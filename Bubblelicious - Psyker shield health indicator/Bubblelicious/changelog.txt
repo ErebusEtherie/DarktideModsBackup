@@ -1,0 +1,43 @@
+CHANGELOG:
+
+	‣Version 1.0.0
+		Initial Release
+	‣Version 1.0.1
+		fixed indicator showing up for non-psyker classes
+	‣Version 1.1.0
+		restructured code
+		removed redundant logic
+		made some small optimizations
+		added border glow & pulse effect
+	‣Version 1.2.0
+		added shield failing voice lines
+		reorganized code for better readability & maintainability
+	‣Version 1.3.0
+		added color customization
+		added option to only keep track of owned shields
+		shield failing voice lines will now only play for owned shields
+		added option for non-psyker classes to see the indicator
+	‣Version 1.3.1
+		fixed indicator remaining visible during cutscenes
+		made some optimizations
+		improved code readability
+	‣Version 1.3.2
+		fixed a rare issue where the shield failing voiceline could trigger immediately after a shield was spawned
+	‣Version 1.4.0
+		added option to prioritize shields based on proximity
+		fixed indicator remaining visible if shield owner left while shield was being tracked
+	‣Version 1.5.0
+		restructured (better compartmentalized) code
+		added shuffle functionality to avoid replaying the same voiceline back to back
+		fixed indicator disappearing if settings were changed while visible
+		most settings can now be changed on the fly
+	‣Version 1.5.1
+		added safeguard to prevent crash to desktop due to "stingray::plugin_api::unit::local_pose failed, UnitReference is not valid"
+	‣Version 1.6.0
+		added option to change the indicator's size/scale
+	‣Version 1.7.0
+		added option to represent shield health as a colored outline for the bubble shield, or as a color change for the flat shield
+		improved overall performance, especially when no shields are active
+	‣Version 1.7.1
+		re-added the safeguard from version 1.5.1
+		made another micro-optimization
