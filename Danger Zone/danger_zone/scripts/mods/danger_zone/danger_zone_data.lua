@@ -73,7 +73,7 @@ for _, name in ipairs(group_names) do
 end
 add_setting(groups.area_effects, "fire_barrel_explosion", {80, 20, 0, 100})
 add_setting(groups.area_effects, "scab_bomber_grenade", {100, 0, 0, 100})
---add_setting(groups.area_effects, "tox_bomber_gas", {100, 0, 0, 20})
+add_setting(groups.area_effects, "tox_bomber_gas", {100, 0, 0, 20})
 add_setting(groups.area_effects, "scab_flamer_explosion", {80, 20, 0, 100})
 add_setting(groups.area_effects, "tox_flamer_explosion", {100, 0, 0, 100})
 

@@ -52,9 +52,9 @@ local templates = {
     tox_flamer_explosion = {
         setting_group = "tox_flamer_explosion",
     },
-    -- tox_bomber_gas = {
-    --     setting_group = "tox_bomber_gas",
-    -- },
+    tox_bomber_gas = {
+        setting_group = "tox_bomber_gas",
+    },
     daemonhost_spawn = {
         radius = ChaosDaemonhostSettings.anger_distances.passive[1].distance,
         setting_group = "daemonhost_spawn",
@@ -139,7 +139,7 @@ return {
         renegade_flamer_backpack = "scab_flamer_explosion",
         renegade_grenadier_fire_grenade = "scab_bomber_grenade",
         cultist_flamer_backpack = "tox_flamer_explosion",
-        -- cultist_grenadier_gas = "tox_bomber_gas",
+        cultist_grenadier_gas = "tox_bomber_gas",
     },
     minion = {
         chaos_daemonhost = {

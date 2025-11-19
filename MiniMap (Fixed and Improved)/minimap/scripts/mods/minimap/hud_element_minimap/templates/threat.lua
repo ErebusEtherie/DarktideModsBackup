@@ -1,4 +1,3 @@
-local UIHudSettings = require("scripts/settings/ui/ui_hud_settings")
 local UIWidget = require("scripts/managers/ui/ui_widget")
 
 local template = {}
@@ -48,13 +47,34 @@ template.update_function = function(widget, marker, x, y)
     icon_passive.offset[1] = x
     icon_passive.offset[2] = y
 
+    local function apply_color_to_texture(texture_style, color)
+        if texture_style and color then
+            if not texture_style.color then
+                texture_style.color = { 255, 255, 255, 255 }
+            end
+            if type(color) == "table" and #color >= 4 then
+                texture_style.color[1] = color[1]
+                texture_style.color[2] = color[2]
+                texture_style.color[3] = color[3]
+                texture_style.color[4] = color[4]
+            else
+                texture_style.color = color
+            end
+        end
+    end
+
+    local marker_icon_style = marker.widget and marker.widget.style and marker.widget.style.icon
+    local color_to_apply = marker_icon_style and marker_icon_style.color or icon.color
+
     local visual_type = marker.data.visual_type or "default"
     if visual_type == "passive" then
         icon.visible = false
         icon_passive.visible = true
+        apply_color_to_texture(icon_passive, color_to_apply or icon_passive.color)
     else
         icon.visible = true
         icon_passive.visible = false
+        apply_color_to_texture(icon, color_to_apply)
     end
 end
 

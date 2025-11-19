@@ -11,7 +11,7 @@ end
 --[+ Getting rid of repeating parts: function(locale, value) return ... end +]--
 local function loc_text(text)
 	return function(locale, value) 
-		return text 
+		return text
 	end
 end
 
@@ -27,12 +27,19 @@ local localization_templates = {
 
 -- Make changes to this file only if you need them!
 
+
+-- FOR TESTS ONLY!!!
+-- create_template("weap_testum00", {"loc_talent_veteran_crits_rend_alt_description"}, {"en"}, function(locale, value) return string.gsub(value, "{", "(") end),
+-- create_template("weap_testum01", {"loc_talent_adamant_pinning_dog_elite_damage_description"}, {"en"}, function(locale, value) return string.gsub(value, "{", "(") end),
+-- FOR TESTS ONLY!!!
+
+
 --[+ ++ВРАГИ - 敵人 ++ +]--
-	--[+ Орда +]--
+	--[+ ОРДА +]--
 		--[+ Groaner - Ворчун +]--
-		create_template("enemies_chaos_groaner_ext_ru",
-			{"loc_breed_display_name_chaos_newly_infected"}, {"ru"},
-				loc_text("Ворчун")),
+		-- create_template("enemies_chaos_groaner_ext_ru",
+			-- {"loc_breed_display_name_chaos_newly_infected"}, {"ru"},
+				-- loc_text("Ворчун")),
 		create_template("enemies_chaos_groaner_ext_ru",
 			{"loc_breed_display_name_chaos_newly_infected"}, {"ru"},
 				loc_text("Ворчун")),
@@ -59,10 +66,9 @@ local localization_templates = {
 				loc_text("Чумной ходок мутировавший")),
 		--[+ Traditional Chinese  +]--
 
-	--[+ Специалисты - 專家 +]--
-
+	--[+ СПЕЦИАЛИСТЫ - 專家 +]--
 		--[+ Poxburster - Чумной взрывник +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_chaos_poxwalker_bomber_ext_ru",
 			{"loc_breed_display_name_chaos_poxwalker_bomber"}, {"ru"},
 				loc_text("Чумной взрывник")),
@@ -72,7 +78,7 @@ local localization_templates = {
 				loc_text("瘟疫爆者")),
 
 		--[+ Dreg Tox Flamer - Дрег Токс-огнемётчик +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_cultist_flamer_ext_ru",
 			{"loc_breed_display_name_cultist_flamer"}, {"ru"},
 				loc_text("Дрег Токс-огнемётчик")),
@@ -82,7 +88,7 @@ local localization_templates = {
 				loc_text("渣滓毒焰噴射者")),
 
 		--[+ Dreg Tox Bomber - Дрег Токс-гренадёр +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_cultist_grenadier_ext_ru",
 			{"loc_breed_display_name_cultist_grenadier"}, {"ru"},
 				loc_text("Дрег Токс-гренадёр")),
@@ -92,7 +98,7 @@ local localization_templates = {
 				loc_text("渣滓劇毒轟炸者")),
 
 		--[+ Scab Flamer - Скаб-огнемётчик +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_renegade_flamer_ext_ru",
 			{"loc_breed_display_name_renegade_flamer"}, {"ru"},
 				loc_text("Скаб-огнемётчик")),
@@ -102,7 +108,7 @@ local localization_templates = {
 				loc_text("血痂噴火者")),
 
 		--[+ Scab Bomber - Скаб-гренадёр +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_renegade_grenadier_ext_ru",
 			{"loc_breed_display_name_renegade_grenadier"}, {"ru"},
 				loc_text("Скаб-гренадёр")),
@@ -112,7 +118,7 @@ local localization_templates = {
 				loc_text("血痂轟炸者")),
 
 		--[+ Scab Trapper - Скаб-сеточник +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_renegade_netgunner_ext_ru",
 			{"loc_breed_display_name_renegade_netgunner"}, {"ru"},
 				loc_text("Скаб-сеточник")),
@@ -121,9 +127,9 @@ local localization_templates = {
 			{"loc_breed_display_name_renegade_netgunner"}, {"zh-tw"},
 				loc_text("血痂陷阱兵")),
 
-	--[+ Элита - 精英 +]--
+	--[+ ЭЛИТА - 精英 +]--
 		--[+ Dreg Shotgunner - Дрег-штурмовик +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_cultist_shocktrooper_ext_ru",
 			{"loc_breed_display_name_cultist_shocktrooper"}, {"ru"},
 				loc_text("Дрег-штурмовик")),
@@ -133,7 +139,7 @@ local localization_templates = {
 				loc_text("渣滓霰彈槍手")),
 
 		--[+ Dreg  - Дрег-пулемётчик +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_cultist_gunner_ext_ru",
 			{"loc_breed_display_name_cultist_gunner"}, {"ru"},
 				loc_text("Дрег-пулемётчик")),
@@ -143,7 +149,7 @@ local localization_templates = {
 				loc_text("渣滓砲手")),
 
 		--[+ Dreg  - Дрег-берсерк +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_cultist_berzerker_ext_ru",
 			{"loc_breed_display_name_cultist_berzerker"}, {"ru"},
 				loc_text("Дрег-берсерк")),
@@ -153,7 +159,7 @@ local localization_templates = {
 				loc_text("渣滓狂怒者")),
 
 		--[+ Scab Shotgunner - Скаб-штурмовик +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_renegade_shocktrooper_ext_ru",
 			{"loc_breed_display_name_renegade_shocktrooper"}, {"ru"},
 				loc_text("Скаб-штурмовик")),
@@ -163,7 +169,7 @@ local localization_templates = {
 				loc_text("血痂霰彈槍手")),
 
 		--[+ Scab - Скаб-пулемётчик +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_renegade_gunner_ext_ru",
 			{"loc_breed_display_name_renegade_gunner"}, {"ru"},
 				loc_text("Скаб-пулемётчик")),
@@ -173,7 +179,7 @@ local localization_templates = {
 				loc_text("血痂砲手")),
 
 		--[+ Scab - Скаб-берсерк +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_renegade_berzerker_ext_ru",
 			{"loc_breed_display_name_renegade_berzerker"}, {"ru"},
 				loc_text("Скаб-берсерк")),
@@ -183,7 +189,7 @@ local localization_templates = {
 				loc_text("血痂狂暴者")),
 
 		--[+ Mauler - Скаб-разрубатель +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_renegade_executor_ext_ru",
 			{"loc_breed_display_name_renegade_executor"}, {"ru"},
 				loc_text("Скаб-разрубатель")),
@@ -193,7 +199,7 @@ local localization_templates = {
 				loc_text("血痂重錘兵")),
 
 		--[+  - Крушила +]--
-		--[+ Russian +]	--
+		--[+ Russian +]--
 		create_template("enemies_chaos_ogryn_executor_ext_ru",
 			{"loc_breed_display_name_chaos_ogryn_executor"}, {"ru"},
 				loc_text("Крушила")),

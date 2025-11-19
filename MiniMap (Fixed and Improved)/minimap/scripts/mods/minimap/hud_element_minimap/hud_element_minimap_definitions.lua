@@ -24,12 +24,36 @@ local widget_definitions = {
             style = {
                 vertical_alignment = "center",
                 horizontal_alignment = "center",
-                offset = { 0, 0, -2 },
+                offset = { 0, 0, -1 },
                 size = {
                     settings.radius * 2,
                     settings.radius * 2
                 },
-                color = Color.ui_grey_medium(64, true)
+                color = Color.ui_grey_light(64, true)
+            }
+        },
+        {
+            pass_type = "circle",
+            style_id = "center_dot",
+            style = {
+                vertical_alignment = "center",
+                horizontal_alignment = "center",
+                offset = { 0, 0, 0 },
+                size = { 4, 4 },
+                color = { 20, 30, 20, 100 }
+            }
+        },
+    }, "minimap"),
+    melee_range_ring = UIWidget.create_definition({
+        {
+            pass_type = "circle",
+            style_id = "ring_circle",
+            style = {
+                vertical_alignment = "center",
+                horizontal_alignment = "center",
+                offset = { 0, 0, 1 },
+                size = { 0, 0 },
+                color = Color.ui_grey_light(40, true),
             }
         },
     }, "minimap"),
@@ -74,6 +98,7 @@ local widget_definitions = {
 local icon_templates = {
     assistance = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/assistance"),
     attention = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/attention"),
+    companion_target = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/companion_target"),
     enemy = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/enemy"),
     interactable = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/interactable"),
     objective = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/objective"),

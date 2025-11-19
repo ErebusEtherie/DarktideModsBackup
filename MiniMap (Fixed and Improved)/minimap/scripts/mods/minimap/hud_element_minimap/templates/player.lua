@@ -1,4 +1,3 @@
-local UIHudSettings = require("scripts/settings/ui/ui_hud_settings")
 local UIWidget = require("scripts/managers/ui/ui_widget")
 
 local template = {}

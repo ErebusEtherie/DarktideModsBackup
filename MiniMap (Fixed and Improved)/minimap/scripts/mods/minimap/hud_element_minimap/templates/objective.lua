@@ -93,6 +93,28 @@ template.update_function = function(widget, marker, x, y)
     main2.offset[1] = x
     main2.offset[2] = y
 
+    local function apply_color_to_texture(texture_style, color)
+        if texture_style and color then
+            if not texture_style.color then
+                texture_style.color = { 255, 255, 255, 255 }
+            end
+            if type(color) == "table" and #color >= 4 then
+                texture_style.color[1] = color[1]
+                texture_style.color[2] = color[2]
+                texture_style.color[3] = color[3]
+                texture_style.color[4] = color[4]
+            else
+                texture_style.color = color
+            end
+        end
+    end
+
+    local marker_icon_style = marker.widget and marker.widget.style and marker.widget.style.icon
+    if marker_icon_style and marker_icon_style.color then
+        apply_color_to_texture(main, marker_icon_style.color)
+        apply_color_to_texture(main2, marker_icon_style.color)
+    end
+
     local demo1 = widget.style.demo1
     local demo2 = widget.style.demo2
     local demo3 = widget.style.demo3
