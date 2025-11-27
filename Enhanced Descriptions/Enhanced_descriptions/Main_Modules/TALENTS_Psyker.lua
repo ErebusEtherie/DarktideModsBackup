@@ -1,5 +1,5 @@
 ---@diagnostic disable: undefined-global
--- Version 4.0
+-- Version 4.7b
 -- Thanks to kuli and his Steam guides: https://steamcommunity.com/id/kulii/myworkshopfiles/?section=guides&appid=1361210
 
 local mod = get_mod("Enhanced_descriptions")
@@ -16,6 +16,20 @@ local COLORS_KWords_ru = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Nu
 local COLORS_KWords_tw = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_tw")
 	--[+ Simplified Chinese +]--
 local COLORS_KWords_zh_cn = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_zh_cn")
+	--[+ German +]--
+-- local COLORS_KWords_de = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_de")
+	--[+ Italian +]--
+-- local COLORS_KWords_it = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_it")
+	--[+ Japanese +]--
+-- local COLORS_KWords_ja = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_ja")
+	--[+ Korean +]--
+-- local COLORS_KWords_ko = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_ko")
+	--[+ Polish +]--
+-- local COLORS_KWords_pl = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_pl")
+	--[+ Portuguese +]--
+-- local COLORS_KWords_pt_br = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_pt_br")
+	--[+ Spanish +]--
+-- local COLORS_KWords_es = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_es")
 
 
 local Dot_red = "{#color(255, 35, 5)}•{#reset()}"
@@ -93,8 +107,8 @@ local psyker_talent_localizations = {
 	["loc_ability_psyker_smite_description_new"] = { -- &->and, +colors
 		en = "Charge up psychic power and release it to deal high "..COLORS_KWords.Damage_rgb.." to a single enemy.\n"
 			.."\n"
-			..Dot_green.." Effective vs Flak and Carapace.\n"
-			..Dot_green.." Higher "..COLORS_KWords.Damage_rgb.." vs Maniac and Unyielding.\n"
+			..Dot_green.." Effective against Flak and Carapace.\n"
+			..Dot_green.." High "..COLORS_KWords.Damage_rgb.." to Maniac and Unyielding.\n"
 			..Dot_green.." Always scores a "..COLORS_KWords.Weakspothit_rgb..".\n"
 			..PHRS.Cant_Crit
 			.."\n"
@@ -129,8 +143,8 @@ local psyker_talent_localizations = {
 		en = "Charge up your psychic power and release it to deal immense "..COLORS_KWords.Damage_rgb.." to a Single Enemy.\n"
 			..Dot_green.." An augmented version of {talent_old:%s} that deals {damage:%s} "..COLORS_KWords.Damage_rgb..".\n"
 			.."\n"
-			..Dot_green.." Effective vs Flak and Carapace.\n"
-			..Dot_green.." Higher "..COLORS_KWords.Damage_rgb.." vs Maniac and Unyielding.\n"
+			..Dot_green.." Effective against Flak and Carapace.\n"
+			..Dot_green.." High "..COLORS_KWords.Damage_rgb.." to Maniac and Unyielding.\n"
 			..Dot_green.." Always scores a "..COLORS_KWords.Weakspothit_rgb..".\n"
 			..Dot_green.." Charging the main attack to "..COLORS_Numbers.pc_50_rgb.." lightly "..COLORS_KWords.Staggers_rgb.." the target.\n"
 			..Dot_green.." On impact, "..COLORS_KWords.Staggers_rgb.." almost all enemies.\n"
@@ -231,8 +245,8 @@ local psyker_talent_localizations = {
 			..Dot_nc.." Max range: "..COLORS_Numbers.n_16_rgb.." meters.\n"
 			..Dot_nc.." Only targets torso hitzone.\n"
 			..PHRS.Cant_Crit
-			..Dot_red.." Deals average armor "..COLORS_KWords.Damage_rgb..".\n"
-			..Dot_red.." Deals low "..COLORS_KWords.Damage_rgb.." vs Carapace.\n"
+			..Dot_red.." Average armor "..COLORS_KWords.Damage_rgb..".\n"
+			..Dot_red.." Low "..COLORS_KWords.Damage_rgb.." to Carapace.\n"
 			..Dot_red.." Cannot "..COLORS_KWords.Stagger_rgb.." Monstrosities or enemies with an active Void shield.\n"
 			.."\n"
 			..Dot_nc.." Forces a brief Quelling action upon reaching "..COLORS_Numbers.pc_100_rgb.." "..COLORS_KWords.Peril_rgb..", removing ~"..COLORS_Numbers.pc_8_5_rgb.." "..COLORS_KWords.Peril_rgb..". If released below "..COLORS_Numbers.pc_100_rgb.." "..COLORS_KWords.Peril_rgb..", it pushes enemies back.\n"
@@ -338,7 +352,8 @@ local psyker_talent_localizations = {
 			..Dot_green.." Can "..COLORS_KWords.Crit_rgb..".\n"
 			..Dot_nc.." Costs "..COLORS_Numbers.n_1_rgb.." ammo.\n"
 			..Dot_nc.." Regenerates "..COLORS_Numbers.n_1_rgb.." ammo every "..COLORS_Numbers.n_3_rgb.." seconds.\n"
-			..Dot_red.." Deals very low "..COLORS_KWords.Damage_rgb.." to Carapace and low "..COLORS_KWords.Damage_rgb.." to Unyielding.\n"
+			..Dot_red.." Very low "..COLORS_KWords.Damage_rgb.." to Carapace.\n"
+			..Dot_red.." Low "..COLORS_KWords.Damage_rgb.." to Unyielding.\n"
 			..Dot_red.." Cannot "..COLORS_KWords.Cleave_rgb.." through Carapace armor by default.\n"
 			.."\n"
 			..Dot_red.." {#color(255, 35, 5)}Warning!{#reset()}\n"
@@ -629,8 +644,8 @@ local psyker_talent_localizations = {
 			..Dot_nc.." Ticks every "..COLORS_Numbers.n_075_rgb.." seconds.\n"
 			.."\n"
 			..PHRS.Refr_dur_stappl.."\n"
-			..Dot_green.." Very high armor "..COLORS_KWords.Damage_rgb.." modifiers across the board.\n"
-			..Dot_red.." Very low armor "..COLORS_KWords.Damage_rgb.." modifier against Carapace.",
+			..Dot_green.." Very high armor "..COLORS_KWords.Damage_rgb..".\n"
+			..Dot_red.." Very low armor "..COLORS_KWords.Damage_rgb.." to Carapace.",
 		--[+ СПОСОБНОСТЬ 1-3 - Ползучее пламя +]-- руоф Раздувающееся пламя
 		ru = "{talent_name:%s} накладывает от "..COLORS_Numbers.n_1_rgb.." до {warpfire_stacks:%s} зарядов "..COLORS_KWords_ru.Soulblaze_rgb_ru.." на поражённые цели в зависимости от текущего процента "..COLORS_KWords_ru.Peril_rgb_ru..":\n"
 			.."_______________________________\n"
@@ -735,10 +750,10 @@ local psyker_talent_localizations = {
 			..Dot_green.." Deals "..COLORS_Numbers.n_250_rgb.." Base "..COLORS_KWords.Damage_rgb..".\n"
 			..Dot_green.." Can "..COLORS_KWords.Stagger_rgb.." all enemies except Monstrosities and enemies with active Void shield.\n"
 			-- ..Dot_nc.." The "..COLORS_KWords.Electrocution_rgb.." is always applied to Specialists and Monstrosities on contact.\n"
-			..Dot_red.." Very low armor "..COLORS_KWords.Damage_rgb.." modifiers.\n"
+			..Dot_red.." Very low armor "..COLORS_KWords.Damage_rgb..".\n"
 			.."\n"
 			..Dot_red.." {#color(255, 35, 5)}BUG{#reset()}\n"
-			.."Specialists and Monstrosities only deal "..COLORS_Numbers.n_1_rgb.." "..COLORS_KWords.Damage_rgb.."  to the shield upon contact, instead of the intended "..COLORS_Numbers.n_8_rgb..".",
+			.."Specialists and Monstrosities only deal "..COLORS_Numbers.n_1_rgb.." "..COLORS_KWords.Damage_rgb.." to the shield upon contact, instead of the intended "..COLORS_Numbers.n_8_rgb..".",
 		--[+ СПОСОБНОСТЬ 2-2 - Порог ослабления +]--
 		ru = "Враги, проходящие сквозь {ability:%s}, с {proc_chance:%s} шансом могут быть поражены "..COLORS_KWords_ru.Electrocuted_rgb_ru..".\n"
 			.."Щит всегда поражает "..COLORS_KWords_ru.Electrocuted_rgb_ru.." специалистов, но при этом повреждается при контакте с ними.\n"
@@ -1499,8 +1514,8 @@ local psyker_talent_localizations = {
 			..Dot_nc.." Ticks every "..COLORS_Numbers.n_075_rgb.." seconds.\n"
 			..PHRS.Refr_dur_stappl.."\n"
 			..Dot_green.." Does proc on Elites or Specials killed by "..COLORS_KWords.Soulblaze_rgb..", "..COLORS_KWords.Burn_rgb.." or "..COLORS_KWords.Bleed_rgb.." ticks.\n"
-			..Dot_green.." Very high armor "..COLORS_KWords.Damage_rgb.." modifiers across the board.\n"
-			..Dot_red.." Very low armor "..COLORS_KWords.Damage_rgb.." modifier against Carapace.",
+			..Dot_green.." Very high armor "..COLORS_KWords.Damage_rgb..".\n"
+			..Dot_red.." Very low armor "..COLORS_KWords.Damage_rgb.." to Carapace.",
 		--[+ Пассивный 5 - Опасное возгорание +]-- руоф Пагубное воспламенение
 		ru = "Убийство элитного врага или специалиста накладывает {stacks:%s} заряда "..COLORS_KWords_ru.Soulblaze_rgb_ru.." на всех врагов в радиусе "..COLORS_Numbers.n_4_rgb.." метров от убитого. До "..COLORS_Numbers.n_31_rgb.." заряда на цель.\n"
 			.."\n"

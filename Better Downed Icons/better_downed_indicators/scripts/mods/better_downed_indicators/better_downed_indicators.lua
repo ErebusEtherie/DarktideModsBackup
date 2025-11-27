@@ -4,7 +4,13 @@ local UISettings = require("scripts/settings/ui/ui_settings")
 local UIWidget = require("scripts/managers/ui/ui_widget")
 local Status = mod:io_dofile("better_downed_indicators/scripts/mods/better_downed_indicators/status_detection")
 
--- Removed custom background_tint pass - using game's tinting method instead
+local packages_to_load = {
+    "packages/ui/views/mission_board_view/mission_board_view",
+    "packages/ui/hud/team_player_panel/team_player_panel",
+    "packages/ui/hud/interaction/interaction",
+    "packages/ui/hud/wield_info/wield_info",
+    "packages/ui/views/inventory_background_view/inventory_background_view",
+}
 
 mod._auspex_active_units = {}
 mod._interaction_active_units = {} -- Track active interactions: unit -> {type = "health_station", interactee_unit = unit}
@@ -729,3 +735,9 @@ mod:hook("InteractorExtension", "reset_interaction", function(func, self, reset_
     
     func(self, reset_focus_unit)
 end)
+
+mod.on_enabled = function()
+    for _, package_path in ipairs(packages_to_load) do
+        Managers.package:load(package_path, mod:get_name(), nil, true)
+    end
+end

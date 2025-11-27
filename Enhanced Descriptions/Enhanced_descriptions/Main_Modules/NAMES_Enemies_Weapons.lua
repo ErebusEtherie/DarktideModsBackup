@@ -1,5 +1,5 @@
 ---@diagnostic disable: undefined-global
--- Version 4.0
+-- Version 4.7b
 
 local mod = get_mod("Enhanced_descriptions")
 
@@ -29,7 +29,7 @@ local localization_templates = {
 
 
 -- FOR TESTS ONLY!!!
--- create_template("weap_testum00", {"loc_talent_veteran_crits_rend_alt_description"}, {"en"}, function(locale, value) return string.gsub(value, "{", "(") end),
+-- create_template("weap_testum00", {"loc_talent_zealot_stamina_cost_multiplier_aura_description"}, {"en"}, function(locale, value) return string.gsub(value, "{", "(") end),
 -- create_template("weap_testum01", {"loc_talent_adamant_pinning_dog_elite_damage_description"}, {"en"}, function(locale, value) return string.gsub(value, "{", "(") end),
 -- FOR TESTS ONLY!!!
 

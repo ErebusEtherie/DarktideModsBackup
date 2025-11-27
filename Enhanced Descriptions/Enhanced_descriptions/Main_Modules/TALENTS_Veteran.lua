@@ -17,6 +17,20 @@ local COLORS_KWords_ru = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Nu
 local COLORS_KWords_tw = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_tw")
 	--[+ Simplified Chinese +]--
 local COLORS_KWords_zh_cn = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_zh_cn")
+	--[+ German +]--
+-- local COLORS_KWords_de = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_de")
+	--[+ Italian +]--
+-- local COLORS_KWords_it = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_it")
+	--[+ Japanese +]--
+-- local COLORS_KWords_ja = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_ja")
+	--[+ Korean +]--
+-- local COLORS_KWords_ko = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_ko")
+	--[+ Polish +]--
+-- local COLORS_KWords_pl = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_pl")
+	--[+ Portuguese +]--
+-- local COLORS_KWords_pt_br = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_pt_br")
+	--[+ Spanish +]--
+-- local COLORS_KWords_es = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_es")
 
 
 local Dot_red = "{#color(255, 35, 5)}•{#reset()}"
@@ -100,8 +114,8 @@ local veteran_talent_localizations = {
 			..Dot_green.." Base "..COLORS_KWords.Damage_rgb.." epicenter: "..COLORS_Numbers.n_500_rgb..".\n"
 			..Dot_green.." Deals high "..COLORS_KWords.Stagger_rgb.." against all enemies including Monstrosities.\n"
 			..Dot_nc.." Max explosion radius: "..COLORS_Numbers.n_10_rgb.." meters.\n"
-			..Dot_nc.." Average armor "..COLORS_KWords.Damage_rgb.." modifiers across the board.\n"
-			..Dot_red.." Very low armor "..COLORS_KWords.Damage_rgb.." modifier against Carapace.",
+			..Dot_nc.." Average armor "..COLORS_KWords.Damage_rgb..".\n"
+			..Dot_red.." Very low armor "..COLORS_KWords.Damage_rgb.." to Carapace.",
 		--[+ БЛИЦ 0 - Фраг-граната +]--
 		ru = "Вы бросаете "..COLORS_KWords_ru.Fragmu_grenu_rgb_ru..", которая взрывается через "..COLORS_Numbers.n_1_7_rgb.." секунд.\n"
 			.."\n"
@@ -130,8 +144,8 @@ local veteran_talent_localizations = {
 			..Dot_green.." Deals high "..COLORS_KWords.Stagger_rgb.." against all enemies including Monstrosities.\n"
 			..Dot_nc.." Max explosion radius: "..COLORS_Numbers.n_10_rgb.." meters.\n"
 			..Dot_nc.." Up to "..COLORS_Numbers.n_16_rgb.." Max "..COLORS_KWords.Bleed_rgb.." Stacks.\n"
-			..Dot_nc.." Average armor "..COLORS_KWords.Damage_rgb.." modifiers across the board.\n"
-			..Dot_red.." Very low armor "..COLORS_KWords.Damage_rgb.." modifier against Carapace.",
+			..Dot_nc.." Average armor "..COLORS_KWords.Damage_rgb..".\n"
+			..Dot_red.." Very low armor "..COLORS_KWords.Damage_rgb.." to Carapace.",
 		--[+ БЛИЦ 1 - Крошащая фраг-граната +]-- руоф Фраг-граната крошителя
 		ru = "Вы бросаете "..COLORS_KWords_ru.Frag_gren_rgb_ru..", которая взрывается после "..COLORS_Numbers.n_1_7_rgb.." секунды. Накладывает {stacks:%s} зарядов "..COLORS_KWords_ru.Bleed_rgb_ru.." на всех поражённых взрывом врагов, нанося "..COLORS_KWords_ru.Dmg_rgb_ru.." с течением времени.\n"
 			..Dot_green.." Это улучшенная версия таланта {talent_name:%s}.\n"
@@ -163,8 +177,8 @@ local veteran_talent_localizations = {
 		en = "Throw a grenade that explodes after "..COLORS_Numbers.n_1_rgb.." second and deals devastating "..COLORS_KWords.Damage_rgb..". Sticks to Flak Armoured, Carapace Armoured and Unyielding Enemies.\n"
 			.."\n"
 			..Dot_green.." Base "..COLORS_KWords.Damage_rgb.." epicenter: "..COLORS_Numbers.n_2400_rgb..".\n"
-			..Dot_green.." Good armor "..COLORS_KWords.Damage_rgb.." modifiers across the board inside epicenter.\n"
-			..Dot_green.." Very high armor "..COLORS_KWords.Damage_rgb.." modifiers against Carapace, Flak, Unyielding inside epicenter.\n"
+			..Dot_green.." Good armor "..COLORS_KWords.Damage_rgb.." inside epicenter.\n"
+			..Dot_green.." Very high armor "..COLORS_KWords.Damage_rgb.." to Carapace, Flak, Unyielding inside epicenter.\n"
 			..Dot_green.." Deals high "..COLORS_KWords.Stagger_rgb.." against all enemies including Monstrosities.\n"
 			..Dot_nc.." Max explosion radius: "..COLORS_Numbers.n_5_rgb.." meters.",
 		--[+ БЛИЦ 2 - Крак-граната +]--
@@ -1395,8 +1409,8 @@ local veteran_talent_localizations = {
 			..Dot_nc.." Ticks every "..COLORS_Numbers.n_05_rgb.." seconds.\n"
 			.."\n"
 			..PHRS.Refr_dur_stappl.."\n"
-			..Dot_green.." Above average armor "..COLORS_KWords.Damage_rgb.." modifiers across the board.\n"
-			..Dot_red.." Low armor "..COLORS_KWords.Damage_rgb.." modifier against Carapace.\n"
+			..Dot_green.." Above average armor "..COLORS_KWords.Damage_rgb..".\n"
+			..Dot_red.." Low armor "..COLORS_KWords.Damage_rgb.." to Carapace.\n"
 			..PHRS.Cant_appl_thr_shlds,
 		--[+ Пассивный 17 - Зазубренный клинок +]-- руоф Зазубренное лезвие
 		ru = "{stacks:%s} заряда "..COLORS_KWords_ru.Bleed_rgb_ru.." получает цель при ударе в ближнем бою.\n"

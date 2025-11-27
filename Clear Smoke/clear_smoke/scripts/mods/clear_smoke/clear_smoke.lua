@@ -1,8 +1,15 @@
+--------------------------------------
+--------------------------------------
+--Created by Leer
+--Fixed by Xiao
+--------------------------------------
+--------------------------------------
 local mod = get_mod("clear_smoke")
-local active_decals = {}
 
-local PACKAGE_NAME = "content/levels/training_grounds/missions/mission_tg_basic_combat_01"
+local active_decals = mod:persistent_table("smoke_active_decals")
+
 local DECAL_UNIT_NAME = "content/levels/training_grounds/fx/decal_aoe_indicator"
+local PACKAGE_NAME = "content/levels/training_grounds/missions/mission_tg_basic_combat_01"
 local BASE_RADIUS = 10
 local BASE_DURATION = 15
 local EXTENDED_DURATION = 30
@@ -14,6 +21,8 @@ local function get_current_time()
 end
 
 local function has_grenade_tinkerer_talent(unit)
+    if not Unit.alive(unit) then return false end
+
     local player = Managers.state.player_unit_spawn:owner(unit)
     if player then
         local profile = player:profile()
@@ -35,17 +44,16 @@ local function set_decal_color(decal_unit)
     Unit.set_scalar_for_material(decal_unit, "projector", "color_multiplier", 0.05)
 end
 
+local function spawn_radius_decal(position, world, duration)
+    if not position then return end
 
-local function spawn_radius_decal(unit, world, duration)
-	if not unit then
-        return
-    end
-
-    local position = Unit.local_position(unit, 1)
     local decal_unit = World.spawn_unit_ex(world, DECAL_UNIT_NAME, nil, position + Vector3(0, 0, 0.1))
+    
+    if not Unit.alive(decal_unit) then return end
+
     local diameter = BASE_RADIUS
     Unit.set_local_scale(decal_unit, 1, Vector3(diameter, diameter, diameter))
-    set_decal_color(decal_unit, 1, 1, 1)
+    set_decal_color(decal_unit)
 
     table.insert(active_decals, {
         unit = decal_unit,
@@ -56,16 +64,22 @@ end
 
 local function create_radius_decal(self)
     if not mod:get("show_radius") then return end
+    
     local unit = self._unit
+    
+    if not Unit.alive(unit) then return end
+
     local world = self._world or Managers.world:world("level_world")
     local duration = has_grenade_tinkerer_talent(unit) and EXTENDED_DURATION or BASE_DURATION
+    
+    local position = Unit.local_position(unit, 1)
 
     if not Managers.package:has_loaded(PACKAGE_NAME) then
         Managers.package:load(PACKAGE_NAME, "clear_smoke", function()
-            spawn_radius_decal(unit, world, duration)
+            spawn_radius_decal(position, world, duration)
         end)
     else
-        spawn_radius_decal(unit, world, duration)
+        spawn_radius_decal(position, world, duration)
     end
 end
 
@@ -76,7 +90,10 @@ mod:hook_safe("ProjectileFxExtension", "destroy", function(self)
 end)
 
 mod.update = function(self, dt)
+    if not Managers.time then return end
+    
     local t = get_current_time()
+    if not t then return end
 
     for i = #active_decals, 1, -1 do
         local data = active_decals[i]
@@ -86,9 +103,9 @@ mod.update = function(self, dt)
             end
             table.remove(active_decals, i)
         else
-            if mod:get("pulse_effect") then
+            if mod:get("pulse_effect") and Unit.alive(data.unit) then
                 local time_left = data.destroy_time - t
-                if time_left <= 5 and Unit.alive(data.unit) then
+                if time_left <= 5 then
                     local pulse = math.sin(t * 12) * 0.5
                     local radius = BASE_RADIUS + pulse
                     Unit.set_local_scale(data.unit, 1, Vector3(radius, radius, radius))
@@ -105,8 +122,17 @@ function mod.on_game_state_changed(status, state_name)
                 World.destroy_unit(data.world, data.unit)
             end
         end
-        active_decals = {}
+        table.clear(active_decals)
     end
+end
+
+function mod.on_unload()
+    for _, data in pairs(active_decals) do
+        if Unit.alive(data.unit) then
+            World.destroy_unit(data.world, data.unit)
+        end
+    end
+    table.clear(active_decals)
 end
 
 mod:hook("SmokeFogSystem", "update", function(func, self, context, dt, t, ...)

@@ -1,5 +1,5 @@
 ---@diagnostic disable: undefined-global
--- Version 4.0
+-- Version 4.7b
 
 local mod = get_mod("Enhanced_descriptions")
 local InputUtils = require("scripts/managers/input/input_utils")

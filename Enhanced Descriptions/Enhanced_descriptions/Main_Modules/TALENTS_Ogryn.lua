@@ -16,6 +16,20 @@ local COLORS_KWords_ru = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Nu
 local COLORS_KWords_tw = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_tw")
 	--[+ Simplified Chinese +]--
 local COLORS_KWords_zh_cn = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_zh_cn")
+	--[+ German +]--
+-- local COLORS_KWords_de = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_de")
+	--[+ Italian +]--
+-- local COLORS_KWords_it = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_it")
+	--[+ Japanese +]--
+-- local COLORS_KWords_ja = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_ja")
+	--[+ Korean +]--
+-- local COLORS_KWords_ko = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_ko")
+	--[+ Polish +]--
+-- local COLORS_KWords_pl = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_pl")
+	--[+ Portuguese +]--
+-- local COLORS_KWords_pt_br = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_pt_br")
+	--[+ Spanish +]--
+-- local COLORS_KWords_es = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_es")
 
 
 local Dot_red = "{#color(255, 35, 5)}•{#reset()}"

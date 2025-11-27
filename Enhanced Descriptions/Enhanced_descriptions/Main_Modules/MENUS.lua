@@ -15,6 +15,20 @@ local COLORS_KWords_ru = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Nu
 local COLORS_KWords_tw = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_tw")
 	--[+ Simplified Chinese +]--
 local COLORS_KWords_zh_cn = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_zh_cn")
+	--[+ German +]--
+-- local COLORS_KWords_de = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_de")
+	--[+ Italian +]--
+-- local COLORS_KWords_it = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_it")
+	--[+ Japanese +]--
+-- local COLORS_KWords_ja = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_ja")
+	--[+ Korean +]--
+-- local COLORS_KWords_ko = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_ko")
+	--[+ Polish +]--
+-- local COLORS_KWords_pl = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_pl")
+	--[+ Portuguese +]--
+-- local COLORS_KWords_pt_br = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_pt_br")
+	--[+ Spanish +]--
+-- local COLORS_KWords_es = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_es")
 
 
 --[+ Function to create a localization template +]--
@@ -140,6 +154,21 @@ local menus_templates = {
 
 --[+ ++MELK - 梅爾克 - 梅尔克大人的采购店++ +]--
 --[+ +Contracts - 合約 - 合同+ +]-- Highlighted numbers
+	--[+ Pick up Х kind +]--
+	["loc_contracts_task_label_collect_pickups"] = {
+		en = "Pick up "..COLORS_Numbers.counts_var_rgb.." {kind:%s}",
+		ru = "{kind:%s}: собрать "..COLORS_Numbers.counts_var_rgb.." штук",
+		-- fr = "",
+		["zh-tw"] = "撿起 "..COLORS_Numbers.counts_var_rgb.." {kind:%s}", -- 撿起[x]本[聖典/法術書]
+		["zh-cn"] = "拾取 "..COLORS_Numbers.counts_var_rgb.." 本{kind:%s}", -- 拾取 X 本 kind
+		-- de = "",
+		-- it = "",
+		-- ja = "",
+		-- ko = "",
+		-- pl = "",
+		-- ["pt-br"] = "",
+		-- es = "",
+	},
 	--[+ Kill Х Monstrosities +]--
 	["loc_contracts_task_label_kill_bosses"] = {
 		en = "Kill "..COLORS_Numbers.countd_var_rgb.." Monstrosities",
@@ -207,21 +236,6 @@ local menus_templates = {
 		-- fr = "",
 		["zh-tw"] = "完成 "..COLORS_Numbers.countd_var_rgb.." 任務，且無玩家死亡", -- 完成[x]場任務，並且無人死亡
 		["zh-cn"] = "完成 "..COLORS_Numbers.countd_var_rgb.." 任务且没有玩家死亡", -- 完成 X 任务且没有玩家死亡
-		-- de = "",
-		-- it = "",
-		-- ja = "",
-		-- ko = "",
-		-- pl = "",
-		-- ["pt-br"] = "",
-		-- es = "",
-	},
-	--[+ Pick up Х kind +]--
-	["loc_contracts_task_label_collect_pickups"] = {
-		en = "Pick up "..COLORS_Numbers.counts_var_rgb.." {kind:%s}",
-		ru = "{kind:%s}: собрать "..COLORS_Numbers.counts_var_rgb.." штук",
-		-- fr = "",
-		["zh-tw"] = "撿起 "..COLORS_Numbers.counts_var_rgb.." {kind:%s}", -- 撿起[x]本[聖典/法術書]
-		["zh-cn"] = "拾取 "..COLORS_Numbers.counts_var_rgb.." 本{kind:%s}", -- 拾取 X 本 kind
 		-- de = "",
 		-- it = "",
 		-- ja = "",

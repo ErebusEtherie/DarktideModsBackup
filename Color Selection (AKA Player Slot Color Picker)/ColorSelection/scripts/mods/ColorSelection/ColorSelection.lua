@@ -3,7 +3,6 @@ local mod = get_mod("ColorSelection")
 local UISettings = require("scripts/settings/ui/ui_settings")
 local UISoundEvents = require("scripts/settings/ui/ui_sound_events")
 
--- Constants
 local CONSTANTS = {
 	MAX_PLAYERS_PER_PAGE = 14,
 	MAX_COLOR_VALUE = 255,
@@ -15,7 +14,6 @@ local CONSTANTS = {
 	LINE_HEIGHT = 30
 }
 
--- Color utility functions
 local ColorUtils = {}
 
 function ColorUtils.normalize_to_rgb(color)
@@ -30,7 +28,7 @@ function ColorUtils.normalize_to_rgb(color)
 			b = math.clamp(color.b or CONSTANTS.MAX_COLOR_VALUE, 0, CONSTANTS.MAX_COLOR_VALUE)
 		}
 	elseif color[1] and color[2] and color[3] then
-		-- ARGB format: {alpha, red, green, blue}
+
 		return {
 			r = math.clamp(color[2] or CONSTANTS.MAX_COLOR_VALUE, 0, CONSTANTS.MAX_COLOR_VALUE),
 			g = math.clamp(color[3] or CONSTANTS.MAX_COLOR_VALUE, 0, CONSTANTS.MAX_COLOR_VALUE),
@@ -53,10 +51,35 @@ function ColorUtils.argb_to_rgb(argb)
 	}
 end
 
--- Initialize custom colors storage
 mod._player_custom_colors = {}
+mod._local_player_account_id = nil  -- Store local player's account ID
 
--- Register color customizer view
+mod.account_id_color_map = mod:persistent_table("account_id_color_map")
+
+-- Update local player account ID (call this whenever player might be available)
+local function update_local_player_id()
+	local pm = Managers and Managers.player
+	if pm then
+		local local_player = pm:local_player_safe(1)
+		if local_player then
+			local success, account_id = pcall(function() return local_player:account_id() end)
+			if success and account_id and account_id ~= "" then
+				mod._local_player_account_id = account_id
+				return true
+			end
+		end
+	end
+	return false
+end
+
+local function pcall_safe(func)
+	local success, result = pcall(func)
+	return success and result or nil
+end
+
+-- Forward declaration - defined after ColorAllocator
+local get_color_for_account_id
+
 local color_customizer_view_name = "color_customizer"
 local color_customizer_view_path = "ColorSelection/scripts/mods/ColorSelection/views/color_customizer_view/color_customizer_view"
 
@@ -93,18 +116,16 @@ local registered_view = mod:register_view({
 })
 
 function mod.open_color_customizer()
-    -- Check if our view is already open - if so, just close it
+
     if Managers.ui:view_active(color_customizer_view_name) then
         Managers.ui:close_view(color_customizer_view_name)
         return
     end
-    
-    -- Don't open if there's already an active view or chat is using input
+
     if Managers.ui:has_active_view() or Managers.ui:chat_using_input() then
         return
     end
-    
-    -- Open the view
+
     Managers.ui:open_view(color_customizer_view_name)
 end
 
@@ -151,8 +172,7 @@ function ColorAllocator:setup(my_slot, all_slots)
 		get_color("player4_color"),
 	}
 	self.bot_color = get_color("bot_color")
-	
-	-- Build a set of currently active slots
+
 	local active_slots = {}
 	if my_slot and my_slot >= 1 then
 		active_slots[my_slot] = true
@@ -165,8 +185,7 @@ function ColorAllocator:setup(my_slot, all_slots)
 			end
 		end
 	end
-	
-	-- Remove assignments for slots that are no longer active
+
 	local slots_to_remove = {}
 	for slot, idx in pairs(self.slot_to_index) do
 		if not active_slots[slot] then
@@ -181,33 +200,30 @@ function ColorAllocator:setup(my_slot, all_slots)
 			self.index_taken[idx] = false
 		end
 	end
-	
-	-- Rebuild index_taken based on current assignments
+
 	self.index_taken = { false, false, false, false }
 	for slot, idx in pairs(self.slot_to_index) do
 		if idx >= 1 and idx <= 4 then
 			self.index_taken[idx] = true
 		end
 	end
-	
-	-- Local player always gets index 1
+
 	if my_slot and my_slot >= 1 then
 		if self.slot_to_index[my_slot] and self.slot_to_index[my_slot] ~= 1 then
-			-- Local player had a different index, need to swap or reassign
+
 			local old_idx = self.slot_to_index[my_slot]
 			self.index_taken[old_idx] = false
 		end
 		self.slot_to_index[my_slot] = 1
 		self.index_taken[1] = true
 	end
-	
-	-- Pre-assign colors to new players to prevent race conditions
+
 	if all_slots then
 		for i = 1, #all_slots do
 			local slot = all_slots[i]
 			if slot ~= my_slot and slot and slot >= 1 then
 				if not self.slot_to_index[slot] then
-					-- Find next available index
+
 					for idx = 1, 4 do
 						if not self.index_taken[idx] then
 							self.slot_to_index[slot] = idx
@@ -223,41 +239,76 @@ end
 
 function ColorAllocator:color_for(slot, account_id)
 	slot = color_for_slot(slot)
-	
-	-- Check if this is a bot (no account_id) - return bot color
+
 	if not account_id or account_id == "" then
 		if mod:get("debug_mode") then
 			mod:info(string.format("[ColorSelection] Returning bot color for slot %d (no account_id)", slot or 0))
 		end
-		return self.bot_color or self.cfg_colors[1]  -- Fallback to player1 color if bot_color not set
+		return self.bot_color or self.cfg_colors[1]
+	end
+
+	-- Ensure local player ID is set (fallback if not initialized yet)
+	if not mod._local_player_account_id then
+		update_local_player_id()
+	end
+
+	-- Check if this is the local player using stored account ID
+	-- Also do a live check as backup
+	local is_local_player = false
+	if mod._local_player_account_id and mod._local_player_account_id == account_id then
+		is_local_player = true
+	else
+		-- Backup live check
+		local pm = Managers and Managers.player
+		if pm then
+			local local_player = pm:local_player_safe(1)
+			if local_player then
+				local success, lp_account_id = pcall(function() return local_player:account_id() end)
+				if success and lp_account_id and lp_account_id == account_id then
+					is_local_player = true
+					-- Update the cached ID
+					mod._local_player_account_id = lp_account_id
+				end
+			end
+		end
 	end
 	
-	-- Apply player-based slot remapping if we have account_id
-	if account_id and self.account_id_to_player_id[account_id] then
-		local player_id = self.account_id_to_player_id[account_id]
-		
-		-- Check if this player is marked as a bot
-		if self.bot_player_ids[player_id] then
-			return self.bot_color or self.cfg_colors[1]
-		end
-		
-		if self.player_to_slot_mapping[player_id] then
-			slot = self.player_to_slot_mapping[player_id]
+	if is_local_player then
+		-- Local player always gets slot 1 color - FETCH LIVE from settings to avoid stale data after mission
+		return {
+			mod:get("player_color_a"),
+			mod:get("player_color_r"),
+			mod:get("player_color_g"),
+			mod:get("player_color_b"),
+		}
+	end
+
+	-- Check if we're in the hub EARLY - before any other color lookups (multiple methods for reliability)
+	local in_hub = false
+	if Managers.mechanism then
+		local success, mechanism_name = pcall(function() return Managers.mechanism:mechanism_name() end)
+		if success and mechanism_name == "hub" then
+			in_hub = true
 		end
 	end
-	
-	-- Check for custom color by account ID first
+	-- Backup check using game mode
+	if not in_hub and Managers.state and Managers.state.game_mode then
+		local success, game_mode_name = pcall(function() return Managers.state.game_mode:game_mode_name() end)
+		if success and game_mode_name == "hub" then
+			in_hub = true
+		end
+	end
+
+	-- Check for custom colors (these apply in hub too)
 	if account_id and mod._player_custom_colors and mod._player_custom_colors[account_id] then
 		return mod._player_custom_colors[account_id]
 	end
-	
-	-- Check for saved color by account ID (stored as table directly, no JSON needed)
+
 	if account_id then
 		local saved_colors = mod:get("saved_player_colors")
 		if saved_colors and type(saved_colors) == "table" and saved_colors[account_id] then
 			local color = saved_colors[account_id]
 			if color and type(color) == "table" then
-				-- Convert to ARGB format and cache it
 				local argb_color = {255, color.r or 255, color.g or 255, color.b or 255}
 				if not mod._player_custom_colors then
 					mod._player_custom_colors = {}
@@ -268,13 +319,54 @@ function ColorAllocator:color_for(slot, account_id)
 		end
 	end
 
+	-- In hub: Only return colors for local player or players with custom colors
+	-- Return nil for others to preserve their default appearance
+	if in_hub then
+		-- No custom color found, return nil to skip color modification
+		return nil
+	end
+
+	-- Mission only: check account_id_color_map for slot-based colors
+	if account_id and mod.account_id_color_map and mod.account_id_color_map[account_id] then
+		local color_index = mod.account_id_color_map[account_id]
+		if color_index >= 1 and color_index <= 4 then
+			return self.cfg_colors[color_index]
+		end
+	end
+
+	if account_id and self.account_id_to_player_id[account_id] then
+		local player_id = self.account_id_to_player_id[account_id]
+		
+		if self.bot_player_ids[player_id] then
+			return self.bot_color or self.cfg_colors[1]
+		end
+		
+		if self.player_to_slot_mapping[player_id] then
+			slot = self.player_to_slot_mapping[player_id]
+		end
+	end
+
 	local idx = self.slot_to_index[slot]
 	if idx then
+		-- Don't return slot 1 color for non-local players
+		if idx == 1 and not is_local_player then
+			-- Reassign to a different slot
+			for i = 2, 4 do
+				if not self.index_taken[i] then
+					self.slot_to_index[slot] = i
+					self.index_taken[i] = true
+					return self.cfg_colors[i]
+				end
+			end
+			-- Fallback to slot 2 if all taken
+			return self.cfg_colors[2]
+		end
 		return self.cfg_colors[idx]
 	end
 
-	-- Fallback for players joining after setup
-	for i = 1, 4 do
+	-- Assign new slot - start from 2 for non-local players (slot 1 reserved for local)
+	local start_idx = is_local_player and 1 or 2
+	for i = start_idx, 4 do
 		if not self.index_taken[i] then
 			self.slot_to_index[slot] = i
 			self.index_taken[i] = true
@@ -282,18 +374,112 @@ function ColorAllocator:color_for(slot, account_id)
 		end
 	end
 
-	-- All indices taken (shouldn't happen with max 4 players)
-	local fallback = ((slot - 1) % 4) + 1
+	-- Fallback - use slot 2-4 for non-local, slot 1 for local
+	local fallback = is_local_player and 1 or (((slot - 1) % 3) + 2)
 	return self.cfg_colors[fallback]
+end
+
+-- Helper function to get color for any account_id (works in hub and missions)
+-- Returns color table or nil if no color should be applied
+get_color_for_account_id = function(account_id)
+	if not account_id or account_id == "" then
+		return nil
+	end
+	
+	-- Ensure local player ID is set
+	if not mod._local_player_account_id then
+		update_local_player_id()
+	end
+	
+	-- Check if this is the local player
+	local is_local = mod._local_player_account_id and mod._local_player_account_id == account_id
+	
+	if is_local then
+		-- Local player always gets their slot 1 color
+		return {
+			mod:get("player_color_a"),
+			mod:get("player_color_r"),
+			mod:get("player_color_g"),
+			mod:get("player_color_b"),
+		}
+	end
+	
+	-- Check for custom colors (works in hub and missions)
+	if mod._player_custom_colors and mod._player_custom_colors[account_id] then
+		return mod._player_custom_colors[account_id]
+	end
+	
+	-- Check saved colors
+	local saved_colors = mod:get("saved_player_colors")
+	if saved_colors and type(saved_colors) == "table" and saved_colors[account_id] then
+		local c = saved_colors[account_id]
+		if c and type(c) == "table" then
+			local color = {255, c.r or 255, c.g or 255, c.b or 255}
+			-- Cache it
+			if not mod._player_custom_colors then
+				mod._player_custom_colors = {}
+			end
+			mod._player_custom_colors[account_id] = color
+			return color
+		end
+	end
+	
+	-- Check if we're in the hub (multiple methods for reliability)
+	local in_hub = false
+	if Managers.mechanism then
+		local success, mechanism_name = pcall(function() return Managers.mechanism:mechanism_name() end)
+		if success and mechanism_name == "hub" then
+			in_hub = true
+		end
+	end
+	-- Backup check using game mode
+	if not in_hub and Managers.state and Managers.state.game_mode then
+		local success, game_mode_name = pcall(function() return Managers.state.game_mode:game_mode_name() end)
+		if success and game_mode_name == "hub" then
+			in_hub = true
+		end
+	end
+	
+	if in_hub then
+		-- In hub, no slot colors for non-custom players
+		return nil
+	end
+	
+	-- In missions, use slot-based colors via ColorAllocator
+	-- Try to get player's actual slot
+	local player = nil
+	local pm = Managers and Managers.player
+	if pm then
+		local human_players = pm:human_players()
+		if human_players then
+			for _, p in pairs(human_players) do
+				local success, pid = pcall(function() return p:account_id() end)
+				if success and pid == account_id then
+					player = p
+					break
+				end
+			end
+		end
+	end
+	
+	local slot = 1
+	if player then
+		local success, s = pcall(function() return player:slot() end)
+		if success and s then
+			slot = s
+		end
+	end
+	
+	-- Use ColorAllocator for mission slot colors
+	return ColorAllocator:color_for(slot, account_id)
 end
 
 local function _on_player_removed(player)
 	if not player then return end
-	
-	-- Clean up runtime color cache for this player (with safety checks)
+
 	local success, account_id = pcall(function() return player:account_id() end)
 	if success and account_id and mod._player_custom_colors then
-		-- Don't remove from saved colors, just runtime cache
+
 		mod._player_custom_colors[account_id] = nil
 	end
 	
@@ -308,7 +494,6 @@ local function _on_player_removed(player)
 	end
 end
 
--- Player lookup cache for performance
 local _player_cache = {
 	by_slot = {},
 	by_account_id = {},
@@ -328,17 +513,15 @@ local function update_player_cache()
 	if human_players then
 		for unique_id, player in pairs(human_players) do
 			if player then
-				-- Filter out bots using the same checks as apply_slot_colors
+
 				local human_success, is_human = pcall(function() return player:is_human_controlled() end)
 				local bot_success, is_bot = pcall(function() return player:is_bot() end)
 				local id_success, account_id = pcall(function() return player:account_id() end)
-				
-				-- Only cache real human players (skip bots)
+
 				if not (human_success and is_human) then goto skip_cache end
 				if bot_success and is_bot then goto skip_cache end
 				if not (id_success and account_id and account_id ~= "") then goto skip_cache end
-				
-				-- Use pcall to safely access player methods
+
 				local slot_success, slot = pcall(function() return player:slot() end)
 				if slot_success and slot then _player_cache.by_slot[slot] = player end
 				if id_success and account_id then _player_cache.by_account_id[account_id] = player end
@@ -353,8 +536,7 @@ end
 
 local function get_player_by_slot(slot)
 	if not slot then return nil end
-	
-	-- Update cache if needed (every 0.5 seconds or on first call)
+
 	local current_time = os.clock()
 	if current_time - _player_cache.last_update > 0.5 then
 		update_player_cache()
@@ -365,8 +547,7 @@ end
 
 local function get_player_by_account_id(account_id)
 	if not account_id then return nil end
-	
-	-- Update cache if needed
+
 	local current_time = os.clock()
 	if current_time - _player_cache.last_update > 0.5 then
 		update_player_cache()
@@ -375,8 +556,7 @@ local function get_player_by_account_id(account_id)
 	return _player_cache.by_account_id[account_id]
 end
 
--- Helper function to apply color to text
--- Simple approach: wrap entire text in color tag, let true_level's inline tags override
+
 local function apply_color_to_name_only(text, color)
 	if not text or type(text) ~= "string" or not color then
 		return text
@@ -384,13 +564,11 @@ local function apply_color_to_name_only(text, color)
 	
 	local c = color
 	local target_color_tag = string.format("{#color(%d,%d,%d)}", c[2], c[3], c[4])
-	
-	-- Strip any leading ColorSelection color tag (from previous application)
-	-- But preserve true_level's inline color tags within the text
+
+
 	local stripped_text = text:gsub("^{#color%([^%)]*%)}", ""):gsub("{#reset%(%)}$", "")
-	
-	-- Simply wrap the entire text with our color
-	-- true_level's inline color tags will override our color where they're placed
+
+
 	return target_color_tag .. stripped_text .. "{#reset()}"
 end
 
@@ -398,35 +576,32 @@ local function apply_widget_color(panel)
 	if not panel or not panel._widgets_by_name or not mod:get("color_hud_names") then
 		return
 	end
-	
-	-- Try to get player from panel directly (more reliable than slot lookup)
+
 	local player = panel._player
 	if not player and panel._data then
 		player = panel._data.player
 	end
-	
-	-- Get slot and account ID
+
 	local slot = nil
 	local account_id = nil
 	
 	if player then
-		-- Get slot from player (with safety check for destroyed objects)
+
 		local success, result = pcall(function() return player:slot() end)
 		if success and result then
 			slot = result
 		end
-		
-		-- Get account ID from player (with safety check for destroyed objects)
+
 		local id_success, id_result = pcall(function() return player:account_id() end)
 		if id_success and id_result then
 			account_id = id_result
 		end
-		-- Update panel's player slot if not set
+
 		if slot and not panel._player_slot then
 			panel._player_slot = slot
 		end
 	else
-		-- Fallback to slot-based lookup if player not available
+
 		slot = panel._player_slot
 		if slot then
 			player = get_player_by_slot(slot)
@@ -445,29 +620,26 @@ local function apply_widget_color(panel)
 	
 	local color = ColorAllocator:color_for(slot, account_id)
 	if not color then
-		return
+		return  -- Skip color modification (hub without custom color)
 	end
 	
 	local widget = panel._widgets_by_name.player_name
 	if not widget or not widget.style or not widget.style.text then
 		return
 	end
-	
-	-- Set the base text color to our custom color (this colors the whole widget)
+
 	if widget.style.text.text_color then
 		widget.style.text.text_color = {color[1], color[2], color[3], color[4]}
 	end
-	
-	-- Also set the default_text_color if it exists
+
 	if widget.style.text.default_text_color then
 		widget.style.text.default_text_color = {color[1], color[2], color[3], color[4]}
 	end
-	
-	-- Also apply inline tags as backup
+
 	if widget.content and widget.content.text then
 		local current_text = widget.content.text
 		local new_text = apply_color_to_name_only(current_text, color)
-		-- Always update to ensure color is applied (game may reset text)
+
 		widget.content.text = new_text
 		widget.dirty = true
 	end
@@ -487,18 +659,44 @@ end
 
 mod:hook_safe("HudElementPersonalPlayerPanel", "init", function(self) alias_ability_bar_widget(self) end)
 mod:hook_safe("HudElementTeamPlayerPanel",     "init", function(self) alias_ability_bar_widget(self) end)
-mod:hook_safe("HudElementPersonalPlayerPanelHub", "init", function(self) alias_ability_bar_widget(self) end)
-mod:hook_safe("HudElementTeamPlayerPanelHub",     "init", function(self) alias_ability_bar_widget(self) end)
+
 mod:hook_safe("HudElementPlayerPanelBase",     "destroy", function(self) alias_ability_bar_widget(self) end)
 
--- Continuously update player panel colors during gameplay
-mod:hook_safe("HudElementPersonalPlayerPanel", "update", function(self) 
+mod:hook_safe("HudElementPersonalPlayerPanelHub", "update", function(self)
+	if mod:is_enabled() and mod:get("color_hud_names") then
+		-- Personal panel in hub is always local player
+		local color = {
+			mod:get("player_color_a") or 255,
+			mod:get("player_color_r") or 226,
+			mod:get("player_color_g") or 210,
+			mod:get("player_color_b") or 117,
+		}
+		
+		local widget = self._widgets_by_name and self._widgets_by_name.player_name
+		if widget and widget.style and widget.style.text then
+			if widget.style.text.text_color then
+				widget.style.text.text_color = {color[1], color[2], color[3], color[4]}
+			end
+			if widget.style.text.default_text_color then
+				widget.style.text.default_text_color = {color[1], color[2], color[3], color[4]}
+			end
+			if widget.content and widget.content.text then
+				local current_text = widget.content.text
+				local new_text = apply_color_to_name_only(current_text, color)
+				widget.content.text = new_text
+				widget.dirty = true
+			end
+		end
+	end
+end)
+
+mod:hook_safe("HudElementPersonalPlayerPanelHub", "_set_player_name", function(self) 
 	if mod:is_enabled() and mod:get("color_hud_names") then
 		apply_widget_color(self)
 	end
 end)
 
-mod:hook_safe("HudElementPersonalPlayerPanelHub", "update", function(self)
+mod:hook_safe("HudElementPersonalPlayerPanel", "update", function(self)
 	if mod:is_enabled() and mod:get("color_hud_names") then
 		apply_widget_color(self)
 	end
@@ -512,7 +710,39 @@ end)
 
 mod:hook_safe("HudElementTeamPlayerPanelHub", "update", function(self)
 	if mod:is_enabled() and mod:get("color_hud_names") then
-		apply_widget_color(self)
+		-- In hub, only color local player
+		local player = self._player
+		if not player and self._data then
+			player = self._data.player
+		end
+		
+		if player then
+			local account_id = nil
+			local id_success, id_result = pcall(function() return player:account_id() end)
+			if id_success and id_result then
+				account_id = id_result
+			end
+			
+			-- Only color if local player or has custom color
+			local color = get_color_for_account_id(account_id)
+			if color then
+				local widget = self._widgets_by_name and self._widgets_by_name.player_name
+				if widget and widget.style and widget.style.text then
+					if widget.style.text.text_color then
+						widget.style.text.text_color = {color[1], color[2], color[3], color[4]}
+					end
+					if widget.style.text.default_text_color then
+						widget.style.text.default_text_color = {color[1], color[2], color[3], color[4]}
+					end
+					if widget.content and widget.content.text then
+						local current_text = widget.content.text
+						local new_text = apply_color_to_name_only(current_text, color)
+						widget.content.text = new_text
+						widget.dirty = true
+					end
+				end
+			end
+		end
 	end
 end)
 
@@ -526,7 +756,6 @@ local function colourise_team_panels(handler)
 	end
 end
 
--- Helper function to apply color to world marker nameplates
 local function apply_nameplate_color(marker)
 	if not marker or not marker.widget then
 		return
@@ -536,8 +765,7 @@ local function apply_nameplate_color(marker)
 	if not player then
 		return
 	end
-	
-	-- Get player info
+
 	local slot = nil
 	local account_id = nil
 	
@@ -551,13 +779,11 @@ local function apply_nameplate_color(marker)
 		account_id = id_result
 	end
 	
-	if not slot then
-		return
-	end
-	
-	local color = ColorAllocator:color_for(slot, account_id)
+	-- Use get_color_for_account_id which handles hub logic properly
+	-- (returns color for local player and custom colors, nil for others in hub)
+	local color = get_color_for_account_id(account_id)
 	if not color then
-		return
+		return  -- Skip color modification (hub without custom color, or non-local player in hub)
 	end
 	
 	local widget = marker.widget
@@ -568,32 +794,32 @@ local function apply_nameplate_color(marker)
 	end
 	
 	local current_text = content.header_text
-	
-	-- Check if we should color the player name portion
 	local color_names = mod:get("color_nameplate_names")
-	
 	local c = color
 	local color_tag = string.format("{#color(%d,%d,%d)}", c[2], c[3], c[4])
 	
-	-- Strip only leading/trailing ColorSelection color tags, preserve true_level's inline tags
-	local stripped_text = current_text:gsub("^{#color%([^%)]*%)}", ""):gsub("{#reset%(%)}$", "")
+	local stripped_text = current_text:gsub("^{#color%([^%)]*%)}", ""):gsub("{#reset%(%)}$", ""):gsub("{#reset%(%)}([^\n])", "%1"):gsub("{#reset%(%)}", "")
 	
 	local new_text
 	if color_names then
-		-- Color everything, let true_level's inline tags override
 		new_text = color_tag .. stripped_text .. "{#reset()}"
 	else
-		-- Only color the icon at the start
-		local icon, rest = stripped_text:match("^([^\32-\126%s]+)%s+(.+)$")  -- Non-ASCII chars followed by space
-		if icon and rest then
-			new_text = color_tag .. icon .. "{#reset()} " .. rest
+		local icon, rest = stripped_text:match("^(.-%b[])%s*(.*)$")
+		if not icon or icon == "" then
+			icon, rest = stripped_text:match("^([^\32-\126]+)%s*(.*)$")
+		end
+		
+		if icon and icon ~= "" then
+			if rest and rest ~= "" then
+				new_text = color_tag .. icon .. "{#reset()} " .. rest
+			else
+				new_text = color_tag .. icon .. "{#reset()}"
+			end
 		else
-			-- No icon found, don't color
-			new_text = stripped_text
+			new_text = color_tag .. stripped_text .. "{#reset()}"
 		end
 	end
 	
-	-- Always update to ensure color changes apply
 	if new_text ~= current_text then
 		content.header_text = new_text
 	end
@@ -606,12 +832,11 @@ mod:hook_require("scripts/ui/hud/elements/team_panel_handler/hud_element_team_pa
 	end
 end)
 
--- Hook world markers to apply colors to nameplates and companion nameplates
 mod:hook_safe("HudElementWorldMarkers", "event_add_world_marker_unit", function(self, marker_type, unit, callback, data)
 	if not mod:is_enabled() then return end
-	-- Apply colors to newly added nameplates (icon always colored, name optional)
+
 	if marker_type and (marker_type:match("nameplate") or marker_type:match("companion")) then
-		-- Find and color the newly added marker
+
 		if self._markers_by_id then
 			for marker_id, marker in pairs(self._markers_by_id) do
 				if marker.unit == unit then
@@ -623,17 +848,15 @@ mod:hook_safe("HudElementWorldMarkers", "event_add_world_marker_unit", function(
 	end
 end)
 
--- Hook nameplate updates to continuously apply colors
 mod:hook_safe("HudElementNameplates", "update", function(self, dt, t, ui_renderer)
 	if not mod:is_enabled() then return end
-	-- Update all visible nameplates (icon always colored, name optional)
+
 	if not Managers or not Managers.ui then return end
 	
 	local ui_manager = Managers.ui
 	local hud = ui_manager._hud
 	if not hud then return end
-	
-	-- Try to get world markers element safely
+
 	local success, world_markers = pcall(function() return hud:element("HudElementWorldMarkers") end)
 	if not success or not world_markers or not world_markers._markers_by_id then return end
 	
@@ -645,13 +868,290 @@ mod:hook_safe("HudElementNameplates", "update", function(self, dt, t, ui_rendere
 	end
 end)
 
+
+
+
+mod:hook(CLASS.ConstantElementChat, "_participant_displayname", function(func, self, participant)
+	local display_name = func(self, participant)
+	
+	if not mod:is_enabled() or not mod:get("color_chat_names") then
+		return display_name
+	end
+	
+	local account_id = participant and participant.account_id
+	if not account_id then
+		return display_name
+	end
+
+	local slot = 1  -- Default to slot 1
+	local player = get_player_by_account_id(account_id)
+	if player then
+		slot = pcall_safe(function() return player:slot() end) or 1
+	end
+	
+	local color = ColorAllocator:color_for(slot, account_id)
+	if not color then
+		return display_name  -- Skip color modification (hub without custom color)
+	end
+	
+	if color then
+		local color_tag = string.format("{#color(%d,%d,%d)}", color[2], color[3], color[4])
+		local result = color_tag .. display_name .. "{#reset()}"
+		
+		if mod:get("debug_mode") then
+			mod:echo(string.format("[ColorSelection] Chat: %s (ID: %s, Slot: %d) - Color: %d,%d,%d", 
+				display_name, account_id:sub(1, 8), slot, color[2], color[3], color[4]))
+		end
+		
+		return result
+	end
+	
+	return display_name
+end)
+
+mod:hook_safe(CLASS.LobbyView, "_sync_player", function(self, unique_id, player)
+	if not mod:is_enabled() or not mod:get("color_lobby_names") then
+		return
+	end
+	
+	local spawn_slots = self._spawn_slots
+	if not spawn_slots then
+		return
+	end
+	
+	local slot_id = self:_player_slot_id(unique_id)
+	local slot = slot_id and spawn_slots[slot_id]
+	
+	if slot and slot.synced then
+		local panel_widget = slot.panel_widget
+		local panel_content = panel_widget and panel_widget.content
+		
+		if not panel_content or not panel_content.character_name then
+			return
+		end
+		
+		local account_id = pcall_safe(function() return player:account_id() end)
+		local player_slot = pcall_safe(function() return player:slot() end) or 1
+		
+		if account_id then
+			local color = ColorAllocator:color_for(player_slot, account_id)
+			if color then
+				local current_name = panel_content.character_name
+				local color_tag = string.format("{#color(%d,%d,%d)}", color[2], color[3], color[4])
+
+				local stripped = current_name:gsub("{#color%([^%)]*%)}", ""):gsub("{#reset%(%)}",  "")
+				panel_content.character_name = color_tag .. stripped .. "{#reset()}"
+				
+				if mod:get("debug_mode") then
+					mod:echo(string.format("[ColorSelection] Lobby: %s (ID: %s, Slot: %d) - Color applied", 
+						stripped, account_id:sub(1, 8), player_slot))
+				end
+			end
+		end
+	end
+end)
+
+mod:hook(CLASS.HudElementCombatFeed, "_get_unit_presentation_name", function(func, self, unit)
+	if not mod:is_enabled() then
+		return func(self, unit)
+	end
+	
+	local player_unit_spawn_manager = Managers.state and Managers.state.player_unit_spawn
+	if not player_unit_spawn_manager then
+		return func(self, unit)
+	end
+	
+	local player = unit and player_unit_spawn_manager:owner(unit)
+	
+	if player then
+		local account_id = pcall_safe(function() return player:account_id() end)
+		local slot = pcall_safe(function() return player:slot() end) or 1
+		
+		if account_id then
+			local color = ColorAllocator:color_for(slot, account_id)
+			local name = func(self, unit)
+			
+			if color and name then
+				local TextUtils = require("scripts/utilities/ui/text")
+				local colored_name = TextUtils.apply_color_to_text(name, color)
+				
+				if mod:get("debug_mode") then
+					mod:echo(string.format("[ColorSelection] Combat Feed: %s (ID: %s, Slot: %d) - Color applied", 
+						name, account_id:sub(1, 8), slot))
+				end
+				
+				return colored_name
+			end
+		end
+	end
+	
+	return func(self, unit)
+end)
+
+local function apply_color_to_player_name(name, player)
+	if not name or name == "" or not player then
+		return name
+	end
+	
+	local account_id = pcall_safe(function() return player:account_id() end)
+	if not account_id or account_id == "" then
+		return name
+	end
+
+	local color = get_color_for_account_id(account_id)
+	
+	if color then
+		local color_tag = string.format("{#color(%d,%d,%d)}", color[2], color[3], color[4])
+		return color_tag .. name .. "{#reset()}"
+	end
+	
+	return name
+end
+
+mod:hook(CLASS.HumanPlayer, "name", function(func, self)
+	local name = func(self)
+	
+	if not mod:is_enabled() then
+		return name
+	end
+
+	if mod:get("color_hud_names") or mod:get("color_chat_names") or 
+	   mod:get("color_lobby_names") then
+		return apply_color_to_player_name(name, self)
+	end
+	
+	return name
+end)
+
+mod:hook(CLASS.RemotePlayer, "name", function(func, self)
+	local name = func(self)
+	
+	if not mod:is_enabled() then
+		return name
+	end
+	
+	if mod:get("color_hud_names") or mod:get("color_chat_names") or 
+	   mod:get("color_lobby_names") then
+		return apply_color_to_player_name(name, self)
+	end
+	
+	return name
+end)
+
+mod:hook(CLASS.PlayerInfo, "character_name", function(func, self)
+	local name = func(self)
+	
+	if not mod:is_enabled() then
+		return name
+	end
+	
+	if mod:get("color_hud_names") or mod:get("color_chat_names") or 
+	   mod:get("color_lobby_names") then
+
+		local account_id = self._account_id
+		if account_id then
+			local color = get_color_for_account_id(account_id)
+			if color then
+				local color_tag = string.format("{#color(%d,%d,%d)}", color[2], color[3], color[4])
+				return color_tag .. name .. "{#reset()}"
+			end
+		end
+	end
+	
+	return name
+end)
+
+mod:hook(CLASS.RemotePlayer, "character_name", function(func, self)
+	local name = func(self)
+	
+	if not mod:is_enabled() then
+		return name
+	end
+	
+	if mod:get("color_hud_names") or mod:get("color_chat_names") or 
+	   mod:get("color_lobby_names") then
+		return apply_color_to_player_name(name, self)
+	end
+	
+	return name
+end)
+
+mod:hook(CLASS.PresenceEntryMyself, "character_name", function(func, self)
+	local name = func(self)
+	
+	if not mod:is_enabled() then
+		return name
+	end
+	
+	if mod:get("color_hud_names") or mod:get("color_chat_names") or 
+	   mod:get("color_lobby_names") then
+		-- PresenceEntryMyself is always the local player
+		local color = {
+			mod:get("player_color_a"),
+			mod:get("player_color_r"),
+			mod:get("player_color_g"),
+			mod:get("player_color_b"),
+		}
+		local color_tag = string.format("{#color(%d,%d,%d)}", color[2], color[3], color[4])
+		return color_tag .. name .. "{#reset()}"
+	end
+	
+	return name
+end)
+
+mod:hook(CLASS.PresenceEntryImmaterium, "character_name", function(func, self)
+	local name = func(self)
+	
+	if not mod:is_enabled() then
+		return name
+	end
+	
+	if mod:get("color_hud_names") or mod:get("color_chat_names") or 
+	   mod:get("color_lobby_names") then
+
+		local account_id = self._immaterium_entry and self._immaterium_entry.account_id
+		if account_id then
+			local color = get_color_for_account_id(account_id)
+			if color then
+				local color_tag = string.format("{#color(%d,%d,%d)}", color[2], color[3], color[4])
+				return color_tag .. name .. "{#reset()}"
+			end
+		end
+	end
+	
+	return name
+end)
+
+mod:hook_require("scripts/utilities/profile_utils", function(instance)
+	mod:hook(instance, "character_name", function(func, profile)
+		local name = func(profile)
+		
+		if not mod:is_enabled() then
+			return name
+		end
+		
+		if mod:get("color_hud_names") or mod:get("color_chat_names") or 
+		   mod:get("color_lobby_names") then
+			local account_id = profile and profile.account_id
+			if account_id then
+				local color = get_color_for_account_id(account_id)
+				if color then
+					local color_tag = string.format("{#color(%d,%d,%d)}", color[2], color[3], color[4])
+					return color_tag .. name .. "{#reset()}"
+				end
+			end
+		end
+		
+		return name
+	end)
+end)
+
 local function install_player_panel_hooks(base)
 	if not base or base.__cs_hooks then return end
 	base.__cs_hooks = true
-	
-	-- Hook update to continuously apply colors (catches cases where name is set outside our hooks)
+
 	mod:hook_safe(base, "update", function(self, dt, t, ui_renderer)
-		-- Only apply if mod enabled, colors enabled, and panel has widgets
+
 		if mod:is_enabled() and mod:get("color_hud_names") and self._widgets_by_name and self._widgets_by_name.player_name then
 			apply_widget_color(self)
 		end
@@ -662,7 +1162,7 @@ local function install_player_panel_hooks(base)
 		if self._colors_revision ~= mod._colors_revision then
 			self._colors_revision = mod._colors_revision
 			self._player_slot = nil
-			-- Force reapplication of color when revision changes
+
 			apply_widget_color(self)
 		end
 	end)
@@ -673,10 +1173,10 @@ local function install_player_panel_hooks(base)
 	end)
 	
 	mod:hook_safe(base, "_update_player_features", function(self, dt, t, player, ui_renderer)
-		-- Store player reference if available
+
 		if player then
 			self._player = player
-			-- Update slot from player (with safety check for destroyed objects)
+
 			local success, slot = pcall(function() return player:slot() end)
 			if success and slot then
 				self._player_slot = slot
@@ -684,8 +1184,7 @@ local function install_player_panel_hooks(base)
 		end
 		apply_widget_color(self) 
 	end)
-	
-	-- Also hook init to ensure player slot is set for hub panels
+
 	mod:hook_safe(base, "init", function(self, parent, draw_layer, scale, data)
 		if data and data.player then
 			local player = data.player
@@ -696,7 +1195,7 @@ local function install_player_panel_hooks(base)
 				end
 			end
 		end
-		-- Apply color immediately after init
+
 		apply_widget_color(self)
 	end)
 end
@@ -725,7 +1224,6 @@ end
 
 mod.on_unload = restore_previous
 
--- Helper function to update all world markers (nameplates and companions)
 local function update_world_markers()
 	local ui_manager = Managers and Managers.ui
 	if not ui_manager then return false end
@@ -738,8 +1236,11 @@ local function update_world_markers()
 	
 	for marker_id, marker in pairs(world_markers._markers_by_id) do
 		local marker_type = marker.type
-		-- Handle both regular nameplates and companion nameplates
+
 		if marker_type and (marker_type:match("nameplate") or marker_type:match("companion")) then
+			-- Reset mod compatibility flags so who_are_you and true_level re-apply
+			marker.wru_modified = false
+			marker.tl_modified = false
 			apply_nameplate_color(marker)
 		end
 	end
@@ -747,8 +1248,48 @@ local function update_world_markers()
 	return true
 end
 
--- Updates only player panel HUD elements to avoid recreating entire HUD
+local function update_mod_compatibility_flags()
+	local ui_manager = Managers and Managers.ui
+	if not ui_manager then return end
+
+	-- LobbyView
+	local lobby_view = ui_manager:view_instance("lobby_view")
+	if lobby_view and lobby_view._spawn_slots then
+		for _, slot in pairs(lobby_view._spawn_slots) do
+			slot.wru_modified = false
+			slot.tl_modified = false
+		end
+	end
+
+	-- GroupFinderView
+	local group_finder_view = ui_manager:view_instance("group_finder_view")
+	if group_finder_view then
+		-- Reset request grid widgets
+		if group_finder_view._player_request_grid then
+			local widgets = group_finder_view._player_request_grid:widgets()
+			if widgets then
+				for _, widget in ipairs(widgets) do
+					widget.wru_modified = false
+					widget.tl_modified = false
+				end
+			end
+		end
+		-- Reset preview grid widgets
+		if group_finder_view._preview_grid then
+			local widgets = group_finder_view._preview_grid:widgets()
+			if widgets then
+				for _, widget in ipairs(widgets) do
+					widget.wru_modified = false
+					widget.tl_modified = false
+				end
+			end
+		end
+	end
+end
+
 local function update_player_panel_colors()
+	update_mod_compatibility_flags()
+
 	local ui_manager = Managers and Managers.ui
 	if not ui_manager or not ui_manager._hud then return false end
 	
@@ -761,16 +1302,30 @@ local function update_player_panel_colors()
 		if element then
 			local class_name = element.__class_name
 			if class_name == "HudElementPersonalPlayerPanel" or class_name == "HudElementPersonalPlayerPanelHub" then
+				-- Reset mod compatibility flags so who_are_you and true_level re-apply
+				element.wru_modified = false
+				element.tl_modified = false
 				apply_widget_color(element)
 			elseif class_name == "HudElementTeamPlayerPanel" or class_name == "HudElementTeamPlayerPanelHub" then
+				-- Reset mod compatibility flags so who_are_you and true_level re-apply
+				element.wru_modified = false
+				element.tl_modified = false
 				apply_widget_color(element)
 			elseif class_name == "HudElementTeamPanelHandler" then
+				-- Reset flags on all panels in handler
+				if element._player_panels_array then
+					for _, data in ipairs(element._player_panels_array) do
+						if data.panel then
+							data.panel.wru_modified = false
+							data.panel.tl_modified = false
+						end
+					end
+				end
 				colourise_team_panels(element)
 			end
 		end
 	end
-	
-	-- Also update world markers (nameplates and companions)
+
 	update_world_markers()
 	
 	return true
@@ -779,10 +1334,8 @@ end
 local last_debug_state = ""  -- Track last debug output to prevent spam
 local logged_reassignments = {}  -- Track which players we've logged reassignments for
 
--- Forward declare the internal function so queue can reference it
 local apply_slot_colors_internal
 
--- Queue system to prevent race conditions when multiple players join simultaneously
 local color_assignment_queue = {}
 local is_processing_queue = false
 
@@ -802,8 +1355,7 @@ local function process_next_in_queue()
 			mod:echo(msg)  -- Also show in chat if debug mode
 		end
 	end
-	
-	-- Process all queued operations sequentially
+
 	local operation_count = 0
 	while #color_assignment_queue > 0 do
 		local operation = table.remove(color_assignment_queue, 1)
@@ -814,12 +1366,10 @@ local function process_next_in_queue()
 			mod:info(msg)
 			mod:echo(msg)
 		end
-		
-		-- Execute the color assignment
+
 		operation()
 	end
-	
-	-- Mark as complete
+
 	is_processing_queue = false
 end
 
@@ -837,13 +1387,15 @@ local function queue_color_assignment()
 	process_next_in_queue()
 end
 
--- Define the actual implementation
 apply_slot_colors_internal = function()
 	if not UISettings then
 		return
 	end
 	
-	-- Initialize player_slot_colors if it doesn't exist
+	if Managers.mechanism and Managers.mechanism:mechanism_name() == "hub" then
+		return
+	end
+	
 	if not UISettings.player_slot_colors then
 		UISettings.player_slot_colors = {}
 	end
@@ -858,13 +1410,11 @@ apply_slot_colors_internal = function()
 	if not pm then
 		return
 	end
-	
-	-- Build player-to-slot mapping (game bug workaround)
-	-- Use existing mapping if available to keep assignments stable
+
+
 	local player_to_slot = ColorAllocator.player_to_slot_mapping or {}
 	local used_slots = {false, false, false, false}  -- Track which 1-4 slots are used
-	
-	-- First pass: Identify local player and collect all players
+
 	local player_slots = {}  -- Store {unique_id, original_slot, player}
 	local current_players = {}  -- Track which players are currently in game
 	local local_player_id = nil
@@ -874,15 +1424,14 @@ apply_slot_colors_internal = function()
 	if human_players then
 		for unique_id, player in pairs(human_players) do
 			if player then
-				-- Multiple checks to ensure we only process real human players
+
 				local human_success, is_human = pcall(function() return player:is_human_controlled() end)
 				local bot_success, is_bot = pcall(function() return player:is_bot() end)
 				local account_success, account_id_check = pcall(function() return player:account_id() end)
-				
-				-- Skip if:
-				-- 1. Not human controlled
-				-- 2. Explicitly marked as bot
-				-- 3. No valid account ID (bots don't have account IDs)
+
+
+
+
 				if not (human_success and is_human) then
 					if mod:get("debug_mode") then
 						mod:echo(string.format("[ColorSelection] Skipping player %s - not human controlled", unique_id:sub(1, 8)))
@@ -906,8 +1455,7 @@ apply_slot_colors_internal = function()
 				if success and slot and slot >= 1 then
 					table.insert(player_slots, {unique_id = unique_id, slot = slot, player = player})
 					current_players[unique_id] = true
-					
-					-- Check if this is the local player
+
 					if lp and player == lp then
 						local_player_id = unique_id
 					end
@@ -917,17 +1465,16 @@ apply_slot_colors_internal = function()
 			end
 		end
 	end
-	
-	-- Remove mappings for players who left
+
 	for player_id in pairs(player_to_slot) do
 		if not current_players[player_id] then
 			local old_slot = player_to_slot[player_id]
 			player_to_slot[player_id] = nil
-			-- Free up the slot they were using
+
 			if old_slot >= 1 and old_slot <= 4 then
 				used_slots[old_slot] = false
 			end
-			-- Clear logged reassignments for this player
+
 			for key in pairs(logged_reassignments) do
 				if key:sub(1, 8) == player_id:sub(1, 8) then
 					logged_reassignments[key] = nil
@@ -935,49 +1482,43 @@ apply_slot_colors_internal = function()
 			end
 		end
 	end
-	
-	-- Mark slots that are already assigned to existing players (except slot 1, reserved for local player)
+
 	for player_id, slot in pairs(player_to_slot) do
 		if player_id ~= local_player_id and slot >= 1 and slot <= 4 then
 			used_slots[slot] = true
 		end
 	end
-	
-	-- ALWAYS assign local player to slot 1
+
 	if local_player_id then
 		player_to_slot[local_player_id] = 1
 		used_slots[1] = true  -- Reserve slot 1 for local player
 	end
-	
-	-- Second pass: Assign other players to slots 2-4 only
-	-- Also build account_id mapping
+
+
 	local account_id_to_player_id = {}
 	for _, data in ipairs(player_slots) do
 		local slot = data.slot
 		local unique_id = data.unique_id
 		local player = data.player
-		
-		-- Get account_id for this player
+
 		local acct_success, account_id = pcall(function() return player:account_id() end)
 		if acct_success and account_id then
 			account_id_to_player_id[account_id] = unique_id
 		end
-		
-		-- Skip local player (already assigned to slot 1)
+
 		if unique_id == local_player_id then
 			goto continue
 		end
-		
-		-- Only assign if player doesn't have a mapping yet
+
 		if not player_to_slot[unique_id] then
-			-- For other players, only use slots 2-4
+
 			local assigned = false
 			for i = 2, 4 do  -- Start from 2, not 1
 				if not used_slots[i] then
 					player_to_slot[unique_id] = i
 					used_slots[i] = true
 					if slot ~= i then
-						-- Only log once per unique reassignment
+
 						local reassignment_key = string.format("%s:%d:%d", unique_id, slot, i)
 						if not logged_reassignments[reassignment_key] then
 							logged_reassignments[reassignment_key] = true
@@ -994,19 +1535,16 @@ apply_slot_colors_internal = function()
 					break
 				end
 			end
-			-- If slots 2-4 all taken (hub scenario with many players)
-			-- Use account_id to deterministically assign a slot so each player gets a consistent color
+
 			if not assigned then
-				-- Get account_id for this player
+
 				local hash_source = account_id or unique_id
-				
-				-- Create a simple hash from the ID string
+
 				local hash = 0
 				for i = 1, #hash_source do
 					hash = hash + string.byte(hash_source, i)
 				end
-				
-				-- Map to slots 2-4 based on hash
+
 				local reassigned_slot = (hash % 3) + 2  -- Maps to 2, 3, or 4
 				player_to_slot[unique_id] = reassigned_slot
 			end
@@ -1014,21 +1552,17 @@ apply_slot_colors_internal = function()
 		
 		::continue::
 	end
-	
-	-- Store mappings in ColorAllocator for color lookups
+
 	ColorAllocator.player_to_slot_mapping = player_to_slot
 	ColorAllocator.account_id_to_player_id = account_id_to_player_id
-	
-	-- Debug: Log all final assignments only if they changed
-	-- Build a hash of current state
+
 	local current_state = {}
 	for player_id, slot in pairs(player_to_slot) do
 		table.insert(current_state, player_id:sub(1, 8) .. "=" .. slot)
 	end
 	table.sort(current_state)
 	local state_hash = table.concat(current_state, ",")
-	
-	-- Only log if state changed
+
 	if state_hash ~= last_debug_state then
 		last_debug_state = state_hash
 		local debug_enabled = mod:get("debug_mode")
@@ -1039,13 +1573,11 @@ apply_slot_colors_internal = function()
 			log_func(mod, string.format("[ColorSelection]   Player %s → slot %d", player_id:sub(1, 8), slot))
 		end
 	end
-	
-	-- Get local player slot (already assigned to slot 1)
+
 	if local_player_id and player_to_slot[local_player_id] then
 		my_slot = player_to_slot[local_player_id]  -- Should always be 1
 	end
-	
-	-- Build all_slots list with remapped slots
+
 	for _, data in ipairs(player_slots) do
 		local unique_id = data.unique_id
 		local remapped_slot = player_to_slot[unique_id]
@@ -1066,11 +1598,10 @@ apply_slot_colors_internal = function()
 
 	ColorAllocator:setup(my_slot, all_slots)
 
-	-- Create our custom metatable for color lookups
 	local color_metatable = {
 		__index = function(_, k)
 			if type(k) ~= "number" or k < 1 then return nil end
-			-- Try to get account ID for this slot using cache
+
 			local account_id = nil
 			local player = get_player_by_slot(k)
 			if player then
@@ -1083,13 +1614,11 @@ apply_slot_colors_internal = function()
 		end,
 	}
 
-	-- Directly set our metatable, don't restore previous (causes conflicts)
 	UISettings.player_slot_colors = setmetatable({}, color_metatable)
 
 	mod._colors_revision = mod._colors_revision + 1
 	update_player_panel_colors()
-	
-	-- Log successful application
+
 	local debug_enabled = mod:get("debug_mode")
 	if debug_enabled then
 		mod:echo("[ColorSelection] Slot colors applied successfully")
@@ -1098,12 +1627,10 @@ apply_slot_colors_internal = function()
 	end
 end
 
--- Public wrapper that queues color assignment to prevent race conditions
 local function apply_slot_colors()
 	queue_color_assignment()
 end
 
--- Expose apply_slot_colors and update_player_panel_colors so they can be called from the color customizer view
 mod.apply_slot_colors = apply_slot_colors
 mod.update_player_panel_colors = update_player_panel_colors
 mod.ColorAllocator = ColorAllocator
@@ -1111,26 +1638,20 @@ mod.ColorUtils = ColorUtils
 mod.CONSTANTS = CONSTANTS
 mod.get_player_by_account_id = get_player_by_account_id
 mod.get_player_by_slot = get_player_by_slot
+mod.get_color_for_account_id = get_color_for_account_id
 
 local in_gameplay_state = false
 
--- No dynamic updates during gameplay
--- Colors are set once when entering mission and stay until you leave
--- To see new color settings, exit and rejoin the mission
-
--- Hook into social menu to add "Copy Account ID" button
 mod:hook_require("scripts/ui/view_elements/view_element_player_social_popup/view_element_player_social_popup_content_list", function(module)
 	if module.from_player_info then
 		local original_from_player_info = module.from_player_info
 		
 		module.from_player_info = function(parent, player_info)
 			local popup_menu_items, num_menu_items = original_from_player_info(parent, player_info)
-			
-			-- Only add button if it's not the own player and account ID exists
+
 			if not player_info:is_own_player() and player_info:account_id() then
 				local account_id = player_info:account_id()
-				
-				-- Add divider before our button
+
 				local _add_divider = function(at_index)
 					local _get_next_list_item = function(at_index)
 						local last_item_index = num_menu_items + 1
@@ -1176,11 +1697,9 @@ mod:hook_require("scripts/ui/view_elements/view_element_player_social_popup/view
 					num_menu_items = last_item_index
 					return new_item, last_item_index
 				end
-				
-				-- Add divider
+
 				_add_divider()
-				
-				-- Add "Copy Account ID" button
+
 				local copy_button = _get_next_list_item()
 				copy_button.blueprint = "button"
 				copy_button.label = mod:localize("copy_account_id_button")
@@ -1198,125 +1717,9 @@ mod:hook_require("scripts/ui/view_elements/view_element_player_social_popup/view
 	end
 end)
 
--- Hook into social menu roster view to apply custom colors to player names
-mod:hook_require("scripts/ui/views/social_menu_roster_view/social_menu_roster_view_blueprints", function(module)
-	-- Function to get custom color for an account ID (same logic as ColorAllocator:color_for)
-	local function get_custom_color(account_id)
-		if not account_id then
-			return nil
-		end
-		
-		-- Check runtime custom colors first
-		if mod._player_custom_colors and mod._player_custom_colors[account_id] then
-			return mod._player_custom_colors[account_id]
-		end
-		
-		-- Check saved colors
-		local saved_colors = mod:get("saved_player_colors")
-		if saved_colors and type(saved_colors) == "table" and saved_colors[account_id] then
-			local saved_color = saved_colors[account_id]
-			if saved_color and type(saved_color) == "table" then
-				-- Convert to ARGB format
-				local rgb = ColorUtils.normalize_to_rgb(saved_color)
-				local color = ColorUtils.rgb_to_argb(rgb)
-				-- Cache it
-				if not mod._player_custom_colors then
-					mod._player_custom_colors = {}
-				end
-				mod._player_custom_colors[account_id] = color
-				return color
-			end
-		end
-		
-		return nil
-	end
-	
-	-- Helper function to apply custom color to a style
-	local function apply_color_to_style(style, color)
-		if not style or not color then
-			return
-		end
-		
-		-- Apply to text_color array (ARGB format)
-		if style.text_color then
-			style.text_color[1] = color[1] or CONSTANTS.MAX_COLOR_VALUE  -- Alpha
-			style.text_color[2] = color[2] or CONSTANTS.MAX_COLOR_VALUE  -- Red
-			style.text_color[3] = color[3] or CONSTANTS.MAX_COLOR_VALUE  -- Green
-			style.text_color[4] = color[4] or CONSTANTS.MAX_COLOR_VALUE  -- Blue
-		end
-		
-		-- Also update default_color if it exists (overrides party status colors)
-		if style.default_color then
-			style.default_color[1] = color[1] or CONSTANTS.MAX_COLOR_VALUE
-			style.default_color[2] = color[2] or CONSTANTS.MAX_COLOR_VALUE
-			style.default_color[3] = color[3] or CONSTANTS.MAX_COLOR_VALUE
-			style.default_color[4] = color[4] or CONSTANTS.MAX_COLOR_VALUE
-		end
-	end
-	
-	-- Wrap the player_plaque blueprint
-	if module.player_plaque and module.player_plaque.pass_template then
-		local pass_template = module.player_plaque.pass_template
-		
-		-- Find and wrap both name_or_activity and account_name passes
-		for i = 1, #pass_template do
-			local pass = pass_template[i]
-			if pass and pass.change_function then
-				-- Handle name_or_activity pass (character name)
-				if pass.style_id == "name_or_activity" then
-					local original_change_function = pass.change_function
-					
-					pass.change_function = function(content, style)
-						-- Call original function first
-						original_change_function(content, style)
-						
-						-- Apply custom color if available
-						local player_info = content.player_info
-						if player_info then
-							local account_id = player_info:account_id()
-							if account_id then
-								local color = get_custom_color(account_id)
-								if color then
-									apply_color_to_style(style, color)
-								end
-							end
-						end
-					end
-				-- Handle account_name pass (account name shown in hub panel)
-				elseif pass.style_id == "account_name" then
-					local original_change_function = pass.change_function
-					
-					pass.change_function = function(content, style)
-						-- Call original function first
-						original_change_function(content, style)
-						
-						-- Apply custom color if available
-						local player_info = content.player_info
-						if player_info then
-							local account_id = player_info:account_id()
-							if account_id then
-								local color = get_custom_color(account_id)
-								if color then
-									apply_color_to_style(style, color)
-								end
-							end
-						end
-					end
-				end
-			end
-		end
-	end
-end)
-
--- Social popup color application removed - keeping only Copy Account ID button functionality
-
 mod.on_all_mods_loaded = function()
-	-- Reset color allocator on mod load
+	update_local_player_id()  -- Try to get local player ID early
 	ColorAllocator:reset()
-	
-	-- Don't apply colors here - wait until entering StateGameplay
-	-- Colors will be applied when entering a mission
-	
 	if mod.command then
 		mod:command("cs_menu", "open color customizer menu", function() mod.open_color_customizer() end)
 		mod:command("cs_sync", "sync/apply color settings", function()
@@ -1328,29 +1731,27 @@ mod.on_all_mods_loaded = function()
 			end
 		end)
 	end
-	
-	-- Hook into DMF keybind system to block mod hotkeys when our view is open
+
 	local dmf = get_mod("DMF")
 	if dmf then
-		-- Use mod:hook to intercept check_keybinds before it runs
+
 		mod:hook(dmf, "check_keybinds", function(func)
-			-- Block all mod hotkeys when our color customizer view is open
+
 			if Managers.ui and Managers.ui:view_active(color_customizer_view_name) then
-				-- Don't call the original function, effectively blocking all keybinds
+
 				return
 			end
-			
-			-- Otherwise, call the original function
+
 			return func()
 		end)
 	end
 end
 
 mod.on_game_state_changed = function(status, state_name)
-	-- Track when we're in actual gameplay (mission with players)
+	update_local_player_id()  -- Update local player ID on state change
+	
 	if status == "enter" and state_name == "StateGameplay" then
 		in_gameplay_state = true
-		-- Apply colors once when entering gameplay
 		apply_slot_colors()
 	elseif status == "exit" and state_name == "StateGameplay" then
 		in_gameplay_state = false
@@ -1359,7 +1760,7 @@ mod.on_game_state_changed = function(status, state_name)
 end
 
 mod.on_enabled = function()
-	-- Only apply if we're already in gameplay state
+	update_local_player_id()  -- Update local player ID when mod enabled
 	if UISettings and in_gameplay_state then
 		apply_slot_colors()
 	end
@@ -1368,9 +1769,21 @@ end
 mod.on_disabled = function()
 	if previous_slot_colors and UISettings and UISettings.player_slot_colors then
 		restore_previous()
-		-- Force update HUD to clear custom colors
+
 		if in_gameplay_state then
 			update_player_panel_colors()
 		end
+	end
+end
+
+mod.on_setting_changed = function(setting_id)
+	if string.find(setting_id, "_color_") then
+		ColorAllocator:reset()
+		if UISettings and in_gameplay_state then
+			apply_slot_colors()
+		end
+		update_player_panel_colors()
+	elseif setting_id == "color_hud_names" or setting_id == "color_nameplate_names" then
+		update_player_panel_colors()
 	end
 end

@@ -28,11 +28,11 @@ TeamKillTracker displays a permanent team kill counter in the bottom left corner
 
 The counter displays in format:
 ```
-TEAM KILLS: 125 / 56789
-PlayerName1: 45 / 15432
-PlayerName2: 38 / 12345
-PlayerName3: 27 / 9876
-PlayerName4: 15 / 4321
+TEAM KILLS: 125 (56,789) [12,345]
+PlayerName1: 45 (15,432) [1,234]
+PlayerName2: 38 (12,345) [987]
+PlayerName3: 27 (9,876) [654]
+PlayerName4: 15 (4,321) [543]
 ```
 
 **Position**: Bottom left corner of screen  
@@ -73,17 +73,22 @@ If you encounter problems:
 3. Restart the game after installation
 
 ## Versions
-1.3.0
+1.7.0
 
 ## Changelogs
-- 1.3.0 – added HUD Counter Mode setting (dropdown: Kills / Damage, Kills only, Damage only).
-- 1.2.0 – added damage tracking and HUD output in "kills/damage" format; switched to account_id keys; prevented double-counting on death events.
+- 1.7.0 – added “everyone except me” display mode and expanded HUD color presets.
+- 1.6.1 – last-hit damage now rounds up to the nearest integer.
+- 1.6.0 – new display modes (all / only me / team total), last-damage color option, dynamic HUD height and layout tweaks.
+- 1.5.0 – added color customization for kills and damage display (8 color presets available).
+- 1.4.0 – fixed kill counting and damage calculation.
+- 1.3.0 – added HUD Counter Mode setting (dropdown: Kills (Damage), Kills only, Damage only).
+- 1.2.0 – added damage tracking and HUD output in "kills (damage)" format; switched to account_id keys; prevented double-counting on death events.
 - 1.1.0 – added settings to hide the team total line and per-user lines; prevented counter reset on settings change; updated localization.
 - 1.0.0 – first version of the mod
 
 
 ### Current Version
-- Tracking kills and damage for all team players (HUD shows kills/damage)
+- Tracking kills and damage for all team players (HUD shows kills (damage))
 - Automatic hiding in hub
 - Sorting by kill count
 - Support for Russian and English localization
@@ -128,11 +133,11 @@ TeamKillTracker отображает постоянный счетчик уби�
 
 Счетчик отображается в формате:
 ```
-TEAM KILLS: 125 / 56789
-PlayerName1: 45 / 15432
-PlayerName2: 38 / 12345
-PlayerName3: 27 / 9876
-PlayerName4: 15 / 4321
+TEAM KILLS: 125 (56,789) [12,345]
+PlayerName1: 45 (15,432) [1,234]
+PlayerName2: 38 (12,345) [987]
+PlayerName3: 27 (9,876) [654]
+PlayerName4: 15 (4,321) [543]
 ```
 
 **Позиция**: Левый нижний угол экрана  
@@ -173,16 +178,21 @@ PlayerName4: 15 / 4321
 3. Перезапустите игру после установки
 
 ## Версии
-1.3.0
+1.7.0
 
 ## Журнал изменений
-- 1.3.0 — добавлена настройка «Режим счётчика в HUD» (выпадающий список: Убийства / Урон, Только убийства, Только урон).
-- 1.2.0 — добавлен подсчёт урона и вывод в HUD в формате «киллы/урон»; переход на ключи account_id; защита от двойного учёта при смерти.
+- 1.7.0 — добавлен режим отображения «все, кроме меня» и расширен набор цветовых пресетов HUD.
+- 1.6.1 — последний удар округляется вверх до ближайшего целого.
+- 1.6.0 — новые режимы отображения (всё / только я / только общий счёт), отдельный цвет последнего урона и адаптивная высота HUD.
+- 1.5.0 — добавлена настройка цвета для отображения убийств и урона (доступно 8 готовых цветов).
+- 1.4.0 — исправлен подсчёт убийств и расчёт урона.
+- 1.3.0 — добавлена настройка «Режим счётчика в HUD» (выпадающий список: Убийства (Урон), Только убийства, Только урон).
+- 1.2.0 — добавлен подсчёт урона и вывод в HUD в формате «киллы (урон)»; переход на ключи account_id; защита от двойного учёта при смерти.
 - 1.1.0 — добавлены настройки скрытия строки Team Kills и строк пользователей; предотвращён сброс счётчика при смене настроек; обновлена локализация.
 - 1.0.0 — первая версия мода
 
 ### Текущая версия
-- Отслеживание убийств и урона всех игроков команды (HUD показывает «киллы/урон»)
+- Отслеживание убийств и урона всех игроков команды (HUD показывает «киллы (урон)»)
 - Автоматическое скрытие в хабе
 - Сортировка по количеству убийств
 - Поддержка русской и английской локализации

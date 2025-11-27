@@ -1,5 +1,7 @@
 ---@diagnostic disable: undefined-global
--- Version 4.0
+-- Version 4.7b
+-- The main file needed for this mod to work.
+
 -- FOR TRANSLATORS: YOU DON'T NEED TO DO ANYTHING IN THIS FILE!
 
 local mod = get_mod("Enhanced_descriptions")

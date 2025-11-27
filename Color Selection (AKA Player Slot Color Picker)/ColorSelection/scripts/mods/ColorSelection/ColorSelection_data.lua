@@ -74,7 +74,7 @@ return {
             type = "numeric",
             setting_id = "player2_color_b",
             title = "label_blue",
-            default_value = 197,
+            default_value = 108,
             range = { 0, 255 },
             decimals_number = 0,
           },
@@ -106,7 +106,7 @@ return {
             type = "numeric",
             setting_id = "player3_color_b",
             title = "label_blue",
-            default_value = 80,
+            default_value = 121,
             range = { 0, 255 },
             decimals_number = 0,
           },
@@ -138,18 +138,18 @@ return {
             type = "numeric",
             setting_id = "player4_color_b",
             title = "label_blue",
-            default_value = 200,
+            default_value = 230,
             range = { 0, 255 },
             decimals_number = 0,
           },
         },
       },
 
-      -- HUD name color options
+      -- UI element color options
       {
-        setting_id = "hudnames_group",
+        setting_id = "ui_coloring_group",
         type = "group",
-        title = "hudnames_header",
+        title = "ui_coloring_header",
         sub_widgets = {
           {
             type = "checkbox",
@@ -160,8 +160,20 @@ return {
           {
             type = "checkbox",
             setting_id = "color_nameplate_names",
-            default_value = false,
+            default_value = true,
             tooltip = "color_nameplate_names_tooltip",
+          },
+          {
+            type = "checkbox",
+            setting_id = "color_chat_names",
+            default_value = true,
+            tooltip = "color_all_ui_names_tooltip",
+          },
+          {
+            type = "checkbox",
+            setting_id = "color_lobby_names",
+            default_value = true,
+            tooltip = "color_all_ui_names_tooltip",
           },
         },
       },

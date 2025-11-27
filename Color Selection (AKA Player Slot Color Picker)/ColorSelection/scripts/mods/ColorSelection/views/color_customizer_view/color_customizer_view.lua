@@ -1270,27 +1270,74 @@ function ColorCustomizerView:_on_save_pressed()
 end
 
 function ColorCustomizerView:_on_reset_pressed()
+    if self._editing_slot then
+        local slot = self._editing_slot
+        local slot_prefix
+        local slot_name
+        
+        if slot == "bot" then
+            slot_prefix = "bot_color"
+            slot_name = "Bot"
+            mod:set("bot_color_r", 128)
+            mod:set("bot_color_g", 128)
+            mod:set("bot_color_b", 128)
+        else
+            slot_prefix = "player" .. (slot == 1 and "" or tostring(slot)) .. "_color"
+            slot_name = tostring(slot)
+            
+            if slot == 1 then
+                mod:set("player_color_r", 226)
+                mod:set("player_color_g", 210)
+                mod:set("player_color_b", 117)
+            elseif slot == 2 then
+                mod:set("player2_color_r", 180)
+                mod:set("player2_color_g", 88)
+                mod:set("player2_color_b", 197)
+            elseif slot == 3 then
+                mod:set("player3_color_r", 84)
+                mod:set("player3_color_g", 172)
+                mod:set("player3_color_b", 80)
+            elseif slot == 4 then
+                mod:set("player4_color_r", 126)
+                mod:set("player4_color_g", 153)
+                mod:set("player4_color_b", 200)
+            end
+        end
+        
+        self._red = mod:get(slot_prefix .. "_r") or CONSTANTS.MAX_COLOR_VALUE
+        self._green = mod:get(slot_prefix .. "_g") or CONSTANTS.MAX_COLOR_VALUE
+        self._blue = mod:get(slot_prefix .. "_b") or CONSTANTS.MAX_COLOR_VALUE
+        
+        self:_update_slider_values(true)
+        self:_update_hex_input()
+        self:_update_color_preview()
+        self:_update_slot_button_colors()
+        
+        if mod.apply_slot_colors and type(mod.apply_slot_colors) == "function" then
+            mod.apply_slot_colors()
+        end
+        
+        mod:notify(mod:localize("slot_color_reset", slot_name))
+        return
+    end
+    
     if not self._account_id or self._account_id == "" then
         mod:notify(mod:localize("error_no_account_id"))
         return
     end
     
-    -- Validate account ID format
     if not self:_is_valid_account_id(self._account_id) then
         mod:notify(mod:localize("error_invalid_account_id"))
         return
     end
     
-    -- Remove custom color from runtime table
     if mod._player_custom_colors and mod._player_custom_colors[self._account_id] then
         mod._player_custom_colors[self._account_id] = nil
     end
     
-    -- Remove saved color from settings
     local saved_colors = mod:get("saved_player_colors")
     if saved_colors and type(saved_colors) == "table" and saved_colors[self._account_id] then
         local colors = {}
-        -- Clone the table, excluding this account ID
         for account_id, color in pairs(saved_colors) do
             if account_id ~= self._account_id and color and type(color) == "table" then
                 colors[account_id] = {
@@ -1303,20 +1350,16 @@ function ColorCustomizerView:_on_reset_pressed()
         mod:set("saved_player_colors", colors)
     end
     
-    -- Force color refresh to use slot-based colors
     if mod.apply_slot_colors and type(mod.apply_slot_colors) == "function" then
         mod.apply_slot_colors()
     else
         mod.on_setting_changed("player_custom_color")
     end
     
-    -- Force immediate UI refresh of player panels
     if mod.update_player_panel_colors and type(mod.update_player_panel_colors) == "function" then
         mod.update_player_panel_colors()
     end
     
-    -- Update UI to show slot-based color (load player info to get slot color)
-    -- Temporarily disable the updating_from_slider check so we can load the slot color
     local was_updating = self._updating_from_slider
     self._updating_from_slider = false
     self:_load_player_info()

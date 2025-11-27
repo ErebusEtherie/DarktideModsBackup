@@ -353,6 +353,10 @@ local arby_stance_audio = {
 
 local arby_charge_audio = {
     "player/arby_charge_1.opus",
+	"player/arby_charge_2.opus",
+	"player/arby_charge_3.opus",
+	"player/arby_charge_4.opus",
+	"player/arby_charge_5.opus",
 }
 
 local arby_shieldblast_audio = {
@@ -919,6 +923,7 @@ local CUSTOM_COOLDOWNS = {
 	play_enemy_mutant_charger_smash_ogryn = 3,
 	play_warp_charge_build_up_critical = 3,
 	play_psyker_warp_charge_overload_start = 3,
+	play_player_ability_adamant_charge = 3,
 }
 
 local CURRENT_COOLDOWNS = {}

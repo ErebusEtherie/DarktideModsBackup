@@ -1,5 +1,5 @@
 ---@diagnostic disable: undefined-global
--- Version 4.0
+-- Version 4.7b
 -- Thanks to kuli and his Steam guides: https://steamcommunity.com/id/kulii/myworkshopfiles/?section=guides&appid=1361210
 
 local mod = get_mod("Enhanced_descriptions")
@@ -16,6 +16,21 @@ local COLORS_KWords_ru = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Nu
 local COLORS_KWords_tw = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_tw")
 	--[+ Simplified Chinese +]--
 local COLORS_KWords_zh_cn = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_zh_cn")
+	--[+ German +]--
+-- local COLORS_KWords_de = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_de")
+	--[+ Italian +]--
+-- local COLORS_KWords_it = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_it")
+	--[+ Japanese +]--
+-- local COLORS_KWords_ja = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_ja")
+	--[+ Korean +]--
+-- local COLORS_KWords_ko = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_ko")
+	--[+ Polish +]--
+-- local COLORS_KWords_pl = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_pl")
+	--[+ Portuguese +]--
+-- local COLORS_KWords_pt_br = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_pt_br")
+	--[+ Spanish +]--
+-- local COLORS_KWords_es = mod:io_dofile("Enhanced_descriptions/Colors_Keywords_Numbers/COLORS_KWords_es")
+
 
 --[+ Function to create a localization template +]--
 local function create_template(id, loc_keys, locales, handle_func)
@@ -632,12 +647,13 @@ local talent_localizations = {
 	},
 }
 
--- Temporary division of Talents into 5 modules by classes
+-- Temporary division of Talents into 6 modules by classes
 local psyker_talents = mod:io_dofile("Enhanced_descriptions/Main_Modules/TALENTS_Psyker")
 local zealot_talents = mod:io_dofile("Enhanced_descriptions/Main_Modules/TALENTS_Zealot")
 local veteran_talents = mod:io_dofile("Enhanced_descriptions/Main_Modules/TALENTS_Veteran")
 local ogryn_talents = mod:io_dofile("Enhanced_descriptions/Main_Modules/TALENTS_Ogryn")
 local arbites_talents = mod:io_dofile("Enhanced_descriptions/Main_Modules/TALENTS_Arbites")
+local scum_talents = mod:io_dofile("Enhanced_descriptions/Main_Modules/TALENTS_Hive_Scum")
 
 -- Unification of all localizations
 for key, value in pairs(psyker_talents) do
@@ -653,6 +669,9 @@ for key, value in pairs(ogryn_talents) do
 	talent_localizations[key] = value
 end
 for key, value in pairs(arbites_talents) do
+	talent_localizations[key] = value
+end
+for key, value in pairs(scum_talents) do
 	talent_localizations[key] = value
 end
 

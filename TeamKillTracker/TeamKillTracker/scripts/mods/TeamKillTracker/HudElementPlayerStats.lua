@@ -4,9 +4,82 @@ local Text = require("scripts/utilities/ui/text")
 local UIWorkspaceSettings = require("scripts/settings/ui/ui_workspace_settings")
 local UIHudSettings = require("scripts/settings/ui/ui_hud_settings")
 local UIWidget = require("scripts/managers/ui/ui_widget")
+local UIFontSettings = require("scripts/managers/ui/ui_font_settings")
+local HudElementTeamPanelHandlerSettings = require("scripts/ui/hud/elements/team_panel_handler/hud_element_team_panel_handler_settings")
+local HudElementTeamPlayerPanelSettings = require("scripts/ui/hud/elements/team_player_panel/hud_element_team_player_panel_settings")
 
+local hud_body_font_settings = UIFontSettings.hud_body or {}
+--local font_size = hud_body_font_settings.font_size or 14
 local font_size = 16
-local size = {400, 200}
+local panel_size = HudElementTeamPanelHandlerSettings.panel_size
+local BORDER_PADDING = 5
+local DEFAULT_PANEL_HEIGHT = math.floor(font_size * (hud_body_font_settings.line_spacing or 1.2)) + BORDER_PADDING * 2
+local panel_offset = {550, -200, 0}
+local background_color = UIHudSettings.color_tint_7
+local background_gradient = "content/ui/materials/hud/backgrounds/team_player_panel_background"
+local width = panel_size[1]
+local base_size = {width, DEFAULT_PANEL_HEIGHT}
+local function apply_panel_height(self, panel_height)
+	local width = base_size[1]
+
+	self:_set_scenegraph_size("teamKillContainer", width, panel_height)
+
+	local widget = self._widgets_by_name.teamKillCounter
+	local styles = widget.style
+	local panel_background = styles.panel_background
+
+	if panel_background then
+		panel_background.size = panel_background.size or {
+			width,
+			panel_height,
+		}
+		panel_background.size[1] = width
+		panel_background.size[2] = panel_height
+	end
+
+	local hit_indicator = styles.hit_indicator
+
+	if hit_indicator then
+		hit_indicator.size = hit_indicator.size or {
+			width + 20,
+			panel_height + 20,
+		}
+		hit_indicator.size[1] = width + 20
+		hit_indicator.size[2] = panel_height + 20
+	end
+
+	local hit_indicator_armor_break = styles.hit_indicator_armor_break
+
+	if hit_indicator_armor_break then
+		hit_indicator_armor_break.size = hit_indicator_armor_break.size or {
+			width,
+			panel_height,
+		}
+		hit_indicator_armor_break.size[1] = width
+		hit_indicator_armor_break.size[2] = panel_height
+	end
+
+	local text_style = styles.text
+
+	if text_style then
+		text_style.size = text_style.size or {
+			width - BORDER_PADDING * 2,
+			panel_height - BORDER_PADDING * 2,
+		}
+		text_style.size[1] = width - BORDER_PADDING * 2
+		text_style.size[2] = math.max(BORDER_PADDING * 2, panel_height - BORDER_PADDING * 2)
+	end
+
+	widget.dirty = true
+end
+local function color_copy(target, source, alpha)
+	target[1] = alpha or source[1]
+	target[2] = source[2]
+	target[3] = source[3]
+	target[4] = source[4]
+
+	return target
+end
 
 local scenegraph_definition = {
 	screen = UIWorkspaceSettings.screen,
@@ -15,8 +88,12 @@ local scenegraph_definition = {
 		scale = "fit",
 		vertical_alignment = "bottom",
 		horizontal_alignment = "left",
-		size = size,
-		position = {550, -30, 10},
+		size = base_size,
+		position = {
+			panel_offset[1],
+			panel_offset[2],
+			panel_offset[3] or 10,
+		},
 	},
 }
 
@@ -24,21 +101,114 @@ local teamKillStyle = {
 	line_spacing = 1.2,
 	font_size = font_size,
 	drop_shadow = true,
-	font_type = "machine_medium",
+	font_type = hud_body_font_settings.font_type or "machine_medium",
 	text_color = {255, 255, 255, 255},
-	size = size,
+	size = {
+		base_size[1] - BORDER_PADDING * 2,
+		base_size[2] - BORDER_PADDING * 2,
+	},
 	text_horizontal_alignment = "left",
 	text_vertical_alignment = "top",
+	offset = {
+		BORDER_PADDING,
+		BORDER_PADDING,
+		0,
+	},
 }
+
+local function calculate_panel_height(line_count)
+	local line_height = math.floor(teamKillStyle.font_size * teamKillStyle.line_spacing)
+
+	if line_count <= 0 then
+		return DEFAULT_PANEL_HEIGHT
+	end
+
+	local content_height = (line_count * line_height) + BORDER_PADDING * 2
+
+	return math.max(DEFAULT_PANEL_HEIGHT, content_height)
+end
 
 local widget_definitions = {
 	teamKillCounter = UIWidget.create_definition(
-		{ {
-			value_id = "text",
-			style_id = "text",
-			pass_type = "text",
-			style = teamKillStyle,
-		} },
+		{
+			{
+				value = "content/ui/materials/hud/backgrounds/terminal_background_team_panels",
+				pass_type = "texture",
+				style_id = "panel_background",
+				style = {
+					horizontal_alignment = "left",
+					color = Color.terminal_background_gradient(178.5, true),
+					size = {
+						base_size[1],
+						base_size[2],
+					},
+					offset = {
+						0,
+						0,
+						0,
+					},
+				},
+				visibility_function = function (content)
+					return content.visible
+				end,
+			},
+			{
+				value = "content/ui/materials/frames/dropshadow_medium",
+				pass_type = "texture",
+				style_id = "hit_indicator",
+				style = {
+					horizontal_alignment = "center",
+					scale_to_material = true,
+					vertical_alignment = "center",
+					color = color_copy({}, UIHudSettings.color_tint_6, 0),
+					size_addition = {
+						20,
+						20,
+					},
+					default_size_addition = {
+						20,
+						20,
+					},
+					offset = {
+						0,
+						0,
+						1,
+					},
+				},
+				visibility_function = function (content)
+					return content.visible
+				end,
+			},
+			{
+				value = "content/ui/materials/frames/inner_shadow_medium",
+				pass_type = "texture",
+				style_id = "hit_indicator_armor_break",
+				style = {
+					horizontal_alignment = "center",
+					scale_to_material = true,
+					vertical_alignment = "center",
+					color = color_copy({}, UIHudSettings.color_tint_6, 0),
+					size_addition = {
+						0,
+						0,
+					},
+					offset = {
+						0,
+						0,
+						1,
+					},
+				},
+				visibility_function = function (content)
+					return content.visible
+				end,
+			},
+			{
+				value_id = "text",
+				style_id = "text",
+				pass_type = "text",
+				style = teamKillStyle,
+			},
+		},
 		"teamKillContainer"
 	),
 }
@@ -56,30 +226,30 @@ end
 HudElementPlayerStats.update = function(self, dt, t, ui_renderer, render_settings, input_service)
 	HudElementPlayerStats.super.update(self, dt, t, ui_renderer, render_settings, input_service)
 	
+	local widget = self._widgets_by_name.teamKillCounter
+
 	if self.is_in_hub then
-		self._widgets_by_name.teamKillCounter.content.text = ""
+		widget.content.visible = false
+		widget.content.text = ""
+
 		return
+	else
+		widget.content.visible = true
 	end
 	
     -- Сдвиг по стилю текста, если скрыты строки пользователей, но показывается строка Team Kills
-    do
-        local style = self._widgets_by_name.teamKillCounter.style.text
-        style.offset = style.offset or {0, 0, 0}
-        self._base_offset_y = self._base_offset_y or style.offset[2] or 0
-
-        local line_height = math.floor(font_size * teamKillStyle.line_spacing)
-        local extra_offset_y = 0
-        if not mod.hide_team_kills and mod.hide_user_kills then
-            -- опускаем на 4 строки вниз
-            extra_offset_y = line_height * 4
-        end
-        style.offset[2] = self._base_offset_y + extra_offset_y
-    end
-
     -- Обновление текста
     local total_kills = 0
     local total_damage = 0
+    local total_last_damage = 0
     local players_with_kills = {}
+    local local_account_id
+    do
+        local local_player = Managers.player and Managers.player:local_player(1)
+        if local_player then
+            local_account_id = local_player:account_id() or local_player:name()
+        end
+    end
 	
 	-- Получаем список текущих игроков в команде
 	local current_players = {}
@@ -88,8 +258,9 @@ HudElementPlayerStats.update = function(self, dt, t, ui_renderer, render_setting
         for _, player in pairs(players) do
             if player then
                 local account_id = player:account_id() or player:name()
+				local character_name = player.character_name and player:character_name()
                 if account_id then
-                    current_players[account_id] = player:name() or account_id
+                    current_players[account_id] = character_name or player:name() or account_id
                 end
             end
         end
@@ -102,7 +273,9 @@ HudElementPlayerStats.update = function(self, dt, t, ui_renderer, render_setting
             total_kills = total_kills + kills
             local damage = (mod.player_damage and mod.player_damage[account_id]) or 0
             total_damage = total_damage + math.floor(damage)
-            table.insert(players_with_kills, {name = display_name, kills = kills, damage = damage})
+            local last_damage = (mod.player_last_damage and mod.player_last_damage[account_id]) or 0
+            total_last_damage = total_last_damage + math.floor(last_damage)
+            table.insert(players_with_kills, {name = display_name, kills = kills, damage = damage, last_damage = last_damage, account_id = account_id})
         end
     end
 	
@@ -115,30 +288,67 @@ HudElementPlayerStats.update = function(self, dt, t, ui_renderer, render_setting
     end)
 	
     -- Формируем текст с учетом настроек
-    local lines = {}
+	local lines = {}
     local mode = mod.hud_counter_mode or mod:get("hud_counter_mode") or 1
-    if not mod.hide_team_kills then
+    local display_mode = mod.display_mode or mod:get("display_mode") or 1
+    local show_team_summary = display_mode ~= 2
+    local show_user_lines = display_mode ~= 3
+    local show_only_local = display_mode == 2
+    local hide_local_line = display_mode == 4
+    local kills_color = mod.get_kills_color_string()
+    local damage_color = mod.get_damage_color_string()
+    local last_damage_color = mod.get_last_damage_color_string()
+    local reset_color = "{#reset()}"
+    
+    if show_team_summary then
         if mode == 1 then
-            table.insert(lines, "TEAM KILLS: " .. total_kills .. " / " .. total_damage)
+            table.insert(lines, "TEAM KILLS: " .. kills_color .. total_kills .. reset_color .. " (" .. damage_color .. mod.format_number(total_damage) .. reset_color .. ")")
         elseif mode == 2 then
-            table.insert(lines, "TEAM KILLS: " .. total_kills)
+            table.insert(lines, "TEAM KILLS: " .. kills_color .. total_kills .. reset_color)
         elseif mode == 3 then
-            table.insert(lines, "TEAM DAMAGE: " .. total_damage)
+            table.insert(lines, "TEAM DAMAGE: " .. damage_color .. mod.format_number(total_damage) .. reset_color)
+        elseif mode == 4 then
+            table.insert(lines, "TEAM LAST DAMAGE: " .. last_damage_color .. mod.format_number(total_last_damage) .. reset_color)
+        elseif mode == 5 then
+            table.insert(lines, "TEAM KILLS: " .. kills_color .. total_kills .. reset_color .. " [" .. last_damage_color .. mod.format_number(total_last_damage) .. reset_color .. "]")
+        elseif mode == 6 then
+            table.insert(lines, "TEAM KILLS: " .. kills_color .. total_kills .. reset_color .. " (" .. damage_color .. mod.format_number(total_damage) .. reset_color .. ") [" .. last_damage_color .. mod.format_number(total_last_damage) .. reset_color .. "]")
         end
     end
 
-    if not mod.hide_user_kills and #players_with_kills > 0 then
+    if show_user_lines and #players_with_kills > 0 then
         for _, player in ipairs(players_with_kills) do
-            local dmg = math.floor(player.damage or 0)
-            if mode == 1 then
-                table.insert(lines, player.name .. ": " .. player.kills .. " / " .. dmg)
-            elseif mode == 2 then
-                table.insert(lines, player.name .. ": " .. player.kills)
-            elseif mode == 3 then
-                table.insert(lines, player.name .. ": " .. dmg)
+            if show_only_local and (not local_account_id or player.account_id ~= local_account_id) then
+                goto continue
             end
+
+            if hide_local_line and local_account_id and player.account_id == local_account_id then
+                goto continue
+            end
+
+            local dmg = math.floor(player.damage or 0)
+            local last_dmg = math.floor(player.last_damage or 0)
+
+            if mode == 1 then
+                table.insert(lines, player.name .. ": " .. kills_color .. player.kills .. reset_color .. " (" .. damage_color .. mod.format_number(dmg) .. reset_color .. ")")
+            elseif mode == 2 then
+                table.insert(lines, player.name .. ": " .. kills_color .. player.kills .. reset_color)
+            elseif mode == 3 then
+                table.insert(lines, player.name .. ": " .. damage_color .. mod.format_number(dmg) .. reset_color)
+            elseif mode == 4 then
+                table.insert(lines, player.name .. ": [" .. last_damage_color .. mod.format_number(last_dmg) .. reset_color .. "]")
+            elseif mode == 5 then
+                table.insert(lines, player.name .. ": " .. kills_color .. player.kills .. reset_color .. " [" .. last_damage_color .. mod.format_number(last_dmg) .. reset_color .. "]")
+            elseif mode == 6 then
+                table.insert(lines, player.name .. ": " .. kills_color .. player.kills .. reset_color .. " (" .. damage_color .. mod.format_number(dmg) .. reset_color .. ") [" .. last_damage_color .. mod.format_number(last_dmg) .. reset_color .. "]")
+            end
+            ::continue::
         end
     end
+
+	local panel_height = calculate_panel_height(#lines)
+
+    apply_panel_height(self, panel_height)
 
     local display_text = table.concat(lines, "\n")
     self._widgets_by_name.teamKillCounter.content.text = display_text

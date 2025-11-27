@@ -49,13 +49,13 @@ return {
     en = "Blue",
   },
 
-  -- Player Name Coloring
-  hudnames_header = {
-    en = "Player Name Coloring",
+  -- UI Element Name Coloring
+  ui_coloring_header = {
+    en = "UI Element Name Coloring",
   },
 
   color_hud_names = {
-    en = "Color Player Names in HUD",
+    en = "Color HUD Names",
   },
 
   color_hud_names_tooltip = {
@@ -63,11 +63,47 @@ return {
   },
 
   color_nameplate_names = {
-    en = "Color Player Names in Nameplates",
+    en = "Color Nameplate Names",
   },
 
   color_nameplate_names_tooltip = {
     en = "Color player names in floating nameplates (above heads in-game).\nThe class icon is always colored. Enable this to also color the player's name.\nLevel/Havoc information from other mods will retain their separate colors.",
+  },
+
+  color_chat_names = {
+    en = "Color Chat Names",
+  },
+
+  color_chat_names_tooltip = {
+    en = "Color player names in chat messages. Each player's messages will appear in their assigned color.",
+  },
+
+  color_lobby_names = {
+    en = "Color Lobby Names",
+  },
+
+  color_lobby_names_tooltip = {
+    en = "Color player names in the mission lobby (ready-up screen before starting a mission).",
+  },
+
+  color_scoreboard_names = {
+    en = "Color Scoreboard Names",
+  },
+
+  color_scoreboard_names_tooltip = {
+    en = "Color player names in the scoreboard (Tab menu/Tactical Overlay).",
+  },
+
+  color_combat_feed = {
+    en = "Color Combat Feed",
+  },
+
+  color_combat_feed_tooltip = {
+    en = "Color player names in the combat feed notifications (right side of screen).",
+  },
+
+  color_all_ui_names_tooltip = {
+    en = "Color player names in this UI element. Colors are applied at the source, so they appear consistently across all game menus.",
   },
 
   -- Bot Color
@@ -151,7 +187,7 @@ return {
     en = "Player color reset to slot-based color",
   },
   color_reset_all = {
-    en = "All custom colors reset to slot-based colors",
+    en = "All slot colors and custom player colors have been reset to defaults",
   },
   copy_account_id_button = {
     en = "Copy Account ID",
@@ -182,5 +218,8 @@ return {
   },
   editing_slot = {
     en = "Editing Slot {#color(255,255,255)}%s{#reset()}",
+  },
+  slot_color_reset = {
+    en = "Slot {#color(255,255,255)}%s{#reset()} color reset to default",
   },
 }

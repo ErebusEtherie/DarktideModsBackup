@@ -187,6 +187,7 @@ Psyker Critical Peril
 Psyker Peril Overload
 Psyker Long Scream/Heavy Damage Silencer (For use with Overloading sounds, MIGHT NOT WORK PROPERLY ON ALL PERSONALITY TYPES!)
 
+
 1.16
 
 Added the following hooks:
@@ -195,3 +196,10 @@ Renegade Grenadier Fuse/Pre-explosion
 Renegade Grenadier Footsteps
 Renegade Grenadier Explosion
 Renegade Grenadier Throwing
+
+
+1.17
+
+Changed the following default sounds:
+
+Arbites Break the Line Ability
