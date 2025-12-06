@@ -1,5 +1,6 @@
 local SkitariusWeaponManager = class("SkitariusWeaponManager")
 local WeaponTemplates = require("scripts/settings/equipment/weapon_templates/weapon_templates")
+local Ammo = require("scripts/utilities/ammo")
 
 local TRAIT_MAP = {
     thrust="windup_increases_power_child",
@@ -163,8 +164,19 @@ SkitariusWeaponManager.ranged_reload_available = function(self)
     local unit_data_extension = player_unit and ScriptUnit.has_extension(player_unit, "unit_data_system")
     local inventory_component = unit_data_extension and unit_data_extension:read_component("slot_secondary")
     if inventory_component then
-        local clip_max = inventory_component.max_ammunition_clip or 0
-        local clip_ammo = inventory_component.current_ammunition_clip or 0
+        local clip_max = 0
+        local max_num_clips = NetworkConstants.ammunition_clip_array.max_size
+        for i = 1, max_num_clips do
+            if Ammo.clip_in_use(inventory_component, i) then
+                clip_max = clip_max + inventory_component.max_ammunition_clip[i]
+            end
+        end
+        local clip_ammo = 0
+        for i = 1, max_num_clips do
+            if Ammo.clip_in_use(inventory_component, i) then
+                clip_ammo = clip_ammo + inventory_component.current_ammunition_clip[i]
+            end
+        end
         local reserve_ammo = inventory_component.current_ammunition_reserve or 0
         if clip_ammo < clip_max and reserve_ammo > 0 then
             return true
@@ -282,7 +294,7 @@ SkitariusWeaponManager.is_light_complete = function(self, running_action, compon
     if chain_action then
         local start_t = component.start_t
         local current_action_t = t - start_t
-        local chain_time = chain_action.chain_time
+        local chain_time = chain_action.chain_time or chain_action[1].chain_time -- Fix for crowbars having multiple chain_times in a table - fortunately they are the same value for each
         chain_validated = (chain_time and chain_time < current_action_t or not not chain_until and current_action_t < chain_until) and true
         return chain_validated
     end
@@ -387,6 +399,17 @@ SkitariusWeaponManager.special_active = function(self)
     end
     return false
 end
+
+SkitariusWeaponManager.should_sprint = function(self)
+    return self:can_sprint() and self:safe_to_sprint()
+end
+
+SkitariusWeaponManager.can_sprint = function(self)
+end
+
+SkitariusWeaponManager.safe_to_sprint = function(self)
+end
+
 
 SkitariusWeaponManager.is_sprinting = function(self)
     local player = Managers.player:local_player_safe(1)

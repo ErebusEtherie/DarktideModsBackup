@@ -53,6 +53,26 @@ return {
 				default_value = false,
 			},
 			{
+				setting_id = "ritual_vfx",
+				type = "checkbox",
+				default_value = false,
+			},
+			{
+				setting_id = "scum_stimm_screen",
+				type = "checkbox",
+				default_value = false,
+			},
+			{
+				setting_id = "scum_rampage_screen",
+				type = "checkbox",
+				default_value = false,
+			},
+			{
+				setting_id = "scum_сhem_explode",
+				type = "checkbox",
+				default_value = false,
+			},
+			{
 				setting_id = "vfx_replacement_group",
 				type = "group",
 				sub_widgets = {

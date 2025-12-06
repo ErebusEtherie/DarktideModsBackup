@@ -12,15 +12,40 @@ local blocked_vfx = {
 	["content/fx/particles/enemies/netgunner/netgunner_muzzle_flash"] = "net_elecric_vfx",
 	["content/fx/particles/weapons/force_staff/force_staff_explosion"] = "voidstrike_explosion_vfx",
 	["content/fx/particles/abilities/psyker_smite_projectile_impact_01"] = "voidstrike_explosion_vfx",
+	
+	["content/fx/particles/enemies/cultist_ritualist/ritual_force_minions_heresy_target_01"] = "ritual_vfx",
+	["content/fx/particles/enemies/cultist_ritualist/ritual_force_minions_heresy_off_hand"] = "ritual_vfx",
+	--["content/fx/particles/enemies/cultist_ritualist/ritual_force_minions_heresy_02"] = "ritual_vfx",
+	["content/fx/particles/enemies/cultist_ritualist/ritual_force_minions_heresy_off_left_hand"] = "ritual_vfx",
+	--["content/fx/particles/enemies/chaos_mutator_daemonhost_shield"] = "ritual_vfx",
+	--["content/fx/particles/enemies/daemonhost/daemonhost_ambient_fog"] = "ritual_vfx",
+	
+	["content/fx/particles/screenspace/player_screen_broker_stimm_syringe"] = "scum_stimm_screen",
+	["content/fx/particles/screenspace/screen_rage_persistant"] = "scum_rampage_screen",
+	["content/fx/particles/screenspace/screen_broker_punk_rage"] = "scum_rampage_screen",
+	["content/fx/particles/weapons/pistols/needlepistol/needlepistol_explosion_primer_m2"] = "scum_сhem_explode",
 }
+
+local ritual_replacement = "content/fx/particles/impacts/flesh/blood_splatter_reduced_damage_01"
 
 mod:hook("World", "create_particles", function(func, world, particle_name, position, rotation)
 	local setting_id = blocked_vfx[particle_name]
-	--mod:echo(particle_name)
-	if setting_id and mod:get(setting_id) then
-		return
+
+	if particle_name == "content/fx/particles/enemies/cultist_ritualist/ritual_force_minions_heresy_01" then
+		if mod:get("ritual_vfx") then
+			particle_name = ritual_replacement
+		end
 	end
 
+	if setting_id and mod:get(setting_id) and particle_name ~= ritual_replacement then
+		return
+	end
+	
+	--[[if string.find(particle_name, "blood") or string.find(particle_name, "bleed") or string.find(particle_name, "bleeding") then
+		return
+	end--]]
+	
+	--mod:echo(particle_name)
 	return func(world, particle_name, position, rotation)
 end)
 

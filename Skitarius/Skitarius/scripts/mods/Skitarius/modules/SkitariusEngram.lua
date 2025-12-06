@@ -33,8 +33,9 @@ local STEP_TO_INDEX = {
 
 local SUB_SEQUENCE = {
     -- MELEE
-    light_attack = {"start_attack", "light_attack", "idle"}, 
+    light_attack = {"start_attack", "light_attack", "idle"},
     heavy_attack = {"start_attack", "heavy_attack", "idle"},
+    sprint_heavy_attack = {"sprint", "sprint_start_attack", "heavy_attack", "idle"},
     block = {"block", "idle"},
     special_action = {"special_action", "idle"},
     push = {"block", "push", "idle"},

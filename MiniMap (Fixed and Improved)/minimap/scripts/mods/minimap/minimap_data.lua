@@ -1,5 +1,59 @@
 local mod = get_mod("minimap")
 
+local color_presets = {}
+for _, name in ipairs(Color.list or {}) do
+    local c = Color[name](255, true)
+    color_presets[#color_presets+1] = { id = name, name = name, r = c[2], g = c[3], b = c[4] }
+end
+table.sort(color_presets, function(a,b) return a.name < b.name end)
+
+local function preset_options(setting_prefix, default_r, default_g, default_b)
+    local opts = {}
+    if default_r and default_g and default_b then
+        local default_key = "default_" .. setting_prefix
+        table.insert(opts, { text = default_key, value = "default" })
+    else
+        table.insert(opts, { text = "default", value = "default" })
+    end
+    for i, p in ipairs(color_presets) do
+        opts[#opts+1] = { text = p.name, value = p.id }
+    end
+    return opts
+end
+
+local function create_color_group(setting_prefix, default_r, default_g, default_b)
+    return {
+        setting_id = setting_prefix,
+        type = "group",
+        sub_widgets = {
+            {
+                setting_id = setting_prefix .. "_preset",
+                type = "dropdown",
+                default_value = "default",
+                options = preset_options(setting_prefix, default_r, default_g, default_b),
+            },
+            {
+                setting_id = setting_prefix .. "_r",
+                type = "numeric",
+                default_value = default_r,
+                range = {0, 255},
+            },
+            {
+                setting_id = setting_prefix .. "_g",
+                type = "numeric",
+                default_value = default_g,
+                range = {0, 255},
+            },
+            {
+                setting_id = setting_prefix .. "_b",
+                type = "numeric",
+                default_value = default_b,
+                range = {0, 255},
+            },
+        }
+    }
+end
+
 local color_options = {}
 for _, color_name in ipairs(Color.list) do
     table.insert(color_options, {
@@ -57,10 +111,28 @@ return {
                         range = {-200, 200},
                     },
                     {
-                        setting_id = "minimap_background_color",
+                        setting_id = "minimap_background_color_preset",
                         type = "dropdown",
                         default_value = "ui_grey_light",
-                        options = color_options,
+                        options = preset_options(),
+                    },
+                    {
+                        setting_id = "minimap_background_color_r",
+                        type = "numeric",
+                        default_value = 180,
+                        range = {0, 255},
+                    },
+                    {
+                        setting_id = "minimap_background_color_g",
+                        type = "numeric",
+                        default_value = 180,
+                        range = {0, 255},
+                    },
+                    {
+                        setting_id = "minimap_background_color_b",
+                        type = "numeric",
+                        default_value = 180,
+                        range = {0, 255},
                     },
                     {
                         setting_id = "minimap_background_opacity",
@@ -130,6 +202,47 @@ return {
                         setting_id = "hide_bots",
                         type = "checkbox",
                         default_value = true,
+                    },
+                },
+            },
+            {
+                setting_id = "distance_markers",
+                type = "group",
+                sub_widgets = {
+                    {
+                        setting_id = "distance_marker_players",
+                        type = "checkbox",
+                        default_value = false,
+                    },
+                    {
+                        setting_id = "distance_marker_companions",
+                        type = "checkbox",
+                        default_value = false,
+                    },
+                    {
+                        setting_id = "distance_marker_enemies",
+                        type = "checkbox",
+                        default_value = false,
+                    },
+                    {
+                        setting_id = "distance_marker_objectives",
+                        type = "checkbox",
+                        default_value = false,
+                    },
+                    {
+                        setting_id = "distance_marker_interactables",
+                        type = "checkbox",
+                        default_value = false,
+                    },
+                    {
+                        setting_id = "distance_marker_pings",
+                        type = "checkbox",
+                        default_value = false,
+                    },
+                    {
+                        setting_id = "distance_marker_only_out_of_range",
+                        type = "checkbox",
+                        default_value = false,
                     },
                 },
             },
@@ -317,10 +430,28 @@ return {
                                 decimals_number = 1,
                             },
                             {
-                                setting_id = "enemy_radar_melee_ring_color",
+                                setting_id = "enemy_radar_melee_ring_color_preset",
                                 type = "dropdown",
                                 default_value = "ui_grey_light",
-                                options = color_options,
+                                options = preset_options(),
+                            },
+                            {
+                                setting_id = "enemy_radar_melee_ring_color_r",
+                                type = "numeric",
+                                default_value = 180,
+                                range = {0, 255},
+                            },
+                            {
+                                setting_id = "enemy_radar_melee_ring_color_g",
+                                type = "numeric",
+                                default_value = 180,
+                                range = {0, 255},
+                            },
+                            {
+                                setting_id = "enemy_radar_melee_ring_color_b",
+                                type = "numeric",
+                                default_value = 180,
+                                range = {0, 255},
                             },
                             {
                                 setting_id = "enemy_radar_melee_ring_opacity",
@@ -340,339 +471,35 @@ return {
                         setting_id = "enemy_colors_specials",
                         type = "group",
                         sub_widgets = {
-                            -- Disablers
-                            {
-                                setting_id = "color_chaos_hound_r",
-                                type = "numeric",
-                                default_value = 255,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_chaos_hound_g",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_chaos_hound_b",
-                                type = "numeric",
-                                default_value = 200,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_renegade_netgunner_r",
-                                type = "numeric",
-                                default_value = 200,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_renegade_netgunner_g",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_renegade_netgunner_b",
-                                type = "numeric",
-                                default_value = 255,
-                                range = {0, 255},
-                            },
-                            -- Snipers
-                            {
-                                setting_id = "color_renegade_sniper_r",
-                                type = "numeric",
-                                default_value = 255,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_renegade_sniper_g",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_renegade_sniper_b",
-                                type = "numeric",
-                                default_value = 150,
-                                range = {0, 255},
-                            },
-                            -- Flamers (Both Renegade & Cultist)
-                            {
-                                setting_id = "color_flamer_r",
-                                type = "numeric",
-                                default_value = 255,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_flamer_g",
-                                type = "numeric",
-                                default_value = 80,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_flamer_b",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            -- Grenadiers (Both Renegade & Cultist)
-                            {
-                                setting_id = "color_grenadier_r",
-                                type = "numeric",
-                                default_value = 180,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_grenadier_g",
-                                type = "numeric",
-                                default_value = 255,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_grenadier_b",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_chaos_poxwalker_bomber_r",
-                                type = "numeric",
-                                default_value = 220,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_chaos_poxwalker_bomber_g",
-                                type = "numeric",
-                                default_value = 255,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_chaos_poxwalker_bomber_b",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
+                            create_color_group("color_chaos_hound", 255, 0, 200),
+                            create_color_group("color_renegade_netgunner", 200, 0, 255),
+                            create_color_group("color_renegade_sniper", 255, 0, 150),
+                            create_color_group("color_flamer", 255, 80, 0),
+                            create_color_group("color_grenadier", 180, 255, 0),
+                            create_color_group("color_chaos_poxwalker_bomber", 220, 255, 0),
                         },
                     },
                     {
                         setting_id = "enemy_colors_elites",
                         type = "group",
                         sub_widgets = {
-                            -- Executors (Both Ogryn & Renegade)
-                            {
-                                setting_id = "color_executor_r",
-                                type = "numeric",
-                                default_value = 150,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_executor_g",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_executor_b",
-                                type = "numeric",
-                                default_value = 200,
-                                range = {0, 255},
-                            },
-                            -- Ragers (Both Renegade & Cultist Berzerkers)
-                            {
-                                setting_id = "color_berzerker_r",
-                                type = "numeric",
-                                default_value = 220,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_berzerker_g",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_berzerker_b",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            -- Plasma Gunner
-                            {
-                                setting_id = "color_renegade_plasma_gunner_r",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_renegade_plasma_gunner_g",
-                                type = "numeric",
-                                default_value = 220,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_renegade_plasma_gunner_b",
-                                type = "numeric",
-                                default_value = 255,
-                                range = {0, 255},
-                            },
-                            -- Bulwark
-                            {
-                                setting_id = "color_chaos_ogryn_bulwark_r",
-                                type = "numeric",
-                                default_value = 255,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_chaos_ogryn_bulwark_g",
-                                type = "numeric",
-                                default_value = 200,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_chaos_ogryn_bulwark_b",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
+                            create_color_group("color_executor", 150, 0, 200),
+                            create_color_group("color_berzerker", 220, 0, 0),
+                            create_color_group("color_renegade_plasma_gunner", 0, 220, 255),
+                            create_color_group("color_chaos_ogryn_bulwark", 255, 200, 0),
                         },
                     },
                     {
                         setting_id = "enemy_colors_generic",
                         type = "group",
                         sub_widgets = {
-                            -- Generic Special (catch-all)
-                            {
-                                setting_id = "color_special_r",
-                                type = "numeric",
-                                default_value = 255,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_special_g",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_special_b",
-                                type = "numeric",
-                                default_value = 255,
-                                range = {0, 255},
-                            },
-                            -- Elite Ranged
-                            {
-                                setting_id = "color_elite_ranged_r",
-                                type = "numeric",
-                                default_value = 255,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_elite_ranged_g",
-                                type = "numeric",
-                                default_value = 100,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_elite_ranged_b",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            -- Elite Melee
-                            {
-                                setting_id = "color_elite_melee_r",
-                                type = "numeric",
-                                default_value = 255,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_elite_melee_g",
-                                type = "numeric",
-                                default_value = 165,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_elite_melee_b",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            -- Monster
-                            {
-                                setting_id = "color_monster_r",
-                                type = "numeric",
-                                default_value = 255,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_monster_g",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_monster_b",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            -- Captain
-                            {
-                                setting_id = "color_captain_r",
-                                type = "numeric",
-                                default_value = 128,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_captain_g",
-                                type = "numeric",
-                                default_value = 0,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_captain_b",
-                                type = "numeric",
-                                default_value = 128,
-                                range = {0, 255},
-                            },
-                            -- Horde
-                            {
-                                setting_id = "color_horde_r",
-                                type = "numeric",
-                                default_value = 150,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_horde_g",
-                                type = "numeric",
-                                default_value = 150,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_horde_b",
-                                type = "numeric",
-                                default_value = 150,
-                                range = {0, 255},
-                            },
-                            -- Roamer
-                            {
-                                setting_id = "color_roamer_r",
-                                type = "numeric",
-                                default_value = 180,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_roamer_g",
-                                type = "numeric",
-                                default_value = 180,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "color_roamer_b",
-                                type = "numeric",
-                                default_value = 180,
-                                range = {0, 255},
-                            },
+                            create_color_group("color_special", 255, 0, 255),
+                            create_color_group("color_elite_ranged", 255, 100, 0),
+                            create_color_group("color_elite_melee", 255, 165, 0),
+                            create_color_group("color_monster", 255, 0, 0),
+                            create_color_group("color_captain", 128, 0, 128),
+                            create_color_group("color_horde", 150, 150, 150),
+                            create_color_group("color_roamer", 180, 180, 180),
                         },
                     },
                 },

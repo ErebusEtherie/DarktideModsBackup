@@ -223,7 +223,7 @@ return {
     en = "Arbites Castigator's Stance Ability"
   },
   arby_charge = {
-    en = "Arbites Break the Line Ability (Empty Placeholder)"
+    en = "Arbites Break the Line Ability"
   },
   arby_shieldblast = {
     en = "Arbites Shield Special Attack"
@@ -317,5 +317,11 @@ return {
   },
   renegade_grenadier_explosion = {
     en = "Renegade Grenadier Explosion"
+  },
+  ganger_rage = {
+    en = "Hive Scum Rampage! Ability"
+  },
+  ganger_focus = {
+	en = "Hive Scum Desperado Ability"
   },
 }

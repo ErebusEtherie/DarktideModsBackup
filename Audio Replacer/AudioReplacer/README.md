@@ -203,3 +203,13 @@ Renegade Grenadier Throwing
 Changed the following default sounds:
 
 Arbites Break the Line Ability
+
+
+1.18
+
+Added sound interrupts, thanks Wobin!
+
+Added the following hooks:
+
+Hive Scum Rampage! Ability
+Hive Scum Desperado Ability

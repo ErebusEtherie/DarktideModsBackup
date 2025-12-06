@@ -3,6 +3,32 @@ local mod = get_mod("minimap")
 mod.settings = {}
 mod.settings.icon_vis = {}
 
+local color_presets = {}
+for _, name in ipairs(Color.list or {}) do
+    local c = Color[name](255, true)
+    color_presets[#color_presets+1] = { id = name, name = name, r = c[2], g = c[3], b = c[4] }
+end
+
+local color_defaults = {
+    color_chaos_hound = { 255, 0, 200 },
+    color_renegade_netgunner = { 200, 0, 255 },
+    color_renegade_sniper = { 255, 0, 150 },
+    color_flamer = { 255, 80, 0 },
+    color_grenadier = { 180, 255, 0 },
+    color_chaos_poxwalker_bomber = { 220, 255, 0 },
+    color_executor = { 150, 0, 200 },
+    color_berzerker = { 220, 0, 0 },
+    color_renegade_plasma_gunner = { 0, 220, 255 },
+    color_chaos_ogryn_bulwark = { 255, 200, 0 },
+    color_special = { 255, 0, 255 },
+    color_elite_ranged = { 255, 100, 0 },
+    color_elite_melee = { 255, 165, 0 },
+    color_monster = { 255, 0, 0 },
+    color_captain = { 128, 0, 128 },
+    color_horde = { 150, 150, 150 },
+    color_roamer = { 180, 180, 180 },
+}
+
 -- Load colors from settings
 local function load_breed_colors_from_settings()
 	local function get_color(r_key, g_key, b_key, default_r, default_g, default_b)
@@ -123,9 +149,27 @@ local hud_elements = {
     },
 }
 
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/hud_element_minimap_settings")
+
 for _, hud_element in ipairs(hud_elements) do
     mod:add_require_path(hud_element.filename)
 end
+
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/hud_element_minimap_definitions")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/assistance")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/attention")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/companion_target")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/enemy")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/interactable")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/objective")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/ping")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/player")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/player_class")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/teammate")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/teammate_class")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/teammate_status")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/threat")
+mod:add_require_path("minimap/scripts/mods/minimap/hud_element_minimap/templates/unknown")
 
 mod:hook("UIHud", "init", function(func, self, elements, visibility_groups, params)
     for _, hud_element in ipairs(hud_elements) do
@@ -233,7 +277,9 @@ local function collect_settings()
     mod.settings.show_in_hub = mod:get("show_in_hub")
     mod.settings.show_in_shooting_range = mod:get("show_in_shooting_range")
     mod.settings.show_when_dead = mod:get("show_when_dead")
-    mod.settings.minimap_background_color = mod:get("minimap_background_color")
+    mod.settings.minimap_background_color_r = mod:get("minimap_background_color_r") or 180
+    mod.settings.minimap_background_color_g = mod:get("minimap_background_color_g") or 180
+    mod.settings.minimap_background_color_b = mod:get("minimap_background_color_b") or 180
     mod.settings.minimap_background_opacity = mod:get("minimap_background_opacity")
     
     -- Enemy Radar settings
@@ -265,13 +311,26 @@ local function collect_settings()
     -- Melee range ring settings
     mod.settings.enemy_radar_melee_ring_enabled = mod:get("enemy_radar_melee_ring_enabled")
     mod.settings.enemy_radar_melee_range = mod:get("enemy_radar_melee_range")
-    mod.settings.enemy_radar_melee_ring_color = mod:get("enemy_radar_melee_ring_color")
+    mod.settings.enemy_radar_melee_ring_color_r = mod:get("enemy_radar_melee_ring_color_r") or 180
+    mod.settings.enemy_radar_melee_ring_color_g = mod:get("enemy_radar_melee_ring_color_g") or 180
+    mod.settings.enemy_radar_melee_ring_color_b = mod:get("enemy_radar_melee_ring_color_b") or 180
     mod.settings.enemy_radar_melee_ring_opacity = mod:get("enemy_radar_melee_ring_opacity")
     
     -- Vertical distance transparency settings
     mod.settings.enemy_radar_vertical_distance_enabled = mod:get("enemy_radar_vertical_distance_enabled")
     mod.settings.enemy_radar_vertical_distance_threshold = mod:get("enemy_radar_vertical_distance_threshold")
     mod.settings.enemy_radar_vertical_distance_transparency = mod:get("enemy_radar_vertical_distance_transparency")
+    
+    -- Distance marker settings
+    mod.settings.distance_markers = {
+        players = mod:get("distance_marker_players"),
+        companions = mod:get("distance_marker_companions"),
+        enemies = mod:get("distance_marker_enemies"),
+        objectives = mod:get("distance_marker_objectives"),
+        interactables = mod:get("distance_marker_interactables"),
+        pings = mod:get("distance_marker_pings"),
+        only_out_of_range = mod:get("distance_marker_only_out_of_range"),
+    }
 end
 
 -- Debug command to check loaded colors
@@ -327,23 +386,72 @@ mod.on_all_mods_loaded = function()
     recreate_hud()
 end
 
+local is_syncing_preset = false
+local hud_recreate_timer = 0
+local HUD_RECREATE_DELAY = 0.1
+
 mod.on_setting_changed = function(setting_id)
+    if not setting_id then
+        return
+    end
+    
+    if is_syncing_preset then
+        return
+    end
+    
+    if string.match(setting_id, "_preset$") then
+        local preset_id = mod:get(setting_id)
+        local base_setting = string.gsub(setting_id, "_preset$", "")
+        
+        is_syncing_preset = true
+        if preset_id == "default" then
+            local defaults = color_defaults[base_setting]
+            if defaults then
+                mod:set(base_setting .. "_r", defaults[1], false)
+                mod:set(base_setting .. "_g", defaults[2], false)
+                mod:set(base_setting .. "_b", defaults[3], false)
+            end
+        else
+            for _, p in ipairs(color_presets) do
+                if p.id == preset_id then
+                    mod:set(base_setting .. "_r", p.r, false)
+                    mod:set(base_setting .. "_g", p.g, false)
+                    mod:set(base_setting .. "_b", p.b, false)
+                    break
+                end
+            end
+        end
+        is_syncing_preset = false
+        collect_settings()
+        return
+    end
+    
     collect_settings()
     
-    -- Reload breed colors if any color setting changed
-    if setting_id and string.find(setting_id, "^color_") then
+    if string.find(setting_id, "^color_") and string.find(setting_id, "_[rgb]$") then
         mod.fallback_breed_colors = load_breed_colors_from_settings()
+        return
     end
 
-    if setting_id == "minimap_background_color" or setting_id == "minimap_background_opacity" then
+    if setting_id == "minimap_background_color_r" or setting_id == "minimap_background_color_g" or 
+       setting_id == "minimap_background_color_b" or setting_id == "minimap_background_opacity" then
         local ui_manager = Managers.ui
         if ui_manager and ui_manager._hud and ui_manager._hud._elements then
             local minimap = get_hud_minimap_element(ui_manager._hud._elements)
-                if minimap and minimap._update_background_color then
-                    minimap:_update_background_color()
+            if minimap and minimap._update_background_color then
+                minimap:_update_background_color()
             end
         end
-    else
+        return
+    end
+    
+    if string.find(setting_id, "_[rgb]$") then
+        return
+    end
+    
+    local current_time = os.clock()
+    if current_time - hud_recreate_timer > HUD_RECREATE_DELAY then
+        hud_recreate_timer = current_time
         recreate_hud()
     end
 end

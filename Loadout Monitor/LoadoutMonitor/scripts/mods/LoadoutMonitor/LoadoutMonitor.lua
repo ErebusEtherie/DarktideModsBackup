@@ -18,7 +18,7 @@ local feats_symbol = {
 	Aura = mod:localize("player_Feats_symbol_Aura"),
 	Keystone = mod:localize("player_Feats_symbol_Keystone"),
 }
-local archetype_symbols = {veteran = "", zealot = "", psyker = "", ogryn = "",	adamant = "",}
+local archetype_symbols = {veteran = "", zealot = "", psyker = "", ogryn = "",	adamant = "",	broker = "",}
 local weapon_slot = {Melee = "slot_primary", Range = "slot_secondary"}
 local talents_index = {
 	veteran = {
@@ -30,7 +30,7 @@ local talents_index = {
 	zealot = {
 		Ability = {"zealot_attack_speed_post_ability","zealot_bolstering_prayer","zealot_stealth"},
 		Blitz = {"zealot_improved_stun_grenade","zealot_flame_grenade","zealot_throwing_knives"},
-		Aura = {"zealot_toughness_damage_reduction_coherency_improved","zealot_corruption_healing_coherency_improved","zealot_always_in_coherency"},
+		Aura = {"zealot_toughness_damage_reduction_coherency_improved","zealot_corruption_healing_coherency_improved","zealot_stamina_cost_multiplier_aura"},
 		Keystone = {"zealot_fanatic_rage","zealot_martyrdom","zealot_quickness_passive"},
 	},
 	psyker = {
@@ -52,6 +52,12 @@ local talents_index = {
 		Keystone = {"adamant_execution_order","adamant_terminus_warrant","adamant_forceful"},
 		Keystone_dog = {"adamant_companion_focus_elite","adamant_disable_companion","adamant_companion_focus_ranged"},
 	},
+	broker = {
+		Ability = {"broker_ability_focus_improved","broker_ability_punk_rage","broker_ability_stimm_field"},
+		Blitz = {"broker_blitz_flash_grenade_improved","broker_blitz_missile_launcher","broker_blitz_tox_grenade"},
+		Aura = {"broker_aura_gunslinger_improved","broker_coherency_melee_damage","broker_coherency_anarchist"},
+		Keystone = {"broker_keystone_vultures_mark_on_kill","broker_keystone_adrenaline_junkie","broker_keystone_chemical_dependency"},
+	},
 }
 local feats_abbreviations = {}
 mod.user_custom_feats_abbreviation = mod:get("user_custom_feats_abbreviation") or {}
@@ -70,12 +76,14 @@ mod.init = function(self)
 		player_Feats_default_order = true,
 		notable_talents = mod:get("display_notable_talents"),
 		player_name = mod:get("display_player_name"),
+		companion_name = mod:get("display_companion_name"),
 		main_class = mod:get("display_main_class"),
 	}
 	mod.offsets = {
 		lobby = {mod:get("lobby_weapon_offset"),mod:get("lobby_weapon_gap"),mod:get("lobby_talent_offset"),mod:get("lobby_talent_offset_y")},
 		notable_talents = {mod:get("notable_talents_offset_x"),mod:get("notable_talents_offset_y"),mod:get("notable_talents_separation")},
 		PlayerName = { mod:get("player_name_offset_x"), mod:get("player_name_offset_y"),},
+		companion_name = { mod:get("companion_name_offset_x"), mod:get("companion_name_offset_y"),},
 		Feats = { mod:get("player_feats_offset_x"), mod:get("player_feats_offset_y"),},
 		Class = { mod:get("player_class_offset_x"), mod:get("player_class_offset_y"),},
 	}
@@ -84,6 +92,7 @@ mod.init = function(self)
 		feats = mod:get("player_feats_font_size"),
 		notable_talents = {mod:get("notable_talents_icon_size"),mod:get("notable_talents_icon_size")},
 		PlayerName = mod:get("player_name_font_size"),
+		companion_name = mod:get("companion_name_font_size"),
 		Feats = mod:get("player_feats_font_size"),
 		Class = mod:get("player_class_font_size"),
 	}
@@ -258,9 +267,13 @@ local trait_offsets = {
 	bless = {280,},
 	perk = {370,},
 }
+mod.get_companion_name = function(profile)
+	return profile.talents and not profile.talents.adamant_disable_companion and profile.companion and profile.companion.name or ""
+end
 
 mod.get_playerloadout_intel = function(profile,widget)
 	local player_name = profile.name
+	local companion_name = mod.get_companion_name(profile)
 	local Melee, Range = profile.loadout["slot_primary"], profile.loadout["slot_secondary"]
 	local content = widget.content
 	local style = widget.style
@@ -287,8 +300,9 @@ mod.get_playerloadout_intel = function(profile,widget)
 	content.loadout_intel_Feats = mod.get_player_feats(profile)
 	content.loadout_intel_Class = main_class_method[mod.display.main_class] or main_class_method.symbol
 	content.loadout_intel_PlayerName = mod.display.player_name and player_name or " "
+	content.loadout_intel_companion_name = mod.display.companion_name and companion_name or ""
 	notable_talents(profile,style)
-	for k,part in pairs({"Feats","Class","PlayerName"}) do
+	for k,part in pairs({"Feats","Class","PlayerName","companion_name"}) do
 		table.merge(style["loadout_intel_"..part].offset,mod.offsets[part])
 		style["loadout_intel_"..part].font_size = mod.font_size[part]
 	end
@@ -584,7 +598,24 @@ mod.playerloadout_definition = function(instance)
 					font_size = 18,
 				},
 				
-			},		
+			},
+			{
+				pass_type = "text",
+				value_id = "loadout_intel_companion_name",
+				style_id = "loadout_intel_companion_name",
+				value = " ",
+				style = {
+					vertical_alignment = "top",
+					text_vertical_alignment = "top",
+					horizontal_alignment = "left",
+					text_horizontal_alignment = "left",
+					offset = {300, 6.5, 150},
+					size = {500, 100},
+					text_color = Color.golden_rod(255, true),
+					font_size = 18,
+				},
+				
+			},
 			{
 				pass_type = "text",
 				value_id = "loadout_intel_Melee",

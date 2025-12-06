@@ -184,6 +184,7 @@ local ASTRONOMICAN = {
 
 -- INCORRECT_TIMES: Weapons and actions which have incorrect internal chain timings for heavies
 local INCORRECT_TIMES = {
+    --[[]]
     ogryn_powermaul_slabshield_p1_m1 = {
         action_right_heavy = {
             incorrect = 0.35,
@@ -216,7 +217,6 @@ local INCORRECT_TIMES = {
             correct = 0.3,
         }
     },
-    --[[ MAYBE DELETE THESE LATER ]]
     combatknife_p1_m1 = {
         action_left_heavy = {
             incorrect = 0.3,
@@ -228,7 +228,7 @@ local INCORRECT_TIMES = {
             incorrect = 0.3,
             correct = 0.35,
         }
-    }
+    },
     --]]
 }
 

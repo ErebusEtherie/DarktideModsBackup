@@ -9,16 +9,26 @@ local HudElementTeamPanelHandlerSettings = require("scripts/ui/hud/elements/team
 local HudElementTeamPlayerPanelSettings = require("scripts/ui/hud/elements/team_player_panel/hud_element_team_player_panel_settings")
 
 local hud_body_font_settings = UIFontSettings.hud_body or {}
---local font_size = hud_body_font_settings.font_size or 14
-local font_size = 16
 local panel_size = HudElementTeamPanelHandlerSettings.panel_size
 local BORDER_PADDING = 5
-local DEFAULT_PANEL_HEIGHT = math.floor(font_size * (hud_body_font_settings.line_spacing or 1.2)) + BORDER_PADDING * 2
+local function get_font_size()
+	return mod.font_size or mod:get("font_size") or 16
+end
+
+local function get_default_panel_height()
+	local font_size = get_font_size()
+	return math.floor(font_size * (hud_body_font_settings.line_spacing or 1.2)) + BORDER_PADDING * 2
+end
+
+local function get_opacity_alpha()
+	local opacity = mod.opacity or mod:get("opacity") or 100
+	return math.floor((opacity / 100) * 255)
+end
 local panel_offset = {550, -200, 0}
 local background_color = UIHudSettings.color_tint_7
 local background_gradient = "content/ui/materials/hud/backgrounds/team_player_panel_background"
 local width = panel_size[1]
-local base_size = {width, DEFAULT_PANEL_HEIGHT}
+local base_size = {width, get_default_panel_height()}
 local function apply_panel_height(self, panel_height)
 	local width = base_size[1]
 
@@ -29,6 +39,10 @@ local function apply_panel_height(self, panel_height)
 	local panel_background = styles.panel_background
 
 	if panel_background then
+		local alpha = get_opacity_alpha()
+		if panel_background.color then
+			panel_background.color[1] = alpha
+		end
 		panel_background.size = panel_background.size or {
 			width,
 			panel_height,
@@ -40,6 +54,10 @@ local function apply_panel_height(self, panel_height)
 	local hit_indicator = styles.hit_indicator
 
 	if hit_indicator then
+		local alpha = get_opacity_alpha()
+		if hit_indicator.color then
+			hit_indicator.color[1] = alpha
+		end
 		hit_indicator.size = hit_indicator.size or {
 			width + 20,
 			panel_height + 20,
@@ -51,6 +69,10 @@ local function apply_panel_height(self, panel_height)
 	local hit_indicator_armor_break = styles.hit_indicator_armor_break
 
 	if hit_indicator_armor_break then
+		local alpha = get_opacity_alpha()
+		if hit_indicator_armor_break.color then
+			hit_indicator_armor_break.color[1] = alpha
+		end
 		hit_indicator_armor_break.size = hit_indicator_armor_break.size or {
 			width,
 			panel_height,
@@ -62,6 +84,12 @@ local function apply_panel_height(self, panel_height)
 	local text_style = styles.text
 
 	if text_style then
+		local font_size = get_font_size()
+		local alpha = get_opacity_alpha()
+		text_style.font_size = font_size
+		if text_style.text_color then
+			text_style.text_color[1] = alpha
+		end
 		text_style.size = text_style.size or {
 			width - BORDER_PADDING * 2,
 			panel_height - BORDER_PADDING * 2,
@@ -97,35 +125,41 @@ local scenegraph_definition = {
 	},
 }
 
-local teamKillStyle = {
-	line_spacing = 1.2,
-	font_size = font_size,
-	drop_shadow = true,
-	font_type = hud_body_font_settings.font_type or "machine_medium",
-	text_color = {255, 255, 255, 255},
-	size = {
-		base_size[1] - BORDER_PADDING * 2,
-		base_size[2] - BORDER_PADDING * 2,
-	},
-	text_horizontal_alignment = "left",
-	text_vertical_alignment = "top",
-	offset = {
-		BORDER_PADDING,
-		BORDER_PADDING,
-		0,
-	},
-}
+local function get_team_kill_style()
+	local font_size = get_font_size()
+	local panel_height = get_default_panel_height()
+	return {
+		line_spacing = 1.2,
+		font_size = font_size,
+		drop_shadow = true,
+		font_type = hud_body_font_settings.font_type or "machine_medium",
+		text_color = {255, 255, 255, 255},
+		size = {
+			width - BORDER_PADDING * 2,
+			panel_height - BORDER_PADDING * 2,
+		},
+		text_horizontal_alignment = "left",
+		text_vertical_alignment = "top",
+		offset = {
+			BORDER_PADDING,
+			BORDER_PADDING,
+			0,
+		},
+	}
+end
 
 local function calculate_panel_height(line_count)
-	local line_height = math.floor(teamKillStyle.font_size * teamKillStyle.line_spacing)
+	local font_size = get_font_size()
+	local line_height = math.floor(font_size * 1.2)
+	local default_height = get_default_panel_height()
 
 	if line_count <= 0 then
-		return DEFAULT_PANEL_HEIGHT
+		return default_height
 	end
 
 	local content_height = (line_count * line_height) + BORDER_PADDING * 2
 
-	return math.max(DEFAULT_PANEL_HEIGHT, content_height)
+	return math.max(default_height, content_height)
 end
 
 local widget_definitions = {
@@ -149,7 +183,8 @@ local widget_definitions = {
 					},
 				},
 				visibility_function = function (content)
-					return content.visible
+					local show_background = mod.show_background or mod:get("show_background") or 1
+					return content.visible and show_background == 1
 				end,
 			},
 			{
@@ -206,7 +241,7 @@ local widget_definitions = {
 				value_id = "text",
 				style_id = "text",
 				pass_type = "text",
-				style = teamKillStyle,
+				style = get_team_kill_style(),
 			},
 		},
 		"teamKillContainer"
@@ -291,10 +326,11 @@ HudElementPlayerStats.update = function(self, dt, t, ui_renderer, render_setting
 	local lines = {}
     local mode = mod.hud_counter_mode or mod:get("hud_counter_mode") or 1
     local display_mode = mod.display_mode or mod:get("display_mode") or 1
-    local show_team_summary = display_mode ~= 2
-    local show_user_lines = display_mode ~= 3
-    local show_only_local = display_mode == 2
-    local hide_local_line = display_mode == 4
+    local team_summary_setting = mod.show_team_summary or mod:get("show_team_summary") or 1
+    local show_team_summary = team_summary_setting == 1
+    local show_player_lines = display_mode ~= 3
+    local show_only_me = display_mode == 2
+    local exclude_me = display_mode == 4
     local kills_color = mod.get_kills_color_string()
     local damage_color = mod.get_damage_color_string()
     local last_damage_color = mod.get_last_damage_color_string()
@@ -316,13 +352,13 @@ HudElementPlayerStats.update = function(self, dt, t, ui_renderer, render_setting
         end
     end
 
-    if show_user_lines and #players_with_kills > 0 then
+    if show_player_lines and #players_with_kills > 0 then
         for _, player in ipairs(players_with_kills) do
-            if show_only_local and (not local_account_id or player.account_id ~= local_account_id) then
+            if show_only_me and (not local_account_id or player.account_id ~= local_account_id) then
                 goto continue
             end
 
-            if hide_local_line and local_account_id and player.account_id == local_account_id then
+            if exclude_me and local_account_id and player.account_id == local_account_id then
                 goto continue
             end
 
@@ -345,6 +381,13 @@ HudElementPlayerStats.update = function(self, dt, t, ui_renderer, render_setting
             ::continue::
         end
     end
+
+	-- Скрываем виджет если нет строк для отображения
+	if #lines == 0 then
+		widget.content.visible = false
+		widget.content.text = ""
+		return
+	end
 
 	local panel_height = calculate_panel_height(#lines)
 

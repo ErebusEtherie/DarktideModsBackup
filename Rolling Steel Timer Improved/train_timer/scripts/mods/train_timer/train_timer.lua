@@ -138,7 +138,7 @@ local ALERT_COLOR = {
 
 -- Custom fuzzy match has_widget check.
 HudElementMissionObjectiveFeed.has_objective = function(self, objectivename)
-	for objective, hud_objective in pairs(self._hud_objectives) do
+	for _, hud_objective in pairs(self._hud_objectives_sorted) do
 		local objective_name = hud_objective._objective_name
 
 		if string.find(objective_name, objectivename, 1, true) then
@@ -147,6 +147,18 @@ HudElementMissionObjectiveFeed.has_objective = function(self, objectivename)
 	end
 
 	return false
+end
+
+local find_widget = function(self, widget_name)
+	for _, widget in pairs(self._widgets_by_name) do
+		if widget then
+			local name = widget.name
+
+			if string.find(name, widget_name, 1, true) then
+				return widget
+			end
+		end
+	end
 end
 
 mod:hook_safe(
@@ -169,11 +181,24 @@ mod:hook_safe(
 			local widget = self._widgets_by_name["timer_background"]
 			widget.content.visible = false
 		end
+
+		-- for debugging
+		--Managers.time:set_local_scale("gameplay", 20)
 	end
 )
 
+-- Check if the objective names match using a fuzzy approach (ignore prefixes or numbers)
+local function fuzzy_match(objective_name, match_name)
+	-- Strip out leading numbers or underscores
+	local clean_objective_name = objective_name:match("^[^%w]*(%w+.*)$") -- remove leading non-alphanumeric chars
+	local clean_match_name = match_name:match("^[^%w]*(%w+.*)$") -- same for match name
+
+	return clean_objective_name == clean_match_name
+end
+
 HudElementMissionObjectiveFeed._update_widgets = function(self, dt, t)
 	if
+
 		self:has_objective("objective_flash_train_reach_locomotive")
 		or self:has_objective("objective_flash_train_alert")
 	then
@@ -192,8 +217,9 @@ HudElementMissionObjectiveFeed._update_widgets = function(self, dt, t)
 
 	local objective_widgets = self._objective_widgets
 
-	for objective, hud_objective in pairs(self._hud_objectives) do
-		local widget = objective_widgets[objective]
+	for _, hud_objective in pairs(self._hud_objectives_sorted) do
+		objective_name = hud_objective._objective_name
+		local widget = find_widget(self, objective_name)
 
 		if widget then
 			local content = widget.content
@@ -201,18 +227,20 @@ HudElementMissionObjectiveFeed._update_widgets = function(self, dt, t)
 			local objective_name = hud_objective._objective_name
 
 			-- If train mission with timer then add clock
-
-			if objective_name == "objective_flash_train_reach_locomotive" or "objective_flash_train_alert" then
+			if
+				fuzzy_match(objective_name, "objective_flash_train_reach_locomotive")
+				or fuzzy_match(objective_name, "objective_flash_train_alert")
+			then
 				-- update clock timer
 				local timerwidget = self._widgets_by_name.timer_text
 				local maxtime = hud_objective._max_counter_amount
 				local time_left = 0
-				if objective_name == "objective_flash_train_reach_locomotive" then
+				if fuzzy_match(objective_name, "objective_flash_train_reach_locomotive") then
 					local completed_seconds = hud_objective._progression * maxtime
 					maxtime = maxtime + 30
 					completed_seconds = completed_seconds
 					time_left = maxtime - completed_seconds
-				elseif objective_name == "objective_flash_train_alert" then
+				elseif fuzzy_match(objective_name, "objective_flash_train_alert") then
 					if hud_objective._time_left then
 						time_left = hud_objective._time_left
 					end
@@ -302,6 +330,37 @@ HudElementMissionObjectiveFeed._update_widgets = function(self, dt, t)
 	end
 end
 
+-- helper to compute text width safely across different game versions
+local function get_text_width_safe(ui_renderer, text, text_style, optional_size)
+	-- Try UIWidget.get_text_dimensions
+	if UIWidget and UIWidget.get_text_dimensions and ui_renderer then
+		local text_width = UIWidget.get_text_dimensions(ui_renderer, text, text_style, optional_size)
+		-- Some builds return multiple values: width, height, caret
+		if type(text_width) == "number" then
+			return text_width
+		else
+			local w = select(1, UIWidget.get_text_dimensions(ui_renderer, text, text_style, optional_size))
+			if type(w) == "number" then
+				return w
+			end
+		end
+	end
+
+	-- Try UIRenderer.text_size
+	if rawget(_G, "UIRenderer") and UIRenderer.text_size and ui_renderer then
+		local font_type = text_style.font_type
+		local font_size = text_style.font_size
+		local material = text_style.material
+		local w = select(1, UIRenderer.text_size(ui_renderer, text, font_type, font_size, material, optional_size))
+		if type(w) == "number" then
+			return w
+		end
+	end
+
+	-- Fallback to zero to avoid crashes; alignment will be default
+	return 0
+end
+
 HudElementMissionObjectiveFeed._update_timer_progress = function(self, hud_objective, widget, dt, realign)
 	local content = widget.content
 	local show_minutes = content.show_minutes
@@ -340,10 +399,15 @@ HudElementMissionObjectiveFeed._update_timer_progress = function(self, hud_objec
 			500,
 			40,
 		}
-		local ui_renderer = self._parent:ui_renderer()
-		local width = self:_text_size_for_style(ui_renderer, realignment_text, text_style, optional_size)
+		local ui_renderer = self._parent and self._parent.ui_renderer and self._parent:ui_renderer() or nil
 
-		text_style.offset[1] = text_style.default_offset[1] - width
+		-- Safe text width measurement; do not call nonexistent _text_size_for_style
+		local width = get_text_width_safe(ui_renderer, realignment_text, text_style, optional_size)
+
+		-- Guard default_offset access
+		local base_x = (text_style.default_offset and text_style.default_offset[1]) or (text_style.offset and text_style.offset[1]) or 0
+		text_style.offset = text_style.offset or { 0, 0, 0 }
+		text_style.offset[1] = base_x - (width or 0)
 	end
 
 	content.timer_text = text

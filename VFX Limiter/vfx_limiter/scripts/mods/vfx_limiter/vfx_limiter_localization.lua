@@ -84,4 +84,16 @@ return {
 	voidstrike_explosion_vfx = {
 		en = "Disable Voidstrike Staff explosion effect",
 	},
+	ritual_vfx = {
+		en = "Disable Heinous Ritual effects",
+	},
+	scum_stimm_screen = {
+		en = "Disable Scum's Stimm Smoke screen effect",
+	},
+	scum_rampage_screen = {
+		en = "Disable Scum's Rampage screen effect",
+	},
+	scum_сhem_explode = {
+		en = "Disable Scum's Chem explode effect",
+	},
 }

@@ -60,7 +60,7 @@ local AUTO = {
     },
     -- Events
     SPECIAL = {
-        KEYWORDS = {loc_action_interaction_tainted_skull = true, loc_action_interaction_stolen_rations_recover = true}
+        KEYWORDS = {loc_action_interaction_tainted_skull = true, loc_action_interaction_stolen_rations_recover = true, loc_saints_relic_pickup_small = true, loc_saints_relic_pickup_medium = true, loc_saints_relic_pickup_large = true}
     },
     -- Selector for special interactibles
     PRIMARY_SECONDARY = "disabled"
@@ -181,7 +181,7 @@ mod:hook_safe("HudElementInteraction", "update", function(self)
         TARGET.MANUAL = (hud_text and true) or false
         if hud_text and AUTO.ENABLED then
             -- Event Pickups
-            if AUTO.SPECIAL.KEYWORDS[hud_text] then
+            if AUTO.SPECIAL.KEYWORDS[hud_text] or AUTO.SPECIAL.KEYWORDS[hud_description] then
                 TARGET.TYPE, TARGET.PRESENT = TARGET.TYPE ~= "MANUAL" and "GENERIC" or TARGET.TYPE, true
             elseif AUTO.MEDSTATION.ENABLED and AUTO.MEDSTATION.KEYWORDS[hud_text] and AUTO.MEDSTATION.KEYWORDS[interaction_class] and AUTO.MEDSTATION.CURRENT <= AUTO.MEDSTATION.THRESHOLD then
                 TARGET.TYPE, TARGET.PRESENT = TARGET.TYPE ~= "MANUAL" and "GENERIC" or TARGET.TYPE, true

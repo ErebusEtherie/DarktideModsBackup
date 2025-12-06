@@ -3,7 +3,7 @@ local UIHudSettings = require("scripts/settings/ui/ui_hud_settings")
 local UISettings = require("scripts/settings/ui/ui_settings")
 local UIWidget = require("scripts/managers/ui/ui_widget")
 
-local settings = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/hud_element_minimap_settings")
+local settings = require("minimap/scripts/mods/minimap/hud_element_minimap/hud_element_minimap_settings")
 
 local scenegraph_definition = {
     screen = UIWorkspaceSettings.screen,
@@ -96,19 +96,19 @@ local widget_definitions = {
 }
 
 local icon_templates = {
-    assistance = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/assistance"),
-    attention = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/attention"),
-    companion_target = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/companion_target"),
-    enemy = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/enemy"),
-    interactable = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/interactable"),
-    objective = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/objective"),
-    ping = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/ping"),
-    player = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/player"),
-    player_class = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/player_class"),
-    teammate = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/teammate"),
-    teammate_class = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/teammate_class"),
-    threat = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/threat"),
-    unknown = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/unknown"),
+    assistance = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/assistance"),
+    attention = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/attention"),
+    companion_target = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/companion_target"),
+    enemy = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/enemy"),
+    interactable = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/interactable"),
+    objective = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/objective"),
+    ping = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/ping"),
+    player = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/player"),
+    player_class = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/player_class"),
+    teammate = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/teammate"),
+    teammate_class = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/teammate_class"),
+    threat = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/threat"),
+    unknown = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/unknown"),
 }
 
 return {

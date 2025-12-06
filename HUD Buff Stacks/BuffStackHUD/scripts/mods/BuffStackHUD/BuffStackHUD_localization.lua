@@ -164,6 +164,24 @@ local loc = {
 	adamant_wield_speed_on_melee_kill_buff = {
 		en = Localize("loc_talent_adamant_wield_speed_on_melee_kill")
 	},
+	broker_focus_sub_2_damage = {
+		en = Localize("loc_talent_broker_ability_focus_sub_2")
+	},
+	broker_keystone_adrenaline_junkie_stack = {
+		en = Localize("loc_talent_broker_keystone_adrenaline_junkie")
+	},
+	broker_keystone_chemical_dependency_stack = {
+		en = Localize("loc_talent_broker_keystone_chemical_dependency")
+	},
+	broker_passive_melee_cleave_on_melee_kill_buff = {
+		en = Localize("loc_talent_broker_passive_melee_cleave_on_melee_kill")
+	},
+	broker_passive_sprinting_reduces_threat_buff = {
+		en = Localize("loc_talent_broker_passive_sprinting_reduces_threat")
+	},
+	vultures_mark = {
+		en = Localize("loc_talent_broker_keystone_vultures_mark_on_kill")
+	},
 	weapon_trait_bespoke_chainaxe_p1_guaranteed_melee_crit_on_activated_kill_effect = {
 		en = "Chain Axe Guarantee Crit"
 	},
@@ -190,12 +208,18 @@ local hide_buffs = {
 	hordes_ailment_minion_burning = 1,
 	hordes_ailment_minion_bleed = 1,
 	hordes_buff_elemental_weakness = 1,
+	exploding_toxin_interval_buff = 1,
+	hordes_buff_broker_flash_grenade_increase_damage_taken_effect = 1,
+	neurotoxin_interval_buff = 1,
+	neurotoxin_interval_buff2 = 1,
+	neurotoxin_interval_buff3 = 1,
+	saw_rending_debuff = 1,
 }
 
 local override_buffs = {
 	veteran_weapon_switch_ranged_visual = "Weapon Specialist (Stored)",
 	psyker_guaranteed_ranged_shot_on_stacked = Localize("loc_talent_psyker_weakspot_grants_crit"),
-	zealot_fanatic_rage = Localize("loc_talent_zealot_fanatic_rage")
+	zealot_fanatic_rage = Localize("loc_talent_zealot_fanatic_rage"),
 }
 
 mod.group_overrides = {
@@ -259,10 +283,13 @@ mod.group_overrides = {
 			en = "Uncanny Strike"
 		},
 		buffs = {
+			"stacking_rending_on_weakspot_parent",
+			"stacking_rending_on_weakspot_child",
 			"weapon_trait_bespoke_combataxe_p3_stacking_rending_on_weakspot_child",
 			"weapon_trait_bespoke_combatknife_p1_stacking_rending_on_weakspot_child",
 			"weapon_trait_bespoke_combatsword_p3_stacking_rending_on_weakspot_child",
 			"weapon_trait_bespoke_forcesword_p1_stacking_rending_on_weakspot_child",
+			"weapon_trait_bespoke_dual_shivs_p1_stacking_rending_on_weakspot_child",
 		}
 	},
 	staff_charger = {
@@ -543,6 +570,7 @@ for buff_name, buff in pairs(BuffTemplates) do
 				local parent_buff = parent_buffs[buff_name]
 				if parent_buff and parent_buff.child_duration and parent_buff.base_child_buff_template then
 					mod:echo(parent_buff.base_child_buff_template)
+					mod:echo(buff_name)
 					local group_key = "autogen_" .. parent_buff.base_child_buff_template
 					mod.group_overrides[group_key] = mod.group_overrides[group_key] or { 
 						loc = {

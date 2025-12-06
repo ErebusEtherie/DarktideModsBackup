@@ -367,6 +367,18 @@ mod_data.options = {
 					default_value = false,
 					sub_widgets   = { --[[...]] } -- optional
 				},
+				{
+					setting_id    = "ganger_rage",
+					type          = "checkbox",
+					default_value = false,
+					sub_widgets   = { --[[...]] } -- optional
+				},
+				{
+					setting_id    = "ganger_focus",
+					type          = "checkbox",
+					default_value = false,
+					sub_widgets   = { --[[...]] } -- optional
+				},
 			},
 		},
 		{

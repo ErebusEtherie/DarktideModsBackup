@@ -20,6 +20,7 @@ local melee_sequence_options = {
     { text = "push",           value = "push" },
     { text = "push_attack",    value = "push_attack" },
 	{ text = "wield",          value = "wield" },
+	--{ text = "sprint_heavy_attack", value = "sprint_heavy_attack" }, -- WIP
 }
 
 return {
@@ -304,6 +305,13 @@ return {
 							-- Thunder Hammer
 							{text = "thunderhammer_2h_p1_m1", value = "thunderhammer_2h_p1_m1"},
 							{text = "thunderhammer_2h_p1_m2", value = "thunderhammer_2h_p1_m2"},
+							-- Bone Saw
+							{text = "saw_p1_m1", value = "saw_p1_m1"},
+							-- Crowbar
+							{text = "crowbar_p1_m1", value = "crowbar_p1_m1"},
+							-- Shivs
+							{text = "dual_shivs_p1_m1", value = "dual_shivs_p1_m1"},
+							{text = "dual_shivs_p1_m2", value = "dual_shivs_p1_m2"},
 							--]]
 						}
 					},
@@ -569,10 +577,19 @@ return {
 							{text = "autogun_p3_m1", value = "autogun_p3_m1"},
 							{text = "autogun_p3_m2", value = "autogun_p3_m2"},
 							{text = "autogun_p3_m3", value = "autogun_p3_m3"},
+							-- Dual Stub Pistols
+							{text = "dual_stubpistols_p1_m1", value = "dual_stubpistols_p1_m1"},
+							-- Dual Autopistols
+							{text = "dual_autopistols_p1_m1", value = "dual_autopistols_p1_m1"},
+							-- Needle Pistols
+							{text = "needlepistol_p1_m1", value = "needlepistol_p1_m1"},
+							{text = "needlepistol_p1_m2", value = "needlepistol_p1_m2"},
+							{text = "needlepistol_p1_m3", value = "needlepistol_p1_m3"},
 							-- Assail
 							{text = "psyker_throwing_knives", value = "psyker_throwing_knives"},
 							-- Smite
 							{text = "psyker_chain_lightning", value = "psyker_chain_lightning"},
+
 						},
 					},
 					{

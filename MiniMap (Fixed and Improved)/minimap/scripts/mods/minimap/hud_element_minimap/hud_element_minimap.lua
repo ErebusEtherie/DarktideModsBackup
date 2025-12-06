@@ -4,7 +4,7 @@ local UIWidget = require("scripts/managers/ui/ui_widget")
 local ScriptCamera = require("scripts/foundation/utilities/script_camera")
 local PlayerUnitStatus = require("scripts/utilities/attack/player_unit_status")
 
-local definitions = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/hud_element_minimap_definitions")
+local definitions = require("minimap/scripts/mods/minimap/hud_element_minimap/hud_element_minimap_definitions")
 
 local HudElementMinimap = class("HudElementMinimap", "HudElementBase")
 
@@ -54,17 +54,12 @@ HudElementMinimap._update_background_color = function(self)
     end
 
     local settings = mod.settings or {}
-    local color_name = settings.minimap_background_color or "ui_grey_light"
+    local r = settings.minimap_background_color_r or 180
+    local g = settings.minimap_background_color_g or 180
+    local b = settings.minimap_background_color_b or 180
     local opacity = settings.minimap_background_opacity or 64
 
-    if color_name == "ui_grey" then
-        color_name = "ui_grey_medium"
-    elseif color_name == "ui_hud_green" then
-        color_name = "ui_hud_green_medium"
-    end
-
-    local color_func = Color[color_name] or Color.ui_grey_light
-        background_widget.style.circ.color = color_func(opacity, true)
+    background_widget.style.circ.color = { opacity, r, g, b }
 end
 
 local markers_data = {}
@@ -508,14 +503,15 @@ HudElementMinimap._draw_widget_by_marker = function(self, marker_info, ui_render
     local widget = self._icon_widgets_by_name[icon_name]
 
     local radius = marker_info.range / self._settings.max_range * self._settings.radius
-    if radius > self._settings.radius then
+    local is_out_of_range = radius > self._settings.radius
+    if is_out_of_range then
         radius = self._settings.out_of_range_radius
     end
     local x = radius * -math.sin(marker_info.azimuth)
     local y = radius * -math.cos(marker_info.azimuth)
 
     local update_function = self._icon_update_functions_by_name[icon_name]
-    update_function(widget, marker_info.marker, x, y, marker_info.vertical_distance)
+    update_function(widget, marker_info.marker, x, y, marker_info.vertical_distance, marker_info.range, is_out_of_range)
 
     UIWidget.draw(widget, ui_renderer)
 end
@@ -582,10 +578,11 @@ HudElementMinimap._draw_widgets = function(self, dt, t, input_service, ui_render
                 circle_style.size[1] = ring_radius * 2
                 circle_style.size[2] = ring_radius * 2
                 
-                local ring_color_name = settings.enemy_radar_melee_ring_color or "ui_grey_light"
+                local ring_r = settings.enemy_radar_melee_ring_color_r or 180
+                local ring_g = settings.enemy_radar_melee_ring_color_g or 180
+                local ring_b = settings.enemy_radar_melee_ring_color_b or 180
                 local ring_opacity = settings.enemy_radar_melee_ring_opacity or 40
-                local ring_color_func = Color[ring_color_name] or Color.ui_grey_light
-                circle_style.color = ring_color_func(ring_opacity, true)
+                circle_style.color = { ring_opacity, ring_r, ring_g, ring_b }
                 
                 melee_ring_widget.alpha_multiplier = 1.0
                 UIWidget.draw(melee_ring_widget, ui_renderer)

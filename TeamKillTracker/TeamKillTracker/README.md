@@ -4,10 +4,7 @@ A mod for Warhammer 40,000: Darktide that tracks team kills in real time.
 
 ## Description
 
-TeamKillTracker displays a permanent team kill counter in the bottom left corner of the screen. The mod shows:
-- Total team kill count
-- Individual statistics for each player
-- Player sorting by kill count (highest to lowest)
+TeamKillTracker keeps a permanent HUD that displays the total team score and a descending list of players with their kills, total damage, and last-hit damage (the player with the most kills stays on top). You can switch the display to "all stats", "only my stats", "team total only", or "everyone except me", and customize colors independently for kills, total damage, and last-hit damage. Additionally, you can adjust the font size (15-30px), toggle background visibility, and control the opacity (0-100%) of the entire HUD element for a fully personalized experience.
 
 ## Features
 
@@ -36,8 +33,8 @@ PlayerName4: 15 (4,321) [543]
 ```
 
 **Position**: Bottom left corner of screen  
-**Font**: Machine Medium, 16px  
-**Color**: White with shadow
+**Font**: Machine Medium (configurable size: 15-30px)  
+**Color**: White with shadow (customizable colors and opacity)
 
 ## Technical Information
 
@@ -61,7 +58,14 @@ The mod uses the `AttackReportManager.add_attack_result` hook to track attack re
 
 ## Settings
 
-The mod supports standard Darktide Mod Framework settings:
+The mod supports the following settings:
+- **HUD Counter Mode**: Choose what to display (Kills + Damage, Kills only, Damage only, etc.)
+- **Show TEAM KILLS line**: Toggle visibility of the team total line (Show / Hide)
+- **Player lines display**: Control what player lines are shown (All players / Only me / Everyone except me / Hide all players)
+- **Font Size**: Adjustable slider from 15 to 30 pixels (default: 16)
+- **Show Background**: Toggle background visibility (Show / Hide)
+- **Opacity**: Control transparency of the entire HUD element (0-100%, default: 100)
+- **Color Customization**: Separate color options for kills, damage, and last-hit damage
 - Enable/disable mod
 - Ability to reload without game restart
 
@@ -73,10 +77,12 @@ If you encounter problems:
 3. Restart the game after installation
 
 ## Versions
-1.7.0
+1.9.0
 
 ## Changelogs
-- 1.7.0 – added “everyone except me” display mode and expanded HUD color presets.
+- 1.9.0 – separated TEAM KILLS line and player lines display controls: added independent "Show TEAM KILLS line" toggle, redesigned "Player lines display" setting with "Hide all players" option. HUD now fully hides when no lines are visible.
+- 1.8.0 – added font size slider (15-30), background visibility toggle, and opacity slider (0-100) for HUD element transparency.
+- 1.7.0 – added "everyone except me" display mode and expanded HUD color presets.
 - 1.6.1 – last-hit damage now rounds up to the nearest integer.
 - 1.6.0 – new display modes (all / only me / team total), last-damage color option, dynamic HUD height and layout tweaks.
 - 1.5.0 – added color customization for kills and damage display (8 color presets available).
@@ -92,6 +98,9 @@ If you encounter problems:
 - Automatic hiding in hub
 - Sorting by kill count
 - Support for Russian and English localization
+- Customizable font size (15-30px)
+- Background visibility toggle
+- Opacity control (0-100%) for HUD element
 
 ## License
 
@@ -109,10 +118,7 @@ This mod is distributed as is. Use at your own risk.
 
 ## Описание
 
-TeamKillTracker отображает постоянный счетчик убийств команды в левом нижнем углу экрана. Мод показывает:
-- Общее количество убийств команды
-- Индивидуальную статистику каждого игрока
-- Сортировку игроков по количеству убийств (от большего к меньшему)
+TeamKillTracker поддерживает постоянный HUD, который отображает общий счёт команды и нисходящий список игроков с их убийствами, общим уроном и уроном последнего удара (игрок с наибольшим количеством убийств остаётся сверху). Вы можете переключить отображение на «все строки», «только моя строка», «только общий счёт» или «все, кроме меня», а также настроить цвета независимо для убийств, общего урона и урона последнего удара. Дополнительно вы можете настроить размер шрифта (15-30px), переключить видимость фона и управлять прозрачностью (0-100%) всего HUD элемента для полностью персонализированного опыта.
 
 ## Особенности
 
@@ -141,8 +147,8 @@ PlayerName4: 15 (4,321) [543]
 ```
 
 **Позиция**: Левый нижний угол экрана  
-**Шрифт**: Machine Medium, 16px  
-**Цвет**: Белый с тенью
+**Шрифт**: Machine Medium (настраиваемый размер: 15-30px)  
+**Цвет**: Белый с тенью (настраиваемые цвета и прозрачность)
 
 ## Техническая информация
 
@@ -166,7 +172,14 @@ PlayerName4: 15 (4,321) [543]
 
 ## Настройки
 
-Мод поддерживает стандартные настройки Darktide Mod Framework:
+Мод поддерживает следующие настройки:
+- **Режим счетчика в HUD**: Выбор отображаемой информации (Убийства + Урон, Только убийства, Только урон и т.д.)
+- **Показывать строку TEAM KILLS**: Переключатель видимости строки общего счёта (Показать / Скрыть)
+- **Отображение строк игроков**: Управление отображением строк игроков (Все игроки / Только я / Все, кроме меня / Скрыть всех игроков)
+- **Размер шрифта**: Настраиваемый слайдер от 15 до 30 пикселей (по умолчанию: 16)
+- **Показывать фон**: Переключатель видимости фона (Показать / Скрыть)
+- **Прозрачность**: Управление прозрачностью всего HUD элемента (0-100%, по умолчанию: 100)
+- **Настройка цветов**: Отдельные опции цвета для убийств, урона и последнего удара
 - Включение/выключение мода
 - Возможность перезагрузки без перезапуска игры
 
@@ -178,9 +191,11 @@ PlayerName4: 15 (4,321) [543]
 3. Перезапустите игру после установки
 
 ## Версии
-1.7.0
+1.9.0
 
 ## Журнал изменений
+- 1.9.0 — разделено управление строкой TEAM KILLS и строками игроков: добавлен независимый переключатель «Показывать строку TEAM KILLS», переработана настройка «Отображение строк игроков» с опцией «Скрыть всех игроков». HUD теперь полностью скрывается при отсутствии видимых строк.
+- 1.8.0 — добавлен слайдер размера шрифта (15-30), переключатель видимости фона и слайдер прозрачности (0-100) для HUD элемента.
 - 1.7.0 — добавлен режим отображения «все, кроме меня» и расширен набор цветовых пресетов HUD.
 - 1.6.1 — последний удар округляется вверх до ближайшего целого.
 - 1.6.0 — новые режимы отображения (всё / только я / только общий счёт), отдельный цвет последнего урона и адаптивная высота HUD.
@@ -196,6 +211,9 @@ PlayerName4: 15 (4,321) [543]
 - Автоматическое скрытие в хабе
 - Сортировка по количеству убийств
 - Поддержка русской и английской локализации
+- Настраиваемый размер шрифта (15-30px)
+- Переключатель видимости фона
+- Управление прозрачностью HUD элемента (0-100%)
 
 ## Лицензия
 

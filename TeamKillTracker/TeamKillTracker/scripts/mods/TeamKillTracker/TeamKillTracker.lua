@@ -17,6 +17,8 @@ mod.player_damage = {}
 mod.player_last_damage = {}
 mod.killed_units = {}
 mod.display_mode = mod:get("display_mode") or 1
+mod.show_background = mod:get("show_background") or 1
+mod.opacity = mod:get("opacity") or 100
 
 for _, hud_element in ipairs(hud_elements) do
 	mod:add_require_path(hud_element.filename)
@@ -112,6 +114,9 @@ local function recreate_hud()
     mod.kills_color = mod:get("kills_color") or "white"
     mod.damage_color = mod:get("damage_color") or "orange"
     mod.last_damage_color = mod:get("last_damage_color") or "orange"
+    mod.font_size = mod:get("font_size") or 16
+    mod.show_background = mod:get("show_background") or 1
+    mod.opacity = mod:get("opacity") or 100
 end
 
 mod.on_all_mods_loaded = function()
@@ -121,9 +126,13 @@ end
 mod.on_setting_changed = function()
     mod.display_mode = mod:get("display_mode") or 1
     mod.hud_counter_mode = mod:get("hud_counter_mode") or 1
+    mod.show_team_summary = mod:get("show_team_summary") or 1
     mod.kills_color = mod:get("kills_color") or "white"
     mod.damage_color = mod:get("damage_color") or "orange"
     mod.last_damage_color = mod:get("last_damage_color") or "orange"
+    mod.font_size = mod:get("font_size") or 16
+    mod.show_background = mod:get("show_background") or 1
+    mod.opacity = mod:get("opacity") or 100
 
     if mod.hud_element then
         mod.hud_element:set_dirty()

@@ -2,7 +2,7 @@ local mod = get_mod("BuffStackHUD")
 
 local color_option = {}
 
-local _is_duplicated = function(a)
+local _is_duplicated = function(a, color_name)
     local join = function(t)
         return string.format("%s,%s,%s", t[2], t[3], t[4])
     end
@@ -11,6 +11,10 @@ local _is_duplicated = function(a)
         local b = Color[table.text](255, true)
 
         if join(a) == join(b) then
+			if color_name < table.text then
+				-- Make sure we use the name with the earliest appearance on alphabatical order.
+				table.text = color_name
+			end
             return true
         end
     end
@@ -18,8 +22,9 @@ local _is_duplicated = function(a)
     return false
 end
 
+
 for i, name in ipairs(Color.list) do
-    if not _is_duplicated(Color[name](255, true)) then
+    if not _is_duplicated(Color[name](255, true), name) then
         color_option[#color_option + 1] = { text = name, value = name }
     end
 end

@@ -9,6 +9,7 @@ local LAST_SHOT = {
 local PRAY = {
     -- SHARED
     idle = {
+        sprint               = { action_one_hold = false, action_two_hold = false, sprint = true, sprinting = true, hold_to_sprint = true, move_forward = 1 },
         idle                 = { action_one_hold = false },
         start_attack         = { action_one_pressed = true, action_one_hold = true },
         light_attack         = { action_one_pressed = true, action_one_hold = true },
@@ -25,7 +26,41 @@ local PRAY = {
         special_start_attack = { weapon_extra_hold = true, action_one_pressed = false, action_one_hold = false, action_two_hold = false },
         special_light_attack = { weapon_extra_hold = true },
         special_heavy_attack = { weapon_extra_hold = true },
+        special_action       = { weapon_extra_pressed = true, weapon_extra_hold = true, action_one_pressed = false, action_one_hold = false },
+    },
+    sprint = {
+        sprint               = { action_one_hold = false, action_two_hold = false, sprint = true, sprinting = true,  hold_to_sprint = true, move_forward = 1 },
+        idle                 = { action_one_hold = false },
+        start_attack         = { action_one_pressed = true, action_one_hold = true },
+        sprint_start_attack  = { action_one_pressed = true, action_one_hold = true, sprint = true, sprinting = true, hold_to_sprint = true, move_forward = 1 },
+        light_attack         = { action_one_pressed = true, action_one_hold = true },
+        heavy_attack         = { action_one_hold = true },
+        push                 = { action_two_hold = true },
+        push_follow_up       = { action_two_hold = true },
+        block                = { action_two_hold = true },
+        quick_wield          = { quick_wield = true },
+        weapon_reload        = { weapon_reload_hold = true },
+        shoot                = { action_one_hold = true, action_one_pressed = true },
+        shoot_alt            = { action_one_hold = true, action_one_pressed = true },
+        charge               = { action_two_hold = true, action_one_pressed = false, action_one_hold = false },
+        charge_alt           = { action_one_hold = true },
+        special_start_attack = { weapon_extra_hold = true, action_one_pressed = false, action_one_hold = false, action_two_hold = false },
+        special_light_attack = { weapon_extra_hold = true },
+        special_heavy_attack = { weapon_extra_hold = true },
         special_action       = { weapon_extra_pressed = true, action_one_pressed = false, action_one_hold = false },
+    },
+    sprint_start_attack = {
+        idle                 = { action_one_hold = false },
+        start_attack         = { action_one_hold = true },
+        light_attack         = { action_one_hold = false },
+        heavy_attack         = { action_one_hold = true },
+        push                 = { action_two_hold = true },
+        push_follow_up       = { action_two_hold = true },
+        block                = { action_two_hold = true },
+        special_action       = { weapon_extra_pressed = true, action_one_hold = false },
+        quick_wield          = { quick_wield = true },
+        weapon_reload        = { weapon_reload_hold = true },
+        shoot                = { action_one_hold = false }
     },
     special_action = {
         idle                 = { action_one_hold = false, action_one_pressed = false },
@@ -44,7 +79,7 @@ local PRAY = {
         special_start_attack = { weapon_extra_hold = true },
         special_light_attack = { weapon_extra_hold = true },
         special_heavy_attack = { weapon_extra_hold = true },
-        special_action       = { weapon_extra_pressed = true },
+        special_action       = { weapon_extra_pressed = true, weapon_extra_hold = true },
     },
     weapon_reload = {
         idle                 = { weapon_reload_hold = false },
@@ -142,19 +177,19 @@ local PRAY = {
         push                 = { action_two_hold = true },
         push_follow_up       = { action_two_hold = true },
         block                = { action_two_hold = true },
-        special_action       = { weapon_extra_pressed = true },
+        special_action       = { weapon_extra_pressed = true, action_one_hold = false },
         quick_wield          = { quick_wield = true },
         weapon_reload        = { weapon_reload_hold = true },
     },
     block = {
-        idle                 = { action_two_hold = false },
+        idle                 = { action_two_hold = false, action_one_hold = false },
         start_attack         = { action_two_hold = false },
         light_attack         = { action_two_hold = false },
         heavy_attack         = { action_two_hold = false },
         push                 = { action_two_hold = true, action_one_hold = true, action_one_pressed = true },
         push_follow_up       = { action_two_hold = true, action_one_hold = true, action_one_pressed = true },
         block                = { action_two_hold = true },
-        special_action       = { weapon_extra_pressed = true },
+        special_action       = { weapon_extra_pressed = true, action_one_hold = false },
         quick_wield          = { quick_wield = true },
         weapon_reload        = { weapon_reload_hold = true },
     },
@@ -330,9 +365,9 @@ SkitariusOmnissiah.omnissiah = function(self, queried_input, user_value)
     end
     --self.mod:echo("%s, %s", current_action, desired_action) -- DEBUG: View current action and final desired engram action after potential modifications
     local divine_outcome = PRAY[current_action][desired_action][queried_input]
-    
+
     -- STAGE 5 : RESOLVE_CONFLICTS
-    divine_outcome = self:resolve_conflicts(queried_input, user_value, divine_outcome)
+    divine_outcome = self:resolve_conflicts(queried_input, user_value, divine_outcome, current_action, desired_action)
     LAST_DIVINATION[queried_input] = divine_outcome
     return divine_outcome
 end
@@ -397,6 +432,9 @@ SkitariusOmnissiah.get_action = function(self)
             end
         end
     end
+    --if step_name == "idle" and self.weapon_manager:is_sprinting() then
+    --    step_name = "sprint"
+    --end
     return step_name
 end
 
@@ -418,6 +456,8 @@ SkitariusOmnissiah.action_to_step = function(self, action_name)
     elseif string.find(action_name, "special") or string.find(action_name, "psyker_push") or string.find(action_name, "flashlight") or string.find(action_name, "whip") then
         if action_name == "action_attack_special_2" and string.find(weapon_name, "combatsword_p2") then
             return "light_attack"
+        elseif string.find(action_name, "pushfollow") then
+            return "push_follow_up"
         elseif string.find(action_name, "light") and not string.find(action_name, "flashlight") then
             return "light_attack"
         elseif string.find(action_name, "heavy") then
@@ -477,6 +517,7 @@ SkitariusOmnissiah.maybe_convert_action = function(self, player_unit, running_ac
     local weapon_name = weapon_manager and weapon_manager:weapon_name()
     local start_t = handler_data.component and handler_data.component.start_t
     local current_action_t = Managers.time:time("gameplay") - start_t
+    --mod:echo("Current Action: %s", action_name)
     -- Convert to heavy if this is a startup action which has charged enough to trigger a heavy attack
     if string.find(action_name, "start_attack") then
         if weapon_manager:weapon_type() == "RANGED" and string.find(original_name, "stab") or string.find(original_name, "bash") then
@@ -490,6 +531,8 @@ SkitariusOmnissiah.maybe_convert_action = function(self, player_unit, running_ac
             action_name = "charge"
         elseif weapon_manager:is_charged_melee(running_action, handler_data.component, action_settings) then
             return "heavy_attack"
+        --elseif self.weapon_manager:is_sprinting() then
+        --    return "sprint_start_attack"
         else
             return "start_attack"
         end
@@ -602,6 +645,10 @@ SkitariusOmnissiah.maybe_convert_desire = function(self, current_action, desired
             return current_action
         end
     end
+    -- Dual Stubs should move from special to special without waiting for idle during special mode
+    if desired_action == "idle" and engram:get_setting("MODE") == "special_action" and string.find(weapon_name, "dual_stubpistols") then
+        return "special_action"
+    end
     return desired_action
 end
 
@@ -609,7 +656,7 @@ end
 -- STAGE 5: OVERRIDE OMNISSIAH'S DECISION IF IT CONFLICTS WITH VALID USER INPUT --
 --//////////////////////////////////////////////////////////////////////////////--
 
-SkitariusOmnissiah.resolve_conflicts = function(self, input, user, omnissiah)
+SkitariusOmnissiah.resolve_conflicts = function(self, input, user, omnissiah, current_action, desired_action)
     local outcome = omnissiah
     local armoury = self.armoury
     local engram = self.engram
@@ -658,6 +705,13 @@ SkitariusOmnissiah.resolve_conflicts = function(self, input, user, omnissiah)
             return true
         end
     end
+    --[[]
+    if input == "move_backward" then -- Force moving forwards
+        if PRAY[current_action] and PRAY[current_action][desired_action] and PRAY[current_action][desired_action]["move_forward"] == 1 then
+            outcome = 0
+        end
+    end
+    --]]
     return outcome
 end
 

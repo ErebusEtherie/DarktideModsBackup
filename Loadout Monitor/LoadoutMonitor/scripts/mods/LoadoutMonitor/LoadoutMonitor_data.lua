@@ -117,6 +117,33 @@ return {
 						range = { -25, 25 },
 						decimals_number = 1,
 					},
+					{
+						setting_id = "display_companion_name",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "companion_name_font_size",
+						title = "setting_font_size",
+						type = "numeric",
+						default_value = 15,
+						range = { 1, 50 },
+					},
+					{
+						setting_id = "companion_name_offset_x",
+						title = "setting_offset_x",
+						type = "numeric",
+						default_value = 400,
+						range = { 0, 500 },
+					},
+					{
+						setting_id = "companion_name_offset_y",
+						title = "setting_offset_y",
+						type = "numeric",
+						default_value = 5.5,
+						range = { -25, 25 },
+						decimals_number = 1,
+					},
 				},
 			},
 			{

@@ -2,7 +2,7 @@ local mod = get_mod("minimap")
 local UISettings = require("scripts/settings/ui/ui_settings")
 local UIWidget = require("scripts/managers/ui/ui_widget")
 
-local Status = Mods.file.dofile("minimap/scripts/mods/minimap/hud_element_minimap/templates/teammate_status")
+local Status = require("minimap/scripts/mods/minimap/hud_element_minimap/templates/teammate_status")
 
 local template = {}
 
@@ -69,10 +69,28 @@ template.create_widget_definition = function(settings, scenegraph_id)
                 return content.show_status_icon and (icon_style == "glowing_with_rings" or icon_style == "non_glowing_with_rings")
             end
         },
+        {
+            style_id = "distance_text",
+            pass_type = "text",
+            value_id = "distance_text",
+            value = "",
+            style = {
+                horizontal_alignment = "center",
+                vertical_alignment = "center",
+                text_vertical_alignment = "center",
+                text_horizontal_alignment = "center",
+                drop_shadow = true,
+                font_type = "proxima_nova_bold",
+                font_size = 12,
+                text_color = Color.white(255, true),
+                offset = { 0, 0, 2 },
+                size = { 100, 20 }
+            }
+        },
     }, scenegraph_id)
 end
 
-template.update_function = function(widget, marker, x, y)
+template.update_function = function(widget, marker, x, y, vertical_distance, range, is_out_of_range)
     local icon = widget.style.icon
     local status_icon_style = widget.style.status_icon
     local status_icon_ring_style = widget.style.status_icon_ring
@@ -87,11 +105,32 @@ template.update_function = function(widget, marker, x, y)
     local player_slot = data:slot()
     local unit = data.player_unit
     
+    local ScriptUnit = require("scripts/foundation/utilities/script_unit")
+    local template_name = marker.template and marker.template.name
+    local is_companion_marker = (template_name == "nameplate_companion" or template_name == "nameplate_companion_hub")
+    
+    local is_companion = false
+    if unit then
+        local unit_data_extension = ScriptUnit.has_extension(unit, "unit_data_system")
+        if unit_data_extension then
+            local breed = unit_data_extension:breed()
+            if breed then
+                is_companion = (breed.tags and breed.tags.companion) or (breed.name == "companion_dog")
+            end
+        end
+        
+        if not is_companion and is_companion_marker then
+            is_companion = true
+        end
+    elseif is_companion_marker then
+        is_companion = true
+    end
+    
     local icon_style = mod.settings and mod.settings.status_icon_style or "non_glowing"
     local show_disabled_status = (icon_style ~= "hidden")
     
     local status = nil
-    if show_disabled_status and unit then
+    if show_disabled_status and unit and not is_companion then
         status = Status.for_unit(unit)
     end
     
@@ -156,6 +195,30 @@ template.update_function = function(widget, marker, x, y)
         widget.content.show_status_icon = false
         widget.content.icon_text = ""
         icon.text_color = UISettings.player_slot_colors[player_slot] or icon.default_text_color
+    end
+    
+    local settings = require("minimap/scripts/mods/minimap/hud_element_minimap/hud_element_minimap_settings")
+    local distance_text_style = widget.style.distance_text
+    distance_text_style.offset[1] = x
+    distance_text_style.offset[2] = y + (settings.icon_size[2] * 0.5) + 8
+    
+    local show_distance = nil
+    if is_companion then
+        show_distance = mod.settings and mod.settings.distance_markers and mod.settings.distance_markers.companions
+    else
+        show_distance = mod.settings and mod.settings.distance_markers and mod.settings.distance_markers.players
+    end
+    local only_out_of_range = mod.settings and mod.settings.distance_markers and mod.settings.distance_markers.only_out_of_range
+    local icon_visible = icon.visible ~= false or widget.content.show_status_icon
+    local should_show = show_distance and range and (not only_out_of_range or is_out_of_range) and icon_visible
+    
+    if should_show then
+        local distance_m = math.floor(range * 10) / 10
+        widget.content.distance_text = string.format("%.1fm", distance_m)
+        distance_text_style.visible = true
+    else
+        widget.content.distance_text = ""
+        distance_text_style.visible = false
     end
 end
 

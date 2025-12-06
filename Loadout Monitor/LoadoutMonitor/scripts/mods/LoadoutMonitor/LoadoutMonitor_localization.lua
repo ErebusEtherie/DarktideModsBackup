@@ -40,6 +40,10 @@ local locr = {
 		en = "Player Name",
 		["zh-cn"] = "玩家名",
 	},
+	display_companion_name = {
+		en = "Dog Name",
+		["zh-cn"] = "伙伴名",
+	},
 	setting_offset_x = {
 		en = "Offset X",
 		["zh-cn"] = "X轴",
@@ -557,9 +561,11 @@ local locr = {
 	def_zealot_toughness_damage_reduction_coherency_improved = {
 		en = "Bene",		["zh-cn"] = "赐",	},
 	def_zealot_corruption_healing_coherency_improved = {
-		en = "Bea",		["zh-cn"] = "纯",	},
+		en = "BoP",		["zh-cn"] = "纯",	},
 	def_zealot_always_in_coherency = {
-		en = "L",		["zh-cn"] = "孤",	},
+		en = "Z",		["zh-cn"] = "孤",	},
+	def_zealot_stamina_cost_multiplier_aura = {
+		en = "L",		["zh-cn"] = "狂",	},
 	
 	def_zealot_fanatic_rage = {
 		en = "BP",		["zh-cn"] = "炽",	},
@@ -654,7 +660,38 @@ local locr = {
 	def_adamant_disable_companion = {
 		en = "LW",		["zh-cn"] = "独",	},
 	def_adamant_companion_focus_ranged = {
-		en = "GGM",		["zh-cn"] = "追",	},
+		en = "GGM",
+		["zh-cn"] = "追",
+	},
+	
+	def_broker_ability_focus_improved = {
+		en = "Desp",		["zh-cn"] = "亡",	},
+	def_broker_ability_punk_rage = {
+		en = "Ram",		["zh-cn"] = "怒",	},
+	def_broker_ability_stimm_field = {
+		en = "Sup",		["zh-cn"] = "箱",	},
+	
+	def_broker_blitz_flash_grenade_improved = {
+		en = "BO",		["zh-cn"] = "震",	},
+	def_broker_blitz_missile_launcher = {
+		en = "RPG",		["zh-cn"] = "爆",	},
+	def_broker_blitz_tox_grenade = {
+		en = "CG",		["zh-cn"] = "化",	},
+		
+	def_broker_aura_gunslinger_improved = {
+		en = "Gun",		["zh-cn"] = "枪",	},
+	def_broker_coherency_melee_damage = {
+		en = "Ruf",		["zh-cn"] = "硬",	},
+	def_broker_coherency_anarchist = {
+		en = "Anar",		["zh-cn"] = "叛",	},
+	
+	def_broker_keystone_vultures_mark_on_kill = {
+		en = "VM",		["zh-cn"] = "掠",	},
+	def_broker_keystone_adrenaline_junkie = {
+		en = "AF",		["zh-cn"] = "肾",	},
+	def_broker_keystone_chemical_dependency = {
+		en = "CD",		["zh-cn"] = "化",	},
+	
 	user_custom_feats_abbreviation_description = {
 		en = "1:Ability   2:Blitz   3:Aura   4:Keystone",
 		["zh-cn"] = "1：技能   2：闪击   3：光环   4：基石",		

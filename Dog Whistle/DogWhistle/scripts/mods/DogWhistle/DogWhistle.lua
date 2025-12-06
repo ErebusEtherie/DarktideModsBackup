@@ -10,7 +10,7 @@ local Archetypes = require("scripts/settings/archetype/archetypes")
 --└───────────────────────┘--
 
 local DOG = {
-    VERSION = 106,                -- Current mod version
+    VERSION = 108,                -- Current mod version
     ENABLED = true,               -- Flag indicating whether or not the mod is enabled
     OWNER   = nil,                -- Player archetype
     SHARED  = false,              -- Flag indicating whether or not non-Arbites classes are allowed to use the mod functionality
@@ -85,7 +85,7 @@ mod.on_all_mods_loaded = function()
     mod.populate_breeds()
     DOG.OWNER = mod.get_archetype()
     -- Mod Settings
-    DOG.ENABLED = mod:get("mod_enable") or true
+    DOG.ENABLED = mod:get("mod_enable") or false
     -- Non-Arbites Settings
     DOG.SHARED = mod:get("other_archetype") or "DISABLED"
     DOG.FOCUS.RETARGET = mod:get("focus_target_retarget") or false

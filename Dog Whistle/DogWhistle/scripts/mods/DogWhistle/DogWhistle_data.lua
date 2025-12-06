@@ -208,6 +208,7 @@ local widgets = {
                     { value = "psyker", text = "psyker" },
                     { value = "veteran", text = "veteran" },
                     { value = "zealot", text = "zealot" },
+                    { value = "broker", text = "broker" }
                 }
             },
             {

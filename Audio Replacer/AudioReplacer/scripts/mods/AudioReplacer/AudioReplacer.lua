@@ -477,6 +477,26 @@ local grenadier_yell_audio = {
 	"grenadier/yell_2.opus",
 }
 
+local ganger_rage_audio = {
+	"player/ganger_rage_1.opus",
+}
+
+local ganger_rage_end_audio = {
+	"player/ganger_rage_end_1.opus",
+	"player/ganger_rage_end_2.opus",
+}
+
+local ganger_focus_audio = {
+	"player/ganger_focus_1.opus",
+	"player/ganger_focus_2.opus",
+	"player/ganger_focus_3.opus",
+	"player/ganger_focus_4.opus",
+}
+
+local ganger_focus_end_audio = {
+	"player/ganger_focus_end_1.opus",
+}
+
 local enemies = {
 	"cultist_mutant",
 	"chaos_hound",
@@ -490,6 +510,14 @@ local enemies = {
 	"renegade_grenadier",
 	
 	--"cultist_flamer"
+}
+
+-- This is for long playing sounds you want interrupted by another.
+-- <The interrupting sound> = "<the sound to be interrupted>"
+-- In this case the rage_stop is interrupting the rage_start
+local ongoing_sound_replacements = {
+	play_player_ability_broker_rage_stop = "play_player_ability_broker_rage_start",
+	play_player_ability_broker_focus_stop = "play_player_ability_broker_focus_start"
 }
 
 local enemy_sound_replacements = {
@@ -593,6 +621,10 @@ local enemy_sound_replacements = {
 		play_psyker_female_a__vce_hurt_heavy = explosion_echo_audio,
 		play_psyker_female_b__vce_hurt_heavy = explosion_echo_audio,
 		play_psyker_female_c__vce_hurt_heavy = explosion_echo_audio,
+		play_player_ability_broker_rage_start = ganger_rage_audio,
+		play_player_ability_broker_rage_stop = ganger_rage_end_audio,
+		play_player_ability_broker_focus_start = ganger_focus_audio,
+		play_player_ability_broker_focus_stop = ganger_focus_end_audio,
 	},
 	cultist_flamer = {
 		play_minion_flamethrower_green_start = flamer_flame_audio
@@ -722,6 +754,10 @@ local options_categories = {
 	play_psyker_female_a__vce_hurt_heavy = "scream_silencer",
 	play_psyker_female_b__vce_hurt_heavy = "scream_silencer",
 	play_psyker_female_c__vce_hurt_heavy = "scream_silencer",
+	play_player_ability_broker_rage_start = "ganger_rage",
+	play_player_ability_broker_rage_stop = "ganger_rage",
+	play_player_ability_broker_focus_start = "ganger_focus",
+	play_player_ability_broker_focus_stop = "ganger_focus",
 
 	-- DOG
 	play_enemy_chaos_hound_vce_leap = "chaos_hound_jump",
@@ -797,14 +833,27 @@ local VOLUME_OVERRIDE = {
 	play_minion_plasmapistol_charge = 25,
 	play_psyker_warp_charge_overload_start = 100,
 	play_warp_charge_build_up_critical = 10,
+	play_player_ability_broker_rage_start = 70,
+	play_player_ability_broker_rage_stop = 30,
+	play_player_ability_broker_focus_start = 70,
+	play_player_ability_broker_focus_stop = 70,
 }
+
+local ongoing_sounds = {}
+
 local replace_audio = function(sound_table, position_or_unit_or_id, source_file) 
 	local sound = get_sound(sound_table)
 	if position_or_unit_or_id and type(position_or_unit_or_id) == "number" then
 		position_or_unit_or_id = nil
 	end
-	local volume = VOLUME_OVERRIDE[source_file] or 100
-	Audio.play_file(sound, {audio_type = "sfx",volume = volume}, position_or_unit_or_id, 0.02, 8, 80)
+	if ongoing_sound_replacements[source_file] then
+		if ongoing_sounds[ongoing_sound_replacements[source_file]] then
+			Audio.stop_file(ongoing_sounds[ongoing_sound_replacements[source_file]])
+			ongoing_sounds[source_file] = nil
+		end
+	end
+	local volume = VOLUME_OVERRIDE[source_file] or 100		
+	ongoing_sounds[source_file] = Audio.play_file(sound, {audio_type = "sfx",volume = volume, track_status = function() ongoing_sounds[source_file] = nil end}, position_or_unit_or_id, 0.02, 8, 80)
 	return false
 end
 
@@ -905,6 +954,10 @@ local override_paths = {
 	loc_enemy_grenadier_a__throwing_grenade_07 = "wwise/externals/",
 	loc_enemy_grenadier_a__throwing_grenade_08 = "wwise/externals/",
 	loc_enemy_grenadier_a__throwing_grenade_09 = "wwise/externals/",
+	play_player_ability_broker_rage_start = "wwise/events/player/",
+	play_player_ability_broker_rage_stop = "wwise/events/player/",
+	play_player_ability_broker_focus_start = "wwise/events/player/",
+	play_player_ability_broker_focus_stop = "wwise/events/player/",
 	--play_minion_flamethrower_green_start = "wwise/events/weapon/"
 }
 
@@ -924,6 +977,7 @@ local CUSTOM_COOLDOWNS = {
 	play_warp_charge_build_up_critical = 3,
 	play_psyker_warp_charge_overload_start = 3,
 	play_player_ability_adamant_charge = 3,
+	play_player_ability_broker_rage_start = 10,
 }
 
 local CURRENT_COOLDOWNS = {}
