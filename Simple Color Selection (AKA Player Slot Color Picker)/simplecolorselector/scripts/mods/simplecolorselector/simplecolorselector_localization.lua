@@ -13,13 +13,13 @@ local loc = {
         en = "Color Preset",
     },
     slot1_r = {
-        en = "Red (0-255)",
+        en = "Red",
     },
     slot1_g = {
-        en = "Green (0-255)",
+        en = "Green",
     },
     slot1_b = {
-        en = "Blue (0-255)",
+        en = "Blue",
     },
     
     slot2 = {
@@ -29,13 +29,13 @@ local loc = {
         en = "Color Preset",
     },
     slot2_r = {
-        en = "Red (0-255)",
+        en = "Red",
     },
     slot2_g = {
-        en = "Green (0-255)",
+        en = "Green",
     },
     slot2_b = {
-        en = "Blue (0-255)",
+        en = "Blue",
     },
     
     slot3 = {
@@ -45,13 +45,13 @@ local loc = {
         en = "Color Preset",
     },
     slot3_r = {
-        en = "Red (0-255)",
+        en = "Red",
     },
     slot3_g = {
-        en = "Green (0-255)",
+        en = "Green",
     },
     slot3_b = {
-        en = "Blue (0-255)",
+        en = "Blue",
     },
     
     slot4 = {
@@ -61,13 +61,13 @@ local loc = {
         en = "Color Preset",
     },
     slot4_r = {
-        en = "Red (0-255)",
+        en = "Red",
     },
     slot4_g = {
-        en = "Green (0-255)",
+        en = "Green",
     },
     slot4_b = {
-        en = "Blue (0-255)",
+        en = "Blue",
     },
     
     bot = {
@@ -77,13 +77,13 @@ local loc = {
         en = "Color Preset",
     },
     bot_r = {
-        en = "Red (0-255)",
+        en = "Red",
     },
     bot_g = {
-        en = "Green (0-255)",
+        en = "Green",
     },
     bot_b = {
-        en = "Blue (0-255)",
+        en = "Blue",
     },
     
     debug_mode_group = {

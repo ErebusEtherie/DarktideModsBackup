@@ -1,6 +1,7 @@
 local mod = get_mod("scoreboard")
 local DMF = get_mod("DMF")
 
+local UISettings = mod:original_require("scripts/settings/ui/ui_settings")
 local Missions = mod:original_require("scripts/settings/mission/mission_templates")
 local ScriptWorld = mod:original_require("scripts/foundation/utilities/script_world")
 local InputUtils = mod:original_require("scripts/managers/input/input_utils")
@@ -14,6 +15,9 @@ local TextUtilities = mod:original_require("scripts/utilities/ui/text")
 local Circumstance = mod:original_require("scripts/settings/circumstance/circumstance_templates")
 local Danger = mod:original_require("scripts/settings/difficulty/danger_settings")
 local ScoreboardHistoryView = class("ScoreboardHistoryView", "BaseView")
+local in_match
+local is_playing_havoc
+local havoc_manager
 
 -- ##### ██╗███╗   ██╗██╗████████╗ ####################################################################################
 -- ##### ██║████╗  ██║██║╚══██╔══╝ ####################################################################################
@@ -158,6 +162,17 @@ end
 --         end
 --     end
 -- end
+local danger_from_challenge = function (challenge, resistance)
+    local challenge_number = tonumber(challenge)
+
+    for _, c in ipairs(Danger) do
+        if c.challenge == challenge_number and (resistance == nil or c.resistance == tonumber(resistance)) then
+            return c
+        end
+    end
+
+    return nil
+end
 
 ScoreboardHistoryView._setup_category_config = function(self, scan_dir)
     if self._category_content_widgets then
@@ -195,8 +210,8 @@ ScoreboardHistoryView._setup_category_config = function(self, scan_dir)
                 mission_subname = "\n"..category_config.timer
             end
             if category_config.mission_challenge ~= "" then
-                local mission_challenge = Danger[tonumber(category_config.mission_challenge)]
-                if mission_challenge then
+                local mission_challenge = danger_from_challenge(category_config.mission_challenge, category_config.mission_resistance)
+                 if mission_challenge then
                     if mission_subname == "" then
                         mission_subname = "\n"..Localize(mission_challenge.display_name)
                     else
@@ -204,6 +219,7 @@ ScoreboardHistoryView._setup_category_config = function(self, scan_dir)
                     end
                 end
             end
+
             if category_config.mission_circumstance ~= "" then
                 local mission_circumstance = Circumstance[category_config.mission_circumstance]
                 if ( mission_circumstance and mission_circumstance.ui ) then
@@ -227,7 +243,11 @@ ScoreboardHistoryView._setup_category_config = function(self, scan_dir)
         if category_config.players then
             for _, player in pairs(category_config.players) do
                 local player_name = player.name
-                local symbol = player.string_symbol or player._profile and player._profile.archetype.string_symbol
+                local symbol = player.string_symbol --or player._profile and player._profile.archetype.string_symbol
+                -- local profile = player:profile()
+			    -- local archetype_name = profile and profile.archetype and profile.archetype.name
+                -- local archetype_name = player._profile.archetype and player._profile.archetype.name
+			    -- local symbol = archetype_name and UISettings.archetype_font_icon[archetype_name]
                 if symbol then
                     player_name = symbol.." "..player_name
                 end

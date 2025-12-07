@@ -47,6 +47,7 @@ local ColorAllocator = {
     index_taken = {},
     player_to_slot_mapping = {},  -- Maps player unique_id to remapped slot (1-4)
     account_id_to_player_id = {},  -- Maps account_id to unique_id for lookups
+    bot_player_ids = {},  -- Set of unique_ids that are bots
 }
 
 function ColorAllocator:reset()
@@ -54,6 +55,31 @@ function ColorAllocator:reset()
     self.index_taken = { false, false, false, false }
     self.player_to_slot_mapping = {}
     self.account_id_to_player_id = {}
+    self.bot_player_ids = {}
+end
+
+local function color_for_slot(slot)
+    if not slot or slot < 1 then
+        return 1
+    end
+    return slot
+end
+
+mod._local_player_account_id = nil
+
+local function update_local_player_id()
+    local pm = Managers and Managers.player
+    if pm then
+        local local_player = pm:local_player_safe(1)
+        if local_player then
+            local success, account_id = pcall(function() return local_player:account_id() end)
+            if success and account_id and account_id ~= "" then
+                mod._local_player_account_id = account_id
+                return true
+            end
+        end
+    end
+    return false
 end
 
 -- my_slot: in-game slot id for local player; all_slots: array of all active slot ids
@@ -161,45 +187,83 @@ function ColorAllocator:setup(my_slot, all_slots)
 end
 
 function ColorAllocator:color_for(game_slot, account_id)
-    if not game_slot or game_slot < 1 then return self.cfg_colors[1] end
+    game_slot = color_for_slot(game_slot)
     
-    -- Return bot color if no account_id (bots don't have account IDs)
     if not account_id or account_id == "" then
         if mod:get("enable_debug_mode") then
-            mod:info(string.format("[SimpleColorSelector] Returning bot color for game slot %d (no account_id)", game_slot))
+            mod:info(string.format("[SimpleColorSelector] Returning bot color for game slot %d (no account_id)", game_slot or 0))
         end
-        return self.bot_color
+        return self.bot_color or self.cfg_colors[1]
     end
     
-    -- Find the player's unique_id from account_id
-    local unique_id = self.account_id_to_player_id[account_id]
-    if not unique_id then
-        if mod:get("enable_debug_mode") then
-            mod:info(string.format("[SimpleColorSelector] No unique_id for account %s in game slot %d, using fallback", 
-                tostring(account_id):sub(1, 8), game_slot))
+    if not mod._local_player_account_id then
+        update_local_player_id()
+    end
+    
+    local is_local_player = false
+    if mod._local_player_account_id and mod._local_player_account_id == account_id then
+        is_local_player = true
+    else
+        local pm = Managers and Managers.player
+        if pm then
+            local local_player = pm:local_player_safe(1)
+            if local_player then
+                local success, lp_account_id = pcall(function() return local_player:account_id() end)
+                if success and lp_account_id and lp_account_id == account_id then
+                    is_local_player = true
+                    mod._local_player_account_id = lp_account_id
+                end
+            end
         end
-        return self.cfg_colors[game_slot] or self.cfg_colors[1]
     end
     
-    -- Get their remapped slot
-    local remapped_slot = self.player_to_slot_mapping[unique_id]
-    if not remapped_slot then
-        if mod:get("enable_debug_mode") then
-            mod:info(string.format("[SimpleColorSelector] No remapped slot for player %s (game slot %d), using fallback", 
-                tostring(unique_id):sub(1, 8), game_slot))
+    if is_local_player then
+        return {
+            255,
+            mod:get("slot1_r") or 226,
+            mod:get("slot1_g") or 210,
+            mod:get("slot1_b") or 117,
+        }
+    end
+    
+    if account_id and self.account_id_to_player_id[account_id] then
+        local player_id = self.account_id_to_player_id[account_id]
+        
+        if self.bot_player_ids[player_id] then
+            return self.bot_color or self.cfg_colors[1]
         end
-        return self.cfg_colors[game_slot] or self.cfg_colors[1]
+        
+        if self.player_to_slot_mapping[player_id] then
+            game_slot = self.player_to_slot_mapping[player_id]
+        end
     end
     
-    -- Get color index for remapped slot
-    local color_idx = self.slot_to_index[remapped_slot] or remapped_slot
-    
-    if mod:get("enable_debug_mode") then
-        mod:info(string.format("[SimpleColorSelector] Game slot %d → player %s → remapped slot %d → color index %d", 
-            game_slot, tostring(unique_id):sub(1, 8), remapped_slot, color_idx))
+    local idx = self.slot_to_index[game_slot]
+    if idx then
+        if idx == 1 and not is_local_player then
+            for i = 2, 4 do
+                if not self.index_taken[i] then
+                    self.slot_to_index[game_slot] = i
+                    self.index_taken[i] = true
+                    return self.cfg_colors[i]
+                end
+            end
+            return self.cfg_colors[2]
+        end
+        return self.cfg_colors[idx]
     end
     
-    return self.cfg_colors[color_idx] or self.cfg_colors[1]
+    local start_idx = is_local_player and 1 or 2
+    for i = start_idx, 4 do
+        if not self.index_taken[i] then
+            self.slot_to_index[game_slot] = i
+            self.index_taken[i] = true
+            return self.cfg_colors[i]
+        end
+    end
+    
+    local fallback = is_local_player and 1 or (((game_slot - 1) % 3) + 2)
+    return self.cfg_colors[fallback]
 end
 
 -- Queue system to prevent race conditions and duplicate assignments
@@ -331,10 +395,40 @@ apply_slot_colors_internal = function()
         end
     end
 
+    if #player_slots == 0 then
+        if debug_mode then
+            mod:info("[SimpleColorSelector] No players with valid slots found, skipping color application")
+        end
+        return
+    end
+    
+    local local_player_has_slot = false
+    if local_player_id then
+        for _, data in ipairs(player_slots) do
+            if data.unique_id == local_player_id then
+                local_player_has_slot = true
+                break
+            end
+        end
+    end
+    
+    if not local_player_has_slot then
+        if debug_mode then
+            mod:info("[SimpleColorSelector] Local player slot not ready, skipping color application")
+        end
+        return
+    end
+
     -- Remove players who left
     for player_id in pairs(player_to_slot) do
         if not current_players[player_id] then
+            local old_slot = player_to_slot[player_id]
             player_to_slot[player_id] = nil
+            
+            if old_slot >= 1 and old_slot <= 4 then
+                used_slots[old_slot] = false
+            end
+            
             if debug_mode then
                 mod:info(string.format("[SimpleColorSelector] Removed player %s (left game)", 
                     tostring(player_id):sub(1, 8)))
@@ -342,10 +436,29 @@ apply_slot_colors_internal = function()
         end
     end
 
-    -- Mark used slots
+    -- Reset used_slots and rebuild from current assignments, checking for duplicates
+    used_slots = {false, false, false, false}
+    local slot_to_players = {}  -- Track which players are using each slot to detect duplicates
+    for i = 1, 4 do
+        slot_to_players[i] = {}
+    end
+    
     for player_id, slot in pairs(player_to_slot) do
         if player_id ~= local_player_id and slot >= 1 and slot <= 4 then
-            used_slots[slot] = true
+            table.insert(slot_to_players[slot], player_id)
+            if #slot_to_players[slot] == 1 then
+                used_slots[slot] = true
+            else
+                -- Duplicate detected - clear this slot assignment so it gets reassigned
+                if debug_mode then
+                    mod:info(string.format("[SimpleColorSelector] Duplicate detected: slot %d has %d players, clearing assignments", 
+                        slot, #slot_to_players[slot]))
+                end
+                for _, pid in ipairs(slot_to_players[slot]) do
+                    player_to_slot[pid] = nil
+                end
+                used_slots[slot] = false
+            end
         end
     end
 
@@ -359,12 +472,18 @@ apply_slot_colors_internal = function()
         end
     end
 
-    -- Build account_id mapping
+    -- Build account_id mapping and assign/reassign players
     local account_id_to_player_id = {}
+    ColorAllocator.bot_player_ids = {}
     for _, data in ipairs(player_slots) do
         local unique_id = data.unique_id
         local player = data.player
         local slot = data.slot
+        
+        local bot_success, is_bot = pcall(function() return player:is_bot() end)
+        if bot_success and is_bot then
+            ColorAllocator.bot_player_ids[unique_id] = true
+        end
         
         local acct_success, account_id = pcall(function() return player:account_id() end)
         if acct_success and account_id then
@@ -375,7 +494,7 @@ apply_slot_colors_internal = function()
             goto continue
         end
         
-        -- Assign new players to available slots
+        -- Assign or reassign players to available slots
         if not player_to_slot[unique_id] then
             local assigned = false
             for i = 2, 4 do  -- Start from 2, slot 1 is for local player
@@ -391,9 +510,19 @@ apply_slot_colors_internal = function()
                 end
             end
             
-            if not assigned and debug_mode then
-                mod:info(string.format("[SimpleColorSelector] WARNING: Could not assign slot for player %s", 
-                    tostring(unique_id):sub(1, 8)))
+            if not assigned then
+                -- All slots taken, use hash-based fallback like ColorSelection
+                local hash_source = account_id or unique_id
+                local hash = 0
+                for i = 1, #hash_source do
+                    hash = hash + string.byte(hash_source, i)
+                end
+                local reassigned_slot = (hash % 3) + 2  -- Maps to 2, 3, or 4
+                player_to_slot[unique_id] = reassigned_slot
+                if debug_mode then
+                    mod:info(string.format("[SimpleColorSelector] Player %s: all slots taken, using hash fallback → slot %d", 
+                        tostring(unique_id):sub(1, 8), reassigned_slot))
+                end
             end
         end
         
@@ -463,14 +592,106 @@ local function apply_slot_colors()
     queue_color_assignment()
 end
 
+-- Track last known player count to detect new players
+local last_player_count = 0
+local last_player_check_time = 0
+local PLAYER_CHECK_INTERVAL = 1.0
+
+local function check_for_new_players()
+    if not in_gameplay_state then
+        return
+    end
+    
+    local current_time = os.clock()
+    if current_time - last_player_check_time < PLAYER_CHECK_INTERVAL then
+        return
+    end
+    last_player_check_time = current_time
+    
+    local pm = Managers and Managers.player
+    if not pm then
+        return
+    end
+    
+    local human_players = pm:human_players()
+    if not human_players then
+        return
+    end
+    
+    local current_count = 0
+    for unique_id, player in pairs(human_players) do
+        if player then
+            local human_success, is_human = pcall(function() return player:is_human_controlled() end)
+            local bot_success, is_bot = pcall(function() return player:is_bot() end)
+            local account_success, account_id = pcall(function() return player:account_id() end)
+            
+            if (human_success and is_human) and not (bot_success and is_bot) and (account_success and account_id and account_id ~= "") then
+                current_count = current_count + 1
+            end
+        end
+    end
+    
+    if current_count ~= last_player_count then
+        if mod:get("enable_debug_mode") then
+            mod:info(string.format("[SimpleColorSelector] Player count changed: %d -> %d, reapplying colors", 
+                last_player_count, current_count))
+        end
+        last_player_count = current_count
+        apply_slot_colors()
+    end
+end
+
+local function on_player_removed(player)
+    if not player then
+        return
+    end
+    
+    local success, account_id = pcall(function() return player:account_id() end)
+    if success and account_id then
+        if ColorAllocator.account_id_to_player_id and ColorAllocator.account_id_to_player_id[account_id] then
+            local unique_id = ColorAllocator.account_id_to_player_id[account_id]
+            if ColorAllocator.player_to_slot_mapping then
+                ColorAllocator.player_to_slot_mapping[unique_id] = nil
+            end
+            ColorAllocator.account_id_to_player_id[account_id] = nil
+        end
+    end
+    
+    if in_gameplay_state then
+        if mod:get("enable_debug_mode") then
+            mod:info("[SimpleColorSelector] Player removed, reapplying colors")
+        end
+        mod:pcall(function()
+            apply_slot_colors()
+        end)
+    end
+end
+
 -- DMF lifecycle hooks
 mod.on_all_mods_loaded = function()
     if mod:get("enable_debug_mode") then
         mod:info("[SimpleColorSelector] on_all_mods_loaded called")
     end
+    
+    update_local_player_id()
+    ColorAllocator:reset()
+    
+    mod:hook_safe("HumanGameplay", "on_player_removed", function(self, player)
+        on_player_removed(player)
+    end)
+    
+    mod:hook_require("scripts/ui/hud/elements/team_panel_handler/hud_element_team_panel_handler", function(H)
+        if not H.__scs_hooked then
+            H.__scs_hooked = true
+            mod:hook_safe(H, "update", function(self)
+                check_for_new_players()
+            end)
+        end
+    end)
 end
 
 mod.on_enabled = function()
+    update_local_player_id()
     if mod:get("enable_debug_mode") then
         mod:info("[SimpleColorSelector] on_enabled called, in_gameplay_state=" .. tostring(in_gameplay_state))
     end
@@ -485,11 +706,16 @@ mod.on_game_state_changed = function(status, state_name)
         mod:info(string.format("[SimpleColorSelector] on_game_state_changed: status=%s, state=%s", status, state_name))
     end
     
+    update_local_player_id()
+    
     if status == "enter" and state_name == "StateGameplay" then
         in_gameplay_state = true
+        last_player_count = 0
+        last_player_check_time = 0
         apply_slot_colors()
     elseif status == "exit" and state_name == "StateGameplay" then
         in_gameplay_state = false
+        last_player_count = 0
     end
 end
 
