@@ -98,26 +98,42 @@ mod:hook(CLASS.PlayerInfo, "character_name", function(func, self)
 	return mod.shorten(name, is_self)
 end)
 
-mod:hook_origin(CLASS.PlayerInfo, "user_display_name", function(self, use_stale)
+mod:hook_origin(CLASS.PlayerInfo, "user_display_name", function(self, use_stale, no_platform_icon)
 	local name = self._user_display_name
 	if use_stale and name then
 		return name
 	end
 	local presence = self:_get_presence()
 	local platform_social = self._platform_social
-	name = presence and presence:platform_persona_name_or_account_name() or platform_social and platform_social:name() or
+	name = presence and presence:platform_persona_name_or_account_name(self._platform, self._platform_id) or platform_social and platform_social:name() or
 		self._account_name or "N/A"
 
+	local platform_icon, color_override = self:platform_icon()
+
 	if self._player and not self._player:is_human_controlled() then
+		if platform_icon and not no_platform_icon then
+			name = string.format("%s %s", platform_icon, name)
+		end
+		if not no_platform_icon then
+			color_override = nil
+		end
 		self._user_display_name = name
-		return name
+		return name, color_override
 	end
 
 	local is_self = self._is_own_player
 	name = mod.shorten(name, is_self)
 
+	if platform_icon and not no_platform_icon then
+		name = string.format("%s %s", platform_icon, name)
+	end
+
+	if not no_platform_icon then
+		color_override = nil
+	end
+
 	self._user_display_name = name
-	return name
+	return name, color_override
 end)
 
 mod:hook(CLASS.RemotePlayer, "name", function(func, self)

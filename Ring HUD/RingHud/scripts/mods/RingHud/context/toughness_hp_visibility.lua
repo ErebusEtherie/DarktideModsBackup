@@ -42,7 +42,7 @@ end
 ----------------------------------------------------------------
 -- We assume mod._settings is populated at init and refreshed centrally.
 local _S = {
-    team_hud_mode           = nil, -- "team_hud_disabled" | "team_hud_icons_*" | others
+    -- Layout (team_hud_mode) is *not* read here anymore; this module is pure policy.
     team_hp_bar             = nil, -- "team_hp_disabled" | "team_hp_bar_context_text_off" | "..._always" | "..._text_*"
     toughness_bar_dropdown  = nil, -- "toughness_bar_disabled" | "..._always*" | "..._context*"
     ads_visibility_dropdown = nil, -- for ADS-as-force-show behavior if you wire it
@@ -51,7 +51,6 @@ local _S = {
 function mod.thv_on_setting_changed()
     local s = rawget(mod, "_settings")
     if not s then return end
-    _S.team_hud_mode           = s.team_hud_mode
     _S.team_hp_bar             = s.team_hp_bar
     _S.toughness_bar_dropdown  = s.toughness_bar_dropdown
     _S.ads_visibility_dropdown = s.ads_visibility_dropdown
@@ -132,10 +131,8 @@ end
 -- Disabled / Always-on checks (Teammates)
 ----------------------------------------------------------------
 local function _team_hp_disabled()
-    return _S.team_hud_mode == "team_hud_disabled"
-        or _S.team_hp_bar == "team_hp_disabled"
-        or _S.team_hud_mode == "team_hud_icons_vanilla"
-        or _S.team_hud_mode == "team_hud_icons_docked"
+    -- Team HP visibility is controlled *only* by the dedicated policy knob now.
+    return _S.team_hp_bar == "team_hp_disabled"
 end
 
 local function _team_hp_always()
@@ -236,7 +233,7 @@ end
 function mod.thv_team_for_peer(peer_id, peer_ctx)
     local result = { show_bar = false, show_text = false }
 
-    -- Team HP disabled entirely or icons-only?
+    -- Team HP disabled entirely by policy knob?
     if _team_hp_disabled() then
         return result
     end

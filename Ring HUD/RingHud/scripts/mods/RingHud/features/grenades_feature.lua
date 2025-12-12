@@ -1,9 +1,25 @@
 -- File: RingHud/scripts/mods/RingHud/features/grenades_feature.lua
 local mod = get_mod("RingHud"); if not mod then return {} end
 
-local Notch                 = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/notch_split")
-local U                     = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
-local GrenadesFeature       = {}
+local Notch                       = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/notch_split")
+local U                           = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
+local GrenadesFeature             = {}
+
+-- Broker flash-grenade (blitz) settings – used for kill-based charge regen progress
+local TalentSettings              = require("scripts/settings/talent/talent_settings")
+local BrokerTalentSettings        = TalentSettings and TalentSettings.broker
+local BROKER_BLITZ_KILLS_REQUIRED = 0
+
+if BrokerTalentSettings then
+    -- Prefer the explicit passive settings, fall back to blitz.flash_grenade if needed.
+    local passive_cfg           = BrokerTalentSettings.broker_passive_blitz_charge_on_kill
+    local blitz_cfg             = BrokerTalentSettings.blitz and BrokerTalentSettings.blitz.flash_grenade
+
+    BROKER_BLITZ_KILLS_REQUIRED =
+        (passive_cfg and passive_cfg.num_kills)
+        or (blitz_cfg and blitz_cfg.num_kills)
+        or 0
+end
 
 local GRENADE_OUTLINE_COLOR = mod.PALETTE_RGBA1.dodge_color_full_rgba -- visual “full” tint
 local GRENADE_ARC_MIN       = -0.25
@@ -327,6 +343,7 @@ function mod.grenades_update_state(unit_data_comp, ability_ext, player_unit, gre
     local live_max_val               = grenade_data.live_max or 0
     local used_any                   = false
 
+    -- Cooldown-based regeneration (e.g. Ogryn box, some talents)
     if ability_ext and ability_ext.ability_is_equipped and ability_ext:ability_is_equipped(ability_key) then
         local rem_cd = ability_ext:remaining_ability_cooldown(ability_key) or 0
         local max_cd = ability_ext:max_ability_cooldown(ability_key) or 0
@@ -340,6 +357,7 @@ function mod.grenades_update_state(unit_data_comp, ability_ext, player_unit, gre
         end
     end
 
+    -- Buff-based regeneration (Veteran/Zealot/Ogryn/Psyker) + Broker blitz-on-kill
     if (not used_any) and player_unit then
         local buff_ext = ScriptUnit.has_extension(player_unit, "buff_system") and
             ScriptUnit.extension(player_unit, "buff_system")
@@ -352,15 +370,20 @@ function mod.grenades_update_state(unit_data_comp, ability_ext, player_unit, gre
                 ogryn_friend_grenade_replenishment = true,
                 psyker_knife_replenishment         = true,
             }
+
+            local broker_kill_buff = nil
+
             for _, b in pairs(buffs) do
                 local tmpl = b and b:template()
                 local name = (tmpl and tmpl.name) or (b and b.template_name and b:template_name())
+
                 if name and names[name] then
                     local dur  = (b.duration and type(b.duration) == "function") and b:duration() or nil
                     local prog = (b.duration_progress and type(b.duration_progress) == "function") and
                         b:duration_progress() or nil
                     if prog and prog > 0 then
-                        local fill                       = (name == "veteran_grenade_replenishment" or name == "adamant_grenade_replenishment")
+                        local fill                       = (name == "veteran_grenade_replenishment"
+                                or name == "adamant_grenade_replenishment")
                             and math.clamp(prog, 0, 1)    -- 0→1 elapsed
                             or math.clamp(1 - prog, 0, 1) -- 1→0 remaining
                         grenade_data.is_regenerating     = true
@@ -368,6 +391,37 @@ function mod.grenades_update_state(unit_data_comp, ability_ext, player_unit, gre
                         if dur and dur > 0 then grenade_data.max_cooldown = dur end
                         grenade_data.regen_progress = fill
                         break
+                    end
+                elseif name == "broker_passive_blitz_charge_on_kill" then
+                    broker_kill_buff = b
+                    -- don’t break; there might also be one of the classic regen buffs present.
+                end
+            end
+
+            -- Broker kill-based blitz charge: show kills-to-next-charge as a partial segment.
+            if (not grenade_data.is_regenerating)
+                and broker_kill_buff
+                and BROKER_BLITZ_KILLS_REQUIRED > 0
+            then
+                local kills = 0
+
+                if broker_kill_buff.visual_stack_count and type(broker_kill_buff.visual_stack_count) == "function" then
+                    kills = broker_kill_buff:visual_stack_count() or 0
+                elseif broker_kill_buff.stack_count and type(broker_kill_buff.stack_count) == "function" then
+                    -- Fallback: if visual_stack_count isn’t exposed for some reason.
+                    kills = broker_kill_buff:stack_count() or 0
+                end
+
+                kills = math.max(kills or 0, 0)
+
+                if kills > 0 then
+                    local prog = math.clamp(kills / BROKER_BLITZ_KILLS_REQUIRED, 0, 1)
+
+                    if prog > 0 then
+                        grenade_data.is_regenerating     = true
+                        grenade_data.replenish_buff_name = "broker_passive_blitz_charge_on_kill"
+                        grenade_data.regen_progress      = prog
+                        -- max_cooldown remains 0 here: this is kill-based, not time-based.
                     end
                 end
             end

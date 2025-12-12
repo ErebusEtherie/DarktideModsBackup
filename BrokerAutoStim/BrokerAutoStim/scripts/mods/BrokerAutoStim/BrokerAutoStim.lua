@@ -2,6 +2,27 @@ local mod = get_mod("BrokerAutoStim")
 
 local PlayerUnitVisualLoadout = require("scripts/extension_systems/visual_loadout/utilities/player_unit_visual_loadout")
 
+local HUD_ELEMENT_CLASS_NAME = "HudElementBrokerAutoStim"
+
+mod:register_hud_element({
+	class_name = HUD_ELEMENT_CLASS_NAME,
+	filename = "BrokerAutoStim/scripts/mods/BrokerAutoStim/HudElementBrokerAutoStim",
+	use_hud_scale = true,
+	visibility_groups = {
+		"alive",
+		"communication_wheel",
+		"tactical_overlay"
+	},
+	validation_function = function(params)
+		return Managers.state.game_mode:game_mode_name() ~= "hub"
+	end
+})
+
+mod.get_hud_element = function()
+	local hud = Managers.ui:get_hud()
+	return hud and hud:element(HUD_ELEMENT_CLASS_NAME)
+end
+
 local STIMM_SLOT_NAME = "slot_pocketable_small"
 
 local function _debug(message_or_func)
@@ -22,6 +43,7 @@ local AUTO_STIMM_STAGES = {
 local auto_stimm_stage = AUTO_STIMM_STAGES.NONE
 local current_wield_slot = nil
 local unwield_to_slot = nil
+local last_equipped_slot = nil
 local input_request = nil
 local stage_start_time = nil
 
@@ -40,6 +62,214 @@ local combat_ability_just_used = false
 local combat_ability_just_ended = false
 local cached_chem_info = nil
 local chem_info_cache_time = nil
+local push_in_progress = false
+local injection_retry_after_push = false
+local block_in_progress = false
+local injection_retry_after_block = false
+
+local profiles = {}
+local is_loading_profile = false
+
+local function _get_default_profile_data()
+    return {
+        only_with_chemical_dependency = false,
+        stim_trigger_mode = "combat_only",
+        combat_duration = 5.0,
+        out_of_combat_timeout = 5.0
+    }
+end
+
+local function _initialize_profiles()
+    profiles = mod:get("profiles") or {}
+    
+    for i = 1, 5 do
+        if not profiles[i] then
+            profiles[i] = {}
+        end
+    end
+    
+    mod:set("profiles", profiles, false)
+end
+
+local function _get_current_profile_data()
+    local active_profile = mod:get("active_profile") or 1
+    if not profiles[active_profile] then
+        profiles[active_profile] = _get_default_profile_data()
+    end
+    return profiles[active_profile]
+end
+
+local function _save_current_settings_to_profile()
+    profiles = mod:get("profiles") or {}
+    local active_profile = mod:get("active_profile") or 1
+    if not profiles[active_profile] then
+        profiles[active_profile] = {}
+    end
+    
+    profiles[active_profile].only_with_chemical_dependency = mod:get("only_with_chemical_dependency")
+    profiles[active_profile].stim_trigger_mode = mod:get("stim_trigger_mode")
+    profiles[active_profile].combat_duration = mod:get("combat_duration")
+    profiles[active_profile].out_of_combat_timeout = mod:get("out_of_combat_timeout")
+    
+    mod:set("profiles", profiles, false)
+end
+
+local function _load_profile_settings(profile_num)
+    profiles = mod:get("profiles") or {}
+    
+    local profile_has_data = profiles[profile_num] and 
+        (profiles[profile_num].only_with_chemical_dependency ~= nil or
+         profiles[profile_num].stim_trigger_mode ~= nil or
+         profiles[profile_num].combat_duration ~= nil or
+         profiles[profile_num].out_of_combat_timeout ~= nil)
+    
+    is_loading_profile = true
+    
+    if profile_has_data then
+        local profile_data = profiles[profile_num]
+        
+        mod:set("only_with_chemical_dependency", profile_data.only_with_chemical_dependency or false, false)
+        
+        local trigger_mode = profile_data.stim_trigger_mode or "combat_only"
+        mod:set("stim_trigger_mode", trigger_mode, false)
+        
+        mod:set("combat_duration", profile_data.combat_duration or 5.0, false)
+        mod:set("out_of_combat_timeout", profile_data.out_of_combat_timeout or 5.0, false)
+    else
+        local default_data = _get_default_profile_data()
+        mod:set("only_with_chemical_dependency", default_data.only_with_chemical_dependency, false)
+        mod:set("stim_trigger_mode", default_data.stim_trigger_mode, false)
+        mod:set("combat_duration", default_data.combat_duration, false)
+        mod:set("out_of_combat_timeout", default_data.out_of_combat_timeout, false)
+    end
+    
+    is_loading_profile = false
+end
+
+local function _save_to_profile(profile_num)
+    profiles = mod:get("profiles") or {}
+    if not profiles[profile_num] then
+        profiles[profile_num] = {}
+    end
+    
+    profiles[profile_num].only_with_chemical_dependency = mod:get("only_with_chemical_dependency")
+    profiles[profile_num].stim_trigger_mode = mod:get("stim_trigger_mode")
+    profiles[profile_num].combat_duration = mod:get("combat_duration")
+    profiles[profile_num].out_of_combat_timeout = mod:get("out_of_combat_timeout")
+    
+    mod:set("profiles", profiles, false)
+end
+
+local function _get_trigger_mode_display_name(trigger_mode)
+    if trigger_mode == "combat_only" then
+        return "Combat Only"
+    elseif trigger_mode == "non_combat_only" then
+        return "Non-Combat Only"
+    elseif trigger_mode == "after_ability_end" then
+        return "After Ability"
+    elseif trigger_mode == "on_ability_use" then
+        return "Before Ability"
+    elseif trigger_mode == "always_stim" then
+        return "Always Stim"
+    end
+    return trigger_mode or "Combat Only"
+end
+
+local function _show_profile_settings(profile_num)
+    profiles = mod:get("profiles") or {}
+    local profile_data = profiles[profile_num] or _get_default_profile_data()
+    
+    mod:echo("=== Profile " .. profile_num .. " Settings ===")
+    mod:echo("Chemical Dependency Only: " .. (profile_data.only_with_chemical_dependency and "Yes" or "No"))
+    mod:echo("Trigger Mode: " .. _get_trigger_mode_display_name(profile_data.stim_trigger_mode or "combat_only"))
+    
+    local trigger_mode = profile_data.stim_trigger_mode or "combat_only"
+    if trigger_mode == "combat_only" or trigger_mode == "non_combat_only" then
+        mod:echo("Combat Duration: " .. string.format("%.1f", profile_data.combat_duration or 5.0) .. "s")
+        mod:echo("Out of Combat Timeout: " .. string.format("%.1f", profile_data.out_of_combat_timeout or 5.0) .. "s")
+    end
+end
+
+local profile_changed_from_hotkey = false
+
+local function _on_profile_changed(old_profile, new_profile, show_notification)
+    if is_loading_profile then
+        return
+    end
+    
+    if old_profile and old_profile ~= new_profile then
+        _save_to_profile(old_profile)
+    end
+    
+    is_loading_profile = true
+    _load_profile_settings(new_profile)
+    is_loading_profile = false
+    
+    -- Only show notifications when switching via hotkey (in-game), not from settings menu
+    if show_notification then
+        mod:echo("Switched to Profile " .. new_profile)
+        
+        if mod:get("show_settings_on_switch") then
+            _show_profile_settings(new_profile)
+        end
+    end
+end
+
+mod.cycle_profile = function(keybind_is_pressed)
+    if not keybind_is_pressed then
+        return
+    end
+    
+    local current_profile = mod:get("active_profile") or 1
+    _save_current_settings_to_profile()
+    
+    local max_profiles = mod:get("number_of_profiles_to_cycle") or 5
+    max_profiles = math.max(1, math.min(5, max_profiles))
+    
+    local next_profile = current_profile + 1
+    if next_profile > max_profiles then
+        next_profile = 1
+    end
+    
+    last_active_profile = current_profile
+    profile_changed_from_hotkey = true
+    mod:set("active_profile", next_profile, true)
+end
+
+local last_active_profile = nil
+
+mod.on_setting_changed = function(setting_id)
+    if is_loading_profile then
+        return
+    end
+    
+    if setting_id == "active_profile" then
+        local new_profile = mod:get("active_profile") or 1
+        local old_profile = last_active_profile or 1
+        last_active_profile = new_profile
+        
+        -- Only show notification if changed via hotkey, not from settings menu
+        local show_notification = profile_changed_from_hotkey
+        profile_changed_from_hotkey = false
+        
+        _on_profile_changed(old_profile, new_profile, show_notification)
+    elseif setting_id == "only_with_chemical_dependency" or
+           setting_id == "stim_trigger_mode" or
+           setting_id == "combat_duration" or
+           setting_id == "out_of_combat_timeout" then
+        _save_current_settings_to_profile()
+    elseif setting_id == "show_hud_icon" then
+        local hud_element = mod.get_hud_element()
+        if hud_element then
+            hud_element:set_visible(mod:get("show_hud_icon"))
+        end
+    elseif setting_id == "hud_icon_size" then
+        local hud_element = mod.get_hud_element()
+        if hud_element then
+            hud_element:set_side_length(mod:get("hud_icon_size"))
+        end
+    end
+end
 
 local function _get_gameplay_time()
     if Managers.time and Managers.time:has_timer("gameplay") then
@@ -58,9 +288,29 @@ local function _is_local_player(unit)
     return player and unit == player.player_unit
 end
 
+local function _get_archetype()
+    local player = Managers.player:local_player_safe(1)
+    if player then
+        local profile = player:profile()
+        if profile then
+            return profile.archetype and profile.archetype.name
+        end
+    end
+    return nil
+end
+
 local function _has_broker_stim()
     local player_unit = _get_player_unit()
     if not player_unit then
+        return false
+    end
+    
+    local ability_extension = ScriptUnit.has_extension(player_unit, "ability_system")
+    if not ability_extension then
+        return false
+    end
+    
+    if not ability_extension:ability_is_equipped("pocketable_ability") then
         return false
     end
     
@@ -70,6 +320,14 @@ local function _has_broker_stim()
     end
     
     return PlayerUnitVisualLoadout.has_weapon_keyword_from_slot(visual_loadout_extension, STIMM_SLOT_NAME, "pocketable_broker_syringe")
+end
+
+mod.is_broker_with_stim = function()
+    local archetype = _get_archetype()
+    if archetype ~= "broker" then
+        return false
+    end
+    return _has_broker_stim()
 end
 
 local function _has_chemical_dependency()
@@ -244,6 +502,8 @@ local function _reset_auto_stimm_state()
     stage_start_time = nil
     input_request = nil
     unwield_to_slot = nil
+    injection_retry_after_push = false
+    injection_retry_after_block = false
 end
 
 local function _reset_all_state()
@@ -257,6 +517,8 @@ local function _reset_all_state()
     current_wield_slot = nil
     cached_chem_info = nil
     chem_info_cache_time = nil
+    push_in_progress = false
+    block_in_progress = false
 end
 
 local function _check_stage_timeout()
@@ -341,6 +603,105 @@ local function _is_weapon_template_valid(slot_name)
     return weapon_template ~= nil
 end
 
+local DANGEROUS_BREEDS = {
+    chaos_poxwalker_bomber = {
+        range_setting = "burster_detection_range",
+        enabled_setting = "block_nearby_burster"
+    },
+    renegade_netgunner = {
+        range_setting = "trapper_detection_range",
+        enabled_setting = "block_nearby_trapper"
+    },
+    chaos_hound = {
+        range_setting = "dog_detection_range",
+        enabled_setting = "block_nearby_dog"
+    },
+    chaos_ogryn_executor = {
+        range_setting = "crusher_detection_range",
+        enabled_setting = "block_nearby_crusher"
+    },
+    renegade_executor = {
+        range_setting = "crusher_detection_range",
+        enabled_setting = "block_nearby_crusher"
+    }
+}
+
+local function _is_currently_blocking()
+    if not mod:get("cancel_on_block") then
+        return false
+    end
+    
+    local player_unit = _get_player_unit()
+    if not player_unit then
+        return false
+    end
+    
+    local unit_data_extension = ScriptUnit.has_extension(player_unit, "unit_data_system")
+    if not unit_data_extension then
+        return false
+    end
+    
+    local block_component = unit_data_extension:read_component("block")
+    if not block_component then
+        return false
+    end
+    
+    return block_component.is_blocking == true
+end
+
+local function _has_nearby_dangerous_enemies()
+    local player_unit = _get_player_unit()
+    if not player_unit then
+        return false
+    end
+    
+    if not Unit.alive(player_unit) or not Unit.world(player_unit) then
+        return false
+    end
+    
+    local broadphase_system = Managers.state.extension and Managers.state.extension:system("broadphase_system")
+    local broadphase = broadphase_system and broadphase_system.broadphase
+    if not broadphase then
+        return false
+    end
+    
+    local side_system = Managers.state.extension and Managers.state.extension:system("side_system")
+    local side = side_system and side_system.side_by_unit[player_unit]
+    if not side then
+        return false
+    end
+    
+    local from_pos = Unit.world_position(player_unit, 1)
+    local enemy_side_names = side:relation_side_names("enemy")
+    local Breed = require("scripts/utilities/breed")
+    
+    for breed_name, breed_data in pairs(DANGEROUS_BREEDS) do
+        -- Check if this enemy type is enabled
+        if mod:get(breed_data.enabled_setting) then
+            local scan_radius = mod:get(breed_data.range_setting) or 15.0
+            if scan_radius > 0 then
+                local results = {}
+                local count = broadphase.query(broadphase, from_pos, scan_radius, results, enemy_side_names)
+                
+                if count and count > 0 then
+                    for i = 1, count do
+                        local unit = results[i]
+                        if Unit.alive(unit) then
+                            local breed = Breed.unit_breed_or_nil(unit)
+                            if breed and breed.name == breed_name then
+                                _debug(function() return string.format("Dangerous enemy detected nearby: %s (%.1fm)", breed_name, scan_radius) end)
+                                return true
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    return false
+end
+
 local function _start_auto_inject()
     if not _has_broker_stim() then
         return false
@@ -358,6 +719,16 @@ local function _start_auto_inject()
         return false
     end
     
+    if _has_nearby_dangerous_enemies() then
+        _debug("Dangerous enemies nearby, blocking injection")
+        return false
+    end
+    
+    if _is_currently_blocking() then
+        _debug("Currently blocking, preventing injection")
+        return false
+    end
+    
     local current_time = _get_gameplay_time()
     if current_wield_slot == STIMM_SLOT_NAME then
         auto_stimm_stage = AUTO_STIMM_STAGES.WAITING_FOR_INJECT
@@ -367,12 +738,20 @@ local function _start_auto_inject()
         if not _is_weapon_template_valid(current_wield_slot) then
             return false
         end
+        if current_wield_slot and current_wield_slot ~= STIMM_SLOT_NAME then
+            last_equipped_slot = current_wield_slot
+            unwield_to_slot = current_wield_slot
+        end
         auto_stimm_stage = AUTO_STIMM_STAGES.SWITCH_TO
         stage_start_time = current_time
         _debug("Wielding stim for auto-inject...")
     end
     
     return true
+end
+
+mod.get_auto_stim_enabled = function()
+    return auto_stim_enabled
 end
 
 mod.toggle_auto_stim = function(keybind_is_pressed)
@@ -382,6 +761,11 @@ mod.toggle_auto_stim = function(keybind_is_pressed)
     
     auto_stim_enabled = not auto_stim_enabled
     mod:echo("Auto-stim " .. (auto_stim_enabled and "enabled" or "disabled"))
+    
+    local hud_element = mod.get_hud_element()
+    if hud_element then
+        hud_element:set_enabled_state(auto_stim_enabled)
+    end
 end
 
 mod.update = function(dt)
@@ -389,7 +773,63 @@ mod.update = function(dt)
         return
     end
     
+    if push_in_progress then
+        local player_unit = _get_player_unit()
+        if player_unit then
+            local weapon_extension = ScriptUnit.has_extension(player_unit, "weapon_system")
+            if weapon_extension and weapon_extension._action_handler then
+                local running_action_name = weapon_extension._action_handler:running_action_name("weapon_action")
+                if running_action_name ~= "action_push" then
+                    push_in_progress = false
+                    if injection_retry_after_push then
+                        _debug("Push finished, retrying injection")
+                        injection_retry_after_push = false
+                        local current_time = _get_gameplay_time()
+                        if current_time then
+                            last_injection_time = nil
+                        end
+                    end
+                end
+            else
+                push_in_progress = false
+            end
+        else
+            push_in_progress = false
+        end
+    end
+    
+    if block_in_progress then
+        local player_unit = _get_player_unit()
+        if player_unit then
+            local weapon_extension = ScriptUnit.has_extension(player_unit, "weapon_system")
+            if weapon_extension and weapon_extension._action_handler then
+                local running_action_name = weapon_extension._action_handler:running_action_name("weapon_action")
+                if running_action_name ~= "action_block" then
+                    block_in_progress = false
+                    if injection_retry_after_block then
+                        _debug("Block finished, retrying injection")
+                        injection_retry_after_block = false
+                        local current_time = _get_gameplay_time()
+                        if current_time then
+                            last_injection_time = nil
+                        end
+                    end
+                end
+            else
+                block_in_progress = false
+            end
+        else
+            block_in_progress = false
+        end
+    end
+    
     if auto_stimm_stage ~= AUTO_STIMM_STAGES.NONE then
+        if auto_stimm_stage == AUTO_STIMM_STAGES.WAITING_FOR_INJECT and _is_currently_blocking() then
+            _debug("Blocking detected during injection countdown, canceling")
+            injection_retry_after_block = true
+            _reset_auto_stimm_state()
+            return
+        end
         _check_stage_timeout()
         return
     end
@@ -448,7 +888,14 @@ mod.update = function(dt)
                 should_check_injection = time_since_last_injection >= effective_duration
             end
         elseif stim_trigger_mode == "non_combat_only" then
-            should_check_injection = time_since_last_injection >= effective_duration
+            -- For non-combat mode, stim immediately when not in combat
+            -- If never injected before, allow immediately. Otherwise use cooldown to prevent spam
+            if not last_injection_time then
+                should_check_injection = true
+            else
+                local cooldown = mod:get("out_of_combat_timeout") or 5.0
+                should_check_injection = time_since_last_injection >= cooldown
+            end
         end
         
         if should_check_injection then
@@ -510,9 +957,13 @@ end)
 
 mod:hook_safe(CLASS.PlayerUnitWeaponExtension, "on_slot_wielded", function(self, slot_name, ...)
     if self._player == Managers.player:local_player(1) then
+        if slot_name ~= STIMM_SLOT_NAME then
+            last_equipped_slot = slot_name
+        end
         current_wield_slot = slot_name
         if auto_stimm_stage == AUTO_STIMM_STAGES.SWITCH_BACK then
-            if input_request and (not unwield_to_slot or slot_name == unwield_to_slot) then
+            local target_slot = unwield_to_slot or last_equipped_slot
+            if input_request and (not target_slot or slot_name == target_slot) then
                 _reset_auto_stimm_state()
                 _debug("Switched back, injection complete")
             end
@@ -532,17 +983,86 @@ mod:hook_safe(CLASS.ActionHandler, "start_action", function(self, id, action_obj
             _debug("Combat ability button pressed - action starting")
         end
         
+        if action_name == "action_push" and mod:get("cancel_on_push") then
+            push_in_progress = true
+            local player_unit = _get_player_unit()
+            local injection_running = false
+            if player_unit then
+                local weapon_extension = ScriptUnit.has_extension(player_unit, "weapon_system")
+                if weapon_extension and weapon_extension._action_handler then
+                    local running_action_name = weapon_extension._action_handler:running_action_name("weapon_action")
+                    injection_running = running_action_name == "action_use_self"
+                end
+            end
+            
+            if auto_stimm_stage == AUTO_STIMM_STAGES.WAITING_FOR_INJECT or auto_stimm_stage == AUTO_STIMM_STAGES.SWITCH_TO then
+                _debug("Push detected during injection attempt, canceling and will retry after push")
+                injection_retry_after_push = true
+                _reset_auto_stimm_state()
+            elseif auto_stimm_stage == AUTO_STIMM_STAGES.SWITCH_BACK or injection_running then
+                if injection_running then
+                    _debug("Push detected during injection, attempting to cancel (may be uninterruptible)")
+                    local t = _get_gameplay_time()
+                    if t and player_unit then
+                        local weapon_extension = ScriptUnit.has_extension(player_unit, "weapon_system")
+                        if weapon_extension then
+                            weapon_extension:stop_action("push_interrupt", nil, t)
+                        end
+                    end
+                end
+                injection_retry_after_push = true
+                _reset_auto_stimm_state()
+            end
+        end
+        
+        if action_name == "action_block" and mod:get("cancel_on_block") then
+            block_in_progress = true
+            local player_unit = _get_player_unit()
+            local injection_running = false
+            if player_unit then
+                local weapon_extension = ScriptUnit.has_extension(player_unit, "weapon_system")
+                if weapon_extension and weapon_extension._action_handler then
+                    local running_action_name = weapon_extension._action_handler:running_action_name("weapon_action")
+                    injection_running = running_action_name == "action_use_self"
+                end
+            end
+            
+            if auto_stimm_stage == AUTO_STIMM_STAGES.WAITING_FOR_INJECT or auto_stimm_stage == AUTO_STIMM_STAGES.SWITCH_TO then
+                _debug("Block detected during injection attempt, canceling and will retry after block")
+                injection_retry_after_block = true
+                _reset_auto_stimm_state()
+            elseif auto_stimm_stage == AUTO_STIMM_STAGES.SWITCH_BACK or injection_running then
+                if injection_running then
+                    _debug("Block detected during injection, attempting to cancel (may be uninterruptible)")
+                    local t = _get_gameplay_time()
+                    if t and player_unit then
+                        local weapon_extension = ScriptUnit.has_extension(player_unit, "weapon_system")
+                        if weapon_extension then
+                            weapon_extension:stop_action("block_interrupt", nil, t)
+                        end
+                    end
+                end
+                injection_retry_after_block = true
+                _reset_auto_stimm_state()
+            end
+        end
+        
+        if action_name == "action_wield" then
+            local slot_name = self._inventory_component.wielded_slot
+            if slot_name ~= STIMM_SLOT_NAME then
+                last_equipped_slot = slot_name
+            end
+        end
+        
         if auto_stimm_stage == AUTO_STIMM_STAGES.SWITCH_BACK and (action_name == "action_unwield_to_previous" or action_name == "action_wield") and used_input ~= "quick_wield" then
-            input_request = unwield_to_slot == "slot_secondary" and "wield_2"
-                or unwield_to_slot == "slot_grenade_ability" and "grenade_ability_pressed"
+            local target_slot = unwield_to_slot or last_equipped_slot
+            input_request = target_slot == "slot_secondary" and "wield_2"
+                or target_slot == "slot_grenade_ability" and "grenade_ability_pressed"
                 or "wield_1"
             unwield_to_slot = input_request == "wield_1" and "slot_primary"
                 or input_request == "wield_2" and "slot_secondary"
                 or input_request == "grenade_ability_pressed" and "slot_grenade_ability"
                 or nil
-        elseif action_name == "action_wield" then
-            local slot_name = self._inventory_component.wielded_slot
-            unwield_to_slot = slot_name ~= STIMM_SLOT_NAME and slot_name or unwield_to_slot
         elseif auto_stimm_stage == AUTO_STIMM_STAGES.WAITING_FOR_INJECT and current_wield_slot == STIMM_SLOT_NAME and action_name == "action_use_self" then
             _debug("Auto-inject detected! Will switch back after injection completes")
             local current_time = _get_gameplay_time()
@@ -566,6 +1086,10 @@ mod:hook(CLASS.InputService, "_get_simulate", _input_action_hook)
 mod.on_game_state_changed = function(status, state_name)
     if status == "enter" and state_name == "StateGameplay" then
         _reset_all_state()
+        local hud_element = mod.get_hud_element()
+        if hud_element then
+            hud_element:set_enabled_state(auto_stim_enabled)
+        end
     end
 end
 
@@ -574,6 +1098,23 @@ Managers.event:register(mod, "player_unit_spawned", function(player)
         _reset_all_state()
     end
 end)
+
+mod.on_all_mods_loaded = function()
+    if Managers.package then
+        Managers.package:load("packages/ui/views/inventory_background_view/inventory_background_view", mod.name, nil, true)
+    end
+end
+
+_initialize_profiles()
+local active_profile = mod:get("active_profile") or 1
+if not active_profile or active_profile < 1 or active_profile > 5 then
+    active_profile = 1
+    mod:set("active_profile", active_profile, false)
+end
+last_active_profile = active_profile
+is_loading_profile = true
+_load_profile_settings(active_profile)
+is_loading_profile = false
 
 
 

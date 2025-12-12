@@ -127,6 +127,7 @@ local STIMM_KIND_BY_NAME = {
     syringe_power_boost_pocketable   = "power",
     syringe_speed_boost_pocketable   = "speed",
     syringe_ability_boost_pocketable = "ability",
+    syringe_broker_pocketable        = "broker",
 }
 
 local CRATE_KIND_BY_NAME = {
@@ -224,34 +225,36 @@ end
 -- If TeamPocketables exposes a tuned helper, use that; otherwise fallback
 -- to a simple 1 - group_hp mapping.
 local function _alpha_med_crate(carrier_hp, group_hp)
-    local group_val = group_hp or carrier_hp or 1
-
     if TeamPocketables and TeamPocketables.opacity_for_medical_crate then
-        -- team_pocketables expects “team_hp_frac” (group view), so prefer group_avg.
-        return TeamPocketables.opacity_for_medical_crate(group_val)
+        -- team_pocketables expects (carrier_hp_frac, group_hp_frac)
+        return TeamPocketables.opacity_for_medical_crate(carrier_hp, group_hp)
     end
 
+    local group_val = group_hp or carrier_hp or 1
     group_val = _clamp01(group_val)
     return math.floor(255 * (1.0 - group_val))
 end
 
 -- Ammo crate: opacity rises as group ammo need increases.
---   • group_need is “average reserve need” in [0,1] (0 = full, 1 = empty)
+--   • group_need is “team_ammo_need” in [0,1] (0 = full, 1 = empty)
+--   • carrier_reserve_frac is only used if group_need is nil (fallback).
 local function _alpha_ammo_crate(carrier_reserve_frac, group_need)
-    local need_val = group_need
+    -- If the helper exists, let it own the mapping from (carrier, need) → alpha.
+    if TeamPocketables and TeamPocketables.opacity_for_ammo_cache then
+        -- team_pocketables expects (carrier_reserve_frac, group_ammo_need)
+        return TeamPocketables.opacity_for_ammo_cache(carrier_reserve_frac, group_need)
+    end
 
-    if need_val == nil then
+    local need_val
+    if group_need ~= nil then
+        -- group_need is already a “need” scalar in [0,1]
+        need_val = _clamp01(group_need)
+    else
         -- Derive a “need” from the carrier’s own reserve if we don't have a group value.
         local carrier_frac = _clamp01(carrier_reserve_frac or 1)
         need_val = 1.0 - carrier_frac
     end
 
-    if TeamPocketables and TeamPocketables.opacity_for_ammo_cache then
-        -- team_pocketables expects “team_ammo_need” (group view)
-        return TeamPocketables.opacity_for_ammo_cache(need_val)
-    end
-
-    need_val = _clamp01(need_val)
     return math.floor(255 * need_val)
 end
 
@@ -331,7 +334,7 @@ function PV.player_flags(hud_state, hotkey_override)
 
     -- Intensity: highlight key pocketables during high-intensity windows
     if _high_intensity_window() then
-        if stimm_kind == "power" or stimm_kind == "speed" then
+        if stimm_kind == "power" or stimm_kind == "speed" or stimm_kind == "broker" then
             stimm_full = true
         end
         if crate_kind == "medical" or crate_kind == "ammo" then
@@ -383,11 +386,11 @@ function PV.player_flags(hud_state, hotkey_override)
         end
     end
 
-    -- Crate: group ammo (reserve)
+    -- Crate: group ammo (reserve -> need)
     if not crate_full and crate_kind == "ammo" then
         local group_ammo = hud_state.team_average_ammo_fraction
         if group_ammo ~= nil then
-            -- Convert “average ammo fraction” into a “need” fraction
+            -- Convert “average ammo fraction” into a “need” fraction in [0,1]
             local need = 1.0 - _clamp01(group_ammo)
             crate_alpha = math.max(crate_alpha, _alpha_ammo_crate(nil, need))
         end
@@ -428,9 +431,11 @@ end
 --   hp_frac              = this teammate's health fraction (0..1)
 --   ability_cd_remaining = remaining ability cooldown (seconds)
 --   ability_cd_max       = max ability cooldown (seconds)
+--   stimm_cd_remaining   = remaining stimm cooldown (seconds) -- NEW
+--   stimm_cd_max         = max stimm cooldown (seconds)       -- NEW
 --   reserve_frac         = this teammate's reserve ammo fraction (0..1) or nil
 --   group_hp_avg         = average hp+corruption over alive strike team (0..1) or nil
---   group_ammo_need      = average “ammo need” over relevant strike team (0..1) or nil
+--   group_ammo_need      = team-wide ammo need metric (0..1, where 1 = huge need)
 --   stimm_icon           = icon material for the stimm (may be nil)
 --   crate_icon           = icon material for the crate (may be nil)
 --   stimm_kind           = "corruption"/"power"/"speed"/"ability"/"unknown" or nil
@@ -449,9 +454,9 @@ function PV.team_flags_for_peer(peer_id, ctx)
         crate = { enabled = false, alpha = 0, full = false },
     }
 
-    -- Global “team HUD disabled / vanilla icons only” modes: hide pockets entirely
+    -- Global “team HUD disabled” mode: hide pockets entirely
     local hud_mode = _S.team_hud_mode
-    if hud_mode == "team_hud_disabled" or hud_mode == "team_hud_icons_vanilla" then
+    if hud_mode == "team_hud_disabled" then
         return result
     end
 
@@ -534,6 +539,16 @@ function PV.team_flags_for_peer(peer_id, ctx)
         if s_icon ~= nil and s_kind == "ability" and ability_max > 0 and ability_secs > 0 then
             stimm_alpha = math.max(stimm_alpha, _alpha_ability(ability_secs, ability_max))
         end
+
+        -- Broker stimm variable opacity: use stimm cooldown
+        if s_icon ~= nil and s_kind == "broker" then
+            local rem = ctx.stimm_cd_remaining or 0
+            local max = ctx.stimm_cd_max or 0
+            if rem > 0 and max > 0 then
+                stimm_alpha = math.max(stimm_alpha, _alpha_ability(rem, max))
+            end
+        end
+
         if stimm_alpha > 0 then
             result.stimm.enabled = true
             result.stimm.full    = false

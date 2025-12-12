@@ -5,6 +5,9 @@ local RingHudUtils       = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/u
 local U                  = RingHudUtils
 local AmmoReserveFeature = {}
 
+-- NOTE: 1.10+ path (correct): "scripts/network_lookup/network_constants"
+local NetworkConstants   = require("scripts/network_lookup/network_constants")
+
 ----------------------------------------------------------------
 -- STATE (reserve): read from unit_data (secondary slot)
 -- into hud_state.ammo_data
@@ -18,8 +21,17 @@ function AmmoReserveFeature.update_state(unit_data_comp_access_point, ammo_data)
     local has_infinite_reserve = false
 
     if secondary_comp then
-        current_reserve      = secondary_comp.current_ammunition_reserve or 0
-        max_reserve          = secondary_comp.max_ammunition_reserve or 0
+        local raw_current    = secondary_comp.current_ammunition_reserve
+        local raw_max        = secondary_comp.max_ammunition_reserve
+
+        local max_size       = NetworkConstants
+            and NetworkConstants.ammunition_reserve_array
+            and NetworkConstants.ammunition_reserve_array.max_size
+            or nil
+
+        -- Use centralized helper from utils
+        current_reserve      = U.sum_ammo_field(raw_current, max_size)
+        max_reserve          = U.sum_ammo_field(raw_max, max_size)
         has_infinite_reserve = (max_reserve == 0)
     end
 

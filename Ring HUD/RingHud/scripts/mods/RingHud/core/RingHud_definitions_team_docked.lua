@@ -8,13 +8,10 @@ local U                   = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/
 
 local W                   = {}
 
--- Vertical gap expressed as a multiple of TILE_SIZE
 local GAP_Y               = C.TILE_SIZE / 1.5
 
--- Keep the downward stack offset you liked (can be overridden in constants.lua)
 local STACK_Y_OFFSET      = C.STACK_Y_OFFSET or math.floor(C.TILE_SIZE * 0.5)
 
--- Helper to add a pass and record its style in a style-map the engine expects
 local function _add_pass(passes, style_map, pass)
     passes[#passes + 1] = pass
     if pass.style_id and pass.style then
@@ -22,7 +19,6 @@ local function _add_pass(passes, style_map, pass)
     end
 end
 
--- The tile-only widget (ring, segments, icons, reserve/ability/toughness/health texts)
 local function make_tile_only_widget_def(node_name)
     local content = {
         -- Status & archetype
@@ -399,19 +395,43 @@ function W.build_definitions()
     local widget_definitions    = {}
 
     local BASE_Y                = (C.START_Y or 650) + STACK_Y_OFFSET
+    local axis                  = mod._settings and mod._settings.team_docked_axis or "vertical"
 
-    for i = 1, 4 do
-        local base                           = string.format("rh_team_%d", i)
-        local group_node                     = base .. "_group"
-        local tile_node                      = base .. "_tile_node"
-        local name_node                      = base .. "_name_node"
+    local off_x                 = (mod._settings and mod._settings.team_hud_offset_x) or 0
+    local off_y                 = (mod._settings and mod._settings.team_hud_offset_y) or 0
+
+    for i = 1, 3 do
+        local base       = string.format("rh_team_%d", i)
+        local group_node = base .. "_group"
+        local tile_node  = base .. "_tile_node"
+        local name_node  = base .. "_name_node"
+
+        local align_h, align_v, px, py
+
+        if axis == "horizontal" then
+            align_h = "center"
+            align_v = "bottom"
+            py      = -0.25 * C.TILE_SIZE
+            if i == 1 then
+                px = 0
+            elseif i == 2 then
+                px = -1 * C.TILE_SIZE
+            else
+                px = 1 * C.TILE_SIZE
+            end
+        else
+            align_h = "left"
+            align_v = "top"
+            px      = C.START_X
+            py      = BASE_Y - (i - 1) * GAP_Y
+        end
 
         scenegraph_definition[group_node]    = {
             parent               = "screen",
-            vertical_alignment   = "top",
-            horizontal_alignment = "left",
+            vertical_alignment   = align_v,
+            horizontal_alignment = align_h,
             size                 = { C.TILE_SIZE, C.TILE_SIZE },
-            position             = { C.START_X, BASE_Y - (i - 1) * GAP_Y, 20 + i },
+            position             = { px + off_x, py + off_y, 20 + i },
         }
 
         scenegraph_definition[tile_node]     = {

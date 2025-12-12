@@ -12,6 +12,20 @@ return {
                 type = "checkbox",
                 default_value = false
 
+            },
+            {
+
+                setting_id = "disable_radio_chatter",
+                type = "checkbox",
+                default_value = false
+
+            },
+            {
+
+                setting_id = "disable_all_chatter",
+                type = "checkbox",
+                default_value = false
+
             }
         }
     }

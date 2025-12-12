@@ -141,8 +141,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
         end
     end
 
-    -- Health segments (base) — outline uses material RGBA teal
-    -- NOTE: Build up to C.MAX_HP_SEGMENTS (one extra pass reserved for the split/"notch").
+    -- Health segments (base)
     for i = 1, C.MAX_HP_SEGMENTS do
         local cid = string.format("hp_seg_%d_visible", i)
         content[cid] = false
@@ -162,14 +161,13 @@ function W.build_marker_definitions(scale, scenegraph_id)
                 pivot                = { C.ARC_SIZE / 2, C.ARC_SIZE },
                 angle                = 0,
                 color                = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or
-                    { 255, 255, 255, 255 }, -- ARGB-255
+                    { 255, 255, 255, 255 },
                 material_values      = {
                     amount               = 0,
-                    -- Clamp index so seg_arc_range never goes OOB for the extra (+1) pass.
                     arc_top_bottom       = U.seg_arc_range(math.min(i, C.MAX_WOUNDS_CAP), C.MAX_WOUNDS_CAP),
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color        = _rgba_or_white(mod.PALETTE_RGBA1 and
-                        mod.PALETTE_RGBA1.default_toughness_color_rgba), -- RGBA 0..1
+                        mod.PALETTE_RGBA1.default_toughness_color_rgba),
                     lightning_opacity    = 0,
                     glow_on_off          = 0,
                 },
@@ -177,8 +175,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
         })
     end
 
-    -- Corruption overlay segments (on top) — outline uses material RGBA purple
-    -- NOTE: Stays at C.MAX_WOUNDS_CAP (unsplit).
+    -- Corruption overlay segments (on top)
     for i = 1, C.MAX_WOUNDS_CAP do
         local cid = string.format("cor_seg_%d_visible", i)
         content[cid] = false
@@ -198,13 +195,13 @@ function W.build_marker_definitions(scale, scenegraph_id)
                 pivot                = { C.ARC_SIZE / 2, C.ARC_SIZE },
                 angle                = 0,
                 color                = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or
-                    { 255, 255, 255, 255 }, -- ARGB-255
+                    { 255, 255, 255, 255 },
                 material_values      = {
                     amount               = 1,
                     arc_top_bottom       = U.seg_arc_range(i, C.MAX_WOUNDS_CAP),
                     fill_outline_opacity = { 0.7, 1.3 },
                     outline_color        = _rgba_or_white(mod.PALETTE_RGBA1 and
-                        mod.PALETTE_RGBA1.default_corruption_color_rgba), -- RGBA 0..1
+                        mod.PALETTE_RGBA1.default_corruption_color_rgba),
                     lightning_opacity    = 0,
                     glow_on_off          = 0,
                 },
@@ -235,10 +232,10 @@ function W.build_marker_definitions(scale, scenegraph_id)
         }
     })
 
-    -- Status icon (replaces archetype while active)
+    -- Status icon
     add_pass({
         pass_type            = "texture",
-        value_id             = "status_icon", -- runtime material path
+        value_id             = "status_icon",
         style_id             = "status_icon",
         horizontal_alignment = "center",
         vertical_alignment   = "center",
@@ -254,16 +251,13 @@ function W.build_marker_definitions(scale, scenegraph_id)
         }
     })
 
-    -- Teammate name (above the glyph)
+    -- Teammate name
     add_pass({
         pass_type            = "text",
         value_id             = "name_text_value",
         style_id             = "name_text_style",
         horizontal_alignment = "center",
         vertical_alignment   = "center",
-        -- Draw whenever there is non-empty text; setting-based rules live in HEWM
-        -- (HudElementRingHud_team_nameplate.lua) which blanks name_text_value when
-        -- floating names are disabled.
         visibility_function  = function(c)
             return type(c.name_text_value) == "string" and c.name_text_value ~= ""
         end,
@@ -319,7 +313,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
         }
     })
 
-    -- Stimm icon (auxiliary; kept for potential future use)
+    -- Stimm icon
     add_pass({
         pass_type            = "texture",
         value_id             = "stimm_icon",
@@ -336,7 +330,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
         }
     })
 
-    -- Ammo reserve % (left) — default hidden; team_ammo.update_ammo(...) drives visibility.
+    -- Ammo reserve %
     add_pass({
         pass_type            = "text",
         value_id             = "reserve_text_value",
@@ -360,7 +354,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
         end)(),
     })
 
-    -- Ability cooldown (right) — default hidden; team_ability.update_ability_cd(...) drives visibility.
+    -- Ability cooldown
     add_pass({
         pass_type            = "text",
         value_id             = "ability_cd_text",
@@ -375,7 +369,6 @@ function W.build_marker_definitions(scale, scenegraph_id)
             s_.vertical_alignment        = "center"
             s_.size                      = { C.TILE_SIZE, C.TILE_SIZE / 13.5 }
             s_.offset                    = { C.TILE_SIZE / 4, -C.TILE_SIZE / 25, 11 }
-            -- Default to palette white (runtime will tint via constants in update_ability_cd).
             local WHITE                  = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or
                 { 255, 255, 255, 255 }
             s_.text_color                = { WHITE[1], WHITE[2], WHITE[3], WHITE[4] }
@@ -386,7 +379,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
         end)(),
     })
 
-    -- Toughness integer (right, below) — default hidden; team_toughness.update_text(...) drives visibility.
+    -- Toughness integer
     add_pass({
         pass_type            = "text",
         value_id             = "toughness_text_value",
@@ -401,7 +394,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
             s_.vertical_alignment        = "center"
             s_.size                      = { C.TILE_SIZE / 3, C.TILE_SIZE / 12 }
             s_.offset                    = { C.TILE_SIZE / 4, -C.TILE_SIZE / 4.5, 10 }
-            s_.text_color                = { 255, 108, 187, 196 } -- ARGB teal
+            s_.text_color                = { 255, 108, 187, 196 }
             s_.font_size                 = C.TILE_SIZE / 12
             s_.drop_shadow               = true
             s_.visible                   = false
@@ -409,7 +402,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
         end)(),
     })
 
-    -- Health integer (left, below) — default hidden; applier drives visibility.
+    -- Health integer
     add_pass({
         pass_type            = "text",
         value_id             = "health_value_text",
@@ -433,9 +426,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
         end)(),
     })
 
-    -- Ledge/pull-up/respawn bar (SPLIT: base + edge). These are driven by the applier:
-    -- - base: amount = 1, arc => [bottom .. edge - half_gap]
-    -- - edge: amount = 0, arc => [edge + half_gap .. top]
+    -- Ledge/pull-up/respawn bar (base)
     add_pass({
         pass_type            = "rotated_texture",
         value                = "content/ui/materials/effects/forcesword_bar",
@@ -466,6 +457,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
         }
     })
 
+    -- Ledge/pull-up/respawn bar (edge)
     add_pass({
         pass_type            = "rotated_texture",
         value                = "content/ui/materials/effects/forcesword_bar",
@@ -479,7 +471,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
             uvs                  = { { 0, 1 }, { 1, 0 } },
             horizontal_alignment = "center",
             vertical_alignment   = "center",
-            offset               = { C.TILE_SIZE / 16, -C.TILE_SIZE / 5.7, 14 }, -- above base
+            offset               = { C.TILE_SIZE / 16, -C.TILE_SIZE / 5.7, 14 },
             size                 = { C.ARC_SIZE, C.ARC_SIZE },
             pivot                = { C.ARC_SIZE / 2, C.ARC_SIZE },
             angle                = 0,
@@ -496,18 +488,15 @@ function W.build_marker_definitions(scale, scenegraph_id)
         }
     })
 
-    -- SCALE & OFFSET COMPENSATION ------------------------------------
+    -- SCALE & OFFSET COMPENSATION
     if s ~= 1 then
         for _, st in pairs(style) do
             _apply_scale_and_offset(st, s)
         end
     end
 
-    -- Capture default_* AFTER any static scaling so distance scaling
-    -- uses these as the baseline.
     _ensure_default_scalables(style)
 
-    -- RETURN A PROPER UIWidget DEFINITION -----------------------------
     return UIWidget.create_definition(passes, scenegraph_id or "screen", content, style)
 end
 

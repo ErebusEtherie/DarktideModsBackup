@@ -10,16 +10,23 @@
 local mod = get_mod("RingHud")
 if not mod then return {} end
 
--- Darktide's colour utilities (for ARGB -> material RGBA)
+if mod.PALETTE_ARGB255 then
+    return mod.PALETTE_ARGB255
+end
+
+-- Darktide utilities
 local ColorUtilities = require("scripts/utilities/ui/colors")
+local UISettings     = require("scripts/settings/ui/ui_settings")
+
 local PALETTE        = {}
 
 -- Canonical ARGB palette (0..255)
 mod.PALETTE_ARGB255  = {
     HEALTH_GREEN             = { 255, 38, 204, 26 },
-    POWER_RED                = { 255, 205, 51, 26 }, -- aka STRENGTH/DAMAGE red
+    POWER_RED                = { 255, 205, 51, 26 },
     SPEED_BLUE               = { 255, 0, 127, 218 },
     COOLDOWN_YELLOW          = { 255, 230, 192, 13 },
+    PUNKY_PINK               = { 255, 208, 69, 255 },
     AMMO_ORANGE              = { 255, 255, 130, 1 },
     TOME_BLUE                = { 255, 80, 110, 160 },
     GRIMOIRE_PURPLE          = { 255, 102, 38, 98 },
@@ -35,6 +42,7 @@ mod.PALETTE_ARGB255  = {
     AMMO_TEXT_COLOR_MEDIUM_L = { 255, 255, 150, 51 },
     AMMO_TEXT_COLOR_LOW      = { 255, 255, 51, 51 },
     AMMO_TEXT_COLOR_CRITICAL = { 255, 255, 0, 0 },
+
     peril_color_spectrum     = {
         { 200, 138, 201, 38 }, -- green
         { 200, 138, 201, 38 },
@@ -59,7 +67,8 @@ mod.PALETTE_RGBA1    = {
     GENERIC_WHITE        = { 1.00, 1.00, 1.00, 1.00 },
 
     -- default_toughness_color_rgba  = { 0.80, 1.00, 1.00, 1.00 },    -- teal
-    TOUGHNESS_TEAL       = { 0.33, 0.56, 0.59, 1.00 }, -- teal, adjusted
+    -- TOUGHNESS_TEAL       = { 0.33, 0.56, 0.59, 1.00 }, -- teal, adjusted
+    TOUGHNESS_TEAL       = { 0.62, 0.77, 0.77, 1.00 }, -- teal
     -- TOUGHNESS_OVERSHIELD          = { 1.00, 0.84, 0.00, 1.00 }, -- gold
     TOUGHNESS_OVERSHIELD = { 1.00, 0.65, 0.00, 1.00 }, -- gold, adjusted
     -- TOUGHNESS_BROKEN              = { 1.00, 0.31, 0.31, 1.00 }, -- red
@@ -104,5 +113,50 @@ mod.PALETTE_RGBA1    = {
 
 }
 
-PALETTE              = mod.PALETTE_ARGB255
+-- ▲ palettes defined; now expose cross-file helpers on `mod.*`
+
+-- Team-mate slot tint (ARGB255). Order of precedence:
+--   1) Explicit color on the player object (table or player:color()).
+--   2) UISettings.player_slot_colors[ slot ], where slot comes from
+--      marker.data:slot() (preferred) or player:slot() if marker missing.
+--   3) Fallback to GENERIC_WHITE.
+function mod.team_slot_tint_argb(player, marker)
+    -- (1) explicit color attached to player
+    if type(player) == "table" then
+        local c = rawget(player, "color")
+        if type(c) == "table" and c[1] ~= nil then
+            return c
+        end
+        if type(c) == "function" then
+            local res = c(player)
+            if type(res) == "table" and res[1] ~= nil then
+                return res
+            end
+        end
+    end
+
+    -- (2) canonical per-slot color from UISettings
+    local slot_idx = nil
+    if marker and marker.data and marker.data.slot then
+        slot_idx = marker.data:slot()
+    elseif type(player) == "table" and player.slot then
+        if type(player.slot) == "function" then
+            slot_idx = player:slot()
+        elseif type(player.slot) == "number" then
+            slot_idx = player.slot
+        end
+    end
+
+    if slot_idx ~= nil then
+        local slot_colors = UISettings and UISettings.player_slot_colors
+        if slot_colors and slot_colors[slot_idx] then
+            return slot_colors[slot_idx]
+        end
+    end
+
+    -- (3) last resort
+    return mod.PALETTE_ARGB255.GENERIC_WHITE
+end
+
+PALETTE = mod.PALETTE_ARGB255
 return PALETTE

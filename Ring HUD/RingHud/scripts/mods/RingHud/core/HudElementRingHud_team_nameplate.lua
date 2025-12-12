@@ -34,12 +34,11 @@ mod.EDGE_STACK_GAP             = mod.EDGE_STACK_GAP or C.TILE_SIZE
 ----------------------------------------------------------------
 -- "Any floating-related" modes (used for hijacking + resolution refresh)
 local function _mode_is_floating()
-    local m = mod._settings.team_hud_mode
+    local m = mod._settings and mod._settings.team_hud_mode
     return m == "team_hud_floating"
         or m == "team_hud_floating_docked"
         or m == "team_hud_floating_vanilla"
-        or m == "team_hud_icons_vanilla"
-        or m == "team_hud_icons_docked"
+        or m == "team_hud_floating_thin"
 end
 
 -- Setting gate: are floating nameplate names enabled by team_name_icon?
@@ -93,7 +92,7 @@ local function _should_hijack_nameplate(marker_type, unit)
     if not lp or unit == lp.player_unit then return false end
     if _player_for_unit(unit) == nil then return false end -- only hijack teammates
 
-    -- Any floating-related mode (including icons_* that still use HEWM) => hijack.
+    -- Any floating-related mode ⇒ hijack.
     if _mode_is_floating() then
         return true
     end
@@ -536,9 +535,9 @@ end
 -- Called by RingHud.lua’s single global on_setting_changed(...)
 function mod.floating_manager.apply_settings(setting_id)
     if setting_id == "team_hud_mode" then
-        if _mode_is_floating() then
-            _refresh_existing_nameplates()
-        end
+        -- Any layout change: tear down existing plates so the engine re-adds them
+        -- under the new mode (floating vs non-floating, vanilla vs RingHud, etc.).
+        _refresh_existing_nameplates()
     elseif setting_id == "team_tiles_scale" then
         if type(mod.recompute_edge_marker_size) == "function" then
             mod.recompute_edge_marker_size()

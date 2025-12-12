@@ -3,6 +3,10 @@ local mod = get_mod("RingHud"); if not mod then return {} end
 
 local U                     = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
 local Ammo                  = require("scripts/utilities/ammo")
+local NetworkConstants      = require("scripts/network_lookup/network_constants")
+
+local MAX_CLIPS             = (NetworkConstants.ammunition_clip_array
+    and NetworkConstants.ammunition_clip_array.max_size) or 1
 
 local AmmoClipFeature       = {}
 
@@ -16,7 +20,9 @@ local AMMO_CLIP_SEGMENT_GAP = 0.015 -- kept local; RingHud constants cover arc m
 --   - max_clip
 -- Does not touch reserve fields (handled elsewhere / ammo_reserve_feature).
 function AmmoClipFeature.update_state(unit_data_comp_access_point, weapon_ext, inv_comp, ammo_data_out)
-    if not ammo_data_out then return end
+    if not ammo_data_out then
+        return
+    end
 
     local wielded_slot              = (inv_comp and inv_comp.wielded_slot) or "none"
     ammo_data_out.wielded_slot_name = wielded_slot
@@ -25,29 +31,36 @@ function AmmoClipFeature.update_state(unit_data_comp_access_point, weapon_ext, i
     local current_clip, max_clip    = 0, 0
 
     -- We only expose clip info when the wielded slot is the secondary AND the template uses ammo.
-    if wielded_slot == "slot_secondary" then
-        local wielded_template = weapon_ext and weapon_ext:weapon_template()
-        local uses_flag = wielded_template
-            and wielded_template.hud_configuration
-            and wielded_template.hud_configuration.uses_ammunition
+    if wielded_slot == "slot_secondary"
+        and unit_data_comp_access_point
+        and weapon_ext
+    then
+        local wielded_template = weapon_ext:weapon_template()
+        local hud_conf         = wielded_template and wielded_template.hud_configuration
+        local uses_flag        = hud_conf and hud_conf.uses_ammunition
 
         if uses_flag then
             uses_ammo = true
 
-            local secondary_comp = unit_data_comp_access_point and
-                unit_data_comp_access_point:read_component("slot_secondary")
-
+            local secondary_comp = unit_data_comp_access_point:read_component("slot_secondary")
             if secondary_comp then
-                -- 1.10 multi-clip ammo layout: aggregate all clips in use
-                local max_num_clips = (NetworkConstants
-                    and NetworkConstants.ammunition_clip_array
-                    and NetworkConstants.ammunition_clip_array.max_size) or 0
+                local curr = secondary_comp.current_ammunition_clip
+                local maxv = secondary_comp.max_ammunition_clip
 
-                for i = 1, max_num_clips do
-                    if Ammo.clip_in_use(secondary_comp, i) then
-                        max_clip     = max_clip + (secondary_comp.max_ammunition_clip[i] or 0)
-                        current_clip = current_clip + (secondary_comp.current_ammunition_clip[i] or 0)
+                -- 1.10+ layout: clips stored as arrays → sum all clips that are "in use"
+                if type(curr) == "table" and type(maxv) == "table" then
+                    local max_slots = MAX_CLIPS
+
+                    for i = 1, max_slots do
+                        if Ammo.clip_in_use(secondary_comp, i) then
+                            current_clip = current_clip + (curr[i] or 0)
+                            max_clip     = max_clip + (maxv[i] or 0)
+                        end
                     end
+                else
+                    -- Fallback for older scalar layout or unexpected data
+                    current_clip = curr or 0
+                    max_clip     = maxv or 0
                 end
             end
         end

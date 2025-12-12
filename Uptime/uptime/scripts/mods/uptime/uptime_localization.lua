@@ -59,16 +59,20 @@ return {
         ["zh-tw"] = "打開持續時間記錄",
     },
     track_meat_grinder = {
-        en = "Track Uptime in Meat Grinder / Psykanium"
+        en = "Track Uptime in Meat Grinder / Psykanium",
+        ["zh-tw"] = "追蹤絞肉機/靈能室的持續時間",
     },
     save_files_options = {
         en = "Save Files",
+        ["zh-tw"] = "保存檔案",
     },
     delete_old_entries = {
         en = "Automatically delete old files",
+        ["zh-tw"] = "自動刪除舊檔案",
     },
     number_of_save_files = {
-        en = "Number of save files to keep"
+        en = "Number of save files to keep",
+        ["zh-tw"] = "要保留的保存檔案數量",
     },
     data_display_settings = {
         en = "Data columns",

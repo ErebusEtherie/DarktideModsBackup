@@ -208,7 +208,7 @@ end
 function get_optional_item_info(buff_instance)
     local context = (buff_instance._template_context or {})
     local item = context.source_item or context.item
-    if not item then
+    if not item or not item.traits then
         mod.buffs_without_item = mod.buffs_without_item or {}
         mod.buffs_without_item[#mod.buffs_without_item + 1] = buff_instance
         return nil

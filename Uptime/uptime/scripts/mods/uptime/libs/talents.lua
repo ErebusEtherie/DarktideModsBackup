@@ -4,9 +4,10 @@ local ogryn_talents = mod:original_require("scripts/settings/ability/archetype_t
 local zealot_talents = mod:original_require("scripts/settings/ability/archetype_talents/talents/zealot_talents")
 local veteran_talents = mod:original_require("scripts/settings/ability/archetype_talents/talents/veteran_talents")
 local arbites_talents = mod:original_require("scripts/settings/ability/archetype_talents/talents/adamant_talents")
+local scum_talents = mod:original_require("scripts/settings/ability/archetype_talents/talents/broker_talents")
 local ArchetypeTalents = require("scripts/settings/ability/archetype_talents/archetype_talents")
 local all_trees = {
-    psyker_talents, ogryn_talents, zealot_talents, veteran_talents, arbites_talents
+    psyker_talents, ogryn_talents, zealot_talents, veteran_talents, arbites_talents, scum_talents
 }
 
 local buff_to_talent = {
@@ -20,7 +21,21 @@ local buff_to_talent = {
     veteran_snipers_focus_stat_buff_increased_stacks = "veteran_snipers_focus",
     veteran_snipers_focus_stat_buff = "veteran_snipers_focus",
 
-    psyker_toughness_on_melee_buff = "psyker_toughness_on_melee"
+    psyker_toughness_on_melee_buff = "psyker_toughness_on_melee",
+
+    broker_punk_rage_stance = "broker_ability_punk_rage",
+    broker_punk_rage_exhaustion = "broker_ability_punk_rage",
+    broker_punk_rage_ramping_melee_power = "broker_ability_punk_rage_sub_2",
+    broker_keystone_adrenaline_junkie_proc = "broker_keystone_adrenaline_junkie",
+    broker_keystone_adrenaline_junkie_stack = "broker_keystone_adrenaline_junkie",
+    broker_passive_melee_cleave_on_melee_kill_buff = "broker_passive_melee_cleave_on_melee_kill",
+    broker_passive_replenish_toughness_on_ranged_toughness_damage_regen = "broker_passive_replenish_toughness_on_ranged_toughness_damage",
+    broker_keystone_chemical_dependency_stack = "broker_keystone_chemical_dependency",
+    broker_passive_damage_on_reload_buff = "broker_passive_damage_on_reload",
+    broker_vultures_mark_dodge_on_ranged_crit_dodge_buff = "broker_keystone_vultures_mark_dodge_on_ranged_crit",
+    vultures_mark = "broker_keystone_vultures_mark_on_kill",
+    broker_focus_sub_2_damage = "broker_ability_focus_sub_2",
+    syringe_broker_buff_stimm_field = "broker_ability_stimm_field"
 }
 
 function get_talent(talent_id)

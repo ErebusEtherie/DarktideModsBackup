@@ -1,12 +1,21 @@
 CHANGELOG
-1.09 Planned changes
+1.09.01 Grenade patch and Team Layouts
+-- [New] Alternative layout and positioning settings for docked team panels
+-- [New] Setting to separate/spread the player's Ring HUD while using an auspex
+-- [Fixed] Fixed a crash relating to team grenade icons, will be using placeholder items until better solution found
+-- [Fixed] Corrected some localisations
+
+1.09 Hive Scum
+-- [New] Hive Scum stimm cooldown, buff timer and icon colour (can change colour with RecolorStimms mod)
+-- [New] Hive Scum Desperado and Rampage buffs added to ability timer feature
+-- [New] Hive Scum throwing shiv ammo shown in charge bar
 -- [New] Settings to control x,y position of player hud element
 -- [New] Option for showing extra ability charges
 -- [New] If carrying two weapons that overheat (plasma+falchion) the peril bar prioritises current weapon but shows a thin line for the other weapon
--- [ ] Optional team ability, keystone and weapon icons during force show
 -- [New] Additional ability ready sounds to choose from
--- [New] Decluttered vanilla team panels added as team hud option
--- [ ] Option to move chat box
+-- [New] Decluttering vanilla team panels added as team hud option
+-- [New] Hive Scum grenade regen now shown in grenades widget (when the buff doesn't bug out)
+-- [New] Option for streamlined version of default team panels
 -- [Better] Performance overhaul
 -- [Better] Class agnostic team grenade icon logic
 -- [Better] Reworked HUD element scaling
@@ -15,14 +24,17 @@ CHANGELOG
 -- [Better] Reorganised team settings for clarity
 -- [Better] Enhanced ability to declutter default HUD
 -- [Better] More granular control over teammate status icons
--- [ ] Unhide mission objective feed during force show
+-- [Better] Improvements to contextual teammate settings
 -- [Fixed] Grimoire/scripture icon colours
+-- [Fixed] Fixed an issue with the MeowBeep crosshair feature
 -- [Fixed] No longer removes tag skulls
+
+1.08a Hive Scum crash fix
+-- [Fixed] Fixed crash caused by new Hive Scum class
 
 1.08 Audible Ability Recharge Fix
 -- [Fixed] Fix conflict with Audible Ability Recharge
 -- [Fixed] Removed options for feature that is not yet implemented
--- [Better] Improvements to contextual teammate settings
 
 1.07 Team Tiles
 -- [New] ADS scale and separation controls

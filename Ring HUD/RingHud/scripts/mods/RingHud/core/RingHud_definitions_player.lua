@@ -5,14 +5,14 @@ if not mod then return {} end
 -- Ensure RingHud palette gets initialized (sets mod.PALETTE_ARGB255 / mod.PALETTE_RGBA1)
 mod:io_dofile("RingHud/scripts/mods/RingHud/systems/RingHud_colors")
 
--- NEW: pull widget factories from feature files
-local StaminaFeature     = mod:io_dofile("RingHud/scripts/mods/RingHud/features/stamina_feature")
-local ChargeFeature      = mod:io_dofile("RingHud/scripts/mods/RingHud/features/charge_feature")
-local DodgeFeature       = mod:io_dofile("RingHud/scripts/mods/RingHud/features/dodge_feature")
-local PerilFeature       = mod:io_dofile("RingHud/scripts/mods/RingHud/features/peril_feature")
-local ToughnessHpFeature = mod:io_dofile("RingHud/scripts/mods/RingHud/features/toughness_hp_feature")
-local AmmoClipFeature    = mod:io_dofile("RingHud/scripts/mods/RingHud/features/ammo_clip_feature")
-local GrenadesFeature    = mod:io_dofile("RingHud/scripts/mods/RingHud/features/grenades_feature")
+-- NEW: pull widget factories from feature files (hardened with {} fallback)
+local StaminaFeature     = mod:io_dofile("RingHud/scripts/mods/RingHud/features/stamina_feature") or {}
+local ChargeFeature      = mod:io_dofile("RingHud/scripts/mods/RingHud/features/charge_feature") or {}
+local DodgeFeature       = mod:io_dofile("RingHud/scripts/mods/RingHud/features/dodge_feature") or {}
+local PerilFeature       = mod:io_dofile("RingHud/scripts/mods/RingHud/features/peril_feature") or {}
+local ToughnessHpFeature = mod:io_dofile("RingHud/scripts/mods/RingHud/features/toughness_hp_feature") or {}
+local AmmoClipFeature    = mod:io_dofile("RingHud/scripts/mods/RingHud/features/ammo_clip_feature") or {}
+local GrenadesFeature    = mod:io_dofile("RingHud/scripts/mods/RingHud/features/grenades_feature") or {}
 
 -- Safeguard lookups so this file never errors if palettes/constants aren’t ready yet.
 local ARGB               = mod.PALETTE_ARGB255 or {}
@@ -41,60 +41,66 @@ local function _effective_ring_scale()
     return tonumber(mod._settings and mod._settings.ring_scale) or 1
 end
 
-local s                                         = _effective_ring_scale()
-local area_side                                 = 240 * s
-mod.scalable_unit                               = area_side / 240 -- replaces px(n): n * unit
-local size                                      = { area_side, area_side }
-local offset_correction                         = area_side * 0.055
-local vertical_offset                           = offset_correction * 3
-local text_offset                               = offset_correction * 4
-local outer_size_factor                         = 1.5
-local inner_size_factor                         = 0.8
+local s                                          = _effective_ring_scale()
+local area_side                                  = 240 * s
+mod.scalable_unit                                = area_side / 240 -- replaces px(n): n * unit
+local size                                       = { area_side, area_side }
+local offset_correction                          = area_side * 0.055
+local vertical_offset                            = offset_correction * 3
+local text_offset                                = offset_correction * 4
+local outer_size_factor                          = 1.5
+local inner_size_factor                          = 0.8
 
-local settings_x                                = (mod._settings and mod._settings.player_hud_offset_x) or 0
-local settings_y                                = (mod._settings and mod._settings.player_hud_offset_y) or 0
+local settings_x                                 = (mod._settings and mod._settings.player_hud_offset_x) or 0
+local settings_y                                 = (mod._settings and mod._settings.player_hud_offset_y) or 0
 
 -- Text styles
-local percent_text_style                        = table.clone(UIFontSettings.body_small)
-percent_text_style.drop_shadow                  = true
-percent_text_style.text_horizontal_alignment    = "center"
-percent_text_style.text_vertical_alignment      = "center"
-percent_text_style.offset                       = { -(text_offset + 3 * mod.scalable_unit), offset_correction, 2 }
+local percent_text_style                         = table.clone(UIFontSettings.body_small)
+percent_text_style.drop_shadow                   = true
+percent_text_style.text_horizontal_alignment     = "center"
+percent_text_style.text_vertical_alignment       = "center"
+percent_text_style.offset                        = { -(text_offset + 3 * mod.scalable_unit), offset_correction, 2 }
 
-local ability_cd_text_style                     = table.clone(UIFontSettings.body_small)
-ability_cd_text_style.drop_shadow               = true
-ability_cd_text_style.text_horizontal_alignment = "left"
-ability_cd_text_style.text_vertical_alignment   = "center"
-ability_cd_text_style.offset                    = { text_offset + 3 * mod.scalable_unit, offset_correction, 2 }
+local ability_cd_text_style                      = table.clone(UIFontSettings.body_small)
+ability_cd_text_style.drop_shadow                = true
+ability_cd_text_style.text_horizontal_alignment  = "left"
+ability_cd_text_style.text_vertical_alignment    = "center"
+ability_cd_text_style.offset                     = { text_offset + 3 * mod.scalable_unit, offset_correction, 2 }
 
-local ability_buff_text_style                   = table.clone(ability_cd_text_style)
-ability_buff_text_style.font_type               = "machine_medium"
-ability_buff_text_style.drop_shadow             = true
-ability_buff_text_style.text_color              = { 255, 0, 255, 0 }
-ability_buff_text_style.offset                  = { text_offset, offset_correction, 2 }
+local ability_buff_text_style                    = table.clone(ability_cd_text_style)
+ability_buff_text_style.font_type                = "machine_medium"
+ability_buff_text_style.drop_shadow              = true
+ability_buff_text_style.text_color               = { 255, 0, 255, 0 }
+ability_buff_text_style.offset                   = { text_offset, offset_correction, 2 }
 
-local ammo_reserve_text_style                   = table.clone(percent_text_style)
-ammo_reserve_text_style.drop_shadow             = true
-ammo_reserve_text_style.offset                  = { 0, 0, 2 }
+-- NEW: Stimm timer style (matches buff style but centered on the stimm node)
+local stimm_timer_text_style                     = table.clone(ability_buff_text_style)
+stimm_timer_text_style.text_horizontal_alignment = "center"
+stimm_timer_text_style.text_vertical_alignment   = "center"
+stimm_timer_text_style.offset                    = { 0, 0, 1 }
 
-local ammo_clip_text_style                      = table.clone(UIFontSettings.body_small)
-ammo_clip_text_style.text_color                 = ARGB.GENERIC_WHITE
-ammo_clip_text_style.drop_shadow                = true
-ammo_clip_text_style.text_horizontal_alignment  = "center"
-ammo_clip_text_style.text_vertical_alignment    = "center"
-ammo_clip_text_style.offset                     = { 0, 0, 1 }
+local ammo_reserve_text_style                    = table.clone(percent_text_style)
+ammo_reserve_text_style.drop_shadow              = true
+ammo_reserve_text_style.offset                   = { 0, 0, 2 }
 
-local health_text_style                         = table.clone(UIFontSettings.body_small)
-health_text_style.text_color                    = ARGB.GENERIC_WHITE
-health_text_style.drop_shadow                   = true
-health_text_style.text_horizontal_alignment     = "center"
-health_text_style.text_vertical_alignment       = "center"
-health_text_style.offset                        = { 0, 0, 1 }
+local ammo_clip_text_style                       = table.clone(UIFontSettings.body_small)
+ammo_clip_text_style.text_color                  = ARGB.GENERIC_WHITE
+ammo_clip_text_style.drop_shadow                 = true
+ammo_clip_text_style.text_horizontal_alignment   = "center"
+ammo_clip_text_style.text_vertical_alignment     = "center"
+ammo_clip_text_style.offset                      = { 0, 0, 1 }
+
+local health_text_style                          = table.clone(UIFontSettings.body_small)
+health_text_style.text_color                     = ARGB.GENERIC_WHITE
+health_text_style.drop_shadow                    = true
+health_text_style.text_horizontal_alignment      = "center"
+health_text_style.text_vertical_alignment        = "center"
+health_text_style.offset                         = { 0, 0, 1 }
 
 -- RGBA 0..1
-local AMMO_CLIP_UNFILLED_COLOR                  = { 0.3, 0.3, 0.3, 0.8 }
+local AMMO_CLIP_UNFILLED_COLOR                   = { 0.3, 0.3, 0.3, 0.8 }
 
-local Definitions                               = {
+local Definitions                                = {
     text_offset           = text_offset,
     offset_correction     = offset_correction,
 
@@ -172,10 +178,11 @@ local Definitions                               = {
             vertical_alignment   = "center",
         },
 
+        -- Enlarged: gives the timer text a proper layout box while keeping the icon small
         stimm_indicator                = {
             parent               = "container",
-            position             = { offset_correction + text_offset + (10 * mod.scalable_unit), offset_correction + (8 * mod.scalable_unit), 11 },
-            size                 = { 15 * mod.scalable_unit, 15 * mod.scalable_unit },
+            position             = { offset_correction + text_offset + (21 * mod.scalable_unit), offset_correction + (8 * mod.scalable_unit), 11 },
+            size                 = { 40 * mod.scalable_unit, 15 * mod.scalable_unit }, -- was 15×15; widened for text
             horizontal_alignment = "center",
             vertical_alignment   = "top",
         },
@@ -221,11 +228,27 @@ local Definitions                               = {
         }, "ammo_clip_text_display_node"),
 
         stimm_indicator_widget = UIWidget.create_definition({
+            -- Icon pass: explicitly small, centered within the larger stimm_indicator node
             {
                 pass_type = "texture",
                 value_id = "stimm_icon",
                 style_id = "stimm_icon",
-                style = { color = ARGB.GENERIC_WHITE, offset = { 0, 0, 0 }, visible = false }
+                style = {
+                    color                = ARGB.GENERIC_WHITE,
+                    offset               = { 0, 0, 0 },
+                    visible              = false,
+                    horizontal_alignment = "left",
+                    vertical_alignment   = "center",
+                    size                 = { 15 * mod.scalable_unit, 15 * mod.scalable_unit },
+                },
+            },
+            -- Timer text pass: uses the full enlarged node area
+            {
+                pass_type = "text",
+                value_id = "stimm_timer_text",
+                style_id = "stimm_timer_text",
+                value = "",
+                style = stimm_timer_text_style
             },
         }, "stimm_indicator"),
 
@@ -244,16 +267,48 @@ local Definitions                               = {
     },
 }
 
--- Let features inject their widget(s)
-StaminaFeature.add_widgets(Definitions.widget_definitions, nil, { size = size }, { ARGB = ARGB, RGBA1 = RGBA1 })
-ChargeFeature.add_widgets(Definitions.widget_definitions, nil, { size = size }, { ARGB = ARGB, RGBA1 = RGBA1 })
-DodgeFeature.add_widgets(Definitions.widget_definitions, nil, { size = size }, { ARGB = ARGB, RGBA1 = RGBA1 })
-PerilFeature.add_widgets(Definitions.widget_definitions, nil, { size = size }, { ARGB = ARGB, RGBA1 = RGBA1 })
-ToughnessHpFeature.add_widgets(Definitions.widget_definitions, nil, { size = size, outer_size_factor = 1.5 },
-    { ARGB = ARGB, RGBA1 = RGBA1 })
-AmmoClipFeature.add_widgets(Definitions.widget_definitions, nil, { size = size, inner_size_factor = inner_size_factor },
-    { ARGB = ARGB, RGBA1 = RGBA1 })
-GrenadesFeature.add_widgets(Definitions.widget_definitions, nil, { size = size, inner_size_factor = inner_size_factor },
-    { ARGB = ARGB, RGBA1 = RGBA1 })
+-- Let features inject their widget(s), but only if they actually loaded
+if StaminaFeature.add_widgets then
+    StaminaFeature.add_widgets(Definitions.widget_definitions, nil, { size = size }, { ARGB = ARGB, RGBA1 = RGBA1 })
+end
+
+if ChargeFeature.add_widgets then
+    ChargeFeature.add_widgets(Definitions.widget_definitions, nil, { size = size }, { ARGB = ARGB, RGBA1 = RGBA1 })
+end
+
+if DodgeFeature.add_widgets then
+    DodgeFeature.add_widgets(Definitions.widget_definitions, nil, { size = size }, { ARGB = ARGB, RGBA1 = RGBA1 })
+end
+
+if PerilFeature.add_widgets then
+    PerilFeature.add_widgets(Definitions.widget_definitions, nil, { size = size }, { ARGB = ARGB, RGBA1 = RGBA1 })
+end
+
+if ToughnessHpFeature.add_widgets then
+    ToughnessHpFeature.add_widgets(
+        Definitions.widget_definitions,
+        nil,
+        { size = size, outer_size_factor = 1.5 },
+        { ARGB = ARGB, RGBA1 = RGBA1 }
+    )
+end
+
+if AmmoClipFeature.add_widgets then
+    AmmoClipFeature.add_widgets(
+        Definitions.widget_definitions,
+        nil,
+        { size = size, inner_size_factor = inner_size_factor },
+        { ARGB = ARGB, RGBA1 = RGBA1 }
+    )
+end
+
+if GrenadesFeature.add_widgets then
+    GrenadesFeature.add_widgets(
+        Definitions.widget_definitions,
+        nil,
+        { size = size, inner_size_factor = inner_size_factor },
+        { ARGB = ARGB, RGBA1 = RGBA1 }
+    )
+end
 
 return Definitions

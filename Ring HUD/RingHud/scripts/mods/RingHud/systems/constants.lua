@@ -23,7 +23,7 @@ local SCALE                    = (mod._settings and mod._settings.team_tiles_sca
 C.START_X, C.START_Y           = 80, 650 -- unchanged anchor
 
 -- These are (re)computed below so every derivative stays consistent with TILE_SIZE.
-C.TILE_SIZE                    = 240 * SCALE
+C.TILE_SIZE                    = 192 * SCALE
 C.ARC_MIN, C.ARC_MAX           = -0.40, 0.40
 C.SEGMENT_GAP                  = 0.02
 C.MAX_WOUNDS_CAP               = 11

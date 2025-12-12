@@ -1,4 +1,4 @@
--- Guarantee Special Action by KamiUnitY. Ver. 1.1.9
+-- Guarantee Special Action by KamiUnitY. Ver. 1.1.10
 
 local mod = get_mod("guarantee_special_action")
 local modding_tools = get_mod("modding_tools")
@@ -218,7 +218,7 @@ local function setPromise(action, from)
             if doing_reload then
                 return
             end
-            if wieldable_component.current_ammunition_reserve == 0 or wieldable_component.current_ammunition_clip == wieldable_component.max_ammunition_clip then
+            if wieldable_component.current_ammunition_reserve == 0 or wieldable_component.current_ammunition_clip[1] == wieldable_component.max_ammunition_clip[1] then
                 return
             end
         else

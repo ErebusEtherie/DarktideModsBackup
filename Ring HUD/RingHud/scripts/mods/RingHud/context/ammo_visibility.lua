@@ -155,17 +155,32 @@ local function _is_infinite_or_unknown(reserve_frac_or_nil)
     return reserve_frac_or_nil == nil
 end
 
+-- Take a pre-baked reserve_frac if present; otherwise derive from
+-- ammo_data.current_reserve / max_reserve (already normalised to scalars by
+-- ammo_reserve_feature).
 local function _player_reserve_frac_from_state(hud_state)
     if not hud_state then return nil end
+
+    -- Allow future branches to pre-bake a scalar
     if hud_state.reserve_frac ~= nil then
         return hud_state.reserve_frac
     end
+
     local ad = hud_state.ammo_data
-    if ad and (ad.max_reserve or 0) > 0 then
-        local cur = ad.current_reserve or 0
-        local max = ad.max_reserve or 0
-        return math.clamp(cur / max, 0, 1)
+    if ad then
+        if ad.has_infinite_reserve then
+            return nil
+        end
+
+        local cur = tonumber(ad.current_reserve) or 0
+        local max = tonumber(ad.max_reserve) or 0
+
+        -- Respect "infinite reserve" semantics: max <= 0 => treat as unknown/infinite
+        if max > 0 then
+            return math.clamp(cur / max, 0, 1)
+        end
     end
+
     return nil -- infinite/unknown
 end
 
@@ -218,11 +233,8 @@ end
 --   peer_id (string/number) – teammate key for timers
 --   reserve_frac_or_nil     – nil for infinite/unknown (will hide)
 function mod.ammo_vis_team_for_peer(peer_id, reserve_frac_or_nil)
-    -- Team HUD disabled or icons-only? (no munitions in icon-only modes)
-    if _S.team_hud_mode == "team_hud_disabled"
-        or _S.team_hud_mode == "team_hud_icons_vanilla"
-        or _S.team_hud_mode == "team_hud_icons_docked"
-    then
+    -- Team HUD disabled? Then there is no place to show team munitions.
+    if _S.team_hud_mode == "team_hud_disabled" then
         return false
     end
 

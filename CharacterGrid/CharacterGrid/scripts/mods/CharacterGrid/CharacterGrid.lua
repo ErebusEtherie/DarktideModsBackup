@@ -1,4 +1,5 @@
 local mod = get_mod("CharacterGrid")
+local character_count_max = mod:get("character_count") > 8
 
 mod:hook_require("scripts/ui/views/main_menu_view/main_menu_view_definitions", function(view_defs)
 	local scenegraph = view_defs.scenegraph_definition
@@ -6,8 +7,9 @@ mod:hook_require("scripts/ui/views/main_menu_view/main_menu_view_definitions", f
 	local character_list_background = scenegraph.character_list_background
 	character_list_background.size = {
 		600,
-		350,
+		character_count_max and 420 or 350,
 	}
+
 	character_list_background.position = {
 		100,
 		-190,
@@ -17,7 +19,7 @@ mod:hook_require("scripts/ui/views/main_menu_view/main_menu_view_definitions", f
 	local character_grid_background = scenegraph.character_grid_background
 	character_grid_background.size = {
 		300,
-		350,
+		character_count_max and 420 or 350,
 	}
 	character_grid_background.offset = {
 		5,
@@ -61,7 +63,7 @@ mod:hook_require("scripts/ui/views/main_menu_view/main_menu_view_definitions", f
 	}
 	character_list_background_style.background.size = {
 		600,
-		480,
+		character_count_max and 560 or 480,
 	}
 
 	local style_id_3 = character_list_background_style.style_id_3
@@ -89,7 +91,7 @@ end
 mod:hook_require("scripts/ui/pass_templates/character_select_pass_templates", function(CharacterSelectPassTemplates)
 	local character_create_size = {
 		280, -- def 280
-		100, -- def 100
+		character_count_max and 98 or 100, -- def 100
 	}
 	CharacterSelectPassTemplates.character_create_size = character_create_size
 

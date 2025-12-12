@@ -61,27 +61,29 @@ function Crosshair.init()
         local widget = self._widget
         if not widget or not widget.style then return end
 
-        local template = self._crosshair_templates and self._crosshair_templates[self._crosshair_type]
-        if not template or not template.name then return end
-
         local style = widget.style
-        local c = table.clone(color)
+        local r, g, b = color[2], color[3], color[4]
 
-        local name = template.name
-        -- Charge-up styles (e.g. plasma, helbore charge rings)
-        if name == "charge_up" or name == "charge_up_ads" then
-            if style.charge_mask_right then style.charge_mask_right.color = c end
-            if style.charge_mask_left then style.charge_mask_left.color = c end
-
-            -- Common 4-tick crosshair variants
-        elseif name == "flamer" or name == "shotgun_wide" or name == "spray_n_pray"
-            or name == "assault" or name == "cross" or name == "shotgun"
-        then
-            if style.left then style.left.color = c end
-            if style.right then style.right.color = c end
-            if style.top then style.top.color = c end
-            if style.bottom then style.bottom.color = c end
+        -- Apply RGB tint to common crosshair parts while preserving their current Alpha.
+        -- This ensures we support Dot (Force Swords), Projectiles, and standard crosses,
+        -- without breaking vanilla fade/spread animations.
+        local function _tint(style_id)
+            local pass_style = style[style_id]
+            if pass_style and pass_style.color then
+                pass_style.color[2] = r
+                pass_style.color[3] = g
+                pass_style.color[4] = b
+            end
         end
+
+        _tint("charge_mask_left")
+        _tint("charge_mask_right")
+        _tint("left")
+        _tint("right")
+        _tint("top")
+        _tint("bottom")
+        _tint("dot")
+        _tint("center")
 
         widget.dirty = true
     end)

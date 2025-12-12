@@ -40,14 +40,48 @@ end)
 -- All other valid grenades default to appearing when count is < 2.
 local GROUP_LT1_VISIBLE = {
     -- veteran
-    veteran_frag_grenade     = true,
-    veteran_krak_grenade     = true,
-    veteran_smoke_grenade    = true,
+    veteran_frag_grenade      = true,
+    veteran_krak_grenade      = true,
+    veteran_smoke_grenade     = true,
+    -- zealot
+    zealot_throwing_knives    = true,
     -- ogryn
-    ogryn_grenade_frag       = true,
+    ogryn_grenade_friend_rock = true,
+    ogryn_grenade_frag        = true,
     -- arbitrator
-    adamant_shock_mine       = true,
-    adamant_grenade_improved = true,
+    adamant_whistle           = true,
+    adamant_shock_mine        = true,
+    adamant_grenade_improved  = true,
+    -- broker
+    quick_flash_grenade       = true,
+}
+
+-- Mapping table to fix path mismatches when falling back to ability names
+local THROWABLE_ICON_LOOKUP = {
+    -- Veteran
+    veteran_frag_grenade      = "content/ui/materials/icons/throwables/hud/frag_grenade",
+    veteran_krak_grenade      = "content/ui/materials/icons/throwables/hud/krak_grenade",
+    veteran_smoke_grenade     = "content/ui/materials/icons/throwables/hud/smoke_grenade",
+    -- Zealot
+    zealot_shock_grenade      = "content/ui/materials/icons/throwables/hud/stun_grenade",
+    zealot_fire_grenade       = "content/ui/materials/icons/throwables/hud/flame_grenade",
+    zealot_throwing_knives    = "content/ui/materials/icons/throwables/hud/throwing_knife",
+    -- Ogryn
+    ogryn_grenade_friend_rock = "content/ui/materials/icons/throwables/hud/rock_grenade",
+    ogryn_grenade_box_cluster = "content/ui/materials/icons/throwables/hud/ogryn_grenade_box",
+    ogryn_grenade_frag        = "content/ui/materials/icons/throwables/hud/ogryn_frag_grenade",
+    -- Psyker
+    psyker_smite              = "content/ui/materials/icons/throwables/hud/smite",
+    psyker_chain_lightning    = "content/ui/materials/icons/throwables/hud/chain_lightning",
+    psyker_throwing_knives    = "content/ui/materials/icons/throwables/hud/throwing_knives",
+    -- Arbites / Adamant
+    adamant_whistle           = "content/ui/materials/icons/throwables/hud/adamant_whistle",
+    adamant_shock_mine        = "content/ui/materials/icons/throwables/hud/shock_mine",
+    adamant_grenade_improved  = "content/ui/materials/icons/throwables/hud/adamant_grenade",
+    -- Hive Scum / Broker
+    quick_flash_grenade       = "content/ui/materials/icons/throwables/hud/quick_flash_grenade",
+    missile_launcher          = "content/ui/materials/icons/throwables/hud/missile_launcher",
+    tox_grenade               = "content/ui/materials/icons/throwables/hud/tox_grenade",
 }
 
 -- Internal: return the equipped grenade/blitz ability name (or nil)
@@ -92,17 +126,55 @@ local function _resolve_grenade_icon(unit)
         return _icon_cache[cache_id]
     end
 
-    -- Lookup from Visual Loadout
-    local vload = ScriptUnit.has_extension(unit, "visual_loadout_system") and
-        ScriptUnit.extension(unit, "visual_loadout_system")
-    if not vload or not vload.weapon_template_from_slot then
-        return nil
+    local icon = nil
+    local name = nil
+
+    -- Objects to hold data sources
+    local grenade_ability_data = nil
+    local weapon_template_data = nil
+
+    -- 1. Gather Data: Ability System (Reliable for Husks)
+    local ability_ext = ScriptUnit.has_extension(unit, "ability_system") and ScriptUnit.extension(unit, "ability_system")
+    if ability_ext and ability_ext.equipped_abilities then
+        local abilities = ability_ext:equipped_abilities()
+        grenade_ability_data = abilities and abilities.grenade_ability
+        if grenade_ability_data then
+            name = grenade_ability_data.name
+        end
     end
 
-    local tmpl = vload:weapon_template_from_slot("slot_grenade_ability")
-    if not tmpl then return nil end
+    -- 2. Gather Data: Visual Loadout (Backup for Name, Source for Icon)
+    local vload = ScriptUnit.has_extension(unit, "visual_loadout_system") and
+        ScriptUnit.extension(unit, "visual_loadout_system")
+    if vload and vload.weapon_template_from_slot then
+        weapon_template_data = vload:weapon_template_from_slot("slot_grenade_ability")
+        if not name and weapon_template_data then
+            name = weapon_template_data.name
+        end
+    end
 
-    local icon = tmpl.hud_icon
+    -- 3. Priority: Hardcoded Lookup (Requires Name)
+    if name and THROWABLE_ICON_LOOKUP[name] then
+        icon = THROWABLE_ICON_LOOKUP[name]
+    end
+
+    -- 4. Fallback: Data-driven fields
+    if not icon then
+        -- A. Ability System hud_icon
+        if grenade_ability_data and type(grenade_ability_data.hud_icon) == "string" and grenade_ability_data.hud_icon ~= "" then
+            icon = grenade_ability_data.hud_icon
+        end
+
+        -- B. Visual Loadout hud_icon
+        if not icon and weapon_template_data and weapon_template_data.hud_icon then
+            icon = weapon_template_data.hud_icon
+        end
+
+        -- C. Construct from Name
+        if not icon and name and name ~= "" then
+            icon = "content/ui/materials/icons/throwables/hud/" .. name
+        end
+    end
 
     -- Cache result if we have a valid ID
     if cache_id and icon then
@@ -116,7 +188,7 @@ end
 -- New: provide an icon override (or nil to keep default)
 ---------------------------------------------------------------------
 function TH.icon_override_for(unit, archetype_name)
-    -- Now queries the actual weapon template in the slot
+    -- Now queries the actual weapon template in the slot or fallback to ability
     return _resolve_grenade_icon(unit)
 end
 

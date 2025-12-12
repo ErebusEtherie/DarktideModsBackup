@@ -14,8 +14,15 @@ end
 -- 0) Read AAR's configured sounds (so RingHud can mirror behavior)
 -----------------------------------------------------------------------
 local function _safe_get_aar_sound(setting_id, fallback)
-    local ok, v = pcall(function() return aar:get(setting_id) end)
-    if ok and type(v) == "string" and v ~= "" then return v end
+    if not aar then return fallback end
+    local getter = aar.get or aar.get_setting
+    if type(getter) == "function" then
+        -- AAR uses colon-call style; pass self to be safe with either style.
+        local v = getter(aar, setting_id)
+        if type(v) == "string" and v ~= "" then
+            return v
+        end
+    end
     return fallback
 end
 
@@ -44,10 +51,16 @@ if not mod._aar_wwise_hook_installed then
 
     -- Expose a safe player to RingHud.lua
     mod._aar_play_event = function(event_name)
-        local world = Managers.world and Managers.world:world("level_world")
-        if not world then return false end
-        local wwise_world = Managers.world:wwise_world(world)
+        if not event_name or event_name == "" then return false end
+        local world_manager = Managers.world
+        if not world_manager or not world_manager.world then return false end
+
+        local world = world_manager:world("level_world")
+        if not world or not world_manager.wwise_world then return false end
+
+        local wwise_world = world_manager:wwise_world(world)
         if not wwise_world then return false end
+
         mod._aar_allow_wwise_play = true
         WwiseWorld.trigger_resource_event(wwise_world, event_name)
         mod._aar_allow_wwise_play = false
@@ -112,9 +125,7 @@ if not mod._aar_hook_installed then
 
             -- ---------- Debounce ----------
             local entry = st.cache[key]
-            if entry and entry.expires_at and now < entry.expires_at then
-                -- Use cached value
-            else
+            if not (entry and entry.expires_at and now < entry.expires_at) then
                 local v       = func(self_ext, ability_type, ...)
                 local ttl     = PER_TYPE_TTL[key] or COALESCE_TTL
                 entry         = { v = v, expires_at = now + ttl }
@@ -126,16 +137,17 @@ if not mod._aar_hook_installed then
             -- ---------- Edge detection (combat ability only) ----------
             if not _is_grenade_like(key) then
                 local was_ready = st.ready[key] == true
-                local is_ready  = remaining_time <= 0
+                local is_ready  = (remaining_time or 0) <= 0
 
                 if is_ready and not was_ready then
                     -- Choose AAR’s event based on charges (1 vs 2)
                     local event = mod._aar_sound_1
-                    local ok_c, charges = pcall(function()
-                        return self_ext:remaining_ability_charges(ability_type)
-                    end)
-                    if ok_c and tonumber(charges) == 2 then
-                        event = mod._aar_sound_2 or event
+                    local charges = nil
+                    if type(self_ext.remaining_ability_charges) == "function" then
+                        charges = self_ext:remaining_ability_charges(ability_type)
+                    end
+                    if tonumber(charges) == 2 and mod._aar_sound_2 and mod._aar_sound_2 ~= "" then
+                        event = mod._aar_sound_2
                     end
                     if event and mod._aar_play_event then
                         mod._aar_play_event(event)

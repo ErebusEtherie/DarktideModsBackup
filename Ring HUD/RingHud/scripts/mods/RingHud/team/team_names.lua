@@ -7,6 +7,15 @@ local Name       = mod.team_names
 
 local UISettings = require("scripts/settings/ui/ui_settings")
 
+-- WRU Icons Cache
+local WRU_ICONS  = {
+    steam = "\xEE\x81\xAB",
+    xbox = "\xEE\x81\xAC",
+    psn = "\xEE\x81\xB1",
+    ps5 = "\xEE\x81\xB1",
+    unknown = "\xEE\x81\xAF"
+}
+
 ----------------------------------------------------------------
 -- Internal helpers: "vanilla" character name
 ----------------------------------------------------------------
@@ -125,6 +134,75 @@ end
 -- Who Are You? integration (dock-only, opt-in per context)
 ----------------------------------------------------------------
 
+local function _manual_wru_modify(wru, name, account_name, account_id, ref)
+    if not (wru and wru.get) then return name end
+
+    -- Helpers local to this scope
+    local function _is_myself(chk_id)
+        local player = Managers.player and Managers.player.local_player_safe and Managers.player:local_player_safe(1)
+        local player_account_id = player and player:account_id()
+        return chk_id == player_account_id
+    end
+
+    local function _format_inline_code(property, value)
+        return string.format("{#%s(%s)}", property, value)
+    end
+
+    local function _apply_style(n, r)
+        local suffix = ""
+        if r and wru:get("enable_override_" .. r) then
+            suffix = "_" .. r
+        end
+
+        n = string.format(" (%s){#reset()}", n)
+
+        if wru:get("enable_custom_size" .. suffix) then
+            local size = wru:get("sub_name_size" .. suffix)
+            n = _format_inline_code("size", size) .. n
+        end
+
+        if wru:get("enable_custom_color" .. suffix) then
+            local custom_color = wru:get("custom_color" .. suffix)
+            if custom_color and Color[custom_color] then
+                local c = Color[custom_color](255, true)
+                local rgb = string.format("%s,%s,%s", c[2], c[3], c[4])
+                n = _format_inline_code("color", rgb) .. n
+            end
+        end
+        return n
+    end
+
+    local display_style = wru.current_style or wru:get("display_style")
+    local icon_style = wru:get("platform_icon")
+    local prefix = ""
+
+    for _, icon in pairs(WRU_ICONS) do
+        if string.match(account_name, icon) then
+            prefix = icon .. " "
+            break
+        end
+    end
+
+    if icon_style == "off" then
+        account_name = string.gsub(account_name, prefix, "")
+    elseif icon_style == "character_only" then
+        account_name = string.gsub(account_name, prefix, "")
+        name = prefix .. name
+    end
+
+    if display_style == "character_only" or (not wru:get("enable_display_self") and _is_myself(account_id)) then
+        name = name
+    elseif display_style == "account_only" then
+        name = account_name
+    elseif display_style == "character_first" then
+        name = name .. _apply_style(account_name, ref)
+    elseif display_style == "account_first" then
+        name = account_name .. _apply_style(name, ref)
+    end
+
+    return name
+end
+
 -- Apply who_are_you's string additions to a (possibly tinted) display name.
 -- Context:
 --   - Only used when `context == "docked"`.
@@ -174,32 +252,20 @@ local function _apply_who_are_you(base, player, context)
     -- Prefer WRU's own helper for resolving account display name, if present.
     local account_name = nil
     if type(wru.account_name) == "function" then
+        -- WRU defines account_name on the mod object, but logic suggests passing id.
         local ok_ac, result = pcall(wru.account_name, account_id)
         if ok_ac and type(result) == "string" and result ~= "" then
             account_name = result
         end
     end
 
-    -- Try any formatter WRU chooses to expose:
-    --   • first: method/field on the mod table,
-    --   • then: a global (for older/newer versions).
-    local fn = nil
-    if type(wru.modify_character_name) == "function" then
-        fn = function(name)
-            return wru:modify_character_name(name, account_name, account_id, "hud")
-        end
-    elseif type(modify_character_name) == "function" then
-        fn = function(name)
-            return modify_character_name(name, account_name, account_id, "hud")
-        end
-    end
-
-    if not fn then
-        -- No exported formatter: leave base unchanged.
+    -- Prevent crash: WRU requires a valid account_name string to perform matching.
+    if not account_name then
         return base
     end
 
-    local ok_fmt, modified = pcall(fn, base)
+    -- Use our internal manual formatter to ensure it works even if WRU api is private
+    local ok_fmt, modified = pcall(_manual_wru_modify, wru, base, account_name, account_id, "team_panel")
     if ok_fmt and type(modified) == "string" and modified ~= "" then
         return modified
     end
@@ -211,50 +277,102 @@ end
 -- True Level integration (dock-only, opt-in per context)
 ----------------------------------------------------------------
 
+-- [NEW] Manual TL formatter to meet specific constraints:
+-- 1. Format/tint true level number (as per TL settings).
+-- 2. If havoc > 0, append "." + havoc, same tint as havoc.
+-- 3. No spaces between level, dot, havoc.
+-- 4. No glyphs.
+local function _manual_tl_modify(tl, base, character_id, ref)
+    if not (tl and tl.get_true_levels) then return base end
+
+    local ok, true_levels = pcall(tl.get_true_levels, character_id)
+    if not (ok and true_levels) then return base end
+
+    -- Helper to resolve TL settings (handles boolean/"on" logic)
+    local function get_tl_setting(key)
+        local val = tl:get(key .. "_" .. ref)
+        local global = tl:get(key)
+
+        if val == "use_global" then
+            val = global
+        elseif type(global) == "boolean" then
+            if val == "on" then
+                val = true
+            elseif val == "off" then
+                val = false
+            end
+        end
+        return val
+    end
+
+    local function apply_tl_color(text, color_name)
+        if not color_name or color_name == "default" or not Color[color_name] then
+            return string.format("{#color(255,255,255)}%s{#reset()}", text)
+        end
+
+        local c = Color[color_name](255, true)
+        if not c then
+            return string.format("{#color(255,255,255)}%s{#reset()}", text)
+        end
+
+        return string.format("{#color(%d,%d,%d)}%s{#reset()}", c[2], c[3], c[4], text)
+    end
+
+    -- 1. Level Number
+    local display_style = get_tl_setting("display_style")
+    local lvl_str = ""
+
+    if display_style == "total" and true_levels.true_level then
+        lvl_str = tostring(true_levels.true_level)
+    elseif display_style == "separate" and true_levels.additional_level then
+        lvl_str = string.format("%s (+%s)", true_levels.current_level, true_levels.additional_level)
+    else
+        lvl_str = tostring(true_levels.current_level)
+    end
+
+    local lvl_color = get_tl_setting("level_color")
+    lvl_str = apply_tl_color(lvl_str, lvl_color)
+
+    -- 2. Havoc Rank
+    local havoc_str = ""
+    local enable_havoc = get_tl_setting("enable_havoc_rank")
+    -- Resolve enable_havoc (boolean or string)
+    if enable_havoc == true or enable_havoc == "on" then
+        local rank = true_levels.havoc_rank
+        if rank and rank > 0 then
+            local content = "." .. tostring(rank)
+            local h_color = get_tl_setting("havoc_rank_color")
+            havoc_str = apply_tl_color(content, h_color)
+        end
+    end
+
+    -- 3. Assembly
+    -- "No spaces between the true level, the "." and the havoc rank"
+    local full_tl = lvl_str .. havoc_str
+
+    if full_tl ~= "" then
+        -- Separator between Name and TL.
+        return base .. " " .. full_tl
+    end
+
+    return base
+end
+
 local function _apply_true_level(base, player, profile, context)
-    if not base or base == "" then
-        return base
-    end
-
-    -- Only docked HUD paths should get TL additions.
-    if context ~= "docked" then
-        return base
-    end
-
-    if type(get_mod) ~= "function" then
-        return base
-    end
+    if not base or base == "" then return base end
+    if context ~= "docked" then return base end
+    if type(get_mod) ~= "function" then return base end
 
     local tl = get_mod("true_level")
-    if not tl then
-        return base
-    end
-
-    -- Documented API: mod.get_true_levels(character_id) + mod.replace_level(text, true_levels, reference, need_adding)
-    local get_true_levels = tl.get_true_levels
-    local replace_level   = tl.replace_level
-
-    if type(get_true_levels) ~= "function" or type(replace_level) ~= "function" then
-        return base
-    end
+    if not tl then return base end
 
     local char_id = profile and profile.character_id
-    if not char_id then
-        return base
-    end
+    if not char_id then return base end
 
-    -- NOTE: true_level defines these as plain functions on the mod table, not methods.
-    -- Do NOT pass `tl` as a self argument here.
-    local ok_levels, true_levels = pcall(get_true_levels, char_id)
-    if not ok_levels or not true_levels then
-        return base
-    end
-
-    -- Reference "hud" matches TL's own HUD hooks; `need_adding = true` mirrors
-    -- the Team Panel behaviour so TL can decide whether/where to inject.
-    local ok_fmt, modified = pcall(replace_level, base, true_levels, "hud", true)
-    if ok_fmt and type(modified) == "string" and modified ~= "" then
-        return modified
+    -- Use custom formatter (ignores tl.replace_level)
+    local ok, res = pcall(_manual_tl_modify, tl, base, char_id, "team_panel")
+    if ok and res then
+        return res
     end
 
     return base
@@ -275,7 +393,6 @@ local function _colored_markup(text, tint_argb255)
     local t = tint_argb255
     if not t or type(t) ~= "table" then
         -- No tint: return raw text (no markup).
-        -- (Primary-only trimming will just keep the whole string in this case.)
         return text
     end
 
@@ -283,21 +400,7 @@ local function _colored_markup(text, tint_argb255)
     local g = t[3] or 255
     local b = t[4] or 255
 
-    -- Layout:
-    --   {#color(r,g,b)} PRIMARY {#color(255,255,255)}{#reset()}
-    --
-    -- IMPORTANT:
-    --  • This is called ONLY on the *primary* name segment (glyph+name),
-    --    BEFORE Who Are You? and True Level append their own extras.
-    --  • That means WHITE_TAG marks the end of the primary segment.
-    --  • RingHud_state_team’s "primary_only" mode:
-    --       - finds the FIRST WHITE_TAG,
-    --       - keeps everything before it,
-    --       - appends "{#reset()}".
-    --
-    -- The docked HUD then appends WRU/TL additions *after* this tinted block,
-    -- so floating/nameplate HUDs stay WRU/TL-free while docked tiles get the
-    -- extra lines with their own fonts/colours.
+    -- Layout: {#color(r,g,b)} PRIMARY {#color(255,255,255)}{#reset()}
     return string.format("{#color(%d,%d,%d)}%s%s{#reset()}", r, g, b, text, WHITE_TAG)
 end
 
@@ -309,8 +412,6 @@ local function _build_primary_plain(player, profile, optional_prefix)
     local prof   = profile or _safe_profile(player)
     local name   = _default_character_name(player, prof)
 
-    -- Prefer an explicit prefix from callers; otherwise derive one from
-    -- the current team_name_icon mode + archetype glyph.
     local prefix = optional_prefix
     if prefix == nil then
         prefix = Name.glyph_prefix(player, prof)
@@ -325,25 +426,6 @@ end
 
 ----------------------------------------------------------------
 -- Single compose function
--- Signature kept for existing call-sites:
---   player, profile, tint_argb255, seeded_text, optional_prefix, context_or_opts?
---
--- New optional 6th argument:
---   • string "docked" | "floating" | whatever
---   • or a table with `context` / `ref` fields.
---
--- Behaviour:
---   • If seeded_text is non-empty, callers should use it directly (current
---     RingHud_state_team behaviour) and *not* pass it here.
---   • Otherwise:
---       1. Build PRIMARY = [glyph prefix?][default_character_name]
---       2. Apply slot-tint and WHITE_TAG via _colored_markup(PRIMARY, tint)
---          ⇒ this gives the shared "base, tinted" name used by BOTH:
---             - floating/nameplates (no WRU/TL),
---             - docked tiles (with WRU/TL appended).
---       3. If context == "docked", feed the tinted primary string through
---          who_are_you and true_level, which may append extra lines / markup.
---       4. Return the final string (already tinted; no further colouring).
 ----------------------------------------------------------------
 function Name.compose(player, profile, tint_argb255, seeded_text, optional_prefix, context_or_opts)
     -- Decode optional context
@@ -354,9 +436,6 @@ function Name.compose(player, profile, tint_argb255, seeded_text, optional_prefi
         context = context_or_opts.context or context_or_opts.ref
     end
 
-    -- If a seeded string is provided, the current RingHud code paths
-    -- handle it without calling Name.compose, so we don't special-case
-    -- seeded_text here. We always build a fresh primary.
     local primary_plain, prof = _build_primary_plain(player, profile, optional_prefix)
 
     -- Step 1: base, slot-tinted primary name (glyph + name), with WHITE_TAG
@@ -364,12 +443,25 @@ function Name.compose(player, profile, tint_argb255, seeded_text, optional_prefi
     local tinted_primary = _colored_markup(primary_plain, tint_argb255)
 
     -- Step 2: docked tiles get WRU/TL applied on top of the tinted primary.
-    -- Floating/nameplate callers pass context "floating" and remain WRU/TL-free.
     local result = tinted_primary
 
     if context == "docked" then
+        -- [NEW] For docked mode, re-apply the slot tint after the primary block.
+        -- This ensures default-colored text from WRU/TL inherits the slot tint.
+        if tint_argb255 and type(tint_argb255) == "table" then
+            local r = tint_argb255[2] or 255
+            local g = tint_argb255[3] or 255
+            local b = tint_argb255[4] or 255
+            result = result .. string.format("{#color(%d,%d,%d)}", r, g, b)
+        end
+
         result = _apply_who_are_you(result, player, context)
         result = _apply_true_level(result, player, prof, context)
+
+        -- [NEW] Close any open color tags from our re-application
+        if tint_argb255 then
+            result = result .. "{#reset()}"
+        end
     end
 
     return result
@@ -377,25 +469,17 @@ end
 
 ----------------------------------------------------------------
 -- Convenience helper for floating/nameplate HUDs
---
--- This now returns EXACTLY the "base, tinted" primary name:
---   • glyph + name, if icon0 mode is active,
---   • slot-coloured via _colored_markup(...),
---   • with a WHITE_TAG sentinel at the end of the primary segment,
---   • and NO WRU / True Level additions.
 ----------------------------------------------------------------
 function Name.default(player)
     local prof = _safe_profile(player)
     local tint = nil
 
     if type(mod.team_slot_tint_argb) == "function" then
-        -- marker is nil here; we only care about the player slot index
         tint = mod.team_slot_tint_argb(player, nil)
     end
 
     local primary_plain = _build_primary_plain(player, prof, nil)
 
-    -- Floating/nameplate use: no WRU/TL; just base tinted primary.
     return _colored_markup(primary_plain, tint)
 end
 

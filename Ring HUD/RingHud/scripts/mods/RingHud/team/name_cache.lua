@@ -2,7 +2,8 @@
 local mod = get_mod("RingHud"); if not mod then return {} end
 
 -- Unified composer (WRU → TL parity, RingHud fallback)
-local Name = mod:io_dofile("RingHud/scripts/mods/RingHud/team/name")
+local Name = mod:io_dofile("RingHud/scripts/mods/RingHud/team/team_names")
+local U    = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
 
 ----------------------------------------------------------------
 -- Time helper (UI time preferred, then gameplay, then os.clock)
@@ -16,25 +17,42 @@ local function _now()
 end
 
 ----------------------------------------------------------------
--- Small utilities
+-- Small utilities (no pcalls; guard by type checks)
 ----------------------------------------------------------------
-local function _argb255_equal(a, b) -- TODO move to util?
-    if a == b then return true end
-    if not a or not b then return false end
-    return a[1] == b[1] and a[2] == b[2] and a[3] == b[3] and a[4] == b[4]
+local function _safe_profile(player)
+    if not player then return nil end
+    if type(player.profile) == "function" then
+        return player:profile()
+    end
+    return rawget(player, "profile")
 end
 
-local function _safe_profile(player)
-    local ok, prof = pcall(function() return player and player:profile() end)
-    if ok then return prof end
-    return nil
+local function _safe_peer_id(player)
+    if not player then return "?" end
+    if type(player.peer_id) == "function" then
+        local v = player:peer_id()
+        if v ~= nil then return tostring(v) end
+    end
+    local raw = rawget(player, "peer_id")
+    if raw ~= nil then return tostring(raw) end
+    return "?"
+end
+
+local function _safe_slot(player)
+    if not player then return "?" end
+    if type(player.slot) == "function" then
+        local v = player:slot()
+        if v ~= nil then return v end
+    end
+    local raw = rawget(player, "slot")
+    return raw ~= nil and raw or "?"
 end
 
 -- Try to form a key that changes when character identity or slot changes.
 local function _player_key(player)
     if not player then return "nil" end
-    local slot = (player.slot and player:slot()) or "?"
-    local peer = (player.peer_id and player:peer_id()) or "?"
+    local slot = _safe_slot(player)
+    local peer = _safe_peer_id(player)
     local prof = _safe_profile(player)
     local cid  = (prof and (prof.character_id or prof.unique_id or prof.id)) or (prof and prof.name) or "?"
     return tostring(peer) .. "|" .. tostring(slot) .. "|" .. tostring(cid)
@@ -59,7 +77,15 @@ end
 function mod.name_cache:invalidate_for_player(player)
     if not player then return end
     local key = _player_key(player)
-    self._data[key] = nil
+    -- Invalidate broadly (prefix variations are suffixes to the key)
+    -- Since we can't easily regex keys, wiping the specific one is tricky if we don't know the current prefix.
+    -- Simple approach: iterate and clear.
+    local partial = key
+    for k, _ in pairs(self._data) do
+        if string.sub(k, 1, #partial) == partial then
+            self._data[k] = nil
+        end
+    end
 end
 
 ----------------------------------------------------------------
@@ -67,9 +93,21 @@ end
 -- Returns the composed WRU→TL string (or RingHud fallback). Never throws.
 -- NOTE: Composition is delegated to Name.compose to ensure 1:1 parity.
 ----------------------------------------------------------------
-function mod.name_cache:compose_team_name(player, slot_tint_argb255)
-    local now          = _now()
-    local key          = _player_key(player)
+function mod.name_cache:compose_team_name(player, slot_tint_argb255, optional_prefix, context_or_opts)
+    local now = _now()
+
+    -- Helper to stringify context for keying
+    local ctx_str = ""
+    if type(context_or_opts) == "string" then
+        ctx_str = context_or_opts
+    elseif type(context_or_opts) == "table" and context_or_opts.context then
+        ctx_str = tostring(context_or_opts.context)
+    end
+
+    -- Include prefix and context in key so changing settings/context (docked vs floating)
+    -- creates distinct cache entries.
+    local key          = _player_key(player) .. "|" .. (optional_prefix or "") .. "|" .. ctx_str
+
     local rec          = self._data[key]
     local prof         = _safe_profile(player)
 
@@ -80,7 +118,7 @@ function mod.name_cache:compose_team_name(player, slot_tint_argb255)
     else
         if (now - (rec.t or 0)) >= (self._refresh_interval_s or 1.25) then
             need_refresh = true
-        elseif not _argb255_equal(rec.tint, slot_tint_argb255) then
+        elseif not U.colors_equal(rec.tint, slot_tint_argb255) then
             need_refresh = true
         elseif rec.profile ~= prof then
             need_refresh = true
@@ -92,8 +130,8 @@ function mod.name_cache:compose_team_name(player, slot_tint_argb255)
     end
 
     -- Delegate to the unified composer (no seeded_text here so it recomputes)
-    local ok, composed = pcall(Name.compose, player, prof, slot_tint_argb255, nil)
-    composed = (ok and composed) or "?"
+    local composed = Name and Name.compose and
+        Name.compose(player, prof, slot_tint_argb255, nil, optional_prefix, context_or_opts) or "?"
 
     -- Store last-known-good
     self._data[key] = {

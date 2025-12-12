@@ -20,6 +20,7 @@ local pocketable_colors  = {
     syringe_power_boost_pocketable   = { color = mod.PALETTE_ARGB255.POWER_RED },
     syringe_speed_boost_pocketable   = { color = mod.PALETTE_ARGB255.SPEED_BLUE },
     syringe_ability_boost_pocketable = { color = mod.PALETTE_ARGB255.COOLDOWN_YELLOW },
+    syringe_broker_pocketable        = { color = mod.PALETTE_ARGB255.PUNKY_PINK },
 
     medical_crate_pocketable         = { color = mod.PALETTE_ARGB255.HEALTH_GREEN },
     ammo_cache_pocketable            = { color = mod.PALETTE_ARGB255.SPEED_BLUE },
@@ -34,6 +35,7 @@ local STIMM_KIND_BY_NAME = {
     syringe_power_boost_pocketable   = "power",
     syringe_speed_boost_pocketable   = "speed",
     syringe_ability_boost_pocketable = "ability",
+    syringe_broker_pocketable        = "broker",
 }
 
 -- Map known crate/tome/grimoire names -> semantic kind
@@ -162,6 +164,103 @@ function P.stimm_icon_and_color(unit)
 end
 
 -- ===================================
+-- Vanilla HUD pocketable tint helper
+-- ===================================
+-- This is called from vanilla_hud_manager via:
+--   mod.team_pocketables.apply_vanilla_tints(panel_element)
+--
+-- It knows about vanilla team panel widget names ('pocketable',
+-- 'pocketable_small') and applies RingHud/RecolorStimms colours,
+-- preserving whatever alpha vanilla is using.
+function P.apply_vanilla_tints(element_instance)
+    if not mod:is_enabled() then
+        return
+    end
+
+    if not (mod._settings) then
+        return
+    end
+
+    local mode = mod._settings.team_hud_mode
+
+    -- Only modes where the vanilla team panel is actually drawn (matches RingHud.lua)
+    if mode ~= "team_hud_disabled"
+        and mode ~= "team_hud_floating_vanilla"
+        and mode ~= "team_hud_floating_thin"
+        and mode ~= "team_hud_icons_vanilla"
+    then
+        return
+    end
+
+    local widgets_by_name = element_instance._widgets_by_name
+    if not widgets_by_name then
+        return
+    end
+
+    local player = element_instance._player
+        or (element_instance._data and element_instance._data.player)
+    local unit = player and player.player_unit
+
+    if not unit or not Unit.alive(unit) then
+        return
+    end
+
+    -- Crate (slot_pocketable)
+    local crate_widget = widgets_by_name.pocketable
+    if crate_widget and crate_widget.style and crate_widget.style.texture then
+        local _, crate_color = P.crate_icon_and_color(unit)
+        local style_color = crate_widget.style.texture.color
+
+        if crate_color then
+            if style_color then
+                -- Preserve whatever alpha vanilla is using; just overwrite RGB
+                local a = style_color[1]
+                style_color[2] = crate_color[2] or style_color[2]
+                style_color[3] = crate_color[3] or style_color[3]
+                style_color[4] = crate_color[4] or style_color[4]
+                style_color[1] = a
+            else
+                crate_widget.style.texture.color = {
+                    255,
+                    crate_color[2] or 255,
+                    crate_color[3] or 255,
+                    crate_color[4] or 255,
+                }
+            end
+
+            crate_widget.dirty = true
+        end
+    end
+
+    -- Stimm (slot_pocketable_small)
+    local stimm_widget = widgets_by_name.pocketable_small
+    if stimm_widget and stimm_widget.style and stimm_widget.style.texture then
+        local _, stimm_color = P.stimm_icon_and_color(unit)
+        local style_color = stimm_widget.style.texture.color
+
+        if stimm_color then
+            if style_color then
+                -- Again, preserve alpha and just apply RGB from RingHud/RecolorStimms
+                local a = style_color[1]
+                style_color[2] = stimm_color[2] or style_color[2]
+                style_color[3] = stimm_color[3] or style_color[3]
+                style_color[4] = stimm_color[4] or style_color[4]
+                style_color[1] = a
+            else
+                stimm_widget.style.texture.color = {
+                    255,
+                    stimm_color[2] or 255,
+                    stimm_color[3] or 255,
+                    stimm_color[4] or 255,
+                }
+            end
+
+            stimm_widget.dirty = true
+        end
+    end
+end
+
+-- ===================================
 -- Context opacity helpers (exported)
 -- ===================================
 -- These are *pure transforms* used by pocketables_visibility.lua:
@@ -214,9 +313,19 @@ function P.opacity_for_medical_crate(carrier_hp_frac, group_hp_frac)
 end
 
 -- Ammo cache opacity:
--- • `carrier_reserve_frac` is the carrier’s own reserve fraction (0..1)
--- • `group_ammo_need` is the team-wide ammo-need metric (0..1, where 1 = huge need).
--- We primarily use group_ammo_need; if it’s nil, we derive need from carrier_reserve_frac.
+-- Inputs (both are expected to be *scalar* 0..1 values from team state):
+-- • `carrier_reserve_frac` – this ally’s reserve fraction
+--      (typically ally_state.counters.reserve_frac, already derived from 1.10
+--       scalar-or-array reserves).
+-- • `group_ammo_need` – team-wide ammo-need metric in [0,1], where 1 = huge need
+--      (e.g. a pre-baked “team_ammo_need” rather than raw component fields).
+--
+-- Behaviour:
+-- • If group_ammo_need is provided, it is used directly.
+-- • Otherwise, need is derived from the carrier’s reserve fraction as (1 - frac).
+-- • No direct reads of current_ammunition_reserve / max_ammunition_reserve
+--   happen here; those are all centralised in the state builders.
+--
 -- Returns integer alpha ∈ [0,255]
 function P.opacity_for_ammo_cache(carrier_reserve_frac, group_ammo_need)
     local need
@@ -231,6 +340,25 @@ function P.opacity_for_ammo_cache(carrier_reserve_frac, group_ammo_need)
     local a = math.floor(255 * need + 0.5)
     if a < 0 then a = 0 elseif a > 255 then a = 255 end
     return a
+end
+
+function P.stimm_cooldown_state(unit)
+    if not unit or not Unit.alive(unit) then return 0, 0 end
+
+    local ability_ext = ScriptUnit.has_extension(unit, "ability_system") and ScriptUnit.extension(unit, "ability_system")
+    if not ability_ext then return 0, 0 end
+
+    local ABILITY_NAME = "pocketable_ability"
+
+    if ability_ext.ability_is_equipped and ability_ext:ability_is_equipped(ABILITY_NAME) then
+        -- Optional: verify it is the broker group if you want to be extra safe,
+        -- but usually checking the slot is enough if they are carrying the item.
+        local rem = ability_ext:remaining_ability_cooldown(ABILITY_NAME) or 0
+        local max = ability_ext:max_ability_cooldown(ABILITY_NAME) or 0
+        return rem, max
+    end
+
+    return 0, 0
 end
 
 return P

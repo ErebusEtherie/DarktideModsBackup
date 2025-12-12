@@ -8,5 +8,9 @@ return {
 		en = "Make the character selection screen better",
 		ru = "CharacterGrid - Улучшите экран выбора персонажей.",
 		["zh-cn"] = "优化角色选择界面",
+	},
+	character_count = {
+		en = "Number of characters to display in grid",
+		ru = "Количество персонажей для отображения в сетке",
 	}
 }

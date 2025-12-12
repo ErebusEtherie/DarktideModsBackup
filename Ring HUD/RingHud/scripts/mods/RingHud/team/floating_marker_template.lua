@@ -2,16 +2,19 @@
 local mod = get_mod("RingHud"); if not mod then return end
 
 -- Reuse RingHud helpers where still needed in-template
-local C                           = mod:io_dofile("RingHud/scripts/mods/RingHud/team/constants")
-local WM                          = mod:io_dofile("RingHud/scripts/mods/RingHud/team/widgets_marker")
+local C                           = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/constants")
+local WM                          = mod:io_dofile("RingHud/scripts/mods/RingHud/core/RingHud_definitions_team_nameplate")
 
 -- View-model + appliers (Option A: move the art, not the container)
-local VM                          = mod:io_dofile("RingHud/scripts/mods/RingHud/team/markers/vm")
+local RingHud_state_team          = mod:io_dofile("RingHud/scripts/mods/RingHud/core/RingHud_state_team")
 local Apply                       = mod:io_dofile("RingHud/scripts/mods/RingHud/team/markers/apply")
 
 -- Shared edge-packing module (single source of truth)
-local Edge                        = (mod.team_edge_stack or mod:io_dofile("RingHud/scripts/mods/RingHud/team/markers/edge_stack"))
+local Edge                        = (mod.team_edge_stack or mod:io_dofile("RingHud/scripts/mods/RingHud/systems/edge_stack"))
 mod.team_edge_stack               = Edge -- ensure it's published under mod.*
+
+-- NEW: fragment-space helpers (virtual 1920×1080)
+local UIResolution                = require("scripts/managers/ui/ui_resolution")
 
 -- ############################################
 -- Template fields (World Marker configuration)
@@ -46,34 +49,30 @@ end
 -- Clamp margins:
 --  * Left/Right  = 0.7 × TILE_WIDTH
 --  * Top/Bottom  = 0.7 × TILE_WIDTH
+-- In fragment space, then normalize by 1920/1080.
 -- =========================
-local function _resolution_px()
-    local w = (rawget(_G, "RESOLUTION_LOOKUP") and RESOLUTION_LOOKUP.width) or 1920
-    local h = (rawget(_G, "RESOLUTION_LOOKUP") and RESOLUTION_LOOKUP.height) or 1080
-    return w, h
+local function _fragments()
+    return UIResolution.width_fragments(), UIResolution.height_fragments() -- 1920,1080
 end
 
 local function _compute_one_tile_margins()
-    local s = (mod._settings and mod._settings.team_tiles_scale) or 1
-    local w, h = _resolution_px()
-    local tile_w = C.MARKER_SIZE_BASE[1] * s
+    local s      = (mod._settings and mod._settings.team_tiles_scale) or 1
+    local fw, fh = _fragments()
+    local tile_w = C.MARKER_SIZE_BASE[1] * s -- fragments
 
-    local lr = (tile_w * 0.7) / w -- left/right: 0.7 × tile width
-    local ud = (tile_w * 0.7) / h -- top/bottom: 0.7 × tile width
+    local lr     = (tile_w * 0.7) / fw       -- normalized (0..1)
+    local ud     = (tile_w * 0.7) / fh       -- normalized (0..1)
 
     return { left = lr, right = lr, up = ud, down = ud }
 end
 
-template._last_margin_w = nil
-template._last_margin_h = nil
+-- Recompute margins if scale changes or resolution changed this frame.
 template._last_margin_s = nil
-
 local function _refresh_screen_margins_if_needed()
     local s = (mod._settings and mod._settings.team_tiles_scale) or 1
-    local w, h = _resolution_px()
-    if w ~= template._last_margin_w or h ~= template._last_margin_h or s ~= template._last_margin_s then
+    if (RESOLUTION_LOOKUP and RESOLUTION_LOOKUP.modified) or s ~= template._last_margin_s then
         template.screen_margins = _compute_one_tile_margins()
-        template._last_margin_w, template._last_margin_h, template._last_margin_s = w, h, s
+        template._last_margin_s = s
     end
 end
 
@@ -147,33 +146,39 @@ function template.on_exit(widget, marker, tpl)
     -- nothing special
 end
 
--- Robust peer id extraction for this template
+-- Robust peer id extraction for this template (no pcalls)
 local function _peer_id_for_player(player)
     if not player then return nil end
-    if player.peer_id then
-        local ok, val = pcall(function() return player:peer_id() end)
-        if ok and val ~= nil then return tostring(val) end
-        local pid = rawget(player, "peer_id")
-        if type(pid) == "string" or type(pid) == "number" then return tostring(pid) end
+
+    if type(player.peer_id) == "function" then
+        local val = player:peer_id()
+        if val ~= nil then return tostring(val) end
     end
-    if player.unique_id then
-        local ok, uid = pcall(function() return player:unique_id() end)
-        if ok and uid ~= nil then return tostring(uid) end
+    local pid = rawget(player, "peer_id")
+    if type(pid) == "string" or type(pid) == "number" then
+        return tostring(pid)
     end
-    if player.name then
-        local ok, nm = pcall(function() return player:name() end)
-        if ok and nm ~= nil then return "name:" .. tostring(nm) end
+
+    if type(player.unique_id) == "function" then
+        local uid = player:unique_id()
+        if uid ~= nil then return tostring(uid) end
     end
+
+    if type(player.name) == "function" then
+        local nm = player:name()
+        if nm ~= nil then return "name:" .. tostring(nm) end
+    end
+
     return nil
 end
 
 -- Main per-frame update — thin orchestrator:
 --  1) capture bases (once) + ensure per-frame reset
---  2) build/apply VM (engine clamp stays on)
+--  2) build/apply RingHud_state_team (engine clamp stays on)
 --  3) APPLY EDGE PUSH LAST (so Apply.apply_all can’t overwrite it)
 function template.update_function(parent, ui_renderer, widget, marker, tpl, dt, t)
     local unit = marker.unit
-    if not unit or not HEALTH_ALIVE[unit] then
+    if not (unit and Unit.alive(unit)) then
         marker.remove = true
         return
     end
@@ -194,10 +199,21 @@ function template.update_function(parent, ui_renderer, widget, marker, tpl, dt, 
     Edge.ensure_bases(marker, widget.style)
 
     -- 2) Build view-model + apply to widget
-    local player_opt = (marker.data and marker.data.player) or (Managers.player and Managers.player:player_by_unit(unit))
+    local player_opt
+    do
+        if marker.data and marker.data.player then
+            player_opt = marker.data.player
+        else
+            local pm = Managers.player
+            if pm and pm.player_by_unit then
+                player_opt = pm:player_by_unit(unit)
+            end
+        end
+    end
+
     local pid = _peer_id_for_player(player_opt)
 
-    local vm = VM.build(unit, marker, {
+    local vm = RingHud_state_team.build(unit, marker, {
         player     = player_opt,
         force_show = ((mod.show_all_hud_hotkey_active == true) and (_mode() ~= "team_hud_disabled")),
         t          = t,

@@ -76,18 +76,18 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
         end
     end
 
-    local mode            = mod._settings.team_hud_mode
+    local s               = mod._settings or {}
+    local mode            = s.team_hud_mode or "team_hud_docked"
     local mode_is_docked  = (mode == "team_hud_docked"
-        or mode == "team_hud_floating_docked"
-        or mode == "team_hud_icons_docked")      -- NEW
+        or mode == "team_hud_floating_docked")
     local players         = U.sorted_teammates() -- deterministic order, excludes local player
 
     -- Force-show is ONLY the dedicated hotkey, never ADS; and only when team HUD isn't disabled
     local force_show_team = (mod.show_all_hud_hotkey_active == true) and (mode ~= "team_hud_disabled")
 
-    -- In 'disabled', 'floating_vanilla', and 'icons_vanilla' modes: never render docked tiles
-    if mode == "team_hud_disabled" or mode == "team_hud_floating_vanilla" or mode == "team_hud_icons_vanilla" then -- NEW
-        for i = 1, 4 do
+    -- In 'disabled' and 'floating_vanilla' modes: never render docked tiles
+    if mode == "team_hud_disabled" or mode == "team_hud_floating_vanilla" then
+        for i = 1, 3 do
             local tile_w = self._widgets_by_name[string.format("rh_team_tile_%d", i)]
             local name_w = self._widgets_by_name[string.format("rh_team_name_%d", i)]
             if tile_w then tile_w.visible = false end
@@ -101,7 +101,7 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
     -- Floating-only (non-docked) path (legacy 'team_hud_floating' with respawn-only exception)
     if not mode_is_docked then
         if mode ~= "team_hud_floating" then
-            for i = 1, 4 do
+            for i = 1, 3 do
                 local tile_w = self._widgets_by_name[string.format("rh_team_tile_%d", i)]
                 local name_w = self._widgets_by_name[string.format("rh_team_name_%d", i)]
                 if tile_w then tile_w.visible = false end
@@ -122,7 +122,12 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
                 force_show = force_show_team,
                 peer_id    = _peer_id(p),
             })
-            if ally_tbl and ally_tbl.status and ally_tbl.status.kind == "dead" and ally_tbl.assist and ally_tbl.assist.respawn_digits then
+            if ally_tbl
+                and ally_tbl.status
+                and ally_tbl.status.kind == "dead"
+                and ally_tbl.assist
+                and ally_tbl.assist.respawn_digits
+            then
                 any_respawns = true
                 break
             end
@@ -133,7 +138,7 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
 
         if not any_respawns then
             -- Hide all tiles/names and bail
-            for i = 1, 4 do
+            for i = 1, 3 do
                 local tile_w = self._widgets_by_name[string.format("rh_team_tile_%d", i)]
                 local name_w = self._widgets_by_name[string.format("rh_team_name_%d", i)]
                 if tile_w then tile_w.visible = false end
@@ -143,7 +148,7 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
         end
 
         -- Populate only tiles that are in respawn state
-        for i = 1, 4 do
+        for i = 1, 3 do
             local tile_w = self._widgets_by_name[string.format("rh_team_tile_%d", i)]
             local name_w = self._widgets_by_name[string.format("rh_team_name_%d", i)]
             if not tile_w or not name_w then goto continue end
@@ -190,11 +195,11 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
         return
     end
 
-    -- Docked (normal, "floating_docked", and "icons_docked")
+    -- Docked (normal and "floating_docked")
     self._show_respawns_in_floating = false
     self._switching_any_visible = false
 
-    for i = 1, 4 do
+    for i = 1, 3 do
         local tile_wname = string.format("rh_team_tile_%d", i)
         local name_wname = string.format("rh_team_name_%d", i)
 
@@ -212,13 +217,10 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
             goto continue
         end
 
-        local unit        = player.player_unit
+        local unit     = player.player_unit
 
-        -- Compose plain vanilla teammate name
-        local name_str    = Name.default(player)
-        local fake_marker = { data = { rh_name_composed = name_str } }
-
-        local ally_tbl    = RingHud_state_team.build(unit, fake_marker, {
+        -- Pass nil marker to allow decorations (Who Are You, True Level) on docked tiles
+        local ally_tbl = RingHud_state_team.build(unit, nil, {
             player     = player,
             t          = t,
             force_show = force_show_team,
@@ -246,12 +248,16 @@ end
 
 -- Gate rendering entirely when not docked (even if element is present)
 function HudElementRingHud_team_docked:draw(dt, t, ui_renderer, render_settings, input_service)
-    if not (mod._settings.team_hud_mode == "team_hud_docked"
-            or mod._settings.team_hud_mode == "team_hud_floating_docked"
-            or mod._settings.team_hud_mode == "team_hud_icons_docked") -- NEW
-        and not self._show_respawns_in_floating then
+    local s    = mod._settings or {}
+    local mode = s.team_hud_mode or "team_hud_docked"
+
+    if not (mode == "team_hud_docked"
+            or mode == "team_hud_floating_docked")
+        and not self._show_respawns_in_floating
+    then
         return
     end
+
     return HudElementRingHud_team_docked.super.draw(self, dt, t, ui_renderer, render_settings, input_service)
 end
 

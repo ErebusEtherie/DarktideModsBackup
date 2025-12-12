@@ -11,6 +11,8 @@ local T                  = mod:io_dofile("RingHud/scripts/mods/RingHud/team/team
 local P                  = mod:io_dofile("RingHud/scripts/mods/RingHud/team/team_pocketables")
 local Status             = mod:io_dofile("RingHud/scripts/mods/RingHud/team/team_icon")
 local Name               = mod:io_dofile("RingHud/scripts/mods/RingHud/team/team_names")
+local NameCache          = mod.name_cache or mod:io_dofile("RingHud/scripts/mods/RingHud/team/name_cache")
+local U                  = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
 
 -- Centralised visibility gates
 mod:io_dofile("RingHud/scripts/mods/RingHud/team/visibility")
@@ -45,11 +47,10 @@ local _stimm_pickup_show_until_by_pid = {}
 local _prev_crate_kind_by_pid         = {}
 local _crate_pickup_show_until_by_pid = {}
 
+-- Per-peer reserve fraction history (for recent-change ammo vis bumps)
+local _prev_reserve_frac_by_pid       = {}
+
 -- ---------- Small locals ----------
-local function _icon_only_mode()
-    local m = mod._settings and mod._settings.team_hud_mode
-    return m == "team_hud_icons_vanilla" or m == "team_hud_icons_docked"
-end
 
 local function _archetype_glyph(profile)
     local arch = profile and profile.archetype and profile.archetype.name
@@ -116,6 +117,29 @@ local function _ability_max_cooldown(unit)
     return 0
 end
 
+-------------------------------------------------------------------------------
+-- Ammo helpers (handle scalar or array-style reserves safely)
+-------------------------------------------------------------------------------
+
+local function _secondary_reserve_frac_for_unit(unit)
+    local uds = _uds(unit)
+    if not uds then return nil end
+
+    local comp = uds:read_component("slot_secondary")
+    if not comp then return nil end
+
+    -- Use centralized helper from utils
+    local cur = U.sum_ammo_field(comp.current_ammunition_reserve)
+    local max = U.sum_ammo_field(comp.max_ammunition_reserve)
+
+    if max and max > 0 then
+        return math.clamp(cur / max, 0, 1)
+    end
+
+    -- max <= 0 ⇒ treat as infinite/unknown reserve (nil)
+    return nil
+end
+
 -- ===== Team metrics (fallbacks; use mod-provided funcs if present) =====
 local function _team_hp_average_frac()
     if mod.team_hp_average_frac then
@@ -155,8 +179,9 @@ local function _team_ammo_need()
         if v then return math.clamp(v, 0, 1) end
     end
 
-    local pm = Managers.player
-    local sum, n = 0, 0
+    local pm  = Managers.player
+    local sum = 0
+    local n   = 0
 
     if pm and pm.players then
         local players = pm:players()
@@ -164,17 +189,10 @@ local function _team_ammo_need()
             for _, p in pairs(players) do
                 local u = p and p.player_unit
                 if u and Unit.alive(u) then
-                    local uds = _uds(u)
-                    if uds then
-                        local comp = uds:read_component("slot_secondary")
-                        if comp and comp.max_ammunition_reserve and comp.max_ammunition_reserve > 0 then
-                            local frac = math.clamp(
-                                (comp.current_ammunition_reserve or 0) / comp.max_ammunition_reserve,
-                                0, 1
-                            )
-                            sum        = sum + frac
-                            n          = n + 1
-                        end
+                    local frac = _secondary_reserve_frac_for_unit(u)
+                    if frac ~= nil then
+                        sum = sum + frac
+                        n   = n + 1
                     end
                 end
             end
@@ -183,16 +201,20 @@ local function _team_ammo_need()
 
     if n == 0 then return 0 end
     local avg = math.clamp(sum / n, 0, 1)
-    return math.clamp(1 - avg, 0, 1) -- need = inverse of reserve level
+    -- Need is inverse of average reserve level (0 = topped up, 1 = starving)
+    return math.clamp(1 - avg, 0, 1)
 end
 
 -- ---------- Public: build(unit, marker, opts) ----------
+
 function RingHud_state_team.build(unit, marker, opts)
     local t               = (opts and opts.t) or ((Managers.time and Managers.time:time("ui")) or os.clock())
     local force_show      = (opts and opts.force_show == true) or false
 
-    -- Evaluate once and pass through
-    local icon_only       = _icon_only_mode()
+    -- Layout-only flag: with icon-only presets removed, this is currently
+    -- always false. If you later add a dedicated "icon-only" layout option,
+    -- wire it here from the new setting instead of team_hud_mode.
+    local icon_only       = false
 
     local player          = (opts and opts.player) or _player_for_unit(unit)
     local profile         = _safe_profile(player)
@@ -223,10 +245,15 @@ function RingHud_state_team.build(unit, marker, opts)
     local arch_is_small   = string.find(tni_setting, "icon0") ~= nil
 
     -- 3. Determine Name Composition Mode
+    local is_floating     = marker ~= nil -- Presence of marker implies floating tile logic
+
+    -- Check for "name0" (No Name). If present AND we are floating, we force the name to blank.
+    -- (Docked HUD always shows names even if "name0" is selected, as that setting applies to floating tiles.)
+    local is_name_hidden  = is_floating and string.find(tni_setting, "name0") ~= nil
+
     -- Floating HUDs with "name1" setting: Only show Primary Name (slot colored).
     -- Docked HUDs: Always show Full Name (Primary + Account + TL/WRU).
     local name_mode       = "full"
-    local is_floating     = marker ~= nil -- Presence of marker implies floating tile logic
 
     if is_floating and string.find(tni_setting, "name1") then
         name_mode = "primary_only"
@@ -234,35 +261,30 @@ function RingHud_state_team.build(unit, marker, opts)
 
     ----------------------------------------------------------------
     -- Name markup:
-    --   • If seeded_text exists (from nameplate path), treat as final
-    --     markup for floating tiles (already tinted, glyph inserted,
-    --     and explicitly WRU-free via Name.default(..., "floating")).
-    --   • Otherwise, compose from scratch and:
-    --       - apply slot tint,
-    --       - insert glyph prefix in all icon0 modes (Name.glyph_prefix),
-    --       - append the WHITE_TAG sentinel for primary trimming,
-    --       - and, for docked tiles only, allow Who Are You? additions.
     ----------------------------------------------------------------
     local name_full
-    if seeded_text and seeded_text ~= "" then
+
+    if is_name_hidden then
+        name_full = ""
+    elseif seeded_text and seeded_text ~= "" then
         -- Floating / nameplate path: respect the precomposed, WRU-free string.
         name_full = seeded_text
     else
-        -- Docked (marker == nil) or fallback path: pass explicit context so
-        -- team_names.lua can decide whether to use Who Are You?.
+        -- Docked (marker == nil) or fallback path
         local context = is_floating and "floating" or "docked"
-        name_full     = Name.compose(player, profile, tint, nil, nil, context)
+
+        if NameCache and NameCache.compose_team_name then
+            name_full = NameCache:compose_team_name(player, tint, nil, context)
+        else
+            name_full = Name.compose(player, profile, tint, nil, nil, context)
+        end
     end
 
     local name = name_full
 
-    if name_mode == "primary_only" then
-        -- The full name is guaranteed (by Name.compose / TL integration) to be
-        -- "[Prefix] [Primary] {#color(255,255,255)} ...".
-        -- The first white tag marks the end of the primary segment.
+    if not is_name_hidden and name_mode == "primary_only" then
         local white_tag_start = string.find(name_full, "{#color%(255,255,255%)}")
         if white_tag_start then
-            -- Strip everything from the white tag onwards to show only primary + prefix
             name = string.sub(name_full, 1, white_tag_start - 1) .. "{#reset()}"
         end
     end
@@ -282,19 +304,22 @@ function RingHud_state_team.build(unit, marker, opts)
     end
     local tough_state  = T.state(unit)
 
-    -- Counters (ammo reserve %, ability cooldown seconds). Visibility is centralized.
-    local reserve_frac = nil
-    do
-        local uds = _uds(unit)
-        if uds then
-            local comp = uds:read_component("slot_secondary")
-            if comp and comp.max_ammunition_reserve and comp.max_ammunition_reserve > 0 then
-                reserve_frac = math.clamp(
-                    (comp.current_ammunition_reserve or 0) / comp.max_ammunition_reserve,
-                    0, 1
-                )
+    ----------------------------------------------------------------
+    -- Counters (ammo reserve %, ability cooldown seconds).
+    -- reserve_frac is computed from secondary slot ammo; supports
+    -- both scalar and array-style reserve layouts.
+    ----------------------------------------------------------------
+    local reserve_frac = _secondary_reserve_frac_for_unit(unit)
+
+    -- Recent-change bump for team ammo visibility (per peer)
+    if pid then
+        local prev = _prev_reserve_frac_by_pid[pid]
+        if reserve_frac ~= nil and prev ~= nil and math.abs(reserve_frac - prev) > 0.001 then
+            if mod.ammo_vis_team_recent_change_bump then
+                mod.ammo_vis_team_recent_change_bump(pid)
             end
         end
+        _prev_reserve_frac_by_pid[pid] = reserve_frac
     end
 
     -- Ability cooldowns (remaining + max if known)
@@ -313,14 +338,10 @@ function RingHud_state_team.build(unit, marker, opts)
     ----------------------------------------------------------------
     -- Ability CD / toughness counter visibility
     ----------------------------------------------------------------
-    -- Ability cooldown: driven by team_munitions_* (ammo+cd modes)
     local show_cd = false
     if V and V.counters then
-        -- Keep centralized gating for context vs always, intensity, etc.
-        -- Only the first return value (CD) is used now.
         show_cd = V.counters(force_show)
     else
-        -- Fallback: simple mapping from team_munitions_* mode
         local mode = mod._settings and mod._settings.team_munitions or "team_munitions_disabled"
         if mode == "team_munitions_ammo_context_cd_enabled"
             or mode == "team_munitions_ammo_always_cd_always"
@@ -332,10 +353,8 @@ function RingHud_state_team.build(unit, marker, opts)
     ----------------------------------------------------------------
     -- Status (logic vs icon)
     ----------------------------------------------------------------
-    -- Resolve the underlying (logical) status once.
     local raw_status_kind = Status.for_unit and Status.for_unit(unit) or nil
 
-    -- Icon-facing status respects the "status icons" toggle.
     local status_kind     = raw_status_kind
     if not status_enabled then
         status_kind = nil
@@ -356,9 +375,6 @@ function RingHud_state_team.build(unit, marker, opts)
             is_pull_up                              = is_pull_up or false
         end
 
-        -- IMPORTANT:
-        --  • raw_status_kind (NOT status_kind) drives assist/respawn logic,
-        --    so it still works even when the status icon is disabled.
         if raw_status_kind == "ledge_hanging" then
             if has_assist and is_pull_up then
                 assist.show           = true
@@ -399,7 +415,6 @@ function RingHud_state_team.build(unit, marker, opts)
     local crate_show_until = nil
 
     if pid then
-        -- Teammate pickup/change latches
         local prev_sk = _prev_stimm_kind_by_pid[pid]
         if s_kind ~= nil and s_kind ~= prev_sk then
             _stimm_pickup_show_until_by_pid[pid] = (t or 0) + (C.STIMM_PICKUP_LATCH_SEC or 10)
@@ -416,8 +431,13 @@ function RingHud_state_team.build(unit, marker, opts)
     end
 
     -- Group metrics (HP + ammo need) for variable-opacity crate rules
-    local group_hp_avg     = _team_hp_average_frac()
-    local group_ammo_need  = _team_ammo_need()
+    local group_hp_avg               = _team_hp_average_frac()
+    local group_ammo_need            = _team_ammo_need()
+
+    local stimm_cd_rem, stimm_cd_max = 0, 0
+    if s_kind == "broker" then
+        stimm_cd_rem, stimm_cd_max = P.stimm_cooldown_state(unit)
+    end
 
     -- Ask centralized pocketables visibility policy for this peer
     local flags            = PV and PV.team_flags_for_peer and PV.team_flags_for_peer(pid or "unknown", {
@@ -425,6 +445,8 @@ function RingHud_state_team.build(unit, marker, opts)
         hp_frac              = hp_frac,
         ability_cd_remaining = ability_secs,
         ability_cd_max       = ability_max,
+        stimm_cd_remaining   = stimm_cd_rem,
+        stimm_cd_max         = stimm_cd_max,
         reserve_frac         = reserve_frac,
         group_hp_avg         = group_hp_avg,
         group_ammo_need      = group_ammo_need,
@@ -473,7 +495,6 @@ function RingHud_state_team.build(unit, marker, opts)
         max_wounds_segments = wounds,
         tough_overshield    = (tough_state == "overshield"),
         tough_broken        = (tough_state == "broken"),
-        -- proximity flags can be inferred by THV from mod.*; omit here
     }
 
     -- Central visibility (context/toughness_hp_visibility.lua)
@@ -495,10 +516,8 @@ function RingHud_state_team.build(unit, marker, opts)
         end
     end
 
-    -- Toughness text visibility now follows the HP text rule (team_hp_bar_*text* modes)
     local show_tough_text = hp_text_visible
 
-    -- ok: dead units are still considered “ok” so docked tiles can show respawn
     local ok_flag = is_human and ((unit ~= nil) or (raw_status_kind == "dead"))
 
     return {
@@ -509,20 +528,14 @@ function RingHud_state_team.build(unit, marker, opts)
         player                = player,
         profile               = profile,
 
-        -- carry peer id from template
         peer_id               = pid,
 
-        -- Advertise to Apply whether we’re in icon-only mode
         icon_only             = icon_only,
 
-        -- Fully-styled (markup) name string: slot-tinted, glyph-in-name
-        -- for icon0 modes, primary/secondary tags etc.
         name_markup           = name,
         arch_glyph            = glyph,
-        tint_argb255          = tint, -- {A,R,G,B}
+        tint_argb255          = tint,
 
-        -- Advertise whether the archetype widget should be visible
-        -- (icon0 => glyph lives in the name; big glyph hidden).
         show_arch_icon_widget = not arch_is_small,
 
         hp                    = {
@@ -543,8 +556,6 @@ function RingHud_state_team.build(unit, marker, opts)
         },
 
         status                = {
-            -- NOTE: kind still respects the “status icons” setting for icon rendering;
-            -- raw_status_kind is used above for assist/respawn logic.
             kind            = status_kind,
             show_icon       = status_kind ~= nil,
             icon_color_argb = status_icon_color,

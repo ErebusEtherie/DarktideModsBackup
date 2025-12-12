@@ -1,23 +1,27 @@
 -- File: RingHud/scripts/mods/RingHud/team/markers/apply.lua
 local mod = get_mod("RingHud"); if not mod then return {} end
 
+if mod.team_marker_apply then
+    return mod.team_marker_apply
+end
+
 -- Expose under mod.* for cross-file access (per your rule)
-mod.team_marker_apply        = mod.team_marker_apply or {}
-local Apply                  = mod.team_marker_apply
+mod.team_marker_apply = mod.team_marker_apply or {}
+local Apply           = mod.team_marker_apply
 
 -- Read-only deps
-local C                      = mod:io_dofile("RingHud/scripts/mods/RingHud/team/constants")
-local U                      = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
-local S                      = mod:io_dofile("RingHud/scripts/mods/RingHud/team/segments")
-local TH                     = mod:io_dofile("RingHud/scripts/mods/RingHud/team/throwables")
-local TXT                    = mod:io_dofile("RingHud/scripts/mods/RingHud/team/text")
-local Notch                  = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/notch_split")
+local C               = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/constants")
+local U               = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
+local S               = mod:io_dofile("RingHud/scripts/mods/RingHud/team/team_health")
+local TH              = mod:io_dofile("RingHud/scripts/mods/RingHud/team/team_grenades")
+local TXT             = mod:io_dofile("RingHud/scripts/mods/RingHud/team/team_ability")
+local AM              = mod:io_dofile("RingHud/scripts/mods/RingHud/team/team_ammo")
+local TT              = mod:io_dofile("RingHud/scripts/mods/RingHud/team/team_toughness")
+local Notch           = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/notch_split")
 
-local UIHudSettings          = require("scripts/settings/ui/ui_hud_settings")
+local UIHudSettings   = require("scripts/settings/ui/ui_hud_settings")
 
 -- ========= Small helpers =========
-
-local DEFAULT_TOUGHNESS_TEAL = mod.PALETTE_ARGB255.TOUGHNESS_TEAL
 
 local function _arch_name_from_profile(profile)
     return profile and profile.archetype and profile.archetype.name
@@ -36,63 +40,75 @@ local function _status_icon_for(kind)
     return (UIHudSettings.player_status_icons and UIHudSettings.player_status_icons[kind]) or nil
 end
 
--- Are we in an icon-only floating mode?
-local function _is_icon_only_mode()
-    local m = mod._settings and mod._settings.team_hud_mode
-    return m == "team_hud_icons_vanilla" or m == "team_hud_icons_docked"
-end
-
 -- ========= Sections =========
 
-local function _apply_name_and_arch(widget, vm)
+-- Name + archetype glyph
+-- IMPORTANT: name_text_value is fully markup-driven (RingHud_state_team.name_markup),
+-- including slot tint and optional glyph prefix. This function must NOT recolour
+-- the name text style; it only sets the string.
+local function _apply_name_and_arch(widget, RingHud_state_team)
     local content, style = widget.content, widget.style
     local changed = false
 
-    if content.arch_icon ~= vm.arch_glyph then
-        content.arch_icon = vm.arch_glyph
+    if content.arch_icon ~= RingHud_state_team.arch_glyph then
+        content.arch_icon = RingHud_state_team.arch_glyph
         changed = true
     end
 
     if style.arch_icon and style.arch_icon.text_color then
-        -- Accept either a palette key or a direct ARGB-255 table in vm.tint_argb255
-        local tint = vm.tint_argb255
+        -- Accept either a palette key or a direct ARGB-255 table in RingHud_state_team.tint_argb255
+        local tint = RingHud_state_team.tint_argb255
         local col =
             (type(tint) == "table" and tint) or
             (type(tint) == "string" and mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255[tint]) or
             mod.PALETTE_ARGB255.GENERIC_WHITE
-        style.arch_icon.text_color = table.clone(col)
-        changed = true
+        changed = U.set_style_text_color(style.arch_icon, col) or changed
     end
 
-    -- Name from composed markup only (suppressed in icon-only modes)
-    local final_name = (_is_icon_only_mode() and "") or ((vm and vm.name_markup) or "")
+    -- Name from composed markup only (slot-tinted, prefix-aware).
+    local final_name = (RingHud_state_team and RingHud_state_team.name_markup) or ""
 
     if content.name_text_value ~= final_name then
         content.name_text_value = final_name
         changed = true
     end
 
+    -- VISIBILITY CHECK FOR BIG ICON
+    if style.arch_icon then
+        -- Default visibility logic: big icon visible when status icon is NOT shown.
+        local visible = (RingHud_state_team.status.show_icon == false)
+
+        -- Override: If "Small" mode is active, FORCE HIDDEN
+        if RingHud_state_team.show_arch_icon_widget == false then
+            visible = false
+        end
+
+        if style.arch_icon.visible ~= visible then
+            style.arch_icon.visible = visible
+            changed = true
+        end
+    end
+
     if changed then widget.dirty = true end
 end
 
 -- Archetype-only (never touches name text)
-local function _apply_arch_only(widget, vm)
+local function _apply_arch_only(widget, RingHud_state_team)
     local content, style = widget.content, widget.style
     local changed = false
 
-    if content.arch_icon ~= vm.arch_glyph then
-        content.arch_icon = vm.arch_glyph
+    if content.arch_icon ~= RingHud_state_team.arch_glyph then
+        content.arch_icon = RingHud_state_team.arch_glyph
         changed = true
     end
 
     if style.arch_icon and style.arch_icon.text_color then
-        local tint = vm.tint_argb255
+        local tint = RingHud_state_team.tint_argb255
         local col =
             (type(tint) == "table" and tint) or
             (type(tint) == "string" and mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255[tint]) or
             mod.PALETTE_ARGB255.GENERIC_WHITE
-        style.arch_icon.text_color = table.clone(col)
-        changed = true
+        changed = U.set_style_text_color(style.arch_icon, col) or changed
     end
 
     -- Ensure name text stays blank in icon-only mode
@@ -104,99 +120,94 @@ local function _apply_arch_only(widget, vm)
     if changed then widget.dirty = true end
 end
 
-local function _apply_segments(widget, vm)
+local function _apply_segments(widget, RingHud_state_team)
     local content, style = widget.content, widget.style
+    if not (content and style and RingHud_state_team and RingHud_state_team.hp) then return end
 
-    -- Base show/hide (per wounds) + clear all corruption visibility (style overlay decides)
+    local bars_enabled = RingHud_state_team.hp.bars_enabled == true
+    local wounds       = RingHud_state_team.hp.wounds or 1
+
+    -- Base per-wound show/hide purely from bars_enabled + wounds;
+    -- corruption flags start cleared and are re-populated from S.update.
     for seg = 1, C.MAX_HP_SEGMENTS do
-        local hp_key = string.format("hp_seg_%d_visible", seg)
+        local hp_key  = string.format("hp_seg_%d_visible", seg)
+        local cor_key = string.format("cor_seg_%d_visible", seg)
+
         if seg <= C.MAX_WOUNDS_CAP then
-            content[hp_key] = seg <= vm.hp.wounds
-            content[string.format("cor_seg_%d_visible", seg)] = false
+            content[hp_key]  = bars_enabled and (seg <= wounds)
+            content[cor_key] = false
         else
-            content[hp_key] = false -- extra (+1) starts hidden; S.update may set its style.visible
+            -- Extra (+1) pass: visibility is driven by S.update + bars_enabled
+            content[hp_key] = false
         end
+    end
+
+    -- If bars are disabled by context, bail after clearing flags
+    if not bars_enabled then
+        return
     end
 
     -- Drive style via the shared segment updater (health + corruption overlay + outlines)
-    S.update(style, vm.tint_argb255, vm.hp.wounds, vm.hp.hp_frac, vm.hp.cor_frac, vm.hp.tough_state)
+    S.update(
+        style,
+        RingHud_state_team.tint_argb255,
+        wounds,
+        RingHud_state_team.hp.hp_frac,
+        RingHud_state_team.hp.cor_frac,
+        RingHud_state_team.hp.tough_state
+    )
 
     -- Mirror corruption overlay style visibility back to content flags
-    for seg = 1, vm.hp.wounds do
+    for seg = 1, wounds do
         local cs = style[string.format("cor_seg_%d", seg)]
-        if cs then content[string.format("cor_seg_%d_visible", seg)] = cs.visible or false end
-    end
-
-    -- Extra (+1) HP pass visible only if bars enabled AND S.update marked it visible
-    do
-        local ex_st = style[string.format("hp_seg_%d", C.MAX_HP_SEGMENTS)]
-        content[string.format("hp_seg_%d_visible", C.MAX_HP_SEGMENTS)] = (vm.hp.bars_enabled and ex_st and ex_st.visible) or
-            false
-    end
-
-    -- If bars are globally disabled, force-hide everything (assist bar may still show later)
-    if not vm.hp.bars_enabled then
-        for seg = 1, C.MAX_HP_SEGMENTS do
-            content[string.format("hp_seg_%d_visible", seg)] = false
-            if seg <= C.MAX_WOUNDS_CAP then
-                content[string.format("cor_seg_%d_visible", seg)] = false
-            end
+        if cs then
+            content[string.format("cor_seg_%d_visible", seg)] = cs.visible or false
         end
     end
+
+    -- Extra (+1) HP pass visible only if S.update marked it visible
+    local extra_id                                                 = string.format("hp_seg_%d", C.MAX_HP_SEGMENTS)
+    local ex_st                                                    = style[extra_id]
+    content[string.format("hp_seg_%d_visible", C.MAX_HP_SEGMENTS)] = ex_st and ex_st.visible or false
 end
 
-local function _apply_counters(widget, vm)
+-- NOTE: ammo visibility is delegated entirely to team_ammo.lua + ammo_visibility.lua.
+-- This function only forwards the scalar reserve_frac + peer_id from ally_state.
+local function _apply_counters(widget, RingHud_state_team, marker)
     local content, style = widget.content, widget.style
     local changed = false
 
-    -- ► Expose per-peer ammo “show until” latch to the widget so text.lua can read it
-    local show_until = vm.counters.reserve_show_until
-    if content._reserve_show_until ~= show_until then
-        content._reserve_show_until = show_until
-        changed = true
-    end
+    -- ► Ammo reserve text (central vis policy)
+    -- Derive a stable peer identifier if available; nil is acceptable (policy handles it).
+    local peer_id = RingHud_state_team.peer_id
+        or RingHud_state_team.peer
+        or (marker and (marker.peer_id or marker.peer))
+        or nil
 
-    TXT.update_ammo(widget, vm.counters.reserve_frac, vm.force_show)
-    TXT.update_ability_cd(widget, vm.counters.ability_secs)
+    AM.update_ammo(widget, RingHud_state_team.counters.reserve_frac, peer_id)
 
-    local cd_style = style.ability_cd_text_style
-    if cd_style and cd_style.visible ~= (vm.counters.show_cd == true) then
-        cd_style.visible = (vm.counters.show_cd == true)
-        changed = true
-    end
+    -- Ability cooldown (delegated; visibility via show_cd from RingHud_state_team)
+    TXT.update_ability_cd(widget, RingHud_state_team.counters.ability_secs, RingHud_state_team.counters.show_cd)
 
+    -- Toughness integer text (delegated; THV has already decided visibility)
+    TT.update_text(
+        widget,
+        RingHud_state_team.counters.tough_int,
+        RingHud_state_team.hp.tough_state,
+        RingHud_state_team.force_show
+    )
+
+    -- Explicit visibility application for toughness text (style.toughness_text_style)
     local tstyle = style.toughness_text_style
-    if tstyle then
-        local s = tostring(vm.counters.tough_int or 0)
-        if content.toughness_text_value ~= s then
-            content.toughness_text_value = s
-            changed = true
-        end
-
-        local col = DEFAULT_TOUGHNESS_TEAL
-        if vm.hp.tough_state == "broken" then
-            col = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.TOUGHNESS_BROKEN) or col
-        elseif vm.hp.tough_state == "overshield" then
-            col = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.TOUGHNESS_OVERSHIELD) or col
-        end
-        if tstyle.text_color then
-            tstyle.text_color = table.clone(col)
-            changed = true
-        end
-
-        local show_tough = (vm.counters.show_tough_text == true)
-        if vm.force_show and mod._settings.team_counters ~= "team_counters_disabled" then
-            show_tough = true
-        end
-        if tstyle.visible ~= show_tough then
-            tstyle.visible = show_tough
-            changed = true
-        end
+    if tstyle and tstyle.visible ~= (RingHud_state_team.counters.show_tough_text == true) then
+        tstyle.visible = (RingHud_state_team.counters.show_tough_text == true)
+        changed = true
     end
 
+    -- Health integer text
     local hstyle = style.health_value_text_style
-    if hstyle and hstyle.visible ~= (vm.hp.text_visible == true) then
-        hstyle.visible = (vm.hp.text_visible == true)
+    if hstyle and hstyle.visible ~= (RingHud_state_team.hp.text_visible == true) then
+        hstyle.visible = (RingHud_state_team.hp.text_visible == true)
         changed = true
     end
 
@@ -217,13 +228,20 @@ local function _apply_health_integer(widget, unit)
     end
 end
 
-local function _apply_status(widget, vm)
+local function _apply_status(widget, RingHud_state_team)
     local content, style = widget.content, widget.style
-    local changed = false
+    local changed        = false
 
-    local kind = vm.status and vm.status.kind
-    local icon = _status_icon_for(kind)
-    local tint = vm.status and vm.status.icon_color_argb
+    local status         = RingHud_state_team.status or {}
+    local kind           = status.kind
+    local tint           = status.icon_color_argb
+
+    -- Respect the explicit show_icon flag if present
+    local show_icon      = (status.show_icon ~= false) and (kind ~= nil)
+    local icon           = nil
+    if show_icon then
+        icon = _status_icon_for(kind)
+    end
 
     if content.status_icon ~= icon then
         content.status_icon = icon
@@ -232,16 +250,15 @@ local function _apply_status(widget, vm)
 
     local sstyle = style.status_icon
     if sstyle then
-        sstyle.visible = icon ~= nil
+        -- Ensure style visibility follows
+        sstyle.visible = (icon ~= nil)
         if tint and sstyle.color then
-            -- Accept a palette key or a direct ARGB-255 table
             local col =
                 (type(tint) == "table" and tint) or
                 (type(tint) == "string" and mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255[tint]) or
                 tint
             if col then
-                sstyle.color = table.clone(col)
-                changed = true
+                changed = U.set_style_color(sstyle, col) or changed
             end
         end
         if tint and content.status_icon_tint ~= tint then
@@ -254,7 +271,7 @@ local function _apply_status(widget, vm)
 end
 
 -- ======== assist / ledge / respawn bar (split base+edge with notch) ========
-local function _apply_assist_or_respawn(widget, vm)
+local function _apply_assist_or_respawn(widget, RingHud_state_team)
     local content, style = widget.content, widget.style
 
     local base_style = style.ledge_bar_base
@@ -271,8 +288,8 @@ local function _apply_assist_or_respawn(widget, vm)
         return
     end
 
-    if vm.assist.show then
-        -- Hide ALL hp/cor segments while the assist bar is visible
+    if RingHud_state_team.assist.show then
+        -- Hide ALL hp/cor segments while the assist bar is visible (purely presentational)
         for seg = 1, C.MAX_HP_SEGMENTS do
             content[string.format("hp_seg_%d_visible", seg)] = false
             if seg <= C.MAX_WOUNDS_CAP then
@@ -291,10 +308,10 @@ local function _apply_assist_or_respawn(widget, vm)
         local parent_top, parent_bottom = full_ab[1], full_ab[2]
 
         -- Use shared helper to split base(1) + edge(0) with a centered gap.
-        -- Optional overrides: vm.assist.gap / vm.assist.eps
-        local frac                      = math.clamp(vm.assist.amount or 0, 0, 1)
-        local gap                       = vm.assist.gap
-        local eps                       = vm.assist.eps
+        -- Optional overrides: RingHud_state_team.assist.gap / RingHud_state_team.assist.eps
+        local frac                      = math.clamp(RingHud_state_team.assist.amount or 0, 0, 1)
+        local gap                       = RingHud_state_team.assist.gap
+        local eps                       = RingHud_state_team.assist.eps
         local res                       = Notch.notch_apply(
             widget,
             "ledge_bar_base", "ledge_bar_edge",
@@ -308,25 +325,25 @@ local function _apply_assist_or_respawn(widget, vm)
         edge_style.visible              = res.edge.show
 
         -- Outline color (apply to both passes, RGBA 0..1)
-        local src                       = vm.assist.outline_rgba01 or { 1, 0, 0, 1 }
-        local function _set_outline(mv)
-            local oc = mv.outline_color
-            if (not oc) or oc[1] ~= src[1] or oc[2] ~= src[2] or oc[3] ~= src[3] or oc[4] ~= src[4] then
-                mv.outline_color = { src[1], src[2], src[3], src[4] }
-                widget.dirty = true
-            end
-        end
-        _set_outline(base_style.material_values)
-        _set_outline(edge_style.material_values)
+        local src                       = RingHud_state_team.assist.outline_rgba01 or { 1, 0, 0, 1 }
+        U.mv_set_outline(base_style.material_values, src)
+        U.mv_set_outline(edge_style.material_values, src)
 
         -- Respawn digits replace archetype glyph while active
-        if vm.assist.respawn_digits then
+        if RingHud_state_team.assist.respawn_digits then
             if content.status_icon ~= nil then
                 content.status_icon = nil
                 widget.dirty = true
             end
-            if content.arch_icon ~= vm.assist.respawn_digits then
-                content.arch_icon = vm.assist.respawn_digits
+            if content.arch_icon ~= RingHud_state_team.assist.respawn_digits then
+                content.arch_icon = RingHud_state_team.assist.respawn_digits
+                widget.dirty = true
+            end
+
+            -- Ensure the big archetype widget is actually visible for respawn digits,
+            -- even if the "small icon in name" option would normally hide it.
+            if style.arch_icon and style.arch_icon.visible ~= true then
+                style.arch_icon.visible = true
                 widget.dirty = true
             end
         end
@@ -352,24 +369,23 @@ local function _apply_assist_or_respawn(widget, vm)
     end
 end
 
-local function _apply_pockets(widget, vm)
+local function _apply_pockets(widget, RingHud_state_team)
     local content, style = widget.content, widget.style
     local changed = false
 
-    -- Crates
+    -- Crates (pure presentation: uses only RingHud_state_team.pockets.*)
     local cstyle = style.crate_icon
     if cstyle then
-        if vm.pockets.crate_enabled and vm.pockets.crate_icon then
-            content.crate_icon = vm.pockets.crate_icon
-            if cstyle.color and vm.pockets.crate_color_argb then
-                local tint = vm.pockets.crate_color_argb
+        if RingHud_state_team.pockets.crate_enabled and RingHud_state_team.pockets.crate_icon then
+            content.crate_icon = RingHud_state_team.pockets.crate_icon
+            if cstyle.color and RingHud_state_team.pockets.crate_color_argb then
+                local tint = RingHud_state_team.pockets.crate_color_argb
                 local col =
                     (type(tint) == "table" and tint) or
                     (type(tint) == "string" and mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255[tint]) or
                     tint
                 if col then
-                    cstyle.color = table.clone(col)
-                    changed = true
+                    changed = U.set_style_color(cstyle, col) or changed
                 end
             end
             if not cstyle.visible then
@@ -385,20 +401,19 @@ local function _apply_pockets(widget, vm)
         end
     end
 
-    -- Stimms
+    -- Stimms (pure presentation: uses only RingHud_state_team.pockets.*)
     local sstyle = style.stimm_icon
     if sstyle then
-        if vm.pockets.stimm_enabled and vm.pockets.stimm_icon then
-            content.stimm_icon = vm.pockets.stimm_icon
-            if sstyle.color and vm.pockets.stimm_color_argb then
-                local tint = vm.pockets.stimm_color_argb
+        if RingHud_state_team.pockets.stimm_enabled and RingHud_state_team.pockets.stimm_icon then
+            content.stimm_icon = RingHud_state_team.pockets.stimm_icon
+            if sstyle.color and RingHud_state_team.pockets.stimm_color_argb then
+                local tint = RingHud_state_team.pockets.stimm_color_argb
                 local col =
                     (type(tint) == "table" and tint) or
                     (type(tint) == "string" and mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255[tint]) or
                     tint
                 if col then
-                    sstyle.color = table.clone(col)
-                    changed = true
+                    changed = U.set_style_color(sstyle, col) or changed
                 end
             end
             if not sstyle.visible then
@@ -419,10 +434,10 @@ end
 
 -- ========= Public helpers =========
 
-function Apply.apply_name(name_widget, vm)
+function Apply.apply_name(name_widget, RingHud_state_team)
     if not (name_widget and name_widget.content) then return end
-    -- Name from composed markup only
-    local s = (vm and vm.name_markup) or ""
+    -- Name from composed markup only (slot-tinted and glyph-aware).
+    local s = (RingHud_state_team and RingHud_state_team.name_markup) or ""
 
     if name_widget.content.name_text_value ~= s then
         name_widget.content.name_text_value = s
@@ -432,19 +447,62 @@ end
 
 -- ========= Public: one-stop apply =========
 
-function Apply.apply_all(widget, marker, vm, opts)
-    if not (widget and vm and vm.ok) then
+function Apply.apply_all(widget, marker, RingHud_state_team, opts)
+    if not (widget and RingHud_state_team and RingHud_state_team.ok) then
         widget.visible = false
         return
     end
-    widget.visible = true
+    widget.visible       = true
 
-    local icon_only = _is_icon_only_mode()
+    local icon_only      = RingHud_state_team.icon_only == true
+
+    -- Current respawn state (purely from ally_state, no mode checks)
+    local respawn_active = RingHud_state_team.assist
+        and RingHud_state_team.assist.show
+        and (RingHud_state_team.assist.respawn_digits ~= nil)
 
     if icon_only then
-        -- Minimal: archetype icon + status icon. Suppress everything else.
-        _apply_arch_only(widget, vm)
-        _apply_status(widget, vm)
+        -- Special case: icon-only tile with a respawn countdown active.
+        -- In this case we still want to show the assist/respawn bar + digits on the tile,
+        -- while keeping the rest of the tile "icon-minimal".
+        if respawn_active then
+            _apply_arch_only(widget, RingHud_state_team)
+            _apply_status(widget, RingHud_state_team)
+            _apply_assist_or_respawn(widget, RingHud_state_team)
+
+            local content, style = widget.content, widget.style
+            if content then
+                if content.toughness_text_value ~= nil then content.toughness_text_value = nil end
+                if content.health_value_text ~= nil then content.health_value_text = nil end
+                -- Hide any stray HP/corruption flags
+                for seg = 1, C.MAX_HP_SEGMENTS do
+                    content[string.format("hp_seg_%d_visible", seg)] = false
+                    if seg <= C.MAX_WOUNDS_CAP then
+                        content[string.format("cor_seg_%d_visible", seg)] = false
+                    end
+                end
+                -- Clear pockets/throwable seeds if present
+                if content.crate_icon ~= nil then content.crate_icon = nil end
+                if content.stimm_icon ~= nil then content.stimm_icon = nil end
+                if content.throwable_icon ~= nil then content.throwable_icon = nil end
+            end
+            if style then
+                if style.toughness_text_style then style.toughness_text_style.visible = false end
+                if style.health_value_text_style then style.health_value_text_style.visible = false end
+                if style.crate_icon then style.crate_icon.visible = false end
+                if style.stimm_icon then style.stimm_icon.visible = false end
+                if style.throwable_icon then style.throwable_icon.visible = false end
+                -- NOTE: We intentionally DO NOT force ledge_bar_base/edge invisible here,
+                -- because _apply_assist_or_respawn has just set them for the respawn bar.
+            end
+
+            widget.dirty = true
+            return
+        end
+
+        -- Default icon-only behaviour when no respawn bar/digits are active
+        _apply_arch_only(widget, RingHud_state_team)
+        _apply_status(widget, RingHud_state_team)
 
         -- Make sure prominent non-icon fields remain blank/hidden if they were ever set
         local content, style = widget.content, widget.style
@@ -470,6 +528,7 @@ function Apply.apply_all(widget, marker, vm, opts)
             if style.stimm_icon then style.stimm_icon.visible = false end
             if style.ledge_bar_base then style.ledge_bar_base.visible = false end
             if style.ledge_bar_edge then style.ledge_bar_edge.visible = false end
+            if style.throwable_icon then style.throwable_icon.visible = false end -- explicit: hide throwables in icon-only
             -- HP segment styles are managed by template/S.update; letting content flags be false is enough
         end
 
@@ -477,29 +536,35 @@ function Apply.apply_all(widget, marker, vm, opts)
         return
     end
 
-    -- Full tile path
-    _apply_name_and_arch(widget, vm)
-    _apply_segments(widget, vm)
-    _apply_counters(widget, vm)
+    -- Full tile path (pure presentation: consumes RingHud_state_team only)
+    _apply_name_and_arch(widget, RingHud_state_team)
+    _apply_segments(widget, RingHud_state_team)
+    _apply_counters(widget, RingHud_state_team, marker)
 
     if opts and opts.unit then
         _apply_health_integer(widget, opts.unit)
     end
 
-    _apply_status(widget, vm)
-    _apply_assist_or_respawn(widget, vm)
+    _apply_status(widget, RingHud_state_team)
+    _apply_assist_or_respawn(widget, RingHud_state_team)
 
-    local arch_name = _arch_name_from_profile(vm.profile)
+    local arch_name = _arch_name_from_profile(RingHud_state_team.profile)
     if widget.style and widget.style.throwable_icon then
         TH.update(widget.style.throwable_icon, arch_name, opts and opts.unit)
         local override = TH.icon_override_for(opts and opts.unit, arch_name)
+
+        -- Safety: hide if no icon found
+        if not override then
+            widget.style.throwable_icon.visible = false
+        end
+
         if widget.content and widget.content.throwable_icon ~= override then
             widget.content.throwable_icon = override
             widget.dirty = true
         end
     end
 
-    _apply_pockets(widget, vm)
+    _apply_pockets(widget, RingHud_state_team)
 
     widget.dirty = true
 end

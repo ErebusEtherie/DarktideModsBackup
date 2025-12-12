@@ -1,10 +1,11 @@
 -- @Author: 我是派蒙啊
 -- @Date:   2024-04-26 12:07:26
 -- @Last Modified by:   我是派蒙啊
--- @Last Modified time: 2024-10-26 12:37:56
+-- @Last Modified time: 2024-12-14 13:56:30
 local mod = get_mod("DefaultSprint")
 mod.settings = mod:persistent_table("settings")
 
+local weapon_name = "unknown"
 local current_slot = "slot_primary"
 local is_sprint_allowed = true
 local is_hold_walk = false
@@ -13,8 +14,10 @@ local attacking_time = 0.0
 
 mod.update = function(dt)
     if attacking_time > 0 then
+        is_attacking = true
         attacking_time = attacking_time - dt
-    elseif is_attacking then
+    else
+        attacking_time = 0
         is_attacking = false
     end
 end
@@ -73,7 +76,13 @@ local SPRINT_WEAPONS =
     "loc_combatknife_p1_m2",
     "loc_combatsword_p3_m1",
     "loc_combatsword_p3_m2",
+    "loc_combatsword_p3_m3",
+    "loc_dual_shivs_p1_m1",
+    "loc_dual_shivs_p1_m2",
+    -- "loc_powersword_2h_p1_m1",
+    -- "loc_powersword_2h_p1_m2",
 }
+
 local _input_action_hook = function(func, self, action_name)
     -- Game not start.
     if not Managers.state.game_mode or not is_sprint_allowed then return func(self, action_name) end
@@ -85,7 +94,8 @@ local _input_action_hook = function(func, self, action_name)
     end
 
     -- Get equiped weapon name
-    local weapon_name = get_equip_weapon()
+    weapon_name = get_equip_weapon()
+    -- mod:echo("weapon_name: " .. weapon_name)
     -- Disable sprint for all range weapons
     if mod.settings["disable_for_range"] and current_slot == "slot_secondary" then return func(self, action_name) end
     -- Disable sprint for all staff weapons
@@ -120,46 +130,66 @@ local _input_action_hook = function(func, self, action_name)
     return func(self, action_name)
 end
 
+-- local is_interrupt_action = function(act)
+--     return act == "action_block"
+--         or act == "action_wield"
+--         or act == "action_unwield"
+--         or act == "grenade_ability"
+-- end
+
 local is_unsprint_action = function(act)
+    -- mod:echo("unsprint_action: " .. act .. " .. ".. weapon_name)
     return act:find("melee_start")
         or act:find("light")
         or act:find("left_heavy")
         or act:find("right_heavy")
         or act:find("action_heavy")
-        or act:find("rapid") -- staffs
-end
-
-local is_interrupt_action = function(act)
-    return act == "action_block"
-        or act == "action_wield"
-        or act == "action_unwield"
-        or act == "grenade_ability"
+        or act:find("rapid")                             -- staffs
+        or act == "action_zealot_channel"      -- Zealot Channel
+        or act == "action_spread_charged"    -- Psyker Smite
 end
 
 mod:hook_safe("ActionHandler", "start_action",
-    function(self, id, action_objects, action_name, action_params, action_settings, used_input, t, transition_type,
-             condition_func_params, automatic_input, reset_combo_override)
+    function(self, id, action_objects, action_name, action_params, action_settings, ...)
         -- print("action_name: " .. action_name)
         -- mod:echo("action_name: " .. action_name)
+
+        -- Power Sword sprint attack
+        if weapon_name:find("loc_powersword_") and action_name == "action_melee_start_sprint" then
+            is_attacking = false
+            attacking_time = 0
+            return
+        end
 
         -- Check for action continued time
         if is_unsprint_action(action_name) then
             local action_time = self:_calculate_action_total_time(action_settings, action_params,
                 self:_calculate_time_scale(action_settings))
 
-            -- print("action_time: " .. action_time)
-            -- mod:echo("action_time: " .. action_time)
+            -- print("action_name: " .. action_name .. " | action_time: " .. action_time)
+            -- mod:echo("action_name: " .. action_name .. " | action_time: " .. action_time)
 
-            -- It was shown that the action only needs 1/3 time to finish itself, unless the start attack action.
-            if not action_name:find("start") then action_time = action_time / 2.7 end
+            -- It was shown that the action only needs about 1/2 time to finish itself, unless the start attack action or zealot channel.
+            if not action_name:find("start") then
+                action_time = action_time / 2
+            end
+            -- If the action time is less than 0.5, we should set it to 0.5 to prevent the action from being interrupted.
+            if action_time < 0.5 then
+                action_time = 0.5
+            end
             attacking_time = action_time
             is_attacking = true
-
+            
             -- mod:echo("attacking_time: " .. attacking_time)
-            -- If we triggered these action, time should be reset.
-        elseif is_interrupt_action(action_name) then
-            attacking_time = 0
+            return
+        -- -- If we triggered these action, time should be reset.
+        -- elseif is_interrupt_action(action_name) then
+        --     is_attacking = false
+        --     attacking_time = 0
         end
+
+        is_attacking = false
+        attacking_time = 0
     end)
 
 -- local is_finish_reason = function(reason)

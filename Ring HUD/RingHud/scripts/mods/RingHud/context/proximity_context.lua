@@ -247,6 +247,43 @@ local function _near_crate_source_now()
         or (mod.near_ammo_cache_deployable == true)
 end
 
+-- Sweep existing active markers (Fix for Ration Pack / Markers AIO keeping markers alive)
+local function _scan_existing_interaction_markers()
+    local hud = Managers.ui and Managers.ui._hud
+    local interaction_element = hud and hud:element("HudElementInteraction")
+
+    if interaction_element and interaction_element._active_markers then
+        for unit, _ in pairs(interaction_element._active_markers) do
+            if Unit.alive(unit) and not mod._tracked_item_units[unit] then
+                -- Check for Health Station
+                local interactee_extension = ScriptUnit.has_extension(unit, "interactee_system") and
+                    ScriptUnit.extension(unit, "interactee_system")
+                if interactee_extension and interactee_extension.interaction_type and interactee_extension:interaction_type() == "health_station" then
+                    mod._tracked_item_units[unit] = unit
+                end
+
+                -- Check for other tracked pickups (robustness)
+                local pickup_name = Unit.get_data(unit, "pickup_type")
+                if pickup_name then
+                    -- Syringes (tag-only in RingHud)
+                    if pickup_name == "syringe_corruption_pocketable"
+                        or pickup_name == "syringe_ability_boost_pocketable"
+                        or pickup_name == "syringe_power_boost_pocketable"
+                        or pickup_name == "syringe_speed_boost_pocketable" then
+                        _set_rh_tracking_status(unit, true)
+                        mod._tracked_item_units[unit] = unit
+
+                        -- Other tracked items (ammo, etc)
+                    elseif _is_tracked_item_type(pickup_name) then
+                        _set_rh_tracking_status(unit, true)
+                        mod._tracked_item_units[unit] = unit
+                    end
+                end
+            end
+        end
+    end
+end
+
 -------------------------------------------------------------------------------
 -- Public System Functions
 -------------------------------------------------------------------------------
@@ -369,6 +406,9 @@ function ProximitySystem.update(dt)
 
     -- Adopt any late-arriving external med-crate markers (e.g. markers_aio).
     _adopt_external_medcrate_markers()
+
+    -- Sweep existing markers (fixes compatibility with Ration Pack / Markers AIO)
+    _scan_existing_interaction_markers()
 
     -- Reset flags
     -- MOVED UP: Ensure we clear flags before potentially returning early due to game mode.
