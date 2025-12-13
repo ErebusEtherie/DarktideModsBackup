@@ -63,36 +63,6 @@ end
 
 local widgets = {
 	{
-		setting_id = "position_group",
-		type = "group",
-		sub_widgets = {
-			{
-				setting_id = "icon_x",
-				type = "numeric",
-				default_value = 765,
-				range = { 0, 3840 },
-			},
-			{
-				setting_id = "icon_y",
-				type = "numeric",
-				default_value = 620,
-				range = { 0, 1080 },
-			},
-			{
-				setting_id = "text_x",
-				type = "numeric",
-				default_value = 761,
-				range = { 0, 3840 },
-			},
-			{
-				setting_id = "text_y",
-				type = "numeric",
-				default_value = 670,
-				range = { 0, 1080 },
-			},
-		}
-	},
-	{
 		setting_id = "display_group",
 		type = "group",
 		sub_widgets = {
@@ -109,32 +79,145 @@ local widgets = {
 				range = { 16, 128 },
 			},
 			{
-				setting_id = "show_active",
-				type = "checkbox",
-				default_value = true,
-			},
-			{
-				setting_id = "show_cooldown",
-				type = "checkbox",
-				default_value = true,
-			},
-			{
 				setting_id = "show_decimals",
 				type = "checkbox",
 				default_value = true,
 			},
 			{
-				setting_id = "show_when_ready",
+				setting_id = "link_all_positions",
+				type = "checkbox",
+				default_value = true,
+			},
+		}
+	},
+	{
+		setting_id = "shared_position_group",
+		type = "group",
+		sub_widgets = {
+			{
+				setting_id = "shared_icon_x",
+				type = "numeric",
+				default_value = 765,
+				range = { 0, 3840 },
+			},
+			{
+				setting_id = "shared_icon_y",
+				type = "numeric",
+				default_value = 620,
+				range = { 0, 1080 },
+			},
+			{
+				setting_id = "shared_text_x",
+				type = "numeric",
+				default_value = 761,
+				range = { 0, 3840 },
+			},
+			{
+				setting_id = "shared_text_y",
+				type = "numeric",
+				default_value = 670,
+				range = { 0, 1080 },
+			},
+		}
+	},
+		{
+			setting_id = "ready_group",
+			type = "group",
+			sub_widgets = {
+				{
+					setting_id = "ready_icon_x",
+					type = "numeric",
+					default_value = 565,
+					range = { 0, 3840 },
+				},
+			{
+				setting_id = "ready_icon_y",
+				type = "numeric",
+				default_value = 620,
+				range = { 0, 1080 },
+			},
+			{
+				setting_id = "ready_show_icon",
+				type = "checkbox",
+				default_value = true,
+			},
+		}
+	},
+		{
+			setting_id = "active_group",
+			type = "group",
+			sub_widgets = {
+				{
+					setting_id = "active_icon_x",
+					type = "numeric",
+					default_value = 565,
+					range = { 0, 3840 },
+				},
+				{
+					setting_id = "active_icon_y",
+					type = "numeric",
+					default_value = 620,
+					range = { 0, 1080 },
+				},
+				{
+					setting_id = "active_text_x",
+					type = "numeric",
+					default_value = 561,
+					range = { 0, 3840 },
+				},
+			{
+				setting_id = "active_text_y",
+				type = "numeric",
+				default_value = 670,
+				range = { 0, 1080 },
+			},
+			{
+				setting_id = "active_show_icon",
 				type = "checkbox",
 				default_value = true,
 			},
 			{
-				setting_id = "show_icon",
+				setting_id = "active_show_timer",
+				type = "checkbox",
+				default_value = true,
+			},
+		}
+	},
+		{
+			setting_id = "cooldown_group",
+			type = "group",
+			sub_widgets = {
+				{
+					setting_id = "cooldown_icon_x",
+					type = "numeric",
+					default_value = 565,
+					range = { 0, 3840 },
+				},
+				{
+					setting_id = "cooldown_icon_y",
+					type = "numeric",
+					default_value = 620,
+					range = { 0, 1080 },
+				},
+				{
+					setting_id = "cooldown_text_x",
+					type = "numeric",
+					default_value = 561,
+					range = { 0, 3840 },
+				},
+			{
+				setting_id = "cooldown_text_y",
+				type = "numeric",
+				default_value = 670,
+				range = { 0, 1080 },
+			},
+			{
+				setting_id = "cooldown_show_icon",
 				type = "checkbox",
 				default_value = true,
 			},
 			{
-				setting_id = "show_timer",
+				setting_id = "cooldown_show_timer",
 				type = "checkbox",
 				default_value = true,
 			},

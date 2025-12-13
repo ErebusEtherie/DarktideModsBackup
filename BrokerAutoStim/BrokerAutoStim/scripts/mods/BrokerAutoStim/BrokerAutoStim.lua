@@ -60,12 +60,27 @@ local auto_stim_enabled = true
 local last_combat_ability_cooldown = nil
 local combat_ability_just_used = false
 local combat_ability_just_ended = false
+local combat_ability_active = false
+local injection_retry_after_ability = false
 local cached_chem_info = nil
 local chem_info_cache_time = nil
 local push_in_progress = false
 local injection_retry_after_push = false
 local block_in_progress = false
 local injection_retry_after_block = false
+local attack_in_progress = false
+local injection_retry_after_attack = false
+local was_carrying_luggable = false
+local injection_retry_after_carrying = false
+local reload_in_progress = false
+local injection_retry_after_reload = false
+local dangerous_enemies_nearby = false
+local injection_retry_after_enemies = false
+local holding_attack = false
+local last_attack_time = nil
+local interaction_active_units = {}
+local interaction_in_progress = false
+local injection_retry_after_interaction = false
 
 local profiles = {}
 local is_loading_profile = false
@@ -497,6 +512,18 @@ local function _get_combat_ability_cooldown()
     return ability_extension:remaining_ability_cooldown("combat_ability")
 end
 
+local function _is_combat_ability_active(allow_on_ability_use)
+    if not mod:get("cancel_during_ability") then
+        return false
+    end
+    
+    if allow_on_ability_use and mod:get("stim_trigger_mode") == "on_ability_use" and combat_ability_just_used then
+        return false
+    end
+    
+    return combat_ability_active == true
+end
+
 local function _reset_auto_stimm_state()
     auto_stimm_stage = AUTO_STIMM_STAGES.NONE
     stage_start_time = nil
@@ -504,6 +531,12 @@ local function _reset_auto_stimm_state()
     unwield_to_slot = nil
     injection_retry_after_push = false
     injection_retry_after_block = false
+    injection_retry_after_attack = false
+    injection_retry_after_carrying = false
+    injection_retry_after_reload = false
+    injection_retry_after_enemies = false
+    injection_retry_after_interaction = false
+    injection_retry_after_ability = false
 end
 
 local function _reset_all_state()
@@ -514,11 +547,20 @@ local function _reset_all_state()
     last_combat_ability_cooldown = nil
     combat_ability_just_used = false
     combat_ability_just_ended = false
+    combat_ability_active = false
     current_wield_slot = nil
     cached_chem_info = nil
     chem_info_cache_time = nil
     push_in_progress = false
     block_in_progress = false
+    attack_in_progress = false
+    was_carrying_luggable = false
+    reload_in_progress = false
+    dangerous_enemies_nearby = false
+    holding_attack = false
+    last_attack_time = nil
+    table.clear(interaction_active_units)
+    interaction_in_progress = false
 end
 
 local function _check_stage_timeout()
@@ -623,11 +665,19 @@ local DANGEROUS_BREEDS = {
     renegade_executor = {
         range_setting = "crusher_detection_range",
         enabled_setting = "block_nearby_crusher"
+    },
+    renegade_berzerker = {
+        range_setting = "rager_detection_range",
+        enabled_setting = "block_nearby_rager"
+    },
+    cultist_berzerker = {
+        range_setting = "rager_detection_range",
+        enabled_setting = "block_nearby_rager"
     }
 }
 
 local function _is_currently_blocking()
-    if not mod:get("cancel_on_block") then
+    if not mod:get("cancel_on_push_block") then
         return false
     end
     
@@ -647,6 +697,138 @@ local function _is_currently_blocking()
     end
     
     return block_component.is_blocking == true
+end
+
+local function _is_currently_attacking()
+    if not mod:get("cancel_on_attack") then
+        return false
+    end
+    
+    local current_time = _get_gameplay_time()
+    if not current_time then
+        return false
+    end
+    
+    local attack_cooldown = mod:get("attack_cooldown") or 0.5
+    
+    if holding_attack then
+        last_attack_time = current_time
+        return true
+    end
+    
+    local player_unit = _get_player_unit()
+    if player_unit then
+        local weapon_extension = ScriptUnit.has_extension(player_unit, "weapon_system")
+        if weapon_extension and weapon_extension._action_handler then
+            local running_action_name = weapon_extension._action_handler:running_action_name("weapon_action")
+            if running_action_name and 
+               (string.find(running_action_name, "action_melee") == 1 or 
+                string.find(running_action_name, "action_shoot") == 1) then
+                last_attack_time = current_time
+                return true
+            end
+        end
+    end
+    
+    if last_attack_time then
+        local time_since_attack = current_time - last_attack_time
+        if time_since_attack < attack_cooldown then
+            return true
+        else
+            last_attack_time = nil
+        end
+    end
+    
+    return false
+end
+
+local function _is_carrying_luggable()
+    if not mod:get("cancel_on_carrying") then
+        return false
+    end
+    
+    local player_unit = _get_player_unit()
+    if not player_unit then
+        return false
+    end
+    
+    local unit_data_extension = ScriptUnit.has_extension(player_unit, "unit_data_system")
+    if not unit_data_extension then
+        return false
+    end
+    
+    local inventory_component = unit_data_extension:read_component("inventory")
+    if not inventory_component then
+        return false
+    end
+    
+    local held_luggable = inventory_component.slot_luggable
+    return held_luggable and held_luggable ~= "not_equipped"
+end
+
+local function _is_interacting()
+    if not mod:get("cancel_on_interaction") then
+        return false
+    end
+    
+    local player_unit = _get_player_unit()
+    if not player_unit then
+        return false
+    end
+    
+    if interaction_active_units[player_unit] then
+        return true
+    end
+    
+    local unit_data_extension = ScriptUnit.has_extension(player_unit, "unit_data_system")
+    if not unit_data_extension then
+        return false
+    end
+    
+    local interaction_component = unit_data_extension:read_component("interaction")
+    if not interaction_component then
+        return false
+    end
+    
+    local InteractionSettings = require("scripts/settings/interaction/interaction_settings")
+    local interaction_states = InteractionSettings.states
+    local state = interaction_component.state
+    
+    if state == interaction_states.is_interacting then
+        local interaction_type = interaction_component.type
+        if interaction_type then
+            local interaction_templates = require("scripts/settings/interaction/interaction_templates")
+            local template = interaction_templates[interaction_type]
+            if template and template.duration and template.duration > 0 then
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+
+local function _is_currently_reloading()
+    if not mod:get("cancel_on_reload") then
+        return false
+    end
+    
+    local player_unit = _get_player_unit()
+    if not player_unit then
+        return false
+    end
+    
+    local weapon_extension = ScriptUnit.has_extension(player_unit, "weapon_system")
+    if not weapon_extension or not weapon_extension._action_handler then
+        return false
+    end
+    
+    local running_action_name = weapon_extension._action_handler:running_action_name("weapon_action")
+    if not running_action_name then
+        return false
+    end
+    
+    return running_action_name == "action_reload"
 end
 
 local function _has_nearby_dangerous_enemies()
@@ -721,11 +903,47 @@ local function _start_auto_inject()
     
     if _has_nearby_dangerous_enemies() then
         _debug("Dangerous enemies nearby, blocking injection")
+        dangerous_enemies_nearby = true
+        injection_retry_after_enemies = true
         return false
     end
     
     if _is_currently_blocking() then
         _debug("Currently blocking, preventing injection")
+        return false
+    end
+    
+    if _is_currently_attacking() then
+        _debug("Currently attacking, preventing injection")
+        attack_in_progress = true
+        injection_retry_after_attack = true
+        return false
+    end
+    
+    if _is_carrying_luggable() then
+        _debug("Currently carrying luggage, preventing injection")
+        was_carrying_luggable = true
+        injection_retry_after_carrying = true
+        return false
+    end
+    
+    if _is_currently_reloading() then
+        _debug("Currently reloading, preventing injection")
+        reload_in_progress = true
+        injection_retry_after_reload = true
+        return false
+    end
+    
+    if _is_interacting() then
+        _debug("Currently interacting, preventing injection")
+        interaction_in_progress = true
+        injection_retry_after_interaction = true
+        return false
+    end
+    
+    if _is_combat_ability_active(true) then
+        _debug("Combat ability is active, preventing injection")
+        injection_retry_after_ability = true
         return false
     end
     
@@ -823,12 +1041,152 @@ mod.update = function(dt)
         end
     end
     
+    if attack_in_progress then
+        if not _is_currently_attacking() then
+            attack_in_progress = false
+            if injection_retry_after_attack then
+                _debug("Attack finished, retrying injection")
+                injection_retry_after_attack = false
+                local current_time = _get_gameplay_time()
+                if current_time then
+                    last_injection_time = nil
+                end
+            end
+        end
+    end
+    
+    if was_carrying_luggable then
+        if not _is_carrying_luggable() then
+            was_carrying_luggable = false
+            if injection_retry_after_carrying then
+                _debug("No longer carrying luggage, retrying injection")
+                injection_retry_after_carrying = false
+                local current_time = _get_gameplay_time()
+                if current_time then
+                    last_injection_time = nil
+                end
+            end
+        end
+    end
+    
+    if reload_in_progress then
+        local player_unit = _get_player_unit()
+        if player_unit then
+            local weapon_extension = ScriptUnit.has_extension(player_unit, "weapon_system")
+            if weapon_extension and weapon_extension._action_handler then
+                local running_action_name = weapon_extension._action_handler:running_action_name("weapon_action")
+                if running_action_name ~= "action_reload" then
+                    reload_in_progress = false
+                    if injection_retry_after_reload then
+                        _debug("Reload finished, retrying injection")
+                        injection_retry_after_reload = false
+                        local current_time = _get_gameplay_time()
+                        if current_time then
+                            last_injection_time = nil
+                        end
+                    end
+                end
+            else
+                reload_in_progress = false
+            end
+        else
+            reload_in_progress = false
+        end
+    end
+    
+    if dangerous_enemies_nearby then
+        if not _has_nearby_dangerous_enemies() then
+            dangerous_enemies_nearby = false
+            if injection_retry_after_enemies then
+                _debug("Dangerous enemies moved out of range, retrying injection")
+                injection_retry_after_enemies = false
+                local current_time = _get_gameplay_time()
+                if current_time then
+                    last_injection_time = nil
+                end
+            end
+        end
+    end
+    
+    if interaction_in_progress then
+        if not _is_interacting() then
+            interaction_in_progress = false
+            if injection_retry_after_interaction then
+                _debug("Interaction finished, retrying injection")
+                injection_retry_after_interaction = false
+                local current_time = _get_gameplay_time()
+                if current_time then
+                    last_injection_time = nil
+                end
+            end
+        end
+    end
+    
+    if combat_ability_active then
+        local current_combat_ability_cooldown = _get_combat_ability_cooldown()
+        if current_combat_ability_cooldown and current_combat_ability_cooldown > 0 then
+            combat_ability_active = false
+            if injection_retry_after_ability then
+                _debug("Combat ability finished, retrying injection")
+                injection_retry_after_ability = false
+                local current_time = _get_gameplay_time()
+                if current_time then
+                    last_injection_time = nil
+                end
+            end
+        end
+    end
+    
     if auto_stimm_stage ~= AUTO_STIMM_STAGES.NONE then
-        if auto_stimm_stage == AUTO_STIMM_STAGES.WAITING_FOR_INJECT and _is_currently_blocking() then
-            _debug("Blocking detected during injection countdown, canceling")
-            injection_retry_after_block = true
-            _reset_auto_stimm_state()
-            return
+        if auto_stimm_stage == AUTO_STIMM_STAGES.WAITING_FOR_INJECT then
+            if _is_currently_blocking() then
+                _debug("Blocking detected during injection countdown, canceling")
+                injection_retry_after_block = true
+                _reset_auto_stimm_state()
+                return
+            end
+            if _is_currently_attacking() then
+                _debug("Attacking detected during injection countdown, canceling")
+                attack_in_progress = true
+                injection_retry_after_attack = true
+                _reset_auto_stimm_state()
+                return
+            end
+            if _is_carrying_luggable() then
+                _debug("Carrying luggage detected during injection countdown, canceling")
+                was_carrying_luggable = true
+                injection_retry_after_carrying = true
+                _reset_auto_stimm_state()
+                return
+            end
+            if _is_currently_reloading() then
+                _debug("Reloading detected during injection countdown, canceling")
+                reload_in_progress = true
+                injection_retry_after_reload = true
+                _reset_auto_stimm_state()
+                return
+            end
+            if _is_interacting() then
+                _debug("Interaction detected during injection countdown, canceling")
+                interaction_in_progress = true
+                injection_retry_after_interaction = true
+                _reset_auto_stimm_state()
+                return
+            end
+            if _has_nearby_dangerous_enemies() then
+                _debug("Dangerous enemies detected during injection countdown, canceling")
+                dangerous_enemies_nearby = true
+                injection_retry_after_enemies = true
+                _reset_auto_stimm_state()
+                return
+            end
+            if _is_combat_ability_active(false) then
+                _debug("Combat ability detected during injection countdown, canceling")
+                combat_ability_active = true
+                injection_retry_after_ability = true
+                _reset_auto_stimm_state()
+                return
+            end
         end
         _check_stage_timeout()
         return
@@ -845,6 +1203,7 @@ mod.update = function(dt)
     if last_combat_ability_cooldown ~= nil and current_combat_ability_cooldown ~= nil then
         if last_combat_ability_cooldown == 0 and current_combat_ability_cooldown > 0 then
             combat_ability_just_ended = true
+            combat_ability_active = false
             _debug("Combat ability cooldown started")
         end
     end
@@ -980,10 +1339,11 @@ mod:hook_safe(CLASS.ActionHandler, "start_action", function(self, id, action_obj
     if _get_player_unit() == self._unit then
         if id == "combat_ability_action" then
             combat_ability_just_used = true
+            combat_ability_active = true
             _debug("Combat ability button pressed - action starting")
         end
         
-        if action_name == "action_push" and mod:get("cancel_on_push") then
+        if action_name == "action_push" and mod:get("cancel_on_push_block") then
             push_in_progress = true
             local player_unit = _get_player_unit()
             local injection_running = false
@@ -1015,7 +1375,7 @@ mod:hook_safe(CLASS.ActionHandler, "start_action", function(self, id, action_obj
             end
         end
         
-        if action_name == "action_block" and mod:get("cancel_on_block") then
+        if action_name == "action_block" and mod:get("cancel_on_push_block") then
             block_in_progress = true
             local player_unit = _get_player_unit()
             local injection_running = false
@@ -1064,11 +1424,26 @@ mod:hook_safe(CLASS.ActionHandler, "start_action", function(self, id, action_obj
                 or input_request == "grenade_ability_pressed" and "slot_grenade_ability"
                 or nil
         elseif auto_stimm_stage == AUTO_STIMM_STAGES.WAITING_FOR_INJECT and current_wield_slot == STIMM_SLOT_NAME and action_name == "action_use_self" then
-            _debug("Auto-inject detected! Will switch back after injection completes")
             local current_time = _get_gameplay_time()
             auto_stimm_stage = AUTO_STIMM_STAGES.SWITCH_BACK
             stage_start_time = current_time
             last_injection_time = current_time
+            
+            if mod:get("animation_cancel_stim") then
+                _debug("Auto-inject detected! Canceling animation and switching back")
+                local target_slot = unwield_to_slot or last_equipped_slot
+                if target_slot then
+                    input_request = target_slot == "slot_secondary" and "wield_2"
+                        or target_slot == "slot_grenade_ability" and "grenade_ability_pressed"
+                        or "wield_1"
+                    unwield_to_slot = input_request == "wield_1" and "slot_primary"
+                        or input_request == "wield_2" and "slot_secondary"
+                        or input_request == "grenade_ability_pressed" and "slot_grenade_ability"
+                        or nil
+                end
+            else
+                _debug("Auto-inject detected! Will switch back after injection completes")
+            end
         end
     end
 end)
@@ -1076,12 +1451,171 @@ end)
 local _input_action_hook = function(func, self, action_name)
     local val = func(self, action_name)
     
+    if mod:get("cancel_on_attack") then
+        if action_name == "action_one_hold" or action_name == "action_one_pressed" then
+            holding_attack = val or false
+        elseif action_name == "action_one_release" then
+            holding_attack = false
+        elseif action_name == "action_two_hold" or action_name == "action_two_pressed" then
+            if val then
+                holding_attack = true
+            end
+        elseif action_name == "action_two_release" then
+            if not func(self, "action_one_hold") then
+                holding_attack = false
+            end
+        end
+    end
+    
     return input_request and action_name == input_request
         or auto_stimm_stage == AUTO_STIMM_STAGES.SWITCH_TO and action_name == "wield_4"
         or val
 end
 mod:hook(CLASS.InputService, "_get", _input_action_hook)
 mod:hook(CLASS.InputService, "_get_simulate", _input_action_hook)
+
+mod:hook("InteracteeSystem", "rpc_interaction_started", function(func, self, channel_id, unit_id, is_level_unit, game_object_id, interaction_input_type)
+    func(self, channel_id, unit_id, is_level_unit, game_object_id, interaction_input_type)
+    
+    local interactor_unit = Managers.state.unit_spawner:unit(game_object_id)
+    local interactee_unit = Managers.state.unit_spawner:unit(unit_id, is_level_unit)
+    
+    if interactor_unit and interactee_unit then
+        local extension = self._unit_to_extension_map[interactee_unit]
+        if extension then
+            local interaction_type = extension._active_interaction_type
+            if not interaction_type or interaction_type == "none" then
+                interaction_type = extension:interaction_type()
+            end
+            
+            if interaction_type and interaction_type ~= "none" then
+                local interaction_templates = require("scripts/settings/interaction/interaction_templates")
+                local template = interaction_templates[interaction_type]
+                if template and template.duration and template.duration > 0 then
+                    interaction_active_units[interactor_unit] = {
+                        type = interaction_type,
+                        interactee_unit = interactee_unit
+                    }
+                end
+            end
+        end
+    end
+end)
+
+mod:hook("InteracteeSystem", "rpc_interaction_stopped", function(func, self, channel_id, unit_id, is_level_unit, result)
+    func(self, channel_id, unit_id, is_level_unit, result)
+    
+    local interactee_unit = Managers.state.unit_spawner:unit(unit_id, is_level_unit)
+    if interactee_unit then
+        local extension = self._unit_to_extension_map[interactee_unit]
+        
+        local interactor_unit = nil
+        if extension then
+            interactor_unit = extension._interactor_unit
+            
+            if not interactor_unit then
+                local uds = ScriptUnit.has_extension(interactee_unit, "unit_data_system") and ScriptUnit.extension(interactee_unit, "unit_data_system")
+                if uds then
+                    local interactee_component = uds:read_component("interactee")
+                    if interactee_component then
+                        interactor_unit = interactee_component.interactor_unit
+                    end
+                end
+            end
+            
+            if not interactor_unit then
+                for tracked_unit, data in pairs(interaction_active_units) do
+                    if data.interactee_unit == interactee_unit then
+                        interactor_unit = tracked_unit
+                        break
+                    end
+                end
+            end
+        end
+        
+        if interactor_unit and interaction_active_units[interactor_unit] then
+            interaction_active_units[interactor_unit] = nil
+        end
+    end
+end)
+
+mod:hook("InteracteeExtension", "started", function(func, self, interactor_unit, interaction_input_type)
+    func(self, interactor_unit, interaction_input_type)
+    
+    if interactor_unit then
+        local interaction_type = self._active_interaction_type
+        if not interaction_type or interaction_type == "none" then
+            interaction_type = self:interaction_type()
+        end
+        
+        if interaction_type and interaction_type ~= "none" then
+            local interaction_templates = require("scripts/settings/interaction/interaction_templates")
+            local template = interaction_templates[interaction_type]
+            if template and template.duration and template.duration > 0 then
+                interaction_active_units[interactor_unit] = {
+                    type = interaction_type,
+                    interactee_unit = self._unit
+                }
+            end
+        end
+    end
+end)
+
+mod:hook("InteracteeExtension", "stopped", function(func, self, result)
+    local interactor_unit = self._interactor_unit
+    func(self, result)
+    
+    if interactor_unit and interaction_active_units[interactor_unit] then
+        interaction_active_units[interactor_unit] = nil
+    end
+end)
+
+mod:hook("PlayerInteracteeExtension", "started", function(func, self, interactor_unit, interaction_input_type)
+    func(self, interactor_unit, interaction_input_type)
+    
+    if interactor_unit then
+        local interaction_type = self:interaction_type()
+        if interaction_type and interaction_type ~= "none" then
+            local interaction_templates = require("scripts/settings/interaction/interaction_templates")
+            local template = interaction_templates[interaction_type]
+            if template and template.duration and template.duration > 0 then
+                interaction_active_units[interactor_unit] = {
+                    type = interaction_type,
+                    interactee_unit = self._unit
+                }
+            end
+        end
+    end
+end)
+
+mod:hook("PlayerInteracteeExtension", "stopped", function(func, self, result)
+    local interactor_unit = self._interactor_unit
+    func(self, result)
+    
+    if interactor_unit and interaction_active_units[interactor_unit] then
+        interaction_active_units[interactor_unit] = nil
+    end
+end)
+
+mod:hook("InteractorExtension", "cancel_interaction", function(func, self, t)
+    local interactor_unit = self._unit
+    
+    if interactor_unit and interaction_active_units[interactor_unit] then
+        interaction_active_units[interactor_unit] = nil
+    end
+    
+    func(self, t)
+end)
+
+mod:hook("InteractorExtension", "reset_interaction", function(func, self, reset_focus_unit)
+    local interactor_unit = self._unit
+    
+    if interactor_unit and interaction_active_units[interactor_unit] then
+        interaction_active_units[interactor_unit] = nil
+    end
+    
+    func(self, reset_focus_unit)
+end)
 
 mod.on_game_state_changed = function(status, state_name)
     if status == "enter" and state_name == "StateGameplay" then

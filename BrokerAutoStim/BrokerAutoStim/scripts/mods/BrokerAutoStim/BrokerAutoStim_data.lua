@@ -69,7 +69,12 @@ local mod = get_mod("BrokerAutoStim")
 							default_value   = 5.0,
 							range           = { 1.0, 30.0 },
 							decimals_number = 1
-					},
+						},
+						{
+							setting_id    = "animation_cancel_stim",
+							type          = "checkbox",
+							default_value = true
+						},
 					}
 				},
 				{
@@ -128,12 +133,39 @@ local mod = get_mod("BrokerAutoStim")
 							type = "group",
 							sub_widgets = {
 								{
-									setting_id    = "cancel_on_push",
+									setting_id    = "cancel_on_push_block",
 									type          = "checkbox",
 									default_value = false
 								},
 								{
-									setting_id    = "cancel_on_block",
+									setting_id    = "cancel_on_attack",
+									type          = "checkbox",
+									default_value = false
+								},
+								{
+									setting_id      = "attack_cooldown",
+									type            = "numeric",
+									default_value   = 0.5,
+									range           = { 0.1, 4.0 },
+									decimals_number = 2
+								},
+								{
+									setting_id    = "cancel_on_carrying",
+									type          = "checkbox",
+									default_value = false
+								},
+								{
+									setting_id    = "cancel_on_reload",
+									type          = "checkbox",
+									default_value = false
+								},
+								{
+									setting_id    = "cancel_on_interaction",
+									type          = "checkbox",
+									default_value = false
+								},
+								{
+									setting_id    = "cancel_during_ability",
 									type          = "checkbox",
 									default_value = false
 								},
@@ -186,6 +218,18 @@ local mod = get_mod("BrokerAutoStim")
 								},
 								{
 									setting_id      = "crusher_detection_range",
+									type            = "numeric",
+									default_value   = 5.0,
+									range           = { 5.0, 50.0 },
+									decimals_number = 1
+								},
+								{
+									setting_id    = "block_nearby_rager",
+									type          = "checkbox",
+									default_value = false
+								},
+								{
+									setting_id      = "rager_detection_range",
 									type            = "numeric",
 									default_value   = 5.0,
 									range           = { 5.0, 50.0 },

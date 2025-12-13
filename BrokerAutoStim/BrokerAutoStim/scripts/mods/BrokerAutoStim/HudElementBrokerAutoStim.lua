@@ -40,7 +40,8 @@ local HudElementBrokerAutoStim = class("HudElementBrokerAutoStim", "HudElementBa
 
 HudElementBrokerAutoStim.init = function(self, parent, draw_layer, start_scale)
 	HudElementBrokerAutoStim.super.init(self, parent, draw_layer, start_scale, ui_definitions)
-	self:set_enabled_state(mod.get_auto_stim_enabled())
+	local enabled = mod.get_auto_stim_enabled and mod.get_auto_stim_enabled() or true
+	self:set_enabled_state(enabled)
 	self:update_visibility()
 	self:set_side_length(mod:get("hud_icon_size") or 30)
 end

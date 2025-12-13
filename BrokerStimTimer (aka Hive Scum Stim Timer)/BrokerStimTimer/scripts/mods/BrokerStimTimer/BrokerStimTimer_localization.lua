@@ -5,21 +5,6 @@ local loc = {
 	mod_description = {
 		en = "A detachable timer for the broker stim ability that can be positioned anywhere on screen.",
 	},
-	position_group = {
-		en = "Position",
-	},
-	icon_x = {
-		en = "Icon Position X",
-	},
-	icon_y = {
-		en = "Icon Position Y",
-	},
-	text_x = {
-		en = "Text Position X",
-	},
-	text_y = {
-		en = "Text Position Y",
-	},
 	display_group = {
 		en = "Display",
 	},
@@ -29,22 +14,79 @@ local loc = {
 	icon_size = {
 		en = "Icon Size",
 	},
-	show_active = {
-		en = "Show Active Timer",
-	},
-	show_cooldown = {
-		en = "Show Cooldown Timer",
-	},
 	show_decimals = {
 		en = "Show Decimals",
 	},
-	show_when_ready = {
-		en = "Show when ready",
+	link_all_positions = {
+		en = "Link All Positions",
 	},
-	show_icon = {
+	shared_position_group = {
+		en = "Shared Position",
+	},
+	shared_icon_x = {
+		en = "Icon Position X",
+	},
+	shared_icon_y = {
+		en = "Icon Position Y",
+	},
+	shared_text_x = {
+		en = "Text Position X",
+	},
+	shared_text_y = {
+		en = "Text Position Y",
+	},
+	ready_group = {
+		en = "Ready",
+	},
+	ready_icon_x = {
+		en = "Icon Position X",
+	},
+	ready_icon_y = {
+		en = "Icon Position Y",
+	},
+	ready_show_icon = {
 		en = "Show Icon",
 	},
-	show_timer = {
+	active_group = {
+		en = "Active",
+	},
+	active_icon_x = {
+		en = "Icon Position X",
+	},
+	active_icon_y = {
+		en = "Icon Position Y",
+	},
+	active_text_x = {
+		en = "Text Position X",
+	},
+	active_text_y = {
+		en = "Text Position Y",
+	},
+	active_show_icon = {
+		en = "Show Icon",
+	},
+	active_show_timer = {
+		en = "Show Timer",
+	},
+	cooldown_group = {
+		en = "Cooldown",
+	},
+	cooldown_icon_x = {
+		en = "Icon Position X",
+	},
+	cooldown_icon_y = {
+		en = "Icon Position Y",
+	},
+	cooldown_text_x = {
+		en = "Text Position X",
+	},
+	cooldown_text_y = {
+		en = "Text Position Y",
+	},
+	cooldown_show_icon = {
+		en = "Show Icon",
+	},
+	cooldown_show_timer = {
 		en = "Show Timer",
 	},
 	active = {

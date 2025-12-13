@@ -71,35 +71,37 @@ function CombatStatsTracker:load_from_history(history_data)
 
     -- Reconstruct engagements from history
     for _, eng_data in ipairs(history_data.engagements or {}) do
-        local engagement = {
-            unit = nil,
-            name = eng_data.name,
-            type = eng_data.type,
-            start_time = eng_data.start_time,
-            end_time = eng_data.end_time,
-            total_damage = eng_data.stats.total_damage or 0,
-            melee_damage = eng_data.stats.melee_damage or 0,
-            ranged_damage = eng_data.stats.ranged_damage or 0,
-            explosion_damage = eng_data.stats.explosion_damage or 0,
-            companion_damage = eng_data.stats.companion_damage or 0,
-            buff_damage = eng_data.stats.buff_damage or 0,
-            melee_crit_damage = eng_data.stats.melee_crit_damage or 0,
-            melee_weakspot_damage = eng_data.stats.melee_weakspot_damage or 0,
-            ranged_crit_damage = eng_data.stats.ranged_crit_damage or 0,
-            ranged_weakspot_damage = eng_data.stats.ranged_weakspot_damage or 0,
-            bleed_damage = eng_data.stats.bleed_damage or 0,
-            burn_damage = eng_data.stats.burn_damage or 0,
-            toxin_damage = eng_data.stats.toxin_damage or 0,
-            total_hits = eng_data.stats.total_hits or 0,
-            melee_hits = eng_data.stats.melee_hits or 0,
-            ranged_hits = eng_data.stats.ranged_hits or 0,
-            melee_crit_hits = eng_data.stats.melee_crit_hits or 0,
-            melee_weakspot_hits = eng_data.stats.melee_weakspot_hits or 0,
-            ranged_crit_hits = eng_data.stats.ranged_crit_hits or 0,
-            ranged_weakspot_hits = eng_data.stats.ranged_weakspot_hits or 0,
-            buffs = eng_data.buffs or {},
-        }
-        table.insert(self._engagements, engagement)
+        if eng_data.end_time then
+            local engagement = {
+                unit = nil,
+                name = eng_data.name,
+                type = eng_data.type,
+                start_time = eng_data.start_time,
+                end_time = eng_data.end_time,
+                total_damage = eng_data.stats.total_damage or 0,
+                melee_damage = eng_data.stats.melee_damage or 0,
+                ranged_damage = eng_data.stats.ranged_damage or 0,
+                explosion_damage = eng_data.stats.explosion_damage or 0,
+                companion_damage = eng_data.stats.companion_damage or 0,
+                buff_damage = eng_data.stats.buff_damage or 0,
+                melee_crit_damage = eng_data.stats.melee_crit_damage or 0,
+                melee_weakspot_damage = eng_data.stats.melee_weakspot_damage or 0,
+                ranged_crit_damage = eng_data.stats.ranged_crit_damage or 0,
+                ranged_weakspot_damage = eng_data.stats.ranged_weakspot_damage or 0,
+                bleed_damage = eng_data.stats.bleed_damage or 0,
+                burn_damage = eng_data.stats.burn_damage or 0,
+                toxin_damage = eng_data.stats.toxin_damage or 0,
+                total_hits = eng_data.stats.total_hits or 0,
+                melee_hits = eng_data.stats.melee_hits or 0,
+                ranged_hits = eng_data.stats.ranged_hits or 0,
+                melee_crit_hits = eng_data.stats.melee_crit_hits or 0,
+                melee_weakspot_hits = eng_data.stats.melee_weakspot_hits or 0,
+                ranged_crit_hits = eng_data.stats.ranged_crit_hits or 0,
+                ranged_weakspot_hits = eng_data.stats.ranged_weakspot_hits or 0,
+                buffs = eng_data.buffs or {},
+            }
+            table.insert(self._engagements, engagement)
+        end
     end
 
     self._session_stats_dirty = true
@@ -509,33 +511,59 @@ function CombatStatsTracker:_update_active_engagements()
     end
 end
 
-function CombatStatsTracker:_update_buffs(active_buffs_data, dt)
-    if not active_buffs_data then
+function CombatStatsTracker:_update_buffs(active_buffs_data, hidden_buff_data, dt)
+    if not active_buffs_data and not hidden_buff_data then
         return
     end
 
-    for i = 1, #active_buffs_data do
-        local buff_data = active_buffs_data[i]
-        local buff_instance = buff_data.buff_instance
+    local templates = {}
 
-        if not buff_data.remove and buff_instance and buff_data.show then
-            local buff_template_name = buff_instance:template_name()
+    if active_buffs_data then
+        for i = 1, #active_buffs_data do
+            local buff_data = active_buffs_data[i]
+            local buff_instance = buff_data.buff_instance
 
-            if buff_template_name then
-                -- Update tracked buffs
-                if not self._tracked_buffs[buff_template_name] then
-                    self._tracked_buffs[buff_template_name] = 0
-                end
-                self._tracked_buffs[buff_template_name] = self._tracked_buffs[buff_template_name] + dt
-
-                -- Update active engagements
-                for _, engagement in ipairs(self._active_engagements) do
-                    if not engagement.buffs[buff_template_name] then
-                        engagement.buffs[buff_template_name] = 0
-                    end
-                    engagement.buffs[buff_template_name] = engagement.buffs[buff_template_name] + dt
+            if not buff_data.remove and buff_instance and buff_data.show then
+                local buff_template_name = buff_instance:template_name()
+                if buff_template_name then
+                    templates[buff_template_name] = true
                 end
             end
+        end
+    end
+
+    if hidden_buff_data then
+        for i = 1, #hidden_buff_data do
+            local buff_instance = hidden_buff_data[i]
+            if buff_instance then
+                local buff_template_name = buff_instance:template_name()
+
+                if buff_template_name and not templates[buff_template_name] then
+                    local buff_template = buff_instance:template()
+                    local has_duration = buff_template.duration or buff_template.active_duration
+                    local is_proc_buff = buff_instance.is_proc_active ~= nil
+                    local should_track = not is_proc_buff or (is_proc_buff and buff_instance:is_proc_active())
+                    if has_duration and should_track then
+                        templates[buff_template_name] = true
+                    end
+                end
+            end
+        end
+    end
+
+    for buff_template_name, _ in pairs(templates) do
+        -- Update tracked buffs
+        if not self._tracked_buffs[buff_template_name] then
+            self._tracked_buffs[buff_template_name] = 0
+        end
+        self._tracked_buffs[buff_template_name] = self._tracked_buffs[buff_template_name] + dt
+
+        -- Update active engagements
+        for _, engagement in ipairs(self._active_engagements) do
+            if not engagement.buffs[buff_template_name] then
+                engagement.buffs[buff_template_name] = 0
+            end
+            engagement.buffs[buff_template_name] = engagement.buffs[buff_template_name] + dt
         end
     end
 end
