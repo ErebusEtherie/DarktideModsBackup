@@ -6,6 +6,7 @@ if mod.team_throwables then
     return mod.team_throwables
 end
 
+local MasterItems = require("scripts/backend/master_items")
 local U = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
 -- Ensure visibility helpers are loaded (force-show, interlude, etc.)
 mod:io_dofile("RingHud/scripts/mods/RingHud/team/visibility")
@@ -114,69 +115,60 @@ end
 local function _resolve_grenade_icon(unit)
     if not unit or not Unit.alive(unit) then return nil end
 
-    -- Try to resolve a stable ID for the cache (Peer ID for humans, Unique ID/Name for bots)
-    local player = Managers.player and Managers.player:player_by_unit(unit)
-    local cache_id = nil
-    if player then
-        cache_id = player:peer_id() or player:unique_id() or player:name()
-    end
+    -- 1. Check Cache
+    local player_manager = Managers.player
+    local player = player_manager and player_manager:player_by_unit(unit)
+    local cache_id = player and (player:peer_id() or player:unique_id() or player:name())
 
-    -- Return cached if available
     if cache_id and _icon_cache[cache_id] then
         return _icon_cache[cache_id]
     end
 
     local icon = nil
-    local name = nil
+    local item_name = nil
 
-    -- Objects to hold data sources
-    local grenade_ability_data = nil
-    local weapon_template_data = nil
-
-    -- 1. Gather Data: Ability System (Reliable for Husks)
+    -- 2. Get the specific Item Name from the Ability Extension
+    -- This tells us WHICH grenade is equipped (e.g. "ogryn_grenade_friend_rock")
     local ability_ext = ScriptUnit.has_extension(unit, "ability_system") and ScriptUnit.extension(unit, "ability_system")
+
     if ability_ext and ability_ext.equipped_abilities then
-        local abilities = ability_ext:equipped_abilities()
-        grenade_ability_data = abilities and abilities.grenade_ability
-        if grenade_ability_data then
-            name = grenade_ability_data.name
+        local equipped_abilities = ability_ext:equipped_abilities()
+        local grenade_ability = equipped_abilities.grenade_ability
+
+        if grenade_ability then
+            item_name = grenade_ability.name
         end
     end
 
-    -- 2. Gather Data: Visual Loadout (Backup for Name, Source for Icon)
-    local vload = ScriptUnit.has_extension(unit, "visual_loadout_system") and
-        ScriptUnit.extension(unit, "visual_loadout_system")
-    if vload and vload.weapon_template_from_slot then
-        weapon_template_data = vload:weapon_template_from_slot("slot_grenade_ability")
-        if not name and weapon_template_data then
-            name = weapon_template_data.name
+    -- 3. Fallback: Visual Loadout
+    if not item_name then
+        local visual_loadout_ext = ScriptUnit.has_extension(unit, "visual_loadout_system") and
+            ScriptUnit.extension(unit, "visual_loadout_system")
+        if visual_loadout_ext and visual_loadout_ext.weapon_template_from_slot then
+            local template = visual_loadout_ext:weapon_template_from_slot("slot_grenade_ability")
+            if template then
+                item_name = template.name
+            end
         end
     end
 
-    -- 3. Priority: Hardcoded Lookup (Requires Name)
-    if name and THROWABLE_ICON_LOOKUP[name] then
-        icon = THROWABLE_ICON_LOOKUP[name]
-    end
+    -- 4. CRITICAL STEP: Lookup the Master Item configuration
+    -- The Master Item contains the specific HUD icon for this variant
+    -- if item_name then
+    --     local master_item = MasterItems.get_item(item_name)
+    --     if master_item and master_item.hud_icon then
+    --         icon = master_item.hud_icon
+    --     end
+    -- end
 
-    -- 4. Fallback: Data-driven fields
+    -- 5. Last Resort: Hardcoded Lookup (Keep this for safety/compatibility)
     if not icon then
-        -- A. Ability System hud_icon
-        if grenade_ability_data and type(grenade_ability_data.hud_icon) == "string" and grenade_ability_data.hud_icon ~= "" then
-            icon = grenade_ability_data.hud_icon
-        end
-
-        -- B. Visual Loadout hud_icon
-        if not icon and weapon_template_data and weapon_template_data.hud_icon then
-            icon = weapon_template_data.hud_icon
-        end
-
-        -- C. Construct from Name
-        if not icon and name and name ~= "" then
-            icon = "content/ui/materials/icons/throwables/hud/" .. name
+        if item_name and THROWABLE_ICON_LOOKUP[item_name] then
+            icon = THROWABLE_ICON_LOOKUP[item_name]
         end
     end
 
-    -- Cache result if we have a valid ID
+    -- Cache and Return
     if cache_id and icon then
         _icon_cache[cache_id] = icon
     end

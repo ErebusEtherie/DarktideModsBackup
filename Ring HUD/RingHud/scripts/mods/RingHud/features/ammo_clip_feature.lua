@@ -18,8 +18,10 @@ local AMMO_CLIP_SEGMENT_GAP = 0.015 -- kept local; RingHud constants cover arc m
 --   - uses_ammo
 --   - current_clip
 --   - max_clip
+--   - is_needle_pistol (new)
+--   - special_active (new)
 -- Does not touch reserve fields (handled elsewhere / ammo_reserve_feature).
-function AmmoClipFeature.update_state(unit_data_comp_access_point, weapon_ext, inv_comp, ammo_data_out)
+function AmmoClipFeature.update_state(unit_data_comp_access_point, weapon_ext, inv_comp, ammo_data_out, archetype_name)
     if not ammo_data_out then
         return
     end
@@ -29,6 +31,8 @@ function AmmoClipFeature.update_state(unit_data_comp_access_point, weapon_ext, i
 
     local uses_ammo                 = false
     local current_clip, max_clip    = 0, 0
+    local is_needle_pistol          = false
+    local special_active            = false
 
     -- We only expose clip info when the wielded slot is the secondary AND the template uses ammo.
     if wielded_slot == "slot_secondary"
@@ -42,10 +46,21 @@ function AmmoClipFeature.update_state(unit_data_comp_access_point, weapon_ext, i
         if uses_flag then
             uses_ammo = true
 
+            -- [RingHud] Broker Needle Pistol Logic
+            if archetype_name == "broker" and wielded_template.name then
+                if string.find(wielded_template.name, "needlepistol") then
+                    is_needle_pistol = true
+                end
+            end
+
             local secondary_comp = unit_data_comp_access_point:read_component("slot_secondary")
             if secondary_comp then
                 local curr = secondary_comp.current_ammunition_clip
                 local maxv = secondary_comp.max_ammunition_clip
+
+                if is_needle_pistol then
+                    special_active = secondary_comp.special_active
+                end
 
                 -- 1.10+ layout: clips stored as arrays → sum all clips that are "in use"
                 if type(curr) == "table" and type(maxv) == "table" then
@@ -66,9 +81,11 @@ function AmmoClipFeature.update_state(unit_data_comp_access_point, weapon_ext, i
         end
     end
 
-    ammo_data_out.uses_ammo    = uses_ammo
-    ammo_data_out.current_clip = current_clip
-    ammo_data_out.max_clip     = max_clip
+    ammo_data_out.uses_ammo        = uses_ammo
+    ammo_data_out.current_clip     = current_clip
+    ammo_data_out.max_clip         = max_clip
+    ammo_data_out.is_needle_pistol = is_needle_pistol
+    ammo_data_out.special_active   = special_active
 end
 
 -- Expose to mod so RingHud_state_player.lua can call: mod.ammo_clip_update_state(...)
@@ -146,7 +163,15 @@ function AmmoClipFeature.update_bar(hud_element, widget, hud_state, hotkey_overr
 
     if overall_visible then
         local border_color
-        if clip_frac >= 0.85 then
+
+        -- [RingHud] Broker Needle Pistol override
+        if data.is_needle_pistol then
+            if data.special_active then
+                border_color = mod.PALETTE_RGBA1.NEEDLE_SPECIAL_ACTIVE
+            else
+                border_color = mod.PALETTE_RGBA1.NEEDLE_SPECIAL_INACTIVE
+            end
+        elseif clip_frac >= 0.85 then
             border_color = mod.PALETTE_RGBA1.AMMO_BAR_COLOR_HIGH
         elseif clip_frac >= 0.65 then
             border_color = mod.PALETTE_RGBA1.AMMO_BAR_COLOR_MEDIUM_H

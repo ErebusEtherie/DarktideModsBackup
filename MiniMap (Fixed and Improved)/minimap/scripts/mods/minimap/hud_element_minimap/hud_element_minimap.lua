@@ -101,13 +101,13 @@ local function is_bot_marker(marker)
     return false
 end
 
-local function get_breed_type_from_marker(marker)
-    if not marker or not marker.unit then
+local function get_breed_type_from_unit(unit)
+    if not unit then
         return nil
     end
     
     local success, breed_type = pcall(function()
-        local unit_data_extension = ScriptUnit.has_extension(marker.unit, "unit_data_system")
+        local unit_data_extension = ScriptUnit.has_extension(unit, "unit_data_system")
         if not unit_data_extension then
             return nil
         end
@@ -137,14 +137,21 @@ local function get_breed_type_from_marker(marker)
     return success and breed_type or nil
 end
 
-local function calculate_threat_score(marker)
+local function get_breed_type_from_marker(marker)
     if not marker or not marker.unit then
+        return nil
+    end
+    return get_breed_type_from_unit(marker.unit)
+end
+
+local function calculate_threat_score_from_unit(unit)
+    if not unit then
         return 0
     end
     
     local success, threat_score = pcall(function()
         -- Get enemy type priority (higher = more dangerous)
-        local unit_data_extension = ScriptUnit.has_extension(marker.unit, "unit_data_system")
+        local unit_data_extension = ScriptUnit.has_extension(unit, "unit_data_system")
         if not unit_data_extension then
             return 0
         end
@@ -244,7 +251,7 @@ local function calculate_threat_score(marker)
         end
         
         -- Get health status (0-1000, higher = more wounded)
-        local health_extension = ScriptUnit.has_extension(marker.unit, "health_system")
+        local health_extension = ScriptUnit.has_extension(unit, "health_system")
         local health_score = 0
         
         if health_extension then
@@ -264,6 +271,13 @@ local function calculate_threat_score(marker)
     end)
     
     return success and threat_score or 0
+end
+
+local function calculate_threat_score(marker)
+    if not marker or not marker.unit then
+        return 0
+    end
+    return calculate_threat_score_from_unit(marker.unit)
 end
 
 HudElementMinimap._collect_markers = function(self)
@@ -316,6 +330,71 @@ HudElementMinimap._collect_markers = function(self)
         roamer = {},
     }
     local non_enemy_markers = {}
+    
+    local tracked_enemy_units = {}
+    
+    if enemy_radar_enabled then
+        local local_player = Managers.player:local_player(1)
+        if local_player then
+            local player_unit = local_player.player_unit
+            if player_unit and Unit.alive(player_unit) and Unit.world(player_unit) then
+                local broadphase_system = Managers.state.extension and Managers.state.extension:system("broadphase_system")
+                local broadphase = broadphase_system and broadphase_system.broadphase
+                
+                if broadphase then
+                    local side_system = Managers.state.extension and Managers.state.extension:system("side_system")
+                    local side = side_system and side_system.side_by_unit[player_unit]
+                    
+                    if side then
+                        local from_pos = Unit.world_position(player_unit, 1)
+                        local enemy_side_names = side:relation_side_names("enemy")
+                        local max_range = mod.settings.enemy_radar_scan_range or 50.0
+                        
+                        local broadphase_results = {}
+                        local count = broadphase.query(broadphase, from_pos, max_range, broadphase_results, enemy_side_names)
+                        
+                        if count and count > 0 then
+                            for i = 1, count do
+                                local enemy_unit = broadphase_results[i]
+                                if Unit.alive(enemy_unit) then
+                                    local is_pinged = pinged_units[enemy_unit] or false
+                                    local is_companion_targeted = companion_targeted_units[enemy_unit] or false
+                                    
+                                    if not is_pinged and not is_companion_targeted then
+                                        local breed_type = get_breed_type_from_unit(enemy_unit)
+                                        if breed_type and enemy_radar_filters[breed_type] then
+                                            tracked_enemy_units[enemy_unit] = true
+                                            
+                                            local enemy_pos = Unit.world_position(enemy_unit, 1)
+                                            local fake_marker = {
+                                                unit = enemy_unit,
+                                                position = Vector3Box(enemy_pos),
+                                                template = {
+                                                    name = "enemy"
+                                                }
+                                            }
+                                            
+                                            local azimuth, range, vertical_distance = self:_get_marker_azimuth_range(fake_marker)
+                                            local marker_info = {
+                                                azimuth = azimuth,
+                                                range = range,
+                                                vertical_distance = vertical_distance,
+                                                name = "enemy",
+                                                marker = fake_marker,
+                                                threat_score = calculate_threat_score_from_unit(enemy_unit)
+                                            }
+                                            
+                                            table.insert(enemy_markers_by_type[breed_type], marker_info)
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
 
     if world_markers_list then
         for i = 1, #world_markers_list do
@@ -332,34 +411,18 @@ HudElementMinimap._collect_markers = function(self)
                                      template_name == "ringhud_teammate_tile")
 
             if not (hide_bots and is_player_marker and is_bot_marker(marker)) then
-                local azimuth, range, vertical_distance = self:_get_marker_azimuth_range(marker)
-                local marker_info = {
-                    azimuth = azimuth,
-                    range = range,
-                    vertical_distance = vertical_distance,
-                    name = template_name,
-                    marker = marker,
-                }
-                
                 local is_enemy_marker = (template_name == "color_coded_healthbar" or template_name == "custom_healthbar")
                 
-                if is_enemy_marker then
-                    local enemy_healthbar_vis = settings.icon_vis and settings.icon_vis[template_name]
+                if not is_enemy_marker or not (marker.unit and tracked_enemy_units[marker.unit]) then
+                    local azimuth, range, vertical_distance = self:_get_marker_azimuth_range(marker)
+                    local marker_info = {
+                        azimuth = azimuth,
+                        range = range,
+                        vertical_distance = vertical_distance,
+                        name = template_name,
+                        marker = marker,
+                    }
                     
-                    if enemy_healthbar_vis and enemy_radar_enabled then
-                        local is_pinged = marker.unit and pinged_units[marker.unit] or false
-                        local is_companion_targeted = marker.unit and companion_targeted_units[marker.unit] or false
-                        
-                        -- Don't show enemy dot if it's pinged or companion targeted (those show their own icons)
-                        if not is_pinged and not is_companion_targeted then
-                            local breed_type = get_breed_type_from_marker(marker)
-                            if breed_type and enemy_radar_filters[breed_type] then
-                                marker_info.threat_score = calculate_threat_score(marker)
-                                table.insert(enemy_markers_by_type[breed_type], marker_info)
-                            end
-                        end
-                    end
-                else
                     table.insert(non_enemy_markers, marker_info)
                 end
             end
@@ -474,13 +537,23 @@ local marker_name_to_icon = {
     interaction = "interactable",
 
     health_bar = "none",
-    -- Health bar mods
+    -- Health bar mods (kept for backward compatibility)
     color_coded_healthbar = "enemy",
     custom_healthbar = "enemy",
+    -- Direct enemy tracking via broadphase
+    enemy = "enemy",
 }
 
 local function get_icon_name_from_marker_info(marker_info)
     local settings = mod.settings or {}
+    
+    if marker_info.name == "enemy" then
+        if not settings.enemy_radar_enabled then
+            return "none"
+        end
+        return "enemy"
+    end
+    
     local visibility = settings.icon_vis and settings.icon_vis[marker_info.name]
     if not visibility then
         return "none"

@@ -1,4 +1,16 @@
 CHANGELOG
+1.09.02 More tweaks
+-- [New] If using a needle pistol, loaded ammo bar colour will indicate mode (suggested by Wobin)
+-- [Better] XY offset sliders now bigger (suggested by blayzekiller)
+-- [Better] Minimalist vanilla team panel will now show ammo reserve percentage if team ammo not disabled
+-- [Better] Minimalist vanilla team panel will not show icons for "grenades" that can't use pickups
+-- [Better] Tidied up settings layout
+-- [Better] Updated Chinese localisation from jcyl2023
+-- [Fixed] Boom Bringer (missile launcher) no longer triggers charge bar (reported by Norkkom)
+-- [Fixed] Added some missing localisation
+-- [Fixed] Nameplate names fixed for (hopefully) all combos of True Level and Who Are You (suggested by Kaarug)
+-- [Known Issue] Sometimes DT bugs and gives invalid team slot colours (RH defaults to white). This will break nameplate names.
+
 1.09.01 Grenade patch and Team Layouts
 -- [New] Alternative layout and positioning settings for docked team panels
 -- [New] Setting to separate/spread the player's Ring HUD while using an auspex
@@ -15,7 +27,6 @@ CHANGELOG
 -- [New] Additional ability ready sounds to choose from
 -- [New] Decluttering vanilla team panels added as team hud option
 -- [New] Hive Scum grenade regen now shown in grenades widget (when the buff doesn't bug out)
--- [New] Option for streamlined version of default team panels
 -- [Better] Performance overhaul
 -- [Better] Class agnostic team grenade icon logic
 -- [Better] Reworked HUD element scaling

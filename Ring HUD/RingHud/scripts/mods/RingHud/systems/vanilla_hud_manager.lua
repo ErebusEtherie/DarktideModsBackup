@@ -4,6 +4,9 @@ if not mod then
     return
 end
 
+local UIWidget                         = require("scripts/managers/ui/ui_widget")
+local UIFontSettings                   = require("scripts/managers/ui/ui_font_settings")
+
 mod.vanilla_hud_manager                = mod.vanilla_hud_manager or {}
 local VanillaHudManager                = mod.vanilla_hud_manager
 
@@ -254,6 +257,36 @@ end
 -------------------------------------------------------------------------------
 
 function VanillaHudManager.init()
+    -- [NEW] Inject ammo text widget into vanilla team panel definitions
+    mod:hook_require("scripts/ui/hud/elements/team_player_panel/hud_element_team_player_panel_definitions",
+        function(definitions)
+            local UIWidget = require("scripts/managers/ui/ui_widget")
+
+            if definitions and definitions.widget_definitions then
+                definitions.widget_definitions.ringhud_ammo_text = UIWidget.create_definition({
+                    {
+                        value_id = "text",
+                        style_id = "text",
+                        pass_type = "text",
+                        value = "",
+                        style = {
+                            vertical_alignment = "center",
+                            horizontal_alignment = "left",
+                            text_vertical_alignment = "center",
+                            text_horizontal_alignment = "left",
+                            size = { 100, 20 },
+                            offset = { 80, -16, 3 },
+                            font_type = "proxima_nova_bold",
+                            font_size = 16,
+                            text_color = mod.PALETTE_ARGB255.GENERIC_WHITE,
+                            drop_shadow = true,
+                            visible = false
+                        },
+                    },
+                }, "toughness_bar")
+            end
+        end)
+
     -- Hook team panel creation once so we can hide the vanilla panel when requested
     if CLASS and CLASS.HudElementTeamPanelHandler then
         mod:hook(CLASS.HudElementTeamPanelHandler, "_add_panel",
@@ -314,13 +347,109 @@ function VanillaHudManager.init()
             end
         )
 
-        -- Recolour vanilla team pocketable + small pocketable using RingHud tints
         mod:hook(CLASS.HudElementTeamPlayerPanel, "update",
             function(func, self, ...)
                 local ret = func(self, ...)
 
+                -- 1. Existing Pocketable Tinting
                 if TeamPockets and TeamPockets.apply_vanilla_tints then
                     TeamPockets.apply_vanilla_tints(self)
+                end
+
+                local s = mod._settings
+
+                if s and s.team_hud_mode == "team_hud_floating_thin" then
+                    local widgets = self._widgets_by_name
+                    local player = self._player or (self._data and self._data.player)
+
+                    -- 2. Ammo Logic
+                    if s.team_munitions ~= "team_munitions_disabled" then
+                        -- A. Disable Vanilla Icon
+                        if widgets.ammo_status then
+                            widgets.ammo_status.visible = false
+                            widgets.ammo_status.dirty = true
+                        end
+
+                        -- B. Update Custom Text
+                        -- TODO How much of this is duplication of team_ammo.lua or some other file?
+                        local ammo_text_widget = widgets.ringhud_ammo_text
+                        if ammo_text_widget then
+                            local content = ammo_text_widget.content
+                            local style = ammo_text_widget.style.text
+                            local unit = player and player.player_unit
+
+                            local text_to_show = ""
+                            local color_to_use = mod.PALETTE_ARGB255.GENERIC_WHITE
+
+                            if unit and Unit.alive(unit) then
+                                local unit_data = ScriptUnit.has_extension(unit, "unit_data_system") and
+                                    ScriptUnit.extension(unit, "unit_data_system")
+                                if unit_data then
+                                    local comp = unit_data:read_component("slot_secondary")
+                                    if comp then
+                                        local cur = HudUtils.sum_ammo_field(comp.current_ammunition_reserve)
+                                        local max = HudUtils.sum_ammo_field(comp.max_ammunition_reserve)
+
+                                        if max > 0 then
+                                            local f = math.clamp(cur / max, 0, 1)
+                                            text_to_show = string.format("%.0f%%", f * 100)
+
+                                            if f >= 0.85 then
+                                                color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_HIGH
+                                            elseif f >= 0.65 then
+                                                color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_MEDIUM_H
+                                            elseif f >= 0.45 then
+                                                color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_MEDIUM_L
+                                            elseif f >= 0.25 then
+                                                color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_LOW
+                                            else
+                                                color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_CRITICAL
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+
+                            if content.text ~= text_to_show then
+                                content.text = text_to_show
+                                ammo_text_widget.dirty = true
+                            end
+
+                            if HudUtils.set_style_text_color(style, color_to_use) then
+                                ammo_text_widget.dirty = true
+                            end
+
+                            if style.visible ~= (text_to_show ~= "") then
+                                style.visible = (text_to_show ~= "")
+                                ammo_text_widget.dirty = true
+                            end
+                        end
+                    end
+
+                    -- 3. Throwable Hiding Logic
+                    local throwable_widget = widgets.throwable
+                    -- Only check if currently visible (don't force visible if vanilla hid it)
+                    if throwable_widget and throwable_widget.visible then
+                        local should_hide = false
+
+                        -- Condition A: Psyker Archetype
+                        if player and player.archetype_name and player:archetype_name() == "psyker" then
+                            should_hide = true
+                        end
+
+                        -- Condition B: Specific Icon
+                        if not should_hide then
+                            local tex = throwable_widget.content.texture
+                            if tex == "content/ui/materials/icons/throwables/hud/small/party_non_grenade" then
+                                should_hide = true
+                            end
+                        end
+
+                        if should_hide then
+                            throwable_widget.visible = false
+                            throwable_widget.dirty = true
+                        end
+                    end
                 end
 
                 return ret

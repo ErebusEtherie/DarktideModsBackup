@@ -29,9 +29,9 @@ return {
     ru = "Ожидание взаимодействия",
   },
   [SettingNames.InteractCooldownTooltip] = {
-    en = "Wait time between interactions in milliseconds. Default: 100",
-    ["zh-cn"] = "两次交互之间的等待时间（毫秒）。默认值：100",
-    ru = "Время ожидания между взаимодействиями в миллисекундах. По умолчанию: 100",
+    en = "Wait time between interactions in milliseconds. Default: 150",
+    ["zh-cn"] = "两次交互之间的等待时间（毫秒）。默认值：150",
+    ru = "Время ожидания между взаимодействиями в миллисекундах. По умолчанию: 150",
   },
   [SettingNames.TargetPrecision] = {
     en = "Target Precision",
@@ -39,8 +39,8 @@ return {
     ru = "Точность цели",
   },
   [SettingNames.TargetPrecisionTooltip] = {
-    en = "The bigger the value, the smaller the detection window when the cursor is positioned on the symbol. Default: 3",
-    ["zh-cn"] = "数值越大，当光标定位在符号上时，检测窗口越小。默认值：3",
-    ru = "Чем больше значение, тем меньше окно обнаружения, когда курсор находится на символе. По умолчанию: 3",
+    en = "The bigger the value, the smaller the detection window when the cursor is positioned on the symbol. Default: 4",
+    ["zh-cn"] = "数值越大，当光标定位在符号上时，检测窗口越小。默认值：4",
+    ru = "Чем больше значение, тем меньше окно обнаружения, когда курсор находится на символе. По умолчанию: 4",
   },
 }

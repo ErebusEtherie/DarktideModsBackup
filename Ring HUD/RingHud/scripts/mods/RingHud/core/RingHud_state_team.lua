@@ -232,9 +232,6 @@ function RingHud_state_team.build(unit, marker, opts)
     local is_human_player = _is_human_from_player(player)
     local is_human        = is_human_unit or is_human_player
 
-    -- Name (seeded by RingHud’s own precomposed value when present; otherwise compose now)
-    local seeded_text     = marker and marker.data and marker.data.rh_name_composed or nil
-
     -- Parse the setting string (format: nameX_iconX_statusX)
     local tni_setting     = (mod._settings and mod._settings.team_name_icon) or "name1_icon1_status1"
 
@@ -266,11 +263,11 @@ function RingHud_state_team.build(unit, marker, opts)
 
     if is_name_hidden then
         name_full = ""
-    elseif seeded_text and seeded_text ~= "" then
-        -- Floating / nameplate path: respect the precomposed, WRU-free string.
-        name_full = seeded_text
     else
-        -- Docked (marker == nil) or fallback path
+        -- Docked (marker == nil) OR Floating (marker != nil)
+        -- We force a clean composition via NameCache/Name.compose based on strict context.
+        -- This ensures that floating elements NEVER accidentally inherit docked-only mods like TL/WRU
+        -- from stale marker data.
         local context = is_floating and "floating" or "docked"
 
         if NameCache and NameCache.compose_team_name then

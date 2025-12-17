@@ -375,7 +375,6 @@ local function make_name_only_widget_def(node_name)
             local s                     = {}
             s.font_type                 = "proxima_nova_bold"
             s.drop_shadow               = true
-            -- Do NOT set s.material; Gui2 will auto-pick slug when it sees {#...} tags.
             s.text_horizontal_alignment = "center"
             s.text_vertical_alignment   = "bottom"
             s.size                      = { C.TILE_SIZE, C.TILE_SIZE / 12 }

@@ -1,7 +1,5 @@
 ---@diagnostic disable: undefined-global
--- Version 4.7b
 -- The main file needed for this mod's menu to work.
-
 -- FOR TRANSLATORS: YOU DON'T NEED TO DO ANYTHING IN THIS FILE!
 
 local mod = get_mod("Enhanced_descriptions")
@@ -16,68 +14,70 @@ local DEFAULT_SETTINGS = {
 	enable_talents_file =			true,
 	enable_names_file =				true,
 	enable_names_tal_bless_file =	true,
+	enable_debug_mode =				false,
+
 }
 
 local COLOR_SETTINGS = {
 	-- Enhanced Descriptions
-	{ id = "bleed",					default = "ui_zealot" },
-	{ id = "brittleness",			default = "medium_orchid" },
-	{ id = "burn",					default = "sienna" },
-	{ id = "cleave",				default = "player_slot_2_bright" },
-	{ id = "coherency",				default = "citadel_kindleflame" },
-	{ id = "combat_ability",		default = "olive_drab" },
-	{ id = "corruption",			default = "ui_corruption_medium" },
-	{ id = "crit",					default = "citadel_yriel_yellow" },
-	{ id = "damage",				default = "citadel_jokaero_orange" },
-	{ id = "electrocuted",			default = "citadel_stormfang" },
-	{ id = "finesse",				default = "dodger_blue" },
-	{ id = "health",				default = "red" },
-	{ id = "hit_mass",				default = "item_rarity_dark_2" },
-	{ id = "impact",				default = "sea_green" },
-	{ id = "peril",					default = "ui_orange_dark" },
-	{ id = "power",					default = "steel_blue" },
-	{ id = "rending",				default = "violet" },
-	{ id = "soulblaze",				default = "ui_toughness_default" },
-	{ id = "stagger",				default = "terminal_background_selected" },
-	{ id = "stamina",				default = "light_salmon" },
-	{ id = "toughness",				default = "ui_difficulty_1" },
-	{ id = "weakspot",				default = "green_yellow" },
+	{ id = "bleed",				default = "ui_zealot" },
+	{ id = "brittleness",		default = "medium_orchid" },
+	{ id = "burn",				default = "sienna" },
+	{ id = "cleave",			default = "player_slot_2_bright" },
+	{ id = "coherency",			default = "citadel_kindleflame" },
+	{ id = "combat_ability",	default = "olive_drab" },
+	{ id = "corruption",		default = "ui_corruption_medium" },
+	{ id = "crit",				default = "citadel_yriel_yellow" },
+	{ id = "damage",			default = "citadel_jokaero_orange" },
+	{ id = "electrocuted",		default = "citadel_stormfang" },
+	{ id = "finesse",			default = "dodger_blue" },
+	{ id = "health",			default = "red" },
+	{ id = "hit_mass",			default = "item_rarity_dark_2" },
+	{ id = "impact",			default = "sea_green" },
+	{ id = "peril",				default = "ui_orange_dark" },
+	{ id = "power",				default = "steel_blue" },
+	{ id = "rending",			default = "violet" },
+	{ id = "soulblaze",			default = "ui_toughness_default" },
+	{ id = "stagger",			default = "terminal_background_selected" },
+	{ id = "stamina",			default = "light_salmon" },
+	{ id = "toughness",			default = "ui_difficulty_1" },
+	{ id = "weakspot",			default = "green_yellow" },
 
 	-- Classes
-	{ id = "class_psyker",			default = "player_slot_4" },
-	{ id = "precision",				default = "ui_psyker" },
-	{ id = "class_ogryn",			default = "player_slot_3" },
-	{ id = "fnp",					default = "light_coral" },
-	{ id = "luckyb",				default = "orange" },
-	{ id = "trample",				default = "dark_olive_green" },
-	{ id = "class_zealot",			default = "player_slot_2" },
-	{ id = "fury",					default = "hot_pink" },
-	{ id = "momentum",				default = "ui_red_super_light" },
-	{ id = "stealth",				default = "ui_grey_light" },
-	{ id = "class_veteran",			default = "player_slot_1" },
-	{ id = "focus",					default = "dark_violet" },
-	{ id = "focust",				default = "teal" },
-	{ id = "meleespec",				default = "ui_hud_red_light" },
-	{ id = "rangedspec",			default = "citadel_the_fang_grey" },
-	{ id = "class_arbites",			default = "plum" },
-	{ id = "class_scum",			default = "citadel_nurgling_green" },
-	{ id = "chemtox",				default = "online_green" },
+	{ id = "class_psyker",		default = "player_slot_4" },
+	{ id = "precision",			default = "ui_psyker" },
+	{ id = "class_ogryn",		default = "player_slot_3" },
+	{ id = "fnp",				default = "light_coral" },
+	{ id = "luckyb",			default = "orange" },
+	{ id = "trample",			default = "dark_olive_green" },
+	{ id = "class_zealot",		default = "player_slot_2" },
+	{ id = "fury",				default = "hot_pink" },
+	{ id = "momentum",			default = "ui_red_super_light" },
+	{ id = "stealth",			default = "ui_grey_light" },
+	{ id = "class_veteran",		default = "player_slot_1" },
+	{ id = "focus",				default = "dark_violet" },
+	{ id = "focust",			default = "teal" },
+	{ id = "meleespec",			default = "ui_hud_red_light" },
+	{ id = "rangedspec",		default = "citadel_the_fang_grey" },
+	{ id = "class_arbites",		default = "plum" },
+	{ id = "class_scum",		default = "citadel_nurgling_green" },
+	{ id = "chemtox",			default = "online_green" },
 
 	-- Misc
-	{ id = "talents",				default = "ui_input_color" },
-	{ id = "talents_penances",		default = "forest_green" },
-	{ id = "numbers",				default = "ui_hud_yellow_super_light" },
-	{ id = "variables",				default = "ui_hud_yellow_super_light" },
-	{ id = "note",					default = "terminal_text_warning_dark" },
-	{ id = "warning",				default = "item_rarity_6" },
+	{ id = "talents",			default = "ui_input_color" },
+	-- { id = "talents_penances",	default = "forest_green" },
+	{ id = "numbers",			default = "ui_hud_yellow_super_light" },
+	{ id = "variables",			default = "ui_hud_yellow_super_light" },
+	{ id = "note",				default = "terminal_text_warning_dark" },
+	{ id = "warning",			default = "item_rarity_6" },
 
 	-- Difficulty
-	{ id = "sedition",				default = "white" },
-	{ id = "uprising",				default = "ui_difficulty_1" },
-	{ id = "malice",				default = "ui_difficulty_2" },
-	{ id = "heresy",				default = "ui_difficulty_3" },
-	{ id = "damnation",				default = "ui_difficulty_4" },
-	{ id = "auric",					default = "ui_difficulty_5" },
+	{ id = "sedition",			default = "white" },
+	{ id = "uprising",			default = "ui_difficulty_1" },
+	{ id = "malice",			default = "ui_difficulty_2" },
+	{ id = "heresy",			default = "ui_difficulty_3" },
+	{ id = "damnation",			default = "ui_difficulty_4" },
+	{ id = "auric",				default = "ui_difficulty_5" },
 }
 
 -- UTILITY FUNCTIONS
@@ -149,7 +149,8 @@ local main_modules = {
 	{ id = "enable_penances_file",			desc = "PENANCES Module" },
 	{ id = "enable_menus_file",				desc = "MENUS Module" },
 	{ id = "enable_names_file",				desc = "NAMES Module - Weapons and Enemies" },
-	{ id = "enable_names_tal_bless_file",	desc = "NAMES Module - Talents and Blessings" }
+	{ id = "enable_names_tal_bless_file",	desc = "NAMES Module - Talents and Blessings" },
+	{ id = "enable_debug_mode",				desc = "Debug Mode" }
 }
 
 for _, module in ipairs(main_modules) do

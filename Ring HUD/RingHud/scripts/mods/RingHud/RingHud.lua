@@ -3,7 +3,7 @@
 
 local mod = get_mod("RingHud")
 if not mod then return end
-mod.version                            = "RingHud version 1.09.01"
+mod.version                            = "RingHud version 1.09.02"
 
 local MISSION_BOARD_PACKAGE            = "packages/ui/views/mission_board_view/mission_board_view"
 
@@ -14,10 +14,16 @@ local PlayerUnitStatus                 = require("scripts/utilities/attack/playe
 
 mod:io_dofile("RingHud/scripts/mods/RingHud/systems/settings_manager")
 
+-- Ensure RingHud palettes/helpers are available early (some features read mod.PALETTE_* at load time)
+mod.colors              = mod.colors or mod:io_dofile("RingHud/scripts/mods/RingHud/systems/RingHud_colors")
+
 local ProximitySystem   = mod:io_dofile("RingHud/scripts/mods/RingHud/context/proximity_context")
 local VanillaHudManager = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/vanilla_hud_manager")
 local ReassuranceSystem = mod:io_dofile("RingHud/scripts/mods/RingHud/context/reassurance_context")
 local ScannerContext    = mod:io_dofile("RingHud/scripts/mods/RingHud/context/scanner_context")
+
+-- Load GrenadesFeature early so its broker blitz template patch + mod.grenades_update_state are installed ASAP
+mod:io_dofile("RingHud/scripts/mods/RingHud/features/grenades_feature")
 
 -- ★ New: centralised ammo visibility policy (after proximity/reassurance/wield)
 mod:io_dofile("RingHud/scripts/mods/RingHud/context/ammo_visibility")
@@ -89,6 +95,19 @@ mod.next_team_stats_poll_time       = 0
 local TEAM_STATS_POLL_INTERVAL      = 10
 
 if mod._ringhud_accumulated_time == nil then mod._ringhud_accumulated_time = 0 end
+
+local function _sum_if_table(v)
+    if type(v) ~= "table" then
+        return v
+    end
+    local s = 0
+    for _, x in pairs(v) do
+        if type(x) == "number" then
+            s = s + x
+        end
+    end
+    return s
+end
 
 -- Helper: current team HUD mode (from settings cache)
 local function _team_mode()
@@ -349,11 +368,15 @@ mod.update = function(dt)
                         local has_ammo = false
                         for _, slot_name in pairs({ "slot_primary", "slot_secondary" }) do
                             local slot_comp = unit_data:read_component(slot_name)
-                            if slot_comp and slot_comp.max_ammunition_reserve and slot_comp.max_ammunition_reserve > 0 then
-                                total_ammo = total_ammo +
-                                    (slot_comp.current_ammunition_reserve / slot_comp.max_ammunition_reserve)
-                                has_ammo = true
-                                break
+                            if slot_comp then
+                                local max_res = _sum_if_table(slot_comp.max_ammunition_reserve) or 0
+                                local cur_res = _sum_if_table(slot_comp.current_ammunition_reserve) or 0
+
+                                if max_res > 0 then
+                                    total_ammo = total_ammo + (cur_res / max_res)
+                                    has_ammo = true
+                                    break
+                                end
                             end
                         end
                         if has_ammo then ammo_count = ammo_count + 1 end
@@ -375,6 +398,11 @@ mod.on_game_state_changed = function(status, state_name)
 
     if state_name == "StateGameplay" and status == "enter" then
         mod._grenade_max_override = nil
+
+        -- Reset broker blitz mirror state on mission entry (prevents stale progress/ghost partials)
+        mod._broker_blitz_tracked_kills = 0
+        mod._broker_blitz_prev_grenade_cur = 0
+
         _refresh_compat_caches()
         _apply_team_mode_runtime()
         mod._refresh_assistance_markers_visibility()
@@ -428,6 +456,10 @@ mod.on_disabled = function(initial_call)
     mod._hotkey_manual_active = false
     mod.reassure_health = false
     mod.reassure_ammo = false
+
+    -- Broker blitz mirror state
+    mod._broker_blitz_tracked_kills = 0
+    mod._broker_blitz_prev_grenade_cur = 0
 
     if VanillaHudManager and VanillaHudManager.on_mod_disabled then
         VanillaHudManager.on_mod_disabled()

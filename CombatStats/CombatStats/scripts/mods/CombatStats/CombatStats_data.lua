@@ -14,12 +14,12 @@ return {
             {
                 setting_id = 'enable_in_hub',
                 type = 'checkbox',
-                default_value = false,
+                default_value = true,
             },
             {
                 setting_id = 'enable_in_missions',
                 type = 'checkbox',
-                default_value = false,
+                default_value = true,
             },
             {
                 setting_id = 'toggle_view_keybind',
@@ -49,6 +49,23 @@ return {
                         type = 'numeric',
                         default_value = 100,
                         range = { 0, 1080 },
+                    },
+                },
+            },
+            {
+                setting_id = 'combat_detection',
+                type = 'group',
+                sub_widgets = {
+                    {
+                        setting_id = 'track_incoming_attacks',
+                        type = 'checkbox',
+                        default_value = true,
+                    },
+                    {
+                        setting_id = 'engagement_timeout',
+                        type = 'numeric',
+                        default_value = 5,
+                        range = { 1, 30 },
                     },
                 },
             },

@@ -107,7 +107,6 @@ function StaminaFeature.add_widgets(dst, styles, metrics, colors)
                     amount = 1,
                     glow_on_off = 0,
                     lightning_opacity = 0,
-                    -- NOTE: keep in sync with STAMINA_ARC_* above
                     arc_top_bottom = { STAMINA_ARC_TOP, STAMINA_ARC_BOTTOM },
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color = { 1, 1, 1, 1 },
@@ -132,7 +131,6 @@ function StaminaFeature.add_widgets(dst, styles, metrics, colors)
                     amount = 0,
                     glow_on_off = 0,
                     lightning_opacity = 0,
-                    -- NOTE: keep in sync with STAMINA_ARC_* above
                     arc_top_bottom = { STAMINA_ARC_TOP, STAMINA_ARC_BOTTOM },
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color = { 1, 1, 1, 1 },

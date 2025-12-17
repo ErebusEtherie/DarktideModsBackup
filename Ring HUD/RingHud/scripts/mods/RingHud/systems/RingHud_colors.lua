@@ -81,6 +81,9 @@ mod.PALETTE_RGBA1    = {
     -- dodge_color_negative_rgba     = { 1.00, 0.31, 0.31, 1.00 },
     dodge_color_negative_rgba     = { 1.00, 0.24, 0.24, 1.00 }, -- red, adjusted
 
+    NEEDLE_SPECIAL_ACTIVE         = { 0.50, 1.00, 1.00, 1.00 }, -- Cyan
+    NEEDLE_SPECIAL_INACTIVE       = { 1.00, 1.00, 0.00, 1.00 }, -- Yellow
+
     default_corruption_color_rgba = { 0.80, 0.27, 0.80, 1.00 },
     default_damage_color_rgba     = { 0.50, 0.50, 0.50, 1.00 }, -- mid-grey
 
@@ -138,7 +141,11 @@ function mod.team_slot_tint_argb(player, marker)
     -- (2) canonical per-slot color from UISettings
     local slot_idx = nil
     if marker and marker.data and marker.data.slot then
-        slot_idx = marker.data:slot()
+        if type(marker.data.slot) == "function" then
+            slot_idx = marker.data:slot()
+        else
+            slot_idx = marker.data.slot
+        end
     elseif type(player) == "table" and player.slot then
         if type(player.slot) == "function" then
             slot_idx = player:slot()

@@ -65,7 +65,7 @@ CleanForceBlocking
 BornReady
 ScanHelper
 MultiBind
-KillfeedImprovements
+--KillfeedImprovements
 --CustomFlames
 LessAnnoyingFx
 LogMeIn
@@ -209,3 +209,4 @@ quick_chat
 HUDTweaker
 crusher_attack_indicator
 valkyrie
+Killfeed Details

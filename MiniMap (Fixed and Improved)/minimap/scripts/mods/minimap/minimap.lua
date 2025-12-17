@@ -284,9 +284,7 @@ local function collect_settings()
     
     -- Enemy Radar settings
     mod.settings.enemy_radar_enabled = mod:get("enemy_radar_enabled")
-    
-    mod.settings.icon_vis.color_coded_healthbar = mod.settings.enemy_radar_enabled
-    mod.settings.icon_vis.custom_healthbar = mod.settings.enemy_radar_enabled
+    mod.settings.enemy_radar_scan_range = mod:get("enemy_radar_scan_range") or 50.0
     
     mod.settings.enemy_radar_filters = {
         elite = mod:get("enemy_radar_filter_elite"),

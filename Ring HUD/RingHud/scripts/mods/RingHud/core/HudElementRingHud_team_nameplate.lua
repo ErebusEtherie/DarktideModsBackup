@@ -292,8 +292,9 @@ local function _refresh_ringhud_marker_names(self_hewm)
     end)
 end
 
--- Mirror header_text into the text field our widget actually renders (name_text_value),
--- but only when the floating-name setting allows it.
+-- Propagate settings to the name text field.
+-- If names are disabled via setting (e.g. name0), force the text blank.
+-- Otherwise, leave it alone so the RingHud state/apply logic can set the clean name.
 local function _propagate_header_to_name_text(self_hewm)
     if not self_hewm or not self_hewm._markers_by_type then return end
     local list = self_hewm._markers_by_type.ringhud_teammate_tile
@@ -319,15 +320,9 @@ local function _propagate_header_to_name_text(self_hewm)
             return
         end
 
-        local ht = wc.header_text
-        if type(ht) ~= "string" then
-            ht = ""
-        end
-
-        if wc.name_text_value ~= ht then
-            wc.name_text_value = ht
-            if w then w.dirty = true end
-        end
+        -- Do NOT overwrite name_text_value with header_text.
+        -- header_text is used by other mods (e.g. True Level) to inject data we don't want on floating tiles.
+        -- RingHud's Apply system handles setting name_text_value correctly.
     end)
 end
 

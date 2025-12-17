@@ -1,7 +1,5 @@
 ---@diagnostic disable: undefined-global
--- Version 4.7b
 -- The main file that is needed to connect the main files of this mod to the framework.
-
 -- FOR TRANSLATORS: YOU DON'T NEED TO DO ANYTHING IN THIS FILE!
 
 return {

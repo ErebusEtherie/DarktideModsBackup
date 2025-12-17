@@ -187,11 +187,9 @@ function template.update_function(parent, ui_renderer, widget, marker, tpl, dt, 
         marker.draw = true
     end
 
-    -- Only bump the shared frame counter ONCE per frame (keyed by `t`)
-    if mod._edge_stack_last_t ~= t then
-        mod._edge_stack_last_t   = t
-        mod._edge_stack_frame_id = (mod._edge_stack_frame_id or 0) + 1
-    end
+    -- [CHANGE] Redundant frame counter increment removed.
+    -- We now rely on HudElementRingHud_team_nameplate.lua to handle the
+    -- mod._edge_stack_frame_id increment globally per frame.
 
     -- 1) bases + per-frame reset (do this BEFORE Apply touches any styles)
     _refresh_screen_margins_if_needed()

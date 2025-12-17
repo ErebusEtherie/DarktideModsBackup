@@ -1,7 +1,5 @@
 ---@diagnostic disable: undefined-global, undefined-field
--- Version 4.7b
 -- The main file with the Localization of the Menu of this mod.
-
 -- FOR TRANSLATORS: TRANSLATION PROOFREADING REQUIRED!
 
 local mod = get_mod("Enhanced_descriptions")
@@ -17,6 +15,7 @@ local LOCALIZATION_GROUPS = {
 	"enable_talents_file",
 	"enable_names_file",
 	"enable_names_tal_bless_file",
+	"enable_debug_mode",
 
 	"bleed",
 	"brittleness",
@@ -116,17 +115,17 @@ end
 
 local localizations = {
 	mod_name = {
-		en = "Enhanced Descriptions",
-		ru = "Улучшенные описания",
-		["zh-tw"] = "描述改善",
-		["zh-cn"] = "描述增强",
-		de = "Erweiterte Beschreibungen",
-		it = "Descrizioni Migliorate",
-		ja = "詳細な説明",
-		ko = "향상된 설명",
-		pl = "Rozszerzone Opisy",
-		["pt-br"] = "Descrições Aprimoradas",
-		es = "Descripciones Mejoradas",
+		en = "{#color(192, 255, 26)} Enhanced Descriptions{#reset()}",
+		ru = "{#color(192, 255, 26)} Улучшенные описания{#reset()}",
+		["zh-tw"] = "{#color(192, 255, 26)} 描述改善{#reset()}",
+		["zh-cn"] = "{#color(192, 255, 26)} 描述增强{#reset()}",
+		de = "{#color(192, 255, 26)} Erweiterte Beschreibungen{#reset()}",
+		it = "{#color(192, 255, 26)} Descrizioni Migliorate{#reset()}",
+		ja = "{#color(192, 255, 26)} 詳細な説明{#reset()}",
+		ko = "{#color(192, 255, 26)} 향상된 설명{#reset()}",
+		pl = "{#color(192, 255, 26)} Rozszerzone Opisy{#reset()}",
+		["pt-br"] = "{#color(192, 255, 26)} Descrições Aprimoradas{#reset()}",
+		es = "{#color(192, 255, 26)} Descripciones Mejoradas{#reset()}",
 	},
 	mod_description = {
 		en = "Improves readability by highlighting numbers and keywords in descriptions of Talents, Blessings, Penances, Curios, and other menu texts. Also fixes localizations and adds clarity to some descriptions.",
@@ -347,6 +346,58 @@ local localizations = {
 		pl = "Ten moduł zmienia nazwy Talentów i Błogosławieństw. Możesz wyłączyć ten moduł, jeśli nie jest ci potrzebny.",
 		["pt-br"] = "Este módulo altera os nomes de Talentos e Bênçãos. Você pode desativar este módulo se não precisar dele.",
 		es = "Este módulo cambia los nombres de Talentos y Bendiciones. Puedes desactivar este módulo si no lo necesitas.",
+	},
+
+	enable_debug_mode = {
+		en = "\"Debug Mode\" module",
+		ru = "Модуль «Режим отладки»",
+		fr = "Module « Mode Débogage »",
+		["zh-tw"] = "「除錯模式」模組",
+		["zh-cn"] = "「调试模式」模块",
+		de = "„Debug-Modus“-Modul",
+		it = "Modulo \"Modalità Debug\"",
+		ja = "「デバッグモード」モジュール",
+		ko = "\"디버그 모드\" 모듈",
+		pl = "Moduł „Tryb Debugowania”",
+		["pt-br"] = "Módulo \"Modo de Depuração\"",
+		es = "Módulo \"Modo Depuración\"",
+	},
+	enable_debug_mode_description = {
+		en = "{#color(255, 35, 5)}FOR DEVELOPERS ONLY!{#reset()}\n"
+			.."This module enables debug commands and utilities for testing and troubleshooting. Use with caution.\n"
+			.."/ed_reload - Reload Enhanced Descriptions\n"
+			.."/ed_clear_cache - Clear color cache\n"
+			.."/ed_status - Show mod status\n"
+			.."/ed_mem - Show memory usage\n"
+			.."/ed_gc - Force garbage collection\n"
+			.."/ed_test_color - Test if colors work\n"
+			.."/ed_lang - Show current language info\n"
+			.."/ed_modules - Check enabled modules\n"
+			.."/ed_test_loc - Test specific localization key\n"
+			.."/ed_reset - Quick reset (clear cache + reload)",
+		ru = "{#color(255, 35, 5)}ТОЛЬКО ДЛЯ РАЗРАБОТЧИКОВ!{#reset()}\n"
+			.."Этот модуль включает команды отладки и утилиты для тестирования и устранения неполадок. Используйте с осторожностью.\n"
+			.."/ed_reload - Перезагрузить расширенные описания\n"
+			.."/ed_clear_cache - Очистить кэш цветов\n"
+			.."/ed_status - Показать статус мода\n"
+			.."/ed_mem - Показать использование памяти\n"
+			.."/ed_gc - Принудительная сборка мусора\n"
+			.."/ed_test_color - Проверить работу цветов\n"
+			.."/ed_lang - Показать информацию о текущем языке\n"
+			.."/ed_modules - Проверить включённые модули\n"
+			.."/ed_test_loc - Проверить определённый ключ локализации\n"
+			.."/ed_reset - Быстрый сброс (очистка кэша + перезагрузка)",
+		fr = "{#color(255, 35, 5)}UNIQUEMENT POUR LES DÉVELOPPEURS !{#reset()}\n"
+			.."Ce module active les commandes de débogage et les utilitaires pour les tests et le dépannage. À utiliser avec prudence.",
+		["zh-tw"] = "{#color(255, 35, 5)}僅供開發者使用！{#reset()}\n此模組啟用除錯指令和用於測試與故障排除的工具。請謹慎使用。",
+		["zh-cn"] = "{#color(255, 35, 5)}仅供开发者使用！{#reset()}\n此模块启用调试命令和用于测试与故障排除的工具。请谨慎使用。",
+		de = "{#color(255, 35, 5)}NUR FÜR ENTWICKLER!{#reset()}\nDieses Modul aktiviert Debug-Befehle und Dienstprogramme zum Testen und Fehlerbeheben. Mit Vorsicht verwenden.",
+		it = "{#color(255, 35, 5)}SOLO PER GLI SVILUPPATORI!{#reset()}\nQuesto modulo abilita i comandi di debug e le utilità per il test e la risoluzione dei problemi. Usare con cautela.",
+		ja = "{#color(255, 35, 5)}開発者のみ！{#reset()}\nこのモジュールは、テストとトラブルシューティングのためのデバッグコマンドとユーティリティを有効にします。注意して使用してください。",
+		ko = "{#color(255, 35, 5)}개발자 전용!{#reset()}\n이 모듈은 테스트 및 문제 해결을 위한 디버그 명령과 유틸리티를 활성화합니다. 주의해서 사용하십시오.",
+		pl = "{#color(255, 35, 5)}TYLKO DLA PROGRAMISTÓW!{#reset()}\nTen moduł umożliwia komendy debugowania i narzędzia do testowania i rozwiązywania problemów. Używaj ostrożnie.",
+		["pt-br"] = "{#color(255, 35, 5)}SOMENTE PARA DESENVOLVEDORES!{#reset()}\nEste módulo ativa comandos de depuração e utilitários para teste e solução de problemas. Use com cautela.",
+		es = "{#color(255, 35, 5)}¡SOLO PARA DESARROLLADORES!{#reset()}\nEste módulo habilita comandos de depuración y utilidades para pruebas y solución de problemas. Usar con precaución.",
 	},
 
 
@@ -939,20 +990,20 @@ local localizations = {
 		["pt-br"] = " Talentos",
 		es = " Talentos",
 	},
-	talents_penances_colour = {
-		en = " Talents - Penances",
-		fr = " Talents - Pénitences",
-		ru = " Таланты - Искупления",
-		["zh-tw"] = " 天賦 - 苦修",
-		["zh-cn"] = " 天赋 - 苦修",
-		de = " Talente - Bußen",
-		it = " Talent - Penitenze",
-		ja = " タレント - 苦行",
-		ko = " 특성 - 참회",
-		pl = " Talenty - Pokuty",
-		["pt-br"] = " Talentos - Penitências",
-		es = " Talentos - Penitencias",
-	},
+	-- talents_penances_colour = {
+		-- en = " Talents - Penances",
+		-- fr = " Talents - Pénitences",
+		-- ru = " Таланты - Искупления",
+		-- ["zh-tw"] = " 天賦 - 苦修",
+		-- ["zh-cn"] = " 天赋 - 苦修",
+		-- de = " Talente - Bußen",
+		-- it = " Talent - Penitenze",
+		-- ja = " タレント - 苦行",
+		-- ko = " 특성 - 참회",
+		-- pl = " Talenty - Pokuty",
+		-- ["pt-br"] = " Talentos - Penitências",
+		-- es = " Talentos - Penitencias",
+	-- },
 	numbers_colour = {
 		en = " Numbers",
 		fr = " Nombres",

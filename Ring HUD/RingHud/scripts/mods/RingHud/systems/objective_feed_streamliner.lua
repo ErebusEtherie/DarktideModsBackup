@@ -89,19 +89,6 @@ local function _enforce_streamlined_styles(element_instance)
             end
         end
     end
-
-    -- Extra tweak: when minimal_objective_feed_enabled is true,
-    -- move the SpectatorText bounding box to the top.
-    if class_name == "HudElementSpectatorText" then
-        local bb_widget = widgets_by_name.bounding_box
-        if bb_widget and bb_widget.style and bb_widget.style.bounding_box then
-            local bb_style = bb_widget.style.bounding_box
-            if bb_style.vertical_alignment ~= "top" then
-                bb_style.vertical_alignment = "top"
-                bb_widget.dirty = true
-            end
-        end
-    end
 end
 
 ----------------------------------------------------------------

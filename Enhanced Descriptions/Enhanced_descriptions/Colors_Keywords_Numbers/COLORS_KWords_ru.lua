@@ -1,443 +1,513 @@
 ---@diagnostic disable: undefined-global
--- Version 4.7b
 
 local mod = get_mod("Enhanced_descriptions")
 local InputUtils = require("scripts/managers/input/input_utils")
-local iu_actit = InputUtils.apply_color_to_input_text
 
--- Все эти ключевые слова необходимо перевести, чтобы иметь к ним доступ в файлах TALENTS.lua, WEAPONS_Blessings_Perks.lua и т.д.:
--- COLORS_KWords_ru.Ability_cd_rgb_ru
--- COLORS_KWords_ru.Cd_rgb_ru
--- COLORS_KWords_ru.Combat_ability_rgb_ru
-
-local CONFIG = {
 -- КЛЮЧЕВЫЕ СЛОВА
+--		Ключ_rgb_ru			"Значение"						-- Где используется?
+local CONFIG = {
 	bleed_text_colour = {
-		Bleed = "кровотечения",
-		Bleeding = "кровотечение",
+		krovotechenie =		"кровотечение",					-- Таланты
+		krovotecheniem =		"кровотечением",					-- Таланты
+		krovotechenia =		"кровотечения",					-- Таланты, Благословения
 	},
 	brittleness_text_colour = {
-		Brttlns = "Хрупкость",
-		Brittleness = "хрупкости",
+		Hrupkost =			"Хрупкость",					-- Примечания внизу
+		hrupkosti =			"хрупкости",					-- Таланты, Благословения
 	},
 	burn_text_colour = {
-		Burn = "горения",
-		Burning = "горящих",
-		Burnd = "поджигает",
-		Heat = "перегрева",
-		Heat2 = "перегреве",
+		gorenia =			"горения",						-- Таланты, Благословения
+		goriaschej =		"горящей",						-- Благословения
+		goriaschih =		"горящих",						-- Благословения
+		podjigaet =			"поджигает",					-- Таланты
+		peregreva =			"перегрева",					-- Благословения
+		peregreve =			"перегреве",					-- Благословения
+		sjigauschei =		"сжигающей",					-- Таланты
 	},
 	cleave_text_colour = {
-		Cleave = "рассечению",
-		Cleaving = "рассечение",
-		Cleavi = "рассечении",
-		Cleavat = "рассекать",
-		Cleavaet = "рассекает",
-		Cleavaetsa = "рассекается",
-		Cleaving_r = "прострел",
-		Cleaving_e = "простреле",
-		Cleaving_ii = "простреливании",
-		Cleaving_u = "прострелу",
-		Cleaving_et = "простреливает",
-		Cleaving_etsa = "простреливается",
+		probit =			"пробить",						-- Таланты
+		prostrel =			"прострел",						-- Благословения
+	-- prostrele =			"простреле",					-- ?
+		prostrelu =			"прострелу",					-- Таланты, Благословения
+		prostrelivaet =		"простреливает",				-- Таланты
+		prostrelivaetsa =	"простреливается",				-- ЧПФ внизу
+		prostrelivanii =	"простреливании",				-- ЧПФ внизу
+		rassekaet =			"рассекает",					-- Таланты
+		rassekaetsa =		"рассекается",					-- ЧПФ внизу
+		rassekat =			"рассекать",					-- Благословения
+		rassechenie =		"рассечение",					-- Благословения
+		rassechenii =		"рассечении",					-- ЧПФ внизу
+		rassecheniu =		"рассечению",					-- Таланты, Благословения
 	},
 	coherency_text_colour = {
-		Coherency = "сплочённости",
+		splochennosti =		"сплочённости",					-- Таланты, ЧПФ внизу
 	},
 	combat_ability_text_colour = {
-		Ability_cd = "восстановления способности",
-		Cd = "восстановления",
-		Combat_abil = "боевая способность",
-		Combat_ability = "боевой способности",
+		boeva_sposobnost =	"боевая способность",			-- Таланты
+		boev_sposobnosti =	"боевой способности",			-- Таланты, Редкости
+		vosstanovlenia =	"восстановления",				-- Таланты
+		vost_sposobnosti =	"восстановления способности",	-- Таланты
 	},
 	corruption_text_colour = {
-		Corruption = "порче",
-		Corruption_i = "порчи",
-		Corruption_a = "порча",
-		Corruption_u = "порчу",
-		Corruptdmg = "урон от порчи",
+	-- porcha =				"порча",						-- ?
+		porche =			"порче",						-- Таланты, Редкости
+		porchi =			"порчи",						-- Таланты
+		porchu =			"порчу",						-- Таланты
+		porchi_uron =		"урон от порчи",				-- Таланты
 	},
 	crit_text_colour = {
-		Crit = "критическому",
-		Crt_chance = "шанс критического выстрела",
-		Crt_u_chance = "шансу критического выстрела",
-		Crit_chance = "шансу критического удара",
+		Krit_vystrely =		"Критические выстрелы",			-- Таланты
+		Krit_udary =		"Критические удары",			-- Благословения
 
-		CritH = "Критические удары",
-		Crit_hit = "критическом ударе",
-		Crithit = "критический удар",
-		Crit_hits = "критическими ударами",
-		Crit0 = "критические удары",
-		Crit_hit_udom = "критическим ударом",
+		krit_udar =			"критический удар",				-- Таланты
+		kritom =			"критическим",					-- Таланты
+		krit_udarom =		"критическим ударом",			-- Таланты, Благословения
+		krit_udary =		"критические удары",			-- Таланты
+		krit_udarami =		"критическими ударами",			-- Благословения
+		krit_udare =		"критическом ударе",			-- Таланты, Благословения
+		krit_udara_uron =	"урону критического удара",		-- Таланты, Благословения
 
-		Crit_dmg_r = "критический урон",
-		Crit_dmg_u = "критическому урону",
-		Crit_hit_color = "урону критического удара",
+		krit_uron =			"критический урон",				-- Таланты, Примечания внизу
+		krit_uronu =		"критическому урону",			-- Таланты, Благословения
 
-		Crit_shots = "Критические выстрелы",
-		Crit_chance_r = "критическом выстреле",
-		Crit_chance_l = "критический выстрел",
-		Crit_hit_om = "критическим выстрелом",
-		Crit_hit_ogo = "критического выстрела",
-		Crit_shot_color = "урону критического выстрела",
+		krit_vystrel =		"критический выстрел",			-- Таланты, Благословения
+		krit_vystrela =		"критического выстрела",		-- Таланты
+		krit_vystrele =		"критическом выстреле",			-- Благословения
+		krit_vystrelom =	"критическим выстрелом",		-- Таланты
+		krit_vystr_uron =	"урону критического выстрела",	-- Благословения
+
+		kriticheskomu =		"критическому",					-- Благословения
+
+		sh_krit_vystrela =	"шансу критического выстрела",	-- Таланты, Благословения
+		sha_krit_udara =	"шанса критического удара",		-- Таланты
+		sh_krit_udara =		"шансу критического удара",		-- Таланты, Благословения
 	},
 	damage_text_colour = {
-		Dmg = "урон",
-		DMG = "Урон",
-		Dmg_a = "урона",
-		Damage = "урону",
-		Damagewrp = "варп-урону",
-		Damagewrp_a = "варп-урона",
+		Uron =				"Урон",							-- Таланты
+		uron =				"урон",							-- Таланты, Благословения, Примечания внизу
+		urona =				"урона",						-- Таланты
+		uronu =				"урону",						-- Таланты, Благословения, Редкости
+	-- urona_warp =			"варп-урона",					-- ?
+		uronu_warp =		"варп-урону",					-- Таланты
 	},
 	electrocuted_text_colour = {
-		Electrocute = "электрошок",
-		Electrocution = "электрошока",
-		Electrocuted = "электрошоком",
+	-- elektroshok =		"электрошок",					-- ?
+		elektroshoka =		"электрошока",					-- Таланты, Благословения
+		elektroshokom =		"электрошоком",					-- Таланты, Благословения
 	},
 	finesse_text_colour = {
-		Fnss = "Ловкость",
-		Finesse = "ловкости",
-		Finesse_dmg = "урону от ловкости",
+		Lovkost =			"Ловкость",						-- Примечания внизу
+		lovkosti =			"ловкости",						-- Таланты, Благословения
+		lovkosti_uron =		"урону от ловкости",			-- Таланты
 	},
 	health_text_colour = {
-		Health = "здоровью",
-		Healthx = "здоровьем",
-		Wound = "здоровья",
-		Wound_u = "рану",
-		Wound_y = "раны",
+		ran =				"ран",							-- Таланты
+		ranu =				"рану",							-- Таланты
+		rany =				"раны",							-- Таланты
+		zdorovie =			"здоровье",						-- Таланты
+		zdoroviem =			"здоровьем",					-- Таланты
+		zdoroviu =			"здоровью",						-- Таланты, Редкости
+		zdorovia =			"здоровья",						-- Таланты, Редкости
 	},
 	hit_mass_text_colour = {
-		Hit_mass = "ударную массу",
-		Hit_masss = "ударной массы",
+		udarn_massu =		"ударную массу",				-- Благословения
+		udarn_massy =		"ударной массы",				-- Благословения
 	},
 	impact_text_colour = {
-		Impact0 = "Выведение из равновесия",
-		Impact = "выведению из равновесия",
+		Vyved_ravnovesia =	"Выведение из равновесия",		-- Примечания внизу
+		vyved_ravnovesia =	"выведению из равновесия",		-- Таланты, Благословения
+		vyveda_ravnovesia =	"выведения из равновесия",		-- Таланты, Благословения
 	},
 	peril_text_colour = {
-		Peril = "опасности",
-		Perils = "опасностей",
-		PerilsozWarp = "Опасностей варпа",
-		Perl = "опасность",
-		Perl0 = "Опасность",
+		Opasnost =			"Опасность",					-- Таланты
+		opasnost =			"опасность",					-- Таланты
+	-- opasnostei =			"опасностей",					-- ?
+		Opasnostei_warpa =	"Опасностей варпа",				-- Таланты
+		opasnosti =			"опасности",					-- Таланты, Благословения
 	},
 	power_text_colour = {
-		Pwr = "Сила",
-		Power = "сила",
-		Strength = "силе",
+		Sila =				"Сила",							-- Примечания внизу
+	-- sila =				"сила",							-- ?
+		sile =				"силе",							-- Таланты, Благословения
 	},
 	rending_text_colour = {
-		Rndg = "Пробивание",
-		Rending = "пробиванию",
+		Probivanie =		"Пробивание",					-- Примечания внизу
+		probivaniu =		"пробиванию",					-- Таланты, Благословения
 	},
 	soulblaze_text_colour = {
-		Soulblaze = "горения души",
+		gorenia_dushi =		"горения души",					-- Таланты, Благословения
 	},
 	stagger_text_colour = {
-		Stagger = "ошеломление",
-		Stagger_i = "ошеломлении",
-		Stagger2 = "ошеломлению",
-		Staggered = "ошеломлённых",
-		Staggering = "ошеломления",
-		Staggern = "ошеломляя",
-		Staggernt = "ошеломить",
-		Staggers = "ошеломляют",
-		Staggerstsa = "ошеломляются",
-		Staggers_e = "ошеломляет",
-		Staggers_esia = "ошеломляется",
-		Stun = "ошеломлённого",
-		Stunned = "ошеломлена",
-		Stuns = "ошеломлённым",
-		Stunss = "Ошеломляющие",
-		Stunssx = "Ошеломлённые",
-		Staggerr = "Ошеломление",
-		Stagger_et = "Ошеломляет",
+		Oshelomlenie =		"Ошеломление",					-- Таланты, Благословения
+	-- Oshelomlennye =		"Ошеломлённые",					-- ?
+		Oshelomlaet =		"Ошеломляет",					-- Таланты
+		Oshelomlautsa =		"Ошеломляются",					-- Таланты
+		Oshelomlauschie =	"Ошеломляющие",					-- Таланты
+
+		oglushit =			"оглушить",						-- Таланты
+		oglushaetes =		"оглушаетесь",					-- Таланты
+
+		oshelomit =			"ошеломить",					-- Таланты
+		oshelomlena =		"ошеломлена",					-- Благословения
+		oshelomlenie =		"ошеломление",					-- Таланты, Примечания внизу
+		oshelomlenii =		"ошеломлении",					-- Таланты
+		oshelomleniu =		"ошеломлению",					-- Таланты, Благословения
+		oshelomlenia =		"ошеломления",					-- Таланты, Благословения, Примечания внизу
+		oshelomlennogo =	"ошеломлённого",				-- Благословения
+		oshelomlennye =		"ошеломлённые",					-- Таланты
+		oshelomlennym =		"ошеломлённым",					-- Таланты, Благословения
+		oshelomlennyh =		"ошеломлённых",					-- Таланты, Благословения
+		oshelomlaet =		"ошеломляет",					-- Таланты, Благословения
+		oshelomlaete =		"ошеломляете",					-- Таланты, Благословения
+		oshelomlaetsa =		"ошеломляется",					-- Благословения
+		oshelomlaut =		"ошеломляют",					-- Таланты
+		oshelomlautsa =		"ошеломляются",					-- Таланты
+		oshelomlauschej =	"ошеломляющей",					-- Таланты
+		oshelomlauschij =	"ошеломляющий",					-- Таланты
+		oshelomlaa =		"ошеломляя",					-- Таланты
 	},
 	stamina_text_colour = {
-		Stamin = "выносливость",
-		Stamina = "выносливости",
+		Vynoslivost =		"Выносливость",					-- Таланты
+		vynoslivost =		"выносливость",					-- Таланты
+		vynoslivosti =		"выносливости",					-- Таланты, Благословения, Редкости
 	},
 	toughness_text_colour = {
-		TDR = "СУС",
-		Toughness = "стойкости",
-		Tghnss = "стойкость",
-		Toughness_dmg_red = "снижение урона стойкости",
-		Toughness_dmg_red_u = "снижению урона стойкости",
-		Toughness_dmg = "урона стойкости",
+		stoikosti =			"стойкости",					-- Таланты, Благословения, Редкости
+		Stoikost =			"Стойкость",					-- Таланты, Примечания внизу
+		stoikost =			"стойкость",					-- Таланты, Примечания внизу
+
+		TDR =				"СУС",
+	-- sn_ur_stoikosti =	"снижение урона стойкости",		-- ?
+		snu_ur_stoikosti =	"снижению урона стойкости",		-- Таланты
+	-- stoikosti_urona =	"урона стойкости",				-- ?
 	},
 	weakspot_text_colour = {
-		Weakspot = "уязвимые места",
-		Weakspothit = "уязвимое место",
-		Weakspot_dmg = "урону по уязвимым местам",
-		Weakspotv_dmg = "урон по уязвимым местам",
+		ujazvimye_mesta =	"уязвимые места",				-- Таланты, Благословения
+		u_mestam_uronu =	"урону по уязвимым местам",		-- Таланты, Благословения
+		ujazvimoe_mesto =	"уязвимое место",				-- Таланты, Благословения
+		u_mestam_uron =		"урон по уязвимым местам",		-- Примечания внизу
 	},
 
--- КЛАССЫ
-	-- Псайкер
+-- КЛАССЫ И ИХ ТАЛАНТЫ
+-- Псайкер
 	class_psyker_text_colour = {
-		cls_psy = "Псайкер",
-		cls_psya = "псайкера",
-		cls_psy2 = "Псайкером",
+		cls_psy =			"Псайкер",
+		cls_psya =			"псайкера",
+		cls_psyov =			"псайкеров",
+		cls_psy2 =			"Псайкером",
 	},
-	precision_text_colour = {
-		Precision = "меткости",
+		precision_text_colour = {
+			Precision =			"меткости",
 	},
-	-- Огрин
+-- Огрин
 	class_ogryn_text_colour = {
-		cls_ogr = "Огрин",
-		cls_ogr2 = "Огрином",
+		cls_ogr =			"Огрин",
+		cls_ogr2 =			"Огрином",
 	},
-	fnp_text_colour = {
-		Feel_no_pain = "Неболита",
-		Desperadki = "Отчаянной атаки", -- Отброс
+		fnp_text_colour = {
+			Feel_no_pain =		"Неболита",
+
+			Desperadki =		"Отчаянной атаки",			-- Падаль
+		},
+		luckyb_text_colour = {
+			Lucky_bullet =		"Счастливую пулю",
+
+			stojkosti_zolot =	"стойкости",				-- Изувер
+			stojkost_zolot =	"стойкость",				-- Изувер
+		},
+		trample_text_colour = {
+			Trample =			"Топота",
+
+			Depend =			"Зависимости",				-- Падаль
 	},
-	luckyb_text_colour = {
-		Lucky_bullet = "Счастливую пулю",
-	},
-	trample_text_colour = {
-		Trample = "Топота",
-		Depend = "Зависимости", -- Отброс
-	},
-	-- Изувер
+-- Изувер
 	class_zealot_text_colour = {
-		cls_zea = "Изувер",
-		cls_zea2 = "Изувером",
+		cls_zea =			"Изувер",
+		cls_zeaa =			"Изувера",
+		cls_zea2 =			"Изувером",
+		cls_zeau =			"Изуверу",
 	},
-	momentum_text_colour = {
-		Momentum = "Моментума",
-		Adren = "Адреналина", -- Отброс
-		AdrenFr = "Адреналиновое безумие", -- Отброс
-	},
-	stealth_text_colour = {
-		Stealth = "Скрытности",
-		Psy_Mark = "отмечены",
-		Psy_Mark_ogo = "отмеченного",
-		Psy_Mark_ym = "отмеченным",
-	},
-	fury_text_colour = {
-		Fury = "Ярость",
-		Fury_i = "Ярости",
-		Rampage = "Буйство!", -- Отброс
-		Rampaga = "Буйства!", -- Отброс
-	},
-	-- Ветеран
+		fury_text_colour = {
+			Fury =				"Ярость",
+			Fury_i =			"Ярости",
+
+			Rampage =			"Буйство!",					-- Падаль
+			Rampaga =			"Буйства!",					-- Падаль
+		},
+		momentum_text_colour = {
+			Momentum =			"Моментума",
+
+			Adren =				"Адреналина",				-- Падаль
+			AdrenFr =			"Адреналиновое безумие",	-- Падаль
+		},
+		stealth_text_colour = {
+			Stealth =			"Скрытности",
+
+			Psy_Mark =			"отмечены",					-- Псайкер
+			Psy_Mark_ogo =		"отмеченного",				-- Псайкер
+			Psy_Mark_ym =		"отмеченным",				-- Псайкер
+		},
+-- Ветеран
 	class_veteran_text_colour = {
-		cls_vet = "Ветеран",
-		cls_veta = "Ветерана",
-		cls_vetu = "Ветерану",
-		cls_vet2 = "Ветераном",
+		cls_vet =			"Ветеран",
+		cls_veta =			"Ветерана",
+		cls_vetu =			"Ветерану",
+		cls_vet2 =			"Ветераном",
 	},
-	focus_text_colour = {
-		Focus = "Концентрации",
-		Forceful = "Неудержимости",
-	},
-	focust_text_colour = {
-		Focus_Target = "Важной цели",
-		Focus_Targt = "Важная цель",
-		Markedenemy = "Отмеченного врага",
-		VultsiMark = "Метки стервятника", -- Отброс
-	},
-	meleespec_text_colour = {
-		Meleespec = "Специалиста-рукопашника",
-		Meleejust = "Судьи-рукопашника",
-	},
-	rangedspec_text_colour = {
-		Rangedspec = "Специалиста-стрелка",
-		Rangedjust = "Судьи-стрелка",
-	},
-	-- Арбитрес
+		focus_text_colour = {
+			Focus =				"Концентрации",
+			Forceful =			"Неудержимости",
+		},
+		focust_text_colour = {
+			Focus_Target =		"Важной цели",
+			Focus_Targt =		"Важная цель",
+
+			VultsMark =			"Метки стервятника",		-- Падаль
+			Markedenemy =		"Отмеченного врага",		-- Псайкер
+		},
+		meleespec_text_colour = {
+			Meleespec =			"Специалиста-рукопашника",
+
+			Meleejust =			"Судьи-рукопашника",		-- Арбитрес
+		},
+		rangedspec_text_colour = {
+			Rangedspec =		"Специалиста-стрелка",
+
+			Rangedjust =		"Судьи-стрелка",			-- Арбитрес
+		},
+-- Арбитрес
 	class_arbites_text_colour = {
-		cls_arb = "Арбитратор",
-		cls_arb2 = "Арбитратором",
+		cls_arb =			"Арбитратор",
+		cls_arb2 =			"Арбитратором",
 	},
-	-- Отброс Улья
+-- Падаль Улья
 	class_scum_text_colour = {
-		cls_scm = "Отброс Улья",
-		cls_scma = "Отброса Улья",
-		cls_scm2 = "Отбросом Улья",
+		cls_scm =			"Падаль Улья",
+		cls_scma =			"Падали Улья",
+		cls_scm2 =			"Падалью Улья",
 	},
-	chemtox_text_colour = {
-		Chem_Toxom = "Хим-токсином",
-		Chem_Toxa = "Хим-токсина",
-	},
+		chemtox_text_colour = {
+			Chem_Toxom =		"Хим-токсином",
+			Chem_Toxa =			"Хим-токсина",
+		},
 
 -- ТАЛАНТЫ
 	talents_text_colour = { -- ЖЁЛТЫЙ цвет
-		Assail = "Нападение",
-		Arbites_gren = "Гранату арбитрес",
-		Brain_rupture = "Разрыв мозга",
-		BreakZLined = "Прорыв вражеского строя",
-		BreakZLine = "Прорыва вражеского строя",
-		Electro_mine = "Вольтаическую шоковую мину",
-		Enfeeble = "Ослабление",
-		Frag_gren = "Фраг-гранату",
-		Fragm_gren = "Осколочная граната",
-		Fragmu_grenu = "Осколочную гранату",
-		Rangd_stnc = "Стойку дальнего боя",
-		Scriers_gaze = "Взор провидца",
-		Stun_gren = "Оглушающая граната",
-		Blind_greny = "Ослепляющие гранаты",
-
-	-- Искупления
-		Prologue_p = "Пролог",
-		Curio_p = "Реликвий",
-		Base_tut_p = "Базовое обучение",
-		Sir_melk_p = "Реквизиториум сира Мелка",
-		Omnissia_p = "Святилище Омниссии",
-	},
+	-- Псайкер
+		Assail =			"Нападение",
+		Brain_rupture =		"Разрыв мозга",
+		Enfeeble =			"Ослабление",
+		Scriers_gaze =		"Взор провидца",
+	-- Арбитрес
+		Electro_mine =		"Вольтаическую шоковую мину",
+		Arbites_gren =		"Гранату арбитрес",
+		Nuncio_akvilu =		"Нунцио-аквилу",
+		BreakZLined =		"Прорыв вражеского строя",
+		BreakZLine =		"Прорыва вражеского строя",
+		Stojku_bicha =		"Стойку бичевателя",
+	-- Падаль
+		Blind_greny =		"Ослепляющие гранаты",
+	-- Ветеран
+		Frag_gren =			"Фраг-гранату",
+		Fragm_gren =		"Осколочная граната",
+		Fragmu_grenu =		"Осколочную гранату",
+		Rangd_stnc =		"Стойку дальнего боя",
+	--Изувер
+		Sv_relikviu =		"Священную реликвию",
+		Stun_gren =			"Оглушающая граната",
+		Oglush_granatu =	"Оглушающую гранату",
 
 -- ИСКУПЛЕНИЯ
-	talents_penances_text_colour = { -- ЗЕЛЁНЫЙ цвет
+		Base_tut_p =		"Базовое обучение",
+		Curio_p =			"Реликвий",
+		Omnissia_p =		"Святилище Омниссии",
+		Prologue_p =		"Пролог",
+		Sir_melk_p =		"Реквизиториум сира Мелка",
+	-- },
+
+-- ИСКУПЛЕНИЯ
+	-- talents_penances_text_colour = { -- ЗЕЛЁНЫЙ цвет
 	-- Псайкер
-		bburst = "Взрыва мозга",
-		bburst0 = "Взрыв мозга",
-		bburst1 = "Разрыв мозга",
-		bburst2 = "Разрыва мозга",
-		smite = "Сокрушение",
-		disrdest = "Прерывание судьбы",
-		psy_wrath = "Гнев психокинетика",
-		psy_wrath2 = "Сбрасывающий вопль",
-		telekshii = "Телекинетический щит",
-		empsionics = "Усиленные псионики",
-		assail = "Нападение",
-		scriersgaze = "Взор провидца",
-		kinetpres = "Кинетическое присутствие",
-		prescience = "Предвидение",
-		seerspres = "Присутствие провидца",
+		assail =			"Нападение",
+		bburst =			"Взрыва мозга",
+		bburst0 =			"Взрыв мозга",
+		bburst1 =			"Разрыв мозга",
+		bburst2 =			"Разрыва мозга",
+		disrdest =			"Прерывание судьбы",
+		empsionics =		"Усиленные псионики",
+		kinetpres =			"Кинетическое присутствие",
+		prescience =		"Предвидение",
+		psy_wrath =			"Гнев психокинетика",
+		psy_wrath2 =		"Сбрасывающий вопль",
+		scriersgaze =		"Взор провидца",
+		seerspres =			"Присутствие провидца",
+		smite =				"Сокрушение",
+		telekshii =			"Телекинетический щит",
 	-- Огрин
-		bull_rush = "Рывок быка",
-		bull_rush2 = "Рывком быка",
-		bull_rush3 = "Рывка быка",
-		bull_rush4 = "Неукротимый",
-		big_box = "Большая коробка боли",
-		big_box2 = "Бросай бомбы!",
-		burstlimo = "Обход ограничителя очереди",
-		stayclose = "Держись рядом!",
-		loyalprot = "Верный защитник",
-		feelnop = "Неболит",
-		bonebraura = "Аура костолома",
-		cowculaura = "Отсев трусливых",
-		heavyhitter = "Тяжеловес",
-		bigfriendro = "Большой дружелюбный валун",
-		fragbomb = "Фраг-бомба",
-		pbbarrage = "Беспощадный обстрел в упор",
+		big_box =			"Большая коробка боли",
+		big_box2 =			"Бросай бомбы!",
+		bigfriendro =		"Большой дружелюбный валун",
+		bonebraura =		"Аура костолома",
+		bull_rush =			"Рывок быка",
+		bull_rush2 =		"Рывком быка",
+		bull_rush3 =		"Рывка быка",
+		bull_rush4 =		"Неукротимый",
+		burstlimo =			"Обход ограничителя очереди",
+		cowculaura =		"Отсев трусливых",
+		feelnop =			"Неболит",
+		fragbomb =			"Фраг-бомба",
+		heavyhitter =		"Тяжеловес",
+		loyalprot =			"Верный защитник",
+		pbbarrage =			"Беспощадный обстрел в упор",
+		stayclose =			"Держись рядом!",
 	-- Veteran
-		volley_fire = "Залповый огонь",
-		snipcon = "Концентрация снайпера",
-		exec_stan = "Стойка палача",
-		krak_gr = "Крак-гранату",
-		frag_gr = "Фраг-гранаты",
-		smok_gr = "Дымовой гранаты",
-		fcs_trg = "Важная цель!",
-		scavenger = "Сборщик",
-		voiceoc = "Командный голос",
-		firetim = "Боевая группа",
-		infiltr = "Проникновение",
-		closenkill = "Приблизиться и убить",
-		weapspec = "Специалист по оружию",
-		survivalist = "Выживальщик",
+		closenkill =		"Приблизиться и убить",
+		exec_stan =			"Стойка палача",
+		fcs_trg =			"Важная цель!",
+		firetim =			"Боевая группа",
+		frag_gr =			"Фраг-гранаты",
+		infiltr =			"Проникновение",
+		krak_gr =			"Крак-гранату",
+		volley_fire =		"Залповый огонь",
+		scavenger =			"Сборщик",
+		smok_gr =			"Дымовой гранаты",
+		snipcon =			"Концентрация снайпера",
+		survivalist =		"Выживальщик",
+		voiceoc =			"Командный голос",
+		weapspec =			"Специалист по оружию",
 	-- Zealot
-		shock_gren0 = "Оглушающе-штурмовую гранату",
-		shock_gren = "Оглушающе-штурмовой гранаты",
-		fire_gren = "Огненной гранаты",
-		shock_gren1 = "Оглушающую гранату",
-		shock_gren2 = "Оглушающие гранаты",
-		chast_wckd = "Кара нечестивых",
-		chast_wckd2 = "Кары нечестивых",
-		fury_faithful = "Ярость верующего",
-		martydom = "Мученичества",
-		holy_revenant = "Святой призрак",
-		chorusosf = "Хор духовной стойкости",
-		beaconop = "Маяк очищения",
-		klinvery = "Клинки веры",
-		shroudf = "Покров",
-		benedict = "Благословение",
-		loner = "Единоличник",
-		fanrage = "Ярость",
-		momentum = "Моментума",
-		inexor = "Неумолимый приговор",
-		blazingp = "Пылающая благочестивость",
+		beaconop =			"Маяк очищения",
+		benedict =			"Благословение",
+		blazingp =			"Пылающая благочестивость",
+		chast_wckd =		"Кара нечестивых",
+		chast_wckd2 =		"Кары нечестивых",
+		chorusosf =			"Хор духовной стойкости",
+		inexor =			"Неумолимый приговор",
+		fanrage =			"Ярость",
+		fire_gren =			"Огненной гранаты",
+		fury_faithful =		"Ярость верующего",
+		holy_revenant =		"Святой призрак",
+		klinvery =			"Клинки веры",
+		loner =				"Единоличник",
+		martydom =			"Мученичества",
+		momentum =			"Моментума",
+		shock_gren =		"Оглушающе-штурмовой гранаты",
+		shock_gren0 =		"Оглушающе-штурмовую гранату",
+		shock_gren1 =		"Оглушающую гранату",
+		shock_gren2 =		"Оглушающие гранаты",
+		shroudf =			"Покров",
 	},
 
 -- СЛОЖНОСТЬ
 	sedition_text_colour = {
-		sedition = "Мятеж",
+		sedition =			"Мятеж",
 	},
 	uprising_text_colour = {
-		uprising = "Восстание",
+		uprising =			"Восстание",
 	},
 	malice_text_colour = {
-		malice = "Злоба",
+		malice =			"Злоба",
 	},
 	heresy_text_colour = {
-		heresy = "Ересь",
+		heresy =			"Ересь",
 	},
 	damnation_text_colour = {
-		damnation = "Проклятие",
+		damnation =			"Проклятие",
 	},
 	auric_text_colour = {
-		auric = "Золото",
+		auric =				"Золото",
 	},
 }
 
-
--- Universal function for creating colored variables
-local function create_colored_keywords(config)
+-- Основная функция для создания цветных ключевых слов
+local function create_colored_keywords_ru()
 	local result = {}
 
-	for color_setting, keywords in pairs(config) do
-		local color_name = mod:get(color_setting)
+	for category, keywords in pairs(CONFIG) do
+		local color_name = mod:get(category) or "white"
+		local color = Color[color_name]
 
-		-- Checking if a color setting exists
-		if not color_name then
-			mod:warning("Color setting '" .. color_setting .. "' not found, using fallback color")
-			color_name = "white"  -- Fallback color
+		if not color then
+			color = Color.white(255, true)
+		else
+			color = color(255, true)
 		end
 
-		-- Check if a color exists in the Color table
-		if not Color[color_name] then
-			mod:error("Color '" .. tostring(color_name) .. "' not defined in color.lua for setting '" .. color_setting .. "', using white")
-			color_name = "white"
-		end
-
-		local color = Color[color_name](255, true)
-
-		for name, text in pairs(keywords) do
-			result[name .. "_rgb_ru"] = iu_actit(text, color) -- "_rgb_ru" NOT just "_rgb"
+		for key, text in pairs(keywords) do
+			if InputUtils and InputUtils.apply_color_to_input_text then
+				local colored_text = InputUtils.apply_color_to_input_text(text, color)
+				result[key .. "_rgb_ru"] = colored_text
+			else
+				result[key .. "_rgb_ru"] = text
+			end
 		end
 	end
 
 	return result
 end
 
--- Validation: check that ALL variables have been created
-local function validate_all()
-	local colors = create_colored_keywords(CONFIG)
-	local total_expected = 0
-	local created_count = 0
-	local missing_vars = {}
+--[+ +ЧАСТО ПОВТОРЯЕМЫЕ ФРАЗЫ+ +]--
+local function create_phrs_ru(colors_ru)
+	local Dot_green =	"{#color(35, 255, 5)}•{#reset()}"
+	local Dot_red =		"{#color(255, 35, 5)}•{#reset()}"
 
-	for color_setting, items in pairs(CONFIG) do
-		for name, _ in pairs(items) do
-			total_expected = total_expected + 1
-			local var_name = name .. "_rgb_ru" -- "_rgb_ru" NOT just "_rgb"
-			if colors[var_name] then
-				created_count = created_count + 1
-			else
-				table.insert(missing_vars, var_name)
-				mod:error("Missing variable: " .. var_name)
-			end
-		end
+	-- local function CKWord(fallback, colors, key)
+		-- return colors[key] or fallback
+	-- end
+	local CKWord = function(fallback, key)
+		return fallback
 	end
 
-	if created_count == total_expected then
-		mod:info("✅ All " .. total_expected .. " keyword variables created successfully")
-	else
-		mod:warning("⚠️ Created " .. created_count .. "/" .. total_expected .. " keyword variables")
-	end
+	return {
+		Can_appl_thr_shlds =		Dot_green.." Накладывается через щиты.",
+		Can_be_refr =				Dot_green.." Обновляется во время действия. ",
+		Can_be_refr_drop_1 =		Dot_green.." Заряды обновляются во время действия и сбрасываются по одному. ",
+		Can_proc_mult = 			Dot_green.." Может срабатывать несколько раз за удар при "..CKWord("рассечении", "rassechenii_rgb_ru").." нескольких врагов.\n",
+		Can_proc_mult_str =			Dot_green.." Может срабатывать несколько раз за выстрел при "..CKWord("простреливании", "prostrelivanii_rgb_ru").." нескольких врагов.\n",
+		Refr_dur_stappl =			Dot_green.." Длительность обновляется при наложении заряда. ",
+-- Псайкер
+		Doesnt_Stack_Psy_Aura =		Dot_red.." Не суммируется с эффектом такой же ауры другого "..CKWord("псайкера", "cls_psya_rgb_ru")..".",
+		Doesnt_Stack_Psy_eff =		Dot_red.." Не суммируется с таким же ослаблением от другого псайкера.",
+-- Ветеран
+		Doesnt_Stack_Vet_Aura =		Dot_red.." Не суммируется с эффектом такой же ауры другого "..CKWord("Ветерана", "cls_veta_rgb_ru")..".",
+-- Изувер
+		Doesnt_Stack_Zea_Aura =		Dot_red.." Не суммируется с эффектом такой же ауры другого "..CKWord("Изувера", "cls_zeaa_rgb_ru")..".",
+	Doesnt_Stack_Zea_abil =		Dot_red.." Не суммируется с эффектом такого же таланта другого "..CKWord("Изувера", "cls_zeaa_rgb_ru")..".",
 
-	return colors
+		Cant_appl_thr_shlds =		Dot_red.." Не накладывается через щиты.",
+		Cant_Crit =					Dot_red.." Не наносит "..CKWord("критические удары", "krit_udary_rgb_ru")..".\n",
+		Carap_cant_clv =			Dot_red.." Панцирная броня не "..CKWord("рассекается", "rassekaetsa_rgb_ru")..".",
+		Carap_cant_cleave =			Dot_red.." Панцирная броня не "..CKWord("простреливается", "prostrelivaetsa_rgb_ru")..".",
+		Dont_intw_coher_toughn =	Dot_red.." Не влияет на "..CKWord("стойкость", "stoikost_rgb_ru").." от "..CKWord("сплочённости", "splochennosti_rgb_ru")..".",
+	}
 end
 
--- Create and validate all variables
-return validate_all()
+--[+ +ПРИМЕЧАНИЯ+ +]--
+local function create_nts_ru(colors_ru)
+	local Dot_green = "{#color(35, 255, 5)}•{#reset()}"
+
+	-- local function CKWord(fallback, colors, key)
+		-- return colors[key] or fallback
+	-- end
+	local CKWord = function(fallback, key)
+		return fallback
+	end
+
+	return {
+		Brtl_note =			Dot_green.." "..CKWord("Хрупкость", "Hrupkost_rgb_ru").." брони повышает "..CKWord("урон", "uron_rgb_ru").." команды по врагу.",
+		Fns_note =			Dot_green.." "..CKWord("Ловкость", "Lovkost_rgb_ru").." повышает "..CKWord("критический урон", "krit_uron_rgb_ru").." и "..CKWord("урон по уязвимым местам", "u_mestam_uron_rgb_ru")..".",
+		Impact_note =		Dot_green.." "..CKWord("Выведение из равновесия", "Vyved_ravnovesia_rgb_ru").." увеличивает эффективность "..CKWord("ошеломления", "oshelomlenia_rgb_ru").." врагов.",
+		Pwr_note =			Dot_green.." "..CKWord("Сила", "Sila_rgb_ru").." повышает "..CKWord("урон", "uron_rgb_ru")..", "..CKWord("ошеломление", "oshelomlenie_rgb_ru").." и "..CKWord("рассечение", "rassechenie_rgb_ru")..".",
+		Rend_note =			Dot_green.." "..CKWord("Пробивание", "Probivanie_rgb_ru").." брони повышает ваш "..CKWord("урон", "uron_rgb_ru")..".",
+	}
+end
+
+-- Создаём цвета
+local colored_keywords_ru = create_colored_keywords_ru()
+
+-- ВОЗВРАЩАЕМ ВСЁ
+return {
+	keywords = colored_keywords_ru,					-- ЦВЕТНЫЕ КЛЮЧЕВЫЕ СЛОВА
+	phrs = create_phrs_ru(colored_keywords_ru),		-- ЧАСТО ПОВТОРЯЕМЫЕ ФРАЗЫ
+	nts = create_nts_ru(colored_keywords_ru)		-- ПРИМЕЧАНИЯ
+}

@@ -2,7 +2,7 @@
     Author: Igromanru
     Date: 20.11.2024
     Mod Name: Decode Minigame Solver
-    Version: 1.2.1
+    Version: 1.2.2
 ]]
 local mod = get_mod("DecodeMinigameSolver")
 

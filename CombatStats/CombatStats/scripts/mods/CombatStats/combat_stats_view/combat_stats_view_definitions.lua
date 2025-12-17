@@ -114,7 +114,7 @@ local widget_definitions = {
             value_id = 'text',
             style_id = 'text',
             pass_type = 'text',
-            value = mod:localize('combat_stats_view_title'),
+            value = mod:localize('mod_name'),
             style = table.clone(UIFontSettings.header_1),
         },
     }, 'combat_stats_title_text'),
@@ -173,7 +173,16 @@ local legend_inputs = {
         display_name = 'loc_combat_stats_view_history',
         alignment = 'right_alignment',
         visibility_function = function(parent)
-            return not parent._viewing_history and parent._tracker == mod.tracker
+            return not parent._viewing_history and not parent._viewing_history_entry
+        end,
+    },
+    {
+        input_action = 'hotkey_menu_special_2',
+        on_pressed_callback = 'cb_on_back_to_current_pressed',
+        display_name = 'loc_combat_stats_back_to_history',
+        alignment = 'right_alignment',
+        visibility_function = function(parent)
+            return parent._viewing_history_entry
         end,
     },
     {
@@ -182,7 +191,7 @@ local legend_inputs = {
         display_name = 'loc_combat_stats_back_to_current',
         alignment = 'right_alignment',
         visibility_function = function(parent)
-            return parent._viewing_history or parent._tracker ~= mod.tracker
+            return parent._viewing_history
         end,
     },
     {
@@ -191,7 +200,16 @@ local legend_inputs = {
         display_name = 'loc_combat_stats_reset_stats',
         alignment = 'right_alignment',
         visibility_function = function(parent)
-            return not parent._viewing_history and parent._tracker == mod.tracker
+            return not parent._viewing_history and not parent._viewing_history_entry
+        end,
+    },
+    {
+        input_action = 'hotkey_menu_special_1',
+        on_pressed_callback = 'cb_on_delete_entry_pressed',
+        display_name = 'loc_combat_stats_delete_entry',
+        alignment = 'right_alignment',
+        visibility_function = function(parent)
+            return parent._viewing_history_entry
         end,
     },
 }

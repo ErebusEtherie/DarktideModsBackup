@@ -6,14 +6,14 @@ local Colors = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/RingHud_color
 local localizations = {
     mod_name                               = {
         en = "Ring HUD",
-        ["zh-cn"] = "环形HUD",
+        ["zh-cn"] = "--【Ring HUD】--",
         ["zh-tw"] = "環形HUD",
     },
     mod_description                        = {
         en =
         "Enhance your combat focus with Ring HUD. This compact, circular display contextually shows vital stats including toughness/health, stamina, peril, weapon charge, ammo, grenades, dodges, and ability timers.",
         ["zh-cn"] = "一个紧凑的环形 HUD，显示生命、韧性、耐力、过载值、充能，闪避、远程蓄力、弹药、手雷、技能冷却信息\n B站 独一无二的小真寻",
-        ["zh-tw"] = "一個緊湊的環形 HUD，顯示生命、韌性、耐力、過載值、充能，閃避、遠程蓄力、彈藥、手雷、技能冷卻信息\n B站 獨一無二的小真尋",
+        ["zh-tw"] = "一個緊湊的環形 HUD，顯示生命、韌性、耐力、過載值、充能，閃避、遠程蓄力、彈藥、手雷、技能冷卻信息\n B站 独一无二的小真寻", -- AI Note: Please do not translate this line
     },
 
     show_all_hud_hotkey                    = {
@@ -23,8 +23,8 @@ local localizations = {
     },
     show_all_hud_hotkey_tooltip            = {
         en = "Hold to temporarily show all Ring HUD elements, overriding their individual visibility settings.",
-        ["zh-cn"] = "按住此按键可以显示所有环形HUD元素，覆盖它们各自可见性设置。",
-        ["zh-tw"] = "按住此按鍵可以顯示所有環形HUD元素，覆蓋它們各自可見性設置。",
+        ["zh-cn"] = "按住此按键可以显示所有环形HUD元素，覆盖它们各自可见性设置",
+        ["zh-tw"] = "按住此按鍵可以顯示所有環形HUD元素，覆蓋它們各自可見性設置",
     },
 
     trigger_detection_range                = {
@@ -34,8 +34,8 @@ local localizations = {
     },
     trigger_detection_tooltip              = {
         en = "Sets the distance for contextual triggers.\n\n• Used for: Ammo, Pocketables, Medicae.",
-        ["zh-cn"] = "靠近补给品或医疗品时，自动显示生命值和弹药信息（单位：米）",
-        ["zh-tw"] = "靠近補給品或醫療品時，自動顯示生命值和彈藥信息（單位：米）",
+        ["zh-cn"] = "靠近补给品或医疗品时，指向自动显示生命值和弹药信息（单位：米）", -- AI Note: Please do not translate this line
+        ["zh-tw"] = "靠近補給品或醫療品時，指向自動顯示生命值和彈藥信息（單位：米）", -- AI Note: Please do not translate this line
     },
 
     --======================
@@ -45,6 +45,9 @@ local localizations = {
         en = " LAYOUT",
         ["zh-cn"] = " 布局",
         ["zh-tw"] = " 佈局",
+    },
+    position_settings                      = {
+        en = "Position",
     },
     layout_settings                        = {
         en = "General",
@@ -71,8 +74,8 @@ local localizations = {
     },
     crosshair_shake_ads                    = {
         en = "ADS Only",
-        ["zh-cn"] = "瞄准启用",
-        ["zh-tw"] = "瞄準啟用",
+        ["zh-cn"] = "瞄准启用", -- AI Note: Please do not translate this line
+        ["zh-tw"] = "瞄準啟用", -- AI Note: Please do not translate this line
     },
     crosshair_shake_disabled               = {
         en = "Disabled",
@@ -102,44 +105,44 @@ local localizations = {
     },
     scanner_offset_bias_override           = {
         en = "Auspex Separation",
-        -- ["zh-cn"] = "扫描仪偏移", -- AI
-        -- ["zh-tw"] = "掃描儀偏移", -- AI
+        ["zh-cn"] = "鸟卜仪 偏移覆盖",
+        ["zh-tw"] = "鳥卜儀 偏移",
     },
     scanner_offset_bias_override_tooltip   = {
         en = "Overrides separation when the Auspex Scanner is active.",
-        -- ["zh-cn"] = "使用鸟卜仪扫描时覆盖HUD偏移设置。", -- AI
-        -- ["zh-tw"] = "使用鳥卜儀掃描時覆蓋HUD偏移設置。", -- AI
+        ["zh-cn"] = "将覆盖 原本的HUD偏移",
+        ["zh-tw"] = "將覆蓋 原本的HUD偏移"
     },
     player_hud_offset_x                    = {
         en = "Position X",
-        -- ["zh-cn"] = "水平位置 X", -- AI
-        -- ["zh-tw"] = "水平位置 X", -- AI
+        ["zh-cn"] = "X轴",
+        ["zh-tw"] = "X轴",
     },
     player_hud_offset_x_tooltip            = {
         en = "Adjusts the horizontal position of the Ring HUD.",
-        -- ["zh-cn"] = "调整环形HUD的水平位置。", -- AI
-        -- ["zh-tw"] = "調整環形HUD的水平位置。", -- AI
+        ["zh-cn"] = "调整 环形HUD的水平位置。",
+        ["zh-tw"] = "調整環形HUD的水平位置。",
     },
     player_hud_offset_y                    = {
         en = "Position Y",
-        -- ["zh-cn"] = "垂直位置 Y", -- AI
-        -- ["zh-tw"] = "垂直位置 Y", -- AI
+        ["zh-cn"] = "Y轴",
+        ["zh-tw"] = "Y轴",
     },
     player_hud_offset_y_tooltip            = {
         en = "Adjusts the vertical position of your Ring HUD.",
-        -- ["zh-cn"] = "调整环形HUD的垂直位置", -- AI
-        -- ["zh-tw"] = "調整環形HUD的垂直位置", -- AI
+        ["zh-cn"] = "调整环形HUD的垂直位置",
+        ["zh-tw"] = "調整環形HUD的垂直位置",
     },
 
-    ads_settings                           = { -- ADS = 开镜瞄
+    ads_settings                           = { -- ADS(Aim Down Sights) = 开镜瞄
         en = "ADS",
         ["zh-cn"] = "瞄准 界面分布",
         ["zh-tw"] = "瞄準 界面佈局",
     },
     ads_visibility_dropdown                = {
         en = "ADS Visibility",
-        ["zh-cn"] = "瞄准HUD可见性",
-        ["zh-tw"] = "瞄準HUD可見性",
+        ["zh-cn"] = "瞄准HUD 可见性",
+        ["zh-tw"] = "瞄準HUD 可見性",
     },
     ads_visibility_dropdown_tooltip        = {
         en = "Controls visibility behavior while aiming down sights.",
@@ -158,8 +161,8 @@ local localizations = {
     },
     ads_vis_hide_outside_ads               = {
         en = "Show in ADS Only",
-        ["zh-cn"] = "腰射显示",
-        ["zh-tw"] = "腰射顯示",
+        ["zh-cn"] = "瞄准启用",
+        ["zh-tw"] = "瞄準啟用",
     },
     ads_vis_hotkey                         = {
         en = "Treat ADS as Force Show",
@@ -290,7 +293,7 @@ local localizations = {
     },
     peril_lightning_enabled                = {
         en = "Bar + Lightning Anim",
-        ["zh-cn"] = "启用能量条 和 闪电效果",
+        ["zh-cn"] = "启用能量条 和 灵能过热闪电触须",
         ["zh-tw"] = "啟用能量條 和 閃電效果",
     },
     peril_bar_enabled                      = {
@@ -443,13 +446,13 @@ local localizations = {
     },
     charge_perilous_enabled                = {
         en = "Peril Generators (Plasma/Psyker)",
-        ["zh-cn"] = "替换 充能力度（灵能者，等离子）",
-        ["zh-tw"] = "替換 充能力度（靈能者，等離子）",
+        ["zh-cn"] = "替换 充能力度（灵能者 等离子）",
+        ["zh-tw"] = "替換 充能力度（靈能者 等離子）",
     },
     charge_kills_enabled                   = {
         en = "Kill Based (Force Greatsword/Shivs)",
-        ["zh-cn"] = "替换 击杀/飞刀 充能", -- approximate; can be refined later
-        ["zh-tw"] = "替換 擊殺/飛刀 充能",
+        ["zh-cn"] = "替换 灵能巨剑斩击 渣滓飞刀 充能", -- AI Note: Please do not translate this line
+        ["zh-tw"] = "替換 靈能巨劍斬擊 渣滓飛刀 充能", -- AI Note: Please do not translate this line
     },
     charge_other_enabled                   = {
         en = "Other (Helbore/Arbites Shield)",
@@ -465,39 +468,39 @@ local localizations = {
 
     timer_cd_dropdown                      = {
         en = "Cooldown Display",
-        -- AI ["zh-cn"] = "冷却计时模式",
-        -- AI ["zh-tw"] = "冷卻計時模式",
+        ["zh-cn"] = "技能冷却 计时器",
+        ["zh-tw"] = "技能冷卻 計時器",
     },
     timer_cd_dropdown_tooltip              = {
         en =
         "Controls how ability cooldowns are shown.\n\n• Single Timer: Shows when no charges remain.\n• Charge Icons: Adds charge pips () per remaining charge.\n• Count + Timer: Shows charge number + timer.",
-        -- ["zh-cn"] = "控制技能冷却显示方式。\n\n• 单计时器：无充能时显示。\n• 充能图标：冷却时显示充能点 ()。\n• 计数+计时：显示数字计数和时间。", -- AI
-        -- ["zh-tw"] = "控制技能冷卻顯示方式。\n\n• 單計時器：無充能時顯示。\n• 充能圖標：冷卻時顯示充能點 ()。\n• 計數+計時：顯示數字計數和時間。", -- AI
+        ["zh-cn"] = "技能冷却显示方式\n\n• 计时：技能冷却时间\n• 图标：双技能时，显示图标()。\n• 计数+计时：双技能时，显示技能剩余次数，技能和冷却时间",
+        ["zh-tw"] = "技能冷卻顯示方式\n\n• 計時：技能冷卻時間\n• 圖標：雙技能時，顯示圖標()。\n• 計數+計時：雙技能時，顯示技能剩餘次數，技能和冷卻時間",
     },
     timer_cd_disabled                      = {
         en = "Disabled",
-        -- ["zh-cn"] = "关闭",
-        -- ["zh-tw"] = "關閉",
+        ["zh-cn"] = "关闭",
+        ["zh-tw"] = "關閉",
     },
     timer_cd_single                        = {
         en = "Single Timer",
-        -- ["zh-cn"] = "单计时",
-        -- ["zh-tw"] = "單計時",
+        ["zh-cn"] = "计时",
+        ["zh-tw"] = "計時",
     },
     timer_cd_pips_single                   = {
         en = "Icons + Timer",
-        -- ["zh-cn"] = "图标 + 计时", -- AI
-        -- ["zh-tw"] = "圖標 + 計時", -- AI
+        ["zh-cn"] = "计时 + 图标",
+        ["zh-tw"] = "圖標 + 計時",
     },
     timer_cd_count_single                  = {
         en = "Count + Timer",
-        -- ["zh-cn"] = "数量 + 计时", -- AI
-        -- ["zh-tw"] = "數量 + 計時", -- AI
+        ["zh-cn"] = "技能数 + 计时",
+        ["zh-tw"] = "技能数 + 計時",
     },
     timer_cd_single_colored                = {
         en = "Single Timer (Coloured)",
-        -- ["zh-cn"] = "单计时 (彩色)", -- AI
-        -- ["zh-tw"] = "單計時 (彩色)", -- AI
+        ["zh-cn"] = "计时 彩色",
+        ["zh-tw"] = "計時 彩色",
     },
 
     timer_buff_enabled                     = {
@@ -512,27 +515,35 @@ local localizations = {
     },
     timer_sound_enabled                    = {
         en = "Ready Sound",
-        -- ["zh-cn"] = "就绪音效", -- AI
-        -- ["zh-tw"] = "就緒音效", -- AI
+        ["zh-cn"] = "技能刷新 音效",
+        ["zh-tw"] = "技能刷新 音效",
     },
     timer_sound_tooltip                    = {
         en =
         "Sound to play when ability is ready.\n\nOther mods: 'Audible Ability Recharge' by demba for more control.",
+        ["zh-cn"] = "更大音量替换原版技能刷新音效，更详细的设定使用demba制作的Audible Ability Recharge",
+        ["zh-tw"] = "使用更大的音量替換技能刷新技能，更詳細的設定使用demba製作的Audible Ability Recharge",
     },
 
     timer_sound_default                    = {
         en = "Default Darktide",
-        -- ["zh-cn"] = "默认原版音效", -- AI
-        -- ["zh-tw"] = "預設原版音效", -- AI
+        ["zh-cn"] = "原版音效",
+        ["zh-tw"] = "原版音效",
     },
     timer_sound_zealot                     = {
         en = "Chorus Pulse",
+        ["zh-cn"] = "祷告脉冲", -- AI Note: Please do not translate this line
+        ["zh-tw"] = "禱告脈衝", -- AI Note: Please do not translate this line
     },
     timer_sound_blunt_shield               = {
         en = "Shield Impact",
+        ["zh-cn"] = "梆!",
+        ["zh-tw"] = "梆!",
     },
     timer_sound_item_tier3                 = {
         en = "Emperor's Gift",
+        ["zh-cn"] = "鸟叫(声音小)", -- AI Note: Please do not translate this line
+        ["zh-tw"] = "鳥叫(聲音小)", -- AI Note: Please do not translate this line
     },
 
     supplies_supergroup                    = {
@@ -580,22 +591,22 @@ local localizations = {
     medical_crate_color                    = {
         en = "Medical Crate Colour",
         ["zh-cn"] = "医疗箱 颜色",
-        ["zh-tw"] = "醫療箱顏色",
+        ["zh-tw"] = "醫療箱 顏色",
     },
     medical_crate_color_tooltip            = {
         en = "Select the colour for the Medical Crate icon.",
-        ["zh-cn"] = "选择医疗箱图标的颜色。",
-        ["zh-tw"] = "選擇醫療箱圖標的顏色。",
+        ["zh-cn"] = "医疗箱图标的颜色",
+        ["zh-tw"] = "選擇醫療箱圖標的顏色",
     },
     ammo_cache_color                       = {
         en = "Ammo Crate Colour",
         ["zh-cn"] = "弹药箱 颜色",
-        ["zh-tw"] = "彈藥箱顏色",
+        ["zh-tw"] = "彈藥箱 顏色",
     },
     ammo_cache_color_tooltip               = {
         en = "Select the colour for the Ammo Cache icon.",
-        ["zh-cn"] = "选择弹药箱图标的颜色",
-        ["zh-tw"] = "選擇彈藥箱圖標的顏色",
+        ["zh-cn"] = "弹药箱图标的颜色",
+        ["zh-tw"] = "彈藥箱圖標的顏色",
     },
 
     --======================
@@ -603,6 +614,8 @@ local localizations = {
     --======================
     team_hud_mode                          = {
         en = "Team HUD",
+        ["zh-cn"] = "团队HUD",
+        ["zh-tw"] = "团队HUD",
     },
     team_hud_mode_tooltip                  = {
         en =
@@ -611,38 +624,50 @@ local localizations = {
             "• Docked HUDs: RingHud tiles (left side). No bots.\n" ..
             "• Nameplate HUDs: Floating tiles over teammates. No bots.\n" ..
             "• Docked + Nameplate: Both styles active.\n",
-        -- ["zh-cn"] = "选择队友HUD布局：\n\n• 默认：仅原版团队面板。\n• 停靠：RingHud面板（左侧）。\n• 浮动：队友头顶浮动面板。\n• 停靠+浮动：两者同时启用。", -- AI
-        -- ["zh-tw"] = "選擇隊友HUD佈局：\n\n• 默認：僅原版團隊面板。\n• 停靠：RingHud面板（左側）。\n• 浮動：隊友頭頂浮動面板。\n• 停靠+浮動：兩者同時啟用。", -- AI
+
+        ["zh-cn"] =
+            "选择团队或队友的HUD布局\n\n" ..
+            "• 原版\n" ..
+            "• 停靠：环形 停靠左侧\n" ..
+            "• 跟随：环形 队友头顶浮动\n" ..
+            "• 停靠+跟随\n",
+        ["zh-tw"] =
+            "選擇團隊或隊友的HUD佈局\n\n" ..
+            "• 原版\n" ..
+            "• 停靠：環形 停靠左側\n" ..
+            "• 跟隨：環形 隊友頭頂浮動\n" ..
+            "• 停靠+跟隨\n",
     },
     team_hud_disabled                      = {
         en = "Darktide Default",
-        -- ["zh-cn"] = "游戏默认", -- AI
-        -- ["zh-tw"] = "遊戲默認", -- AI
+        ["zh-cn"] = "原版",
+        ["zh-tw"] = "原版",
     },
     team_hud_docked                        = {
         en = "Docked Only",
-        -- ["zh-cn"] = "仅停靠", -- AI
-        -- ["zh-tw"] = "僅停靠", -- AI
+        ["zh-cn"] = "左停靠",
+        ["zh-tw"] = "左停靠",
     },
     team_hud_floating                      = {
         en = "Nameplates Only",
-        -- ["zh-cn"] = "仅浮动", -- AI
-        -- ["zh-tw"] = "僅浮動", -- AI
+        ["zh-cn"] = "跟随",
+        ["zh-tw"] = "跟隨", -- AI
     },
     team_hud_floating_docked               = {
         en = "Docked + Nameplates",
-        -- ["zh-cn"] = "停靠 + 浮动", -- AI
-        -- ["zh-tw"] = "停靠 + 浮動", -- AI
+        ["zh-cn"] = "停靠 + 跟随",
+        ["zh-tw"] = "停靠 + 跟隨",
     },
     team_hud_floating_vanilla              = {
         en = "Default + Nameplates",
-        -- ["zh-cn"] = "默认 + 浮动", -- AI
-        -- ["zh-tw"] = "默認 + 浮動", -- AI
+        ["zh-cn"] = "原版 + 跟随",
+        ["zh-tw"] = "原版 + 跟隨",
     },
     team_hud_floating_thin                 = {
         en = "Minimal Default + Nameplates",
-        -- ["zh-cn"] = "极简默认 + 浮动", -- AI
-        -- ["zh-tw"] = "極簡默認 + 浮動", -- AI
+        --有点Bug
+        ["zh-cn"] = "原版极简 + 跟随(有头像框显示BUG)",
+        ["zh-tw"] = "原版極簡 + 跟隨",
     },
 
     -- Group titles / tooltips used in RingHud_data.lua
@@ -651,24 +676,31 @@ local localizations = {
         ["zh-cn"] = " 团队HUD",
         ["zh-tw"] = " 團隊HUD",
     },
+    team_docked_position                   = {
+        en = "Docked Position"
+    },
     team_hud_settings                      = {
         en = "Team Layout",
-        -- ["zh-cn"] = "团队布局", -- AI
-        -- ["zh-tw"] = "團隊佈局", -- AI
+        ["zh-cn"] = "队友HUD布局",
+        ["zh-tw"] = "隊友HUD佈局",
     },
     team_hud_settings_tooltip              = {
         en = "Configure teammate tiles: layout, scale, and modes.",
-        -- ["zh-cn"] = "配置队友面板：布局、缩放和模式。", -- AI
-        -- ["zh-tw"] = "配置隊友面板：佈局、縮放和模式。", -- AI
+        ["zh-cn"] = "配置团队HUD：显示模式、缩放。",
+        ["zh-tw"] = "配置團隊HUD：顯示模式、縮放。",
     },
     team_hud_offset_x                      = {
         en = "Position X",
+        ["zh-cn"] = "X轴",
+        ["zh-tw"] = "X軸",
     },
     team_hud_offset_x_tooltip              = {
         en = "Adjusts the horizontal position of the docked team HUD.",
     },
     team_hud_offset_y                      = {
         en = "Position Y",
+        ["zh-cn"] = "Y轴",
+        ["zh-tw"] = "Y軸",
     },
     team_hud_offset_y_tooltip              = {
         en = "Adjusts the vertical position of the docked team HUD.",
@@ -696,31 +728,31 @@ local localizations = {
     },
     team_docked_axis_vertical              = {
         en = "Vertical",
-        -- ["zh-cn"] = "垂直", -- AI
-        -- ["zh-tw"] = "垂直", -- AI
+        ["zh-cn"] = "Y轴",
+        ["zh-tw"] = "Y軸",
     },
     team_docked_axis_horizontal            = {
         en = "Horizontal",
-        -- ["zh-cn"] = "水平", -- AI
-        -- ["zh-tw"] = "水平", -- AI
+        ["zh-cn"] = "X轴",
+        ["zh-tw"] = "X軸",
     },
 
     team_tiles_scale                       = {
         en = "Scale",
-        -- ["zh-cn"] = "缩放", -- AI
-        -- ["zh-tw"] = "縮放", -- AI
+        ["zh-cn"] = "缩放倍率",
+        ["zh-tw"] = "縮放倍率",
     },
     team_tiles_scale_tooltip               = {
         en = "Multiplies the size of teammate HUDs.",
-        -- ["zh-cn"] = "队友HUD的缩放倍数。", -- AI
-        -- ["zh-tw"] = "隊友HUD的縮放倍數。", -- AI
+        ["zh-cn"] = "控制队友的HUD缩放倍率，例如头顶的图标",
+        ["zh-tw"] = "控制隊友的HUD縮放倍率，例如頭頂的圖標",
     },
 
     -- Team HP bar (titles + options)
     team_hp_bar                            = {
         en = "Health Bars",
-        -- ["zh-cn"] = "血条", -- AI
-        -- ["zh-tw"] = "血條", -- AI
+        ["zh-cn"] = "队友血条",
+        ["zh-tw"] = "隊友血條",
     },
     team_hp_bar_tooltip                    = {
         en = "Shows teammates' health on their tiles. 'Text' adds contextual numeric HP and toughness.",
@@ -729,34 +761,34 @@ local localizations = {
     },
     team_hp_disabled                       = {
         en = "Disabled",
-        -- ["zh-cn"] = "禁用", -- AI
-        -- ["zh-tw"] = "禁用", -- AI
+        ["zh-cn"] = "禁用",
+        ["zh-tw"] = "禁用",
     },
     team_hp_bar_always_text_off            = {
         en = "Bar Always",
-        -- ["zh-cn"] = "始终显示血条", -- AI
-        -- ["zh-tw"] = "始終顯示血條", -- AI
+        ["zh-cn"] = "始终显示 血条",
+        ["zh-tw"] = "始終顯示 血條",
     },
     team_hp_bar_always_text_context        = {
         en = "Bar + Text Always",
-        -- ["zh-cn"] = "始终显示血条+文字", -- AI
-        -- ["zh-tw"] = "始終顯示血條+文字", -- AI
+        ["zh-cn"] = "始终显示 血条 + 数字",
+        ["zh-tw"] = "始終顯示 血條 + 數字",
     },
     team_hp_bar_context_text_off           = {
         en = "Bar (Contextual)",
-        -- ["zh-cn"] = "血条 (自动)", -- AI
-        -- ["zh-tw"] = "血條 (自動)", -- AI
+        ["zh-cn"] = "自动显示 血量条",
+        ["zh-tw"] = "自動顯示 血量條"
     },
     team_hp_bar_context_text_context       = {
         en = "Bar + Text (Contextual)",
-        -- ["zh-cn"] = "血条+文字 (自动)", -- AI
-        -- ["zh-tw"] = "血條+文字 (自動)", -- AI
+        ["zh-cn"] = "自动显示 血条 + 数字 ",
+        ["zh-tw"] = "自動顯示 血條 + 數字 ",
     },
 
     team_name_icon                         = {
         en = "Nameplate Icons",
-        -- ["zh-cn"] = "名字与图标", -- AI
-        -- ["zh-tw"] = "名字與圖標", -- AI
+        ["zh-cn"] = "名字与图标",
+        ["zh-tw"] = "名字與圖標",
     },
     team_name_icon_tooltip                 = {
         en =
@@ -767,12 +799,12 @@ local localizations = {
 
     name0_icon1_status1                    = {
         en = "Class Icon, RH Status Icons",
-        -- ["zh-cn"] = "无名字，大图标（RH 状态）", -- AI
+        ["zh-cn"] = "无名 大图标",
         -- ["zh-tw"] = "無名字，大圖示（RH 狀態）", -- AI
     },
     name0_icon1_status0                    = {
         en = "Class Icon",
-        -- ["zh-cn"] = "无名字，大图标（原版状态）", -- AI
+        ["zh-cn"] = "无名字，大图标（原版状态）",
         -- ["zh-tw"] = "無名字，大圖示（原版狀態）", -- AI
     },
     name0_icon0_status1                    = {
@@ -821,8 +853,8 @@ local localizations = {
 
     team_munitions_disabled                 = {
         en = "Disabled",
-        -- ["zh-cn"] = "禁用", -- AI
-        -- ["zh-tw"] = "禁用", -- AI
+        ["zh-cn"] = "禁用",
+        ["zh-tw"] = "禁用",
     },
     team_munitions_ammo_only_always         = {
         en = "Ammo Only (Always)",
@@ -933,11 +965,13 @@ local localizations = {
     --======================
     ui_integration_settings                 = {
         en = "Integration",
-        ["zh-cn"] = "界面整合",
-        ["zh-tw"] = "介面整合",
+        ["zh-cn"] = "UI集成", --不知道干什么的
+        ["zh-tw"] = "UI集成",
     },
     ui_integration_settings_tooltip         = {
         en = "Settings that integrate with the vanilla UI.",
+        ["zh-cn"] = "与原版UI集成的设置：聊天位置和任务目标信息行为",
+        ["zh-tw"] = "與原版UI集成的設置：聊天位置和任務目標信息行為",
     },
     minimal_objective_feed_enabled          = {
         en = "Streamline Popups",
@@ -969,27 +1003,45 @@ local function _readable_en(key)
 end
 
 local zh_cn_color_names = {
-    HEALTH_GREEN = "绿色",
-    POWER_RED = "红色",
-    SPEED_BLUE = "蓝色",
-    COOLDOWN_YELLOW = "黄色",
-    AMMO_ORANGE = "橙色",
-    TOME_BLUE = "浅蓝",
-    GRIMOIRE_PURPLE = "紫色",
-    GENERIC_CYAN = "青色",
-    GENERIC_WHITE = "白色",
+    AMMO_TEXT_COLOR_CRITICAL = "纯红", -- AI Note: Please do not translate this line
+    AMMO_TEXT_COLOR_HIGH     = "水绿", -- AI Note: Please do not translate this line
+    AMMO_TEXT_COLOR_LOW      = "赤红", -- AI Note: Please do not translate this line
+    AMMO_TEXT_COLOR_MEDIUM_H = "牙白", -- AI Note: Please do not translate this line
+    AMMO_TEXT_COLOR_MEDIUM_L = "彤色", -- AI Note: Please do not translate this line
+    COOLDOWN_YELLOW          = "郁金", -- AI Note: Please do not translate this line
+    SPEED_BLUE               = "钴蓝", -- AI Note: Please do not translate this line
+    GENERIC_WHITE            = "月白", -- AI Note: Please do not translate this line
+    GRIMOIRE_PURPLE          = "紫绀", -- AI Note: Please do not translate this line
+    HEALTH_GREEN             = "薄绿", -- AI Note: Please do not translate this line
+    POWER_RED                = "绯红", -- AI Note: Please do not translate this line
+    TOUGHNESS_BROKEN         = "火红", -- AI Note: Please do not translate this line
+    TOUGHNESS_OVERSHIELD     = "鹅黄", -- AI Note: Please do not translate this line
+    TOUGHNESS_TEAL           = "青色", -- AI Note: Please do not translate this line
+    AMMO_ORANGE              = "橙色", -- AI Note: Please do not translate this line
+    TOME_BLUE                = "浅蓝", -- AI Note: Please do not translate this line
+    TOUGHNESS_TEAL           = "靛青", -- AI Note: Please do not translate this line
+    GENERIC_CYAN             = "青色", -- AI Note: Please do not translate this line
 }
 
 local zh_tw_color_names = {
-    HEALTH_GREEN = "綠色",
-    POWER_RED = "紅色",
-    SPEED_BLUE = "藍色",
-    COOLDOWN_YELLOW = "黃色",
-    AMMO_ORANGE = "橙色",
-    TOME_BLUE = "淺藍",
-    GRIMOIRE_PURPLE = "紫色",
-    GENERIC_CYAN = "青色",
-    GENERIC_WHITE = "白色",
+    AMMO_TEXT_COLOR_CRITICAL = "純紅", -- AI Note: Please do not translate this line
+    AMMO_TEXT_COLOR_HIGH     = "水綠", -- AI Note: Please do not translate this line
+    AMMO_TEXT_COLOR_LOW      = "赤紅", -- AI Note: Please do not translate this line
+    AMMO_TEXT_COLOR_MEDIUM_H = "牙白", -- AI Note: Please do not translate this line
+    AMMO_TEXT_COLOR_MEDIUM_L = "彤色", -- AI Note: Please do not translate this line
+    COOLDOWN_YELLOW          = "鬱金", -- AI Note: Please do not translate this line
+    SPEED_BLUE               = "鈷藍", -- AI Note: Please do not translate this line
+    GENERIC_WHITE            = "月白", -- AI Note: Please do not translate this line
+    GRIMOIRE_PURPLE          = "紫紺", -- AI Note: Please do not translate this line
+    HEALTH_GREEN             = "薄綠", -- AI Note: Please do not translate this line
+    POWER_RED                = "緋紅", -- AI Note: Please do not translate this line
+    TOUGHNESS_BROKEN         = "火紅", -- AI Note: Please do not translate this line
+    TOUGHNESS_OVERSHIELD     = "鵝黃", -- AI Note: Please do not translate this line
+    TOUGHNESS_TEAL           = "青色", -- AI Note: Please do not translate this line
+    AMMO_ORANGE              = "橙色", -- AI Note: Please do not translate this line
+    TOME_BLUE                = "淺藍", -- AI Note: Please do not translate this line
+    TOUGHNESS_TEAL           = "靛青", -- AI Note: Please do not translate this line
+    GENERIC_CYAN             = "青色", -- AI Note: Please do not translate this line
 }
 
 -- Auto-generate colored labels for flat palette entries only.

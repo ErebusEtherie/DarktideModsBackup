@@ -4,8 +4,6 @@ local mod = get_mod("RingHud")
 if not mod then return {} end
 
 local PlayerCharacterConstants = require("scripts/settings/player_character/player_character_constants")
--- PlayerUnitStatus is required in the original but not used in the public function logic provided,
--- except implicitly via intensity context or if extended. Keeping it.
 local PlayerUnitStatus         = require("scripts/utilities/attack/player_unit_status")
 
 local Intensity                = mod:io_dofile("RingHud/scripts/mods/RingHud/context/intensity_context")
@@ -120,6 +118,28 @@ local ALLOWED_BUFF_NAMES       = {
     broker_punk_rage_stance                   = true, -- Rampage
 }
 
+-- Safer than the common “tmpl.name or buff:template_name()” pattern, because some
+-- buff instances expose `template_name` as a string field, not a callable method.
+local function _buff_template_name(buff_instance)
+    if not buff_instance then
+        return nil
+    end
+
+    if buff_instance.template and type(buff_instance.template) == "function" then
+        local tmpl = buff_instance:template()
+        local name = tmpl and tmpl.name
+        if name then
+            return name
+        end
+    end
+
+    if buff_instance.template_name and type(buff_instance.template_name) == "function" then
+        return buff_instance:template_name()
+    end
+
+    return buff_instance._template_name or buff_instance.template_name
+end
+
 -- ####################################################################################################
 -- ## Public Module Functions
 -- ####################################################################################################
@@ -141,19 +161,92 @@ function RingHudState.get_hud_data_state(ring_hud_instance)
     hud_state.charge_is_dual_shivs = false
     hud_state.peril_data.other_overheat_slot_name = nil
 
-    -- Default values
+    -- Default values (including nested tables, so we never render stale state on early returns)
     hud_state.peril_fraction = 0
     hud_state.is_peril_driven_by_warp = false
     hud_state.stamina_fraction = 0
     hud_state.charge_fraction = 0
     hud_state.charge_max_charges = 0
     hud_state.charge_current_charges = 0
-    hud_state.toughness_data.has_overshield = false
-    hud_state.timer_data.buff_timer_value = 0
-    hud_state.timer_data.buff_max_duration = 0
-    hud_state.timer_data.ability_cooldown_remaining = 0
-    hud_state.timer_data.is_ability_on_cooldown_for_timer = false
-    hud_state.broker_stimm_data.is_broker = false
+
+    do
+        local dd = hud_state.dodge_data
+        dd.current_dodges = 0
+        dd.efficient_dodges_display = 0
+        dd.max_efficient_dodges_actual = 1
+        dd.has_infinite = false
+        dd.remaining_efficient = 0
+    end
+
+    do
+        local td = hud_state.toughness_data
+        td.raw_fraction = 0
+        td.display_fraction = 0
+        td.has_overshield = false
+    end
+
+    do
+        local hd = hud_state.health_data
+        hd.current_fraction = 0
+        hd.corruption_fraction = 0
+        hd.current_health = 0
+        hd.max_health = 0
+    end
+
+    do
+        local gd = hud_state.grenade_data
+        gd.current = 0
+        gd.current_charges = 0
+        gd.max = 0
+        gd.max_charges = 0
+        gd.live_max = 0
+        gd.is_regenerating = false
+        gd.replenish_buff_name = nil
+        gd.max_cooldown = 0
+        gd.regen_progress = 0
+    end
+
+    do
+        local ad = hud_state.ammo_data
+        ad.current_clip = 0
+        ad.max_clip = 0
+        ad.uses_ammo = false
+        ad.current_reserve = 0
+        ad.max_reserve = 0
+        ad.wielded_slot_name = nil
+        ad.has_infinite_reserve = false
+    end
+
+    do
+        local td = hud_state.timer_data
+        td.buff_timer_value = 0
+        td.buff_max_duration = 0
+        td.ability_cooldown_remaining = 0
+        td.is_ability_on_cooldown_for_timer = false
+        td.max_combat_ability_cooldown = 0
+    end
+
+    do
+        local bd = hud_state.broker_stimm_data
+        bd.is_broker = false
+        bd.buff_remaining = 0
+        bd.buff_duration = 0
+        bd.cooldown_remaining = 0
+        bd.cooldown_max = 0
+    end
+
+    hud_state.peril_data.value = 0
+    hud_state.peril_data.source = "warp"
+    hud_state.peril_data.other_overheat_fraction = 0
+    hud_state.peril_data.other_overheat_slot_name = nil
+
+    hud_state.ability_data.remaining_charges = 0
+    hud_state.ability_data.max_charges = 0
+    hud_state.ability_data.remaining_cooldown = 0
+    hud_state.ability_data.max_cooldown = 0
+    hud_state.ability_data.paused = false
+
+    hud_state.is_veteran_deadshot_adsing = false
 
     local parent_hud = ring_hud_instance and ring_hud_instance._parent
     hud_state.player_extensions = parent_hud and parent_hud:player_extensions()
@@ -187,6 +280,7 @@ function RingHudState.get_hud_data_state(ring_hud_instance)
 
     local player = Managers.player:local_player_safe(1)
     local player_unit = player and player.player_unit
+
     if player_unit then
         local visual_loadout_extension = ScriptUnit.has_extension(player_unit, "visual_loadout_system") and
             ScriptUnit.extension(player_unit, "visual_loadout_system")
@@ -254,7 +348,6 @@ function RingHudState.get_hud_data_state(ring_hud_instance)
     local overheat_source  = "overheat:none"
     local overheat_level   = 0
 
-    -- Safety check for mod functions
     local has_peril_funcs  = mod.peril_slot_is_weapon and mod.peril_template_generates_overheat and
         mod.peril_read_slot_overheat
 
@@ -322,45 +415,48 @@ function RingHudState.get_hud_data_state(ring_hud_instance)
             hud_state.charge_weapon_template_name = current_wep_template.name
         end
 
-        local special_tweak = current_wep_template and current_wep_template.weapon_special_tweak_data
-        if special_tweak and special_tweak.max_charges then
-            local wielded_wep_comp           = unit_data_comp_access_point:read_component(wielded_slot_charge)
-            local max_charges                = special_tweak.max_charges or 0
-            local current_charges            = (wielded_wep_comp and wielded_wep_comp.num_special_charges) or 0
+        local is_missile_launcher = (hud_state.charge_weapon_template_name == "missile_launcher")
 
-            hud_state.charge_max_charges     = max_charges
-            hud_state.charge_current_charges = current_charges
+        if not is_missile_launcher then
+            local special_tweak = current_wep_template and current_wep_template.weapon_special_tweak_data
+            if special_tweak and special_tweak.max_charges then
+                local wielded_wep_comp           = unit_data_comp_access_point:read_component(wielded_slot_charge)
+                local max_charges                = special_tweak.max_charges or 0
+                local current_charges            = (wielded_wep_comp and wielded_wep_comp.num_special_charges) or 0
 
-            if special_tweak.charge_remove_time and not special_tweak.passive_charge_add_interval then
-                hud_state.charge_system_type = "kill_count"
-            elseif special_tweak.passive_charge_add_interval then
-                hud_state.charge_system_type = "block_passive"
+                hud_state.charge_max_charges     = max_charges
+                hud_state.charge_current_charges = current_charges
+
+                if special_tweak.charge_remove_time and not special_tweak.passive_charge_add_interval then
+                    hud_state.charge_system_type = "kill_count"
+                elseif special_tweak.passive_charge_add_interval then
+                    hud_state.charge_system_type = "block_passive"
+                end
+
+                if (hud_state.charge_system_type == "kill_count" or hud_state.charge_system_type == "block_passive")
+                    and max_charges > 0
+                then
+                    hud_state.charge_fraction = current_charges / max_charges
+                end
+
+                local tmpl_name = hud_state.charge_weapon_template_name
+                if wielded_slot_charge == "slot_primary"
+                    and tmpl_name
+                    and string.sub(tmpl_name, 1, 13) == "dual_shivs_p1"
+                then
+                    hud_state.charge_is_dual_shivs = true
+                end
             end
 
-            if (hud_state.charge_system_type == "kill_count" or hud_state.charge_system_type == "block_passive")
-                and max_charges > 0
-            then
-                hud_state.charge_fraction = current_charges / max_charges
-            end
-
-            -- Tag dual shivs: primary-slot, dual_shivs_p1* template family
-            local tmpl_name = hud_state.charge_weapon_template_name
-            if wielded_slot_charge == "slot_primary"
-                and tmpl_name
-                and string.sub(tmpl_name, 1, 13) == "dual_shivs_p1"
-            then
-                hud_state.charge_is_dual_shivs = true
-            end
-        end
-
-        if not hud_state.charge_system_type then
-            local action_module_charge_comp_data = unit_data_comp_access_point:read_component("action_module_charge")
-            if action_module_charge_comp_data
-                and action_module_charge_comp_data.charge_level
-                and action_module_charge_comp_data.charge_level > 0
-            then
-                hud_state.charge_system_type = "action_module"
-                hud_state.charge_fraction    = action_module_charge_comp_data.charge_level
+            if not hud_state.charge_system_type then
+                local action_module_charge_comp_data = unit_data_comp_access_point:read_component("action_module_charge")
+                if action_module_charge_comp_data
+                    and action_module_charge_comp_data.charge_level
+                    and action_module_charge_comp_data.charge_level > 0
+                then
+                    hud_state.charge_system_type = "action_module"
+                    hud_state.charge_fraction    = action_module_charge_comp_data.charge_level
+                end
             end
         end
     end
@@ -417,12 +513,8 @@ function RingHudState.get_hud_data_state(ring_hud_instance)
         hud_state.health_data.max_health          = health_ext:max_health() or 0
     end
 
-    -- Grenades
-    do
-        local player_local = Managers.player:local_player_safe(1)
-        local player_unit2 = player_local and player_local.player_unit
-        mod.grenades_update_state(unit_data_comp_access_point, ability_ext, player_unit2, hud_state.grenade_data)
-    end
+    -- Grenades (pass the same player_unit we already fetched)
+    mod.grenades_update_state(unit_data_comp_access_point, ability_ext, player_unit, hud_state.grenade_data)
 
     -- Ability info
     if ability_ext and ability_ext:ability_is_equipped("combat_ability") then
@@ -442,9 +534,10 @@ function RingHudState.get_hud_data_state(ring_hud_instance)
     -- Ammo
     do
         local ammo_data = hud_state.ammo_data
+        local archetype_name = player and player.archetype_name and player:archetype_name()
 
         if mod.ammo_clip_update_state then
-            mod.ammo_clip_update_state(unit_data_comp_access_point, weapon_ext, inv_comp, ammo_data)
+            mod.ammo_clip_update_state(unit_data_comp_access_point, weapon_ext, inv_comp, ammo_data, archetype_name)
         end
 
         if mod.ammo_reserve_update_state then
@@ -466,9 +559,9 @@ function RingHudState.get_hud_data_state(ring_hud_instance)
     end
 
     -- Buff timers + ability timer (STRICT allow-list)
-    if player and player.player_unit then
-        local archetype         = player:archetype_name()
-        local player_unit_timer = player.player_unit
+    if player_unit then
+        local archetype         = player and player:archetype_name()
+        local player_unit_timer = player_unit
         local broker_data       = hud_state.broker_stimm_data
 
         -- Broker stimm: buff + cooldown for the stimm ability
@@ -484,9 +577,7 @@ function RingHudState.get_hud_data_state(ring_hud_instance)
                 ScriptUnit.extension(player_unit_timer, "buff_system")
             if buff_ext_broker and buff_ext_broker._buffs_by_index then
                 for _, buff_instance in pairs(buff_ext_broker._buffs_by_index) do
-                    local tmpl = buff_instance and buff_instance:template()
-                    local name = (tmpl and tmpl.name) or
-                        (buff_instance and buff_instance.template_name and buff_instance:template_name())
+                    local name = _buff_template_name(buff_instance)
                     if name == "syringe_broker_buff" then
                         local duration = buff_instance:duration()
                         local progress = buff_instance:duration_progress() or 0
@@ -532,9 +623,7 @@ function RingHudState.get_hud_data_state(ring_hud_instance)
             ScriptUnit.extension(player_unit_timer, "buff_system")
         if buff_ext_timer and buff_ext_timer._buffs_by_index then
             for _, buff_instance in pairs(buff_ext_timer._buffs_by_index) do
-                local tmpl = buff_instance and buff_instance:template()
-                local name = (tmpl and tmpl.name) or
-                    (buff_instance and buff_instance.template_name and buff_instance:template_name())
+                local name = _buff_template_name(buff_instance)
                 if name and ALLOWED_BUFF_NAMES[name] then
                     local has_duration = buff_instance.duration ~= nil and type(buff_instance.duration) == "function"
                     local has_progress = buff_instance.duration_progress ~= nil and

@@ -303,6 +303,13 @@ return {
                         default_value = false,
                     },
                     {
+                        setting_id = "enemy_radar_scan_range",
+                        type = "numeric",
+                        default_value = 50.0,
+                        range = {5.0, 100.0},
+                        decimals_number = 1,
+                    },
+                    {
                         setting_id = "enemy_radar_priority_mode",
                         type = "dropdown",
                         default_value = "threat",

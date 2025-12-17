@@ -99,7 +99,7 @@ local DATA = {
                                 setting_id      = "player_hud_offset_x",
                                 type            = "numeric",
                                 default_value   = 0,
-                                range           = { -800, 800 },
+                                range           = { -1400, 1400 },
                                 decimals_number = 0,
                                 tooltip         = "player_hud_offset_x_tooltip",
                             },
@@ -107,7 +107,7 @@ local DATA = {
                                 setting_id      = "player_hud_offset_y",
                                 type            = "numeric",
                                 default_value   = 0,
-                                range           = { -500, 500 },
+                                range           = { -1000, 1000 },
                                 decimals_number = 0,
                                 tooltip         = "player_hud_offset_y_tooltip",
                             },
@@ -425,9 +425,9 @@ local DATA = {
                     -- Team HUD
                     ------------------------------------------------------------------
                     {
-                        setting_id  = "team_hud_settings",
+                        setting_id  = "team_docked_position",
                         type        = "group",
-                        tooltip     = "team_hud_settings_tooltip",
+                        tooltip     = "team_docked_position_tooltip",
                         sub_widgets = {
                             {
                                 setting_id    = "team_docked_axis",
@@ -455,6 +455,13 @@ local DATA = {
                                 decimals_number = 0,
                                 tooltip         = "team_hud_offset_y_tooltip",
                             },
+                        },
+                    },
+                    {
+                        setting_id  = "team_hud_settings",
+                        type        = "group",
+                        tooltip     = "team_hud_settings_tooltip",
+                        sub_widgets = {
                             {
                                 setting_id      = "team_tiles_scale",
                                 type            = "numeric",
@@ -494,7 +501,6 @@ local DATA = {
                             },
                         },
                     },
-
                     ------------------------------------------------------------------
                     -- Team HUD Detail
                     ------------------------------------------------------------------

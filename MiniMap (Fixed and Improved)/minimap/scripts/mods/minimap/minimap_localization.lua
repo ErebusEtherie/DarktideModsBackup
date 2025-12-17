@@ -217,6 +217,10 @@ local loc = {
         en = "Enable Enemy Radar",
         ["zh-cn"] = "启用敌情雷达",
     },
+    enemy_radar_scan_range = {
+        en = "Scan Range (meters)",
+        ["zh-cn"] = "扫描范围（米）",
+    },
     enemy_radar_priority_mode = {
         en = "Priority Mode",
         ["zh-cn"] = "优先级模式",

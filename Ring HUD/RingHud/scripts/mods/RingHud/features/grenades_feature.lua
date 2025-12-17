@@ -1,24 +1,118 @@
 -- File: RingHud/scripts/mods/RingHud/features/grenades_feature.lua
 local mod = get_mod("RingHud"); if not mod then return {} end
 
+-- Guard against double-loading (prevents rehook warnings if io_dofile is called twice)
+if mod.grenades_feature then
+    return mod.grenades_feature
+end
+
+mod.grenades_feature              = {}
+local GrenadesFeature             = mod.grenades_feature
+
 local Notch                       = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/notch_split")
 local U                           = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
-local GrenadesFeature             = {}
 
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Broker flash-grenade (blitz) settings – used for kill-based charge regen progress
+-- Prefer TalentSettings.broker.blitz.flash_grenade.num_kills (matches broker buff template),
+-- fall back to broker_passive_blitz_charge_on_kill.num_kills if needed.
+-- ─────────────────────────────────────────────────────────────────────────────
 local TalentSettings              = require("scripts/settings/talent/talent_settings")
 local BrokerTalentSettings        = TalentSettings and TalentSettings.broker
 local BROKER_BLITZ_KILLS_REQUIRED = 0
 
-if BrokerTalentSettings then
-    -- Prefer the explicit passive settings, fall back to blitz.flash_grenade if needed.
-    local passive_cfg           = BrokerTalentSettings.broker_passive_blitz_charge_on_kill
-    local blitz_cfg             = BrokerTalentSettings.blitz and BrokerTalentSettings.blitz.flash_grenade
+do
+    local broker_blitz_cfg      = BrokerTalentSettings and BrokerTalentSettings.blitz and
+        BrokerTalentSettings.blitz.flash_grenade
+    local passive_cfg           = BrokerTalentSettings and BrokerTalentSettings.broker_passive_blitz_charge_on_kill
 
     BROKER_BLITZ_KILLS_REQUIRED =
-        (passive_cfg and passive_cfg.num_kills)
-        or (blitz_cfg and blitz_cfg.num_kills)
+        (broker_blitz_cfg and broker_blitz_cfg.num_kills)
+        or (passive_cfg and passive_cfg.num_kills)
         or 0
+end
+
+-- Option D: mirror template_data.tracked_kills into mod state (best-effort)
+mod._broker_blitz_tracked_kills    = mod._broker_blitz_tracked_kills or 0
+mod._broker_blitz_prev_grenade_cur = mod._broker_blitz_prev_grenade_cur or 0
+mod._broker_blitz_template_patched = mod._broker_blitz_template_patched or false
+
+do
+    if not mod._broker_blitz_template_patched and mod.hook_require then
+        mod._broker_blitz_template_patched = true
+
+        mod:hook_require("scripts/settings/buff/archetype_buff_templates/broker_buff_templates", function(templates)
+            local tpl = templates and templates.broker_passive_blitz_charge_on_kill
+            if type(tpl) ~= "table" then
+                return
+            end
+
+            if tpl._ringhud_broker_blitz_patched then
+                return
+            end
+            tpl._ringhud_broker_blitz_patched = true
+
+            local BuffSettings                = require("scripts/settings/buff/buff_settings")
+            local proc_events                 = BuffSettings and BuffSettings.proc_events
+
+            local function _mirror_if_local_player(template_data, template_context)
+                if type(template_data) ~= "table" then
+                    return
+                end
+                local kills = template_data.tracked_kills
+                if type(kills) ~= "number" then
+                    return
+                end
+
+                local player      = Managers.player:local_player_safe(1)
+                local player_unit = player and player.player_unit
+                local unit        = template_context and template_context.unit
+
+                if player_unit and unit == player_unit then
+                    mod._broker_blitz_tracked_kills = math.max(kills, 0)
+                end
+            end
+
+            -- start_func: initialize mirror when buff is applied clientside
+            if type(tpl.start_func) == "function" then
+                local orig_start = tpl.start_func
+                tpl.start_func = function(template_data, template_context, ...)
+                    orig_start(template_data, template_context, ...)
+                    _mirror_if_local_player(template_data, template_context)
+                end
+            end
+
+            -- specific_proc_func: mirror after tracked_kills increments/resets
+            local sp = tpl.specific_proc_func
+            if proc_events and type(sp) == "table" then
+                local function _wrap_proc(key)
+                    local fn = sp[key]
+                    if type(fn) ~= "function" then
+                        return
+                    end
+
+                    sp[key] = function(params, template_data, template_context, t, ...)
+                        local ret = fn(params, template_data, template_context, t, ...)
+                        _mirror_if_local_player(template_data, template_context)
+                        return ret
+                    end
+                end
+
+                _wrap_proc(proc_events.on_kill)
+                _wrap_proc(proc_events.on_minion_death)
+            end
+
+            -- visual_stack_count: extra mirror point (harmless, helps if UI calls it clientside)
+            if type(tpl.visual_stack_count) == "function" then
+                local orig_vsc = tpl.visual_stack_count
+                tpl.visual_stack_count = function(template_data, template_context, ...)
+                    local ret = orig_vsc(template_data, template_context, ...)
+                    _mirror_if_local_player(template_data, template_context)
+                    return ret
+                end
+            end
+        end)
+    end
 end
 
 local GRENADE_OUTLINE_COLOR = mod.PALETTE_RGBA1.dodge_color_full_rgba -- visual “full” tint
@@ -343,6 +437,23 @@ function mod.grenades_update_state(unit_data_comp, ability_ext, player_unit, gre
     local live_max_val               = grenade_data.live_max or 0
     local used_any                   = false
 
+    -- Keep the broker mirror from going stale across any charge change / full state
+    do
+        local prev = mod._broker_blitz_prev_grenade_cur
+        if prev == nil then
+            prev = cur
+        end
+
+        if cur ~= prev then
+            mod._broker_blitz_tracked_kills = 0
+            mod._broker_blitz_prev_grenade_cur = cur
+        end
+
+        if cur >= live_max_val then
+            mod._broker_blitz_tracked_kills = 0
+        end
+    end
+
     -- Cooldown-based regeneration (e.g. Ogryn box, some talents)
     if ability_ext and ability_ext.ability_is_equipped and ability_ext:ability_is_equipped(ability_key) then
         local rem_cd = ability_ext:remaining_ability_cooldown(ability_key) or 0
@@ -357,11 +468,30 @@ function mod.grenades_update_state(unit_data_comp, ability_ext, player_unit, gre
         end
     end
 
+    local function _buff_template_name(buff)
+        if not buff then return nil end
+
+        if buff.template and type(buff.template) == "function" then
+            local tmpl = buff:template()
+            local name = tmpl and tmpl.name
+            if name then
+                return name
+            end
+        end
+
+        if buff.template_name and type(buff.template_name) == "function" then
+            return buff:template_name()
+        end
+
+        -- Fallbacks (string fields)
+        return buff._template_name or buff.template_name
+    end
+
     -- Buff-based regeneration (Veteran/Zealot/Ogryn/Psyker) + Broker blitz-on-kill
     if (not used_any) and player_unit then
         local buff_ext = ScriptUnit.has_extension(player_unit, "buff_system") and
             ScriptUnit.extension(player_unit, "buff_system")
-        local buffs = buff_ext and buff_ext._buffs_by_index
+        local buffs    = buff_ext and buff_ext._buffs_by_index
         if buffs and cur < live_max_val then
             local names = {
                 veteran_grenade_replenishment      = true,
@@ -374,18 +504,17 @@ function mod.grenades_update_state(unit_data_comp, ability_ext, player_unit, gre
             local broker_kill_buff = nil
 
             for _, b in pairs(buffs) do
-                local tmpl = b and b:template()
-                local name = (tmpl and tmpl.name) or (b and b.template_name and b:template_name())
+                local name = _buff_template_name(b)
 
                 if name and names[name] then
                     local dur  = (b.duration and type(b.duration) == "function") and b:duration() or nil
                     local prog = (b.duration_progress and type(b.duration_progress) == "function") and
                         b:duration_progress() or nil
                     if prog and prog > 0 then
-                        local fill                       = (name == "veteran_grenade_replenishment"
-                                or name == "adamant_grenade_replenishment")
+                        local fill                       = (name == "veteran_grenade_replenishment" or name == "adamant_grenade_replenishment")
                             and math.clamp(prog, 0, 1)    -- 0→1 elapsed
                             or math.clamp(1 - prog, 0, 1) -- 1→0 remaining
+
                         grenade_data.is_regenerating     = true
                         grenade_data.replenish_buff_name = name
                         if dur and dur > 0 then grenade_data.max_cooldown = dur end
@@ -394,29 +523,31 @@ function mod.grenades_update_state(unit_data_comp, ability_ext, player_unit, gre
                     end
                 elseif name == "broker_passive_blitz_charge_on_kill" then
                     broker_kill_buff = b
-                    -- don’t break; there might also be one of the classic regen buffs present.
                 end
             end
 
             -- Broker kill-based blitz charge: show kills-to-next-charge as a partial segment.
-            if (not grenade_data.is_regenerating)
-                and broker_kill_buff
-                and BROKER_BLITZ_KILLS_REQUIRED > 0
-            then
+            -- Option A: read from buff object if present.
+            -- Option D: if the buff isn't discoverable here (or returns 0), fall back to mirrored tracked_kills.
+            if (not grenade_data.is_regenerating) and BROKER_BLITZ_KILLS_REQUIRED > 0 then
                 local kills = 0
 
-                if broker_kill_buff.visual_stack_count and type(broker_kill_buff.visual_stack_count) == "function" then
-                    kills = broker_kill_buff:visual_stack_count() or 0
-                elseif broker_kill_buff.stack_count and type(broker_kill_buff.stack_count) == "function" then
-                    -- Fallback: if visual_stack_count isn’t exposed for some reason.
-                    kills = broker_kill_buff:stack_count() or 0
+                if broker_kill_buff then
+                    if broker_kill_buff.visual_stack_count and type(broker_kill_buff.visual_stack_count) == "function" then
+                        kills = broker_kill_buff:visual_stack_count() or 0
+                    elseif broker_kill_buff.stack_count and type(broker_kill_buff.stack_count) == "function" then
+                        kills = broker_kill_buff:stack_count() or 0
+                    end
+                end
+
+                if (kills or 0) <= 0 then
+                    kills = mod._broker_blitz_tracked_kills or 0
                 end
 
                 kills = math.max(kills or 0, 0)
 
                 if kills > 0 then
                     local prog = math.clamp(kills / BROKER_BLITZ_KILLS_REQUIRED, 0, 1)
-
                     if prog > 0 then
                         grenade_data.is_regenerating     = true
                         grenade_data.replenish_buff_name = "broker_passive_blitz_charge_on_kill"
