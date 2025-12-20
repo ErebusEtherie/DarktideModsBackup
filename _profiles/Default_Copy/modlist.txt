@@ -12,7 +12,6 @@
 -Distinct Side Mission Icons (aka Which Book)
 -Darktide Mod Framework
 -CombatStats
--Buy Until Rating
 -BrokerStimTimer (aka Hive Scum Stim Timer)
 -BrokerAutoStim
 -Auto Loot
@@ -41,7 +40,6 @@
 -Ammonia
 +Dog Whistle
 -Emperor's Lantern
-+Circumstance Fix
 -Auto Rations - Recover or Destroy
 -StickyFingers
 +AFK
@@ -51,10 +49,8 @@
 +VFX Limiter
 -Audio Replacer
 +Skitarius
--KeepSwinging
 +Unlimited Power
 -Crystalline Focus
-+Inventory2D - FIX for Bound By Duty Update
 +Better Loadouts - Extra Loadout Icons and Slots
 -Correct Mission Voting Info
 -Colored Enemy Healthbars REDUX
@@ -62,12 +58,10 @@
 -Gas Outline
 +SuperFlashlight
 -Modular Menu Buttons
--Loading Screen Decoration Remover - Hide Load Screen Divider and Next Hint Prompt
 -Quick Level Mastery
 +NoNews
 -Triage
 +Scoreboard Explosive
--Scoreboard Damage
 -TeamKillTracker
 -Teammate Tracker
 +Barrels
@@ -105,18 +99,14 @@
 -Revive Success Sound
 +Settings Extension
 +UI Extension
-+Bugfix - Squad Location Marker Colours
--Inventory Hider
 +Character Screen Contracts (aka Better Melk)
 +Equipped Icon Plus
-+Inventory2D
 +More Characters and Loadouts
 +Crosshair HUD
 +Player Outlines
 +Ping Monitor
 +DefaultSprint 1.4.1
 +AutoTag
--Zip It
 +Ration Pack
 -Loadout Monitor
 +Retain Selection
@@ -162,10 +152,8 @@
 +Outline Colours
 +Decode Helper
 -FullAuto
--Scoreboard Tag Counter
 -Custom HUD
 +Team Outline Colours
-+Log Me In
 +LessAnnoyingFX
 +Killfeed Improvements
 +MultiBind
@@ -188,7 +176,6 @@
 -DynamicCrosshair
 +Share Talents
 -Warp Unbound Timer
--Remove Loading Status - Hide or Rename Load Screen Reason
 +Mourningstar Dialogue Improved
 +Decode Minigame Solver
 +Train Solver
@@ -196,8 +183,6 @@
 +GetOutOfTheWay
 -MemoryLeakFix
 +Power DI
--True Solo QoL
--Testing Utilities (add buffs)
 +Scoreboard
 +Animation Events
 -Artificial Latency
@@ -212,7 +197,6 @@
 +Many More Try
 +Quick Look Card
 +Remember Server Location
--Simple Speed Meter
 -What The Localization
 +Emperor's Guidance
 +Clear Smoke
