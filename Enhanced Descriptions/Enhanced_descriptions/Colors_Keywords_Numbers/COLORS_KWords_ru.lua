@@ -8,7 +8,7 @@ local InputUtils = require("scripts/managers/input/input_utils")
 local CONFIG = {
 	bleed_text_colour = {
 		krovotechenie =		"кровотечение",					-- Таланты
-		krovotecheniem =		"кровотечением",					-- Таланты
+		krovotecheniem =	"кровотечением",				-- Таланты
 		krovotechenia =		"кровотечения",					-- Таланты, Благословения
 	},
 	brittleness_text_colour = {
@@ -43,8 +43,10 @@ local CONFIG = {
 		splochennosti =		"сплочённости",					-- Таланты, ЧПФ внизу
 	},
 	combat_ability_text_colour = {
+		sposobnosti =		"способности",					-- Таланты
 		boeva_sposobnost =	"боевая способность",			-- Таланты
 		boev_sposobnosti =	"боевой способности",			-- Таланты, Редкости
+		vosstanovlenii =	"восстановлении",				-- Таланты
 		vosstanovlenia =	"восстановления",				-- Таланты
 		vost_sposobnosti =	"восстановления способности",	-- Таланты
 	},
@@ -54,19 +56,23 @@ local CONFIG = {
 		porchi =			"порчи",						-- Таланты
 		porchu =			"порчу",						-- Таланты
 		porchi_uron =		"урон от порчи",				-- Таланты
+		porchi_urona =		"урона от порчи",				-- Таланты
 	},
 	crit_text_colour = {
+		Kriticheskie =		"Критические",					-- Таланты
 		Krit_vystrely =		"Критические выстрелы",			-- Таланты
 		Krit_udary =		"Критические удары",			-- Благословения
 
 		krit_udar =			"критический удар",				-- Таланты
-		kritom =			"критическим",					-- Таланты
 		krit_udarom =		"критическим ударом",			-- Таланты, Благословения
 		krit_udary =		"критические удары",			-- Таланты
 		krit_udarami =		"критическими ударами",			-- Благословения
+		krit_udara =		"критического удара",			-- Таланты
 		krit_udare =		"критическом ударе",			-- Таланты, Благословения
+		krit_udar_uron =	"урон критического удара",		-- Таланты
 		krit_udara_uron =	"урону критического удара",		-- Таланты, Благословения
 
+		Krt_uron =			"Крит. урон",					-- Таланты
 		krit_uron =			"критический урон",				-- Таланты, Примечания внизу
 		krit_uronu =		"критическому урону",			-- Таланты, Благословения
 
@@ -76,11 +82,14 @@ local CONFIG = {
 		krit_vystrelom =	"критическим выстрелом",		-- Таланты
 		krit_vystr_uron =	"урону критического выстрела",	-- Благословения
 
+		kritom =			"критическим",					-- Таланты
 		kriticheskomu =		"критическому",					-- Благословения
 
 		sh_krit_vystrela =	"шансу критического выстрела",	-- Таланты, Благословения
 		sha_krit_udara =	"шанса критического удара",		-- Таланты
 		sh_krit_udara =		"шансу критического удара",		-- Таланты, Благословения
+
+		Conc_Stimm =		"Стима концентрации",
 	},
 	damage_text_colour = {
 		Uron =				"Урон",							-- Таланты
@@ -89,6 +98,8 @@ local CONFIG = {
 		uronu =				"урону",						-- Таланты, Благословения, Редкости
 	-- urona_warp =			"варп-урона",					-- ?
 		uronu_warp =		"варп-урону",					-- Таланты
+
+		Combat_Stimm =		"Боевого стима",
 	},
 	electrocuted_text_colour = {
 	-- elektroshok =		"электрошок",					-- ?
@@ -104,6 +115,7 @@ local CONFIG = {
 		ran =				"ран",							-- Таланты
 		ranu =				"рану",							-- Таланты
 		rany =				"раны",							-- Таланты
+		Zdorovie =			"Здоровье",						-- Таланты
 		zdorovie =			"здоровье",						-- Таланты
 		zdoroviem =			"здоровьем",					-- Таланты
 		zdoroviu =			"здоровью",						-- Таланты, Редкости
@@ -133,6 +145,8 @@ local CONFIG = {
 	rending_text_colour = {
 		Probivanie =		"Пробивание",					-- Примечания внизу
 		probivaniu =		"пробиванию",					-- Таланты, Благословения
+
+		Cartel_Stimm =		"Особого стима Картеля",
 	},
 	soulblaze_text_colour = {
 		gorenia_dushi =		"горения души",					-- Таланты, Благословения
@@ -164,6 +178,7 @@ local CONFIG = {
 		oshelomlautsa =		"ошеломляются",					-- Таланты
 		oshelomlauschej =	"ошеломляющей",					-- Таланты
 		oshelomlauschij =	"ошеломляющий",					-- Таланты
+		oshelomlauschih =	"ошеломляющих",					-- Таланты
 		oshelomlaa =		"ошеломляя",					-- Таланты
 	},
 	stamina_text_colour = {
@@ -177,12 +192,13 @@ local CONFIG = {
 		stoikost =			"стойкость",					-- Таланты, Примечания внизу
 
 		TDR =				"СУС",
-	-- sn_ur_stoikosti =	"снижение урона стойкости",		-- ?
+	-- ur_stoikosti =		"снижение урона стойкости",		-- ?
 		snu_ur_stoikosti =	"снижению урона стойкости",		-- Таланты
-	-- stoikosti_urona =	"урона стойкости",				-- ?
+		stoikosti_urona =	"урона стойкости",				-- Таланты
 	},
 	weakspot_text_colour = {
 		ujazvimye_mesta =	"уязвимые места",				-- Таланты, Благословения
+		ujazvimym_mestam =	"уязвимым местам",				-- Таланты
 		u_mestam_uronu =	"урону по уязвимым местам",		-- Таланты, Благословения
 		ujazvimoe_mesto =	"уязвимое место",				-- Таланты, Благословения
 		u_mestam_uron =		"урон по уязвимым местам",		-- Примечания внизу
@@ -198,18 +214,23 @@ local CONFIG = {
 	},
 		precision_text_colour = {
 			Precision =			"меткости",
+
+			Celerity_Stimm =	"Стима скорости",
 	},
 -- Огрин
 	class_ogryn_text_colour = {
 		cls_ogr =			"Огрин",
+		cls_ogra =			"Огрина",
 		cls_ogr2 =			"Огрином",
 	},
 		fnp_text_colour = {
 			Feel_no_pain =		"Неболита",
 
-			Desperadki =		"Отчаянной атаки",			-- Падаль
+			Desperadki =		"Отчаянной атаки",			-- Отребье
 		},
 		luckyb_text_colour = {
+			Lucky_bullt =		"Счастливая пуля",
+			Lucky_bllt =		"Счастливой пули",
 			Lucky_bullet =		"Счастливую пулю",
 
 			stojkosti_zolot =	"стойкости",				-- Изувер
@@ -218,7 +239,7 @@ local CONFIG = {
 		trample_text_colour = {
 			Trample =			"Топота",
 
-			Depend =			"Зависимости",				-- Падаль
+			Depend =			"Зависимости",				-- Отребье
 	},
 -- Изувер
 	class_zealot_text_colour = {
@@ -231,14 +252,20 @@ local CONFIG = {
 			Fury =				"Ярость",
 			Fury_i =			"Ярости",
 
-			Rampage =			"Буйство!",					-- Падаль
-			Rampaga =			"Буйства!",					-- Падаль
+			Rampage =			"Буйство!",					-- Отребье
+			Rampaga =			"Буйства!",					-- Отребье
 		},
 		momentum_text_colour = {
 			Momentum =			"Моментума",
 
-			Adren =				"Адреналина",				-- Падаль
-			AdrenFr =			"Адреналиновое безумие",	-- Падаль
+			TauntT =			"Провокация",				-- Огрин
+			Taunt =				"спровоцированные",			-- Огрин
+			Taunted =			"спровоцировала",			-- Огрин
+			Tauntin =			"провоцируете",				-- Огрин
+			Taunting =			"провоцируя",				-- Огрин
+
+			Adren =				"Адреналина",				-- Отребье
+			AdrenFr =			"Адреналиновое безумие",	-- Отребье
 		},
 		stealth_text_colour = {
 			Stealth =			"Скрытности",
@@ -257,18 +284,22 @@ local CONFIG = {
 		focus_text_colour = {
 			Focus =				"Концентрации",
 			Forceful =			"Неудержимости",
+
+			Shout =				"Крик",						-- Отребье
 		},
 		focust_text_colour = {
 			Focus_Target =		"Важной цели",
 			Focus_Targt =		"Важная цель",
 
-			VultsMark =			"Метки стервятника",		-- Падаль
+			VultsMark =			"Метки стервятника",		-- Отребье
 			Markedenemy =		"Отмеченного врага",		-- Псайкер
 		},
 		meleespec_text_colour = {
 			Meleespec =			"Специалиста-рукопашника",
 
 			Meleejust =			"Судьи-рукопашника",		-- Арбитрес
+
+			Exhausted =			"Истощение",				-- Отребье
 		},
 		rangedspec_text_colour = {
 			Rangedspec =		"Специалиста-стрелка",
@@ -280,15 +311,18 @@ local CONFIG = {
 		cls_arb =			"Арбитратор",
 		cls_arb2 =			"Арбитратором",
 	},
--- Падаль Улья
+-- Отребье Улья
 	class_scum_text_colour = {
-		cls_scm =			"Падаль Улья",
-		cls_scma =			"Падали Улья",
-		cls_scm2 =			"Падалью Улья",
+		cls_scm =			"Отребье Улья",
+		cls_scma =			"Отребья Улья",
+		cls_scm2 =			"Отребьем Улья",
 	},
 		chemtox_text_colour = {
-			Chem_Toxom =		"Хим-токсином",
+			Chem_Tox =			"Хим-токсин",
 			Chem_Toxa =			"Хим-токсина",
+			Chem_Toxom =		"Хим-токсином",
+
+			Med_Stimm =			"Мед стима",
 		},
 
 -- ТАЛАНТЫ
@@ -298,6 +332,17 @@ local CONFIG = {
 		Brain_rupture =		"Разрыв мозга",
 		Enfeeble =			"Ослабление",
 		Scriers_gaze =		"Взор провидца",
+	-- Ветеран
+		Frag_gren =			"Фраг-гранату",
+		Fragm_gren =		"Осколочная граната",
+		Fragmu_grenu =		"Осколочную гранату",
+		Rangd_stnc =		"Стойку дальнего боя",
+	-- Изувер
+		Sv_relikviu =		"Священную реликвию",
+		Stun_gren =			"Оглушающая граната",
+		Oglush_granatu =	"Оглушающую гранату",
+	-- Огрин
+		Att_Seeker =		"Провокатор",
 	-- Арбитрес
 		Electro_mine =		"Вольтаическую шоковую мину",
 		Arbites_gren =		"Гранату арбитрес",
@@ -305,28 +350,18 @@ local CONFIG = {
 		BreakZLined =		"Прорыв вражеского строя",
 		BreakZLine =		"Прорыва вражеского строя",
 		Stojku_bicha =		"Стойку бичевателя",
-	-- Падаль
+	-- Отребье
 		Blind_greny =		"Ослепляющие гранаты",
-	-- Ветеран
-		Frag_gren =			"Фраг-гранату",
-		Fragm_gren =		"Осколочная граната",
-		Fragmu_grenu =		"Осколочную гранату",
-		Rangd_stnc =		"Стойку дальнего боя",
-	--Изувер
-		Sv_relikviu =		"Священную реликвию",
-		Stun_gren =			"Оглушающая граната",
-		Oglush_granatu =	"Оглушающую гранату",
+		Desperady =			"Сорвиголовы",
 
 -- ИСКУПЛЕНИЯ
-		Base_tut_p =		"Базовое обучение",
+		Base_tut_p =		"Базовое руководство",
 		Curio_p =			"Реликвий",
 		Omnissia_p =		"Святилище Омниссии",
+		PthOTrst_p =		"Пути доверия",
 		Prologue_p =		"Пролог",
 		Sir_melk_p =		"Реквизиториум сира Мелка",
-	-- },
 
--- ИСКУПЛЕНИЯ
-	-- talents_penances_text_colour = { -- ЗЕЛЁНЫЙ цвет
 	-- Псайкер
 		assail =			"Нападение",
 		bburst =			"Взрыва мозга",
@@ -399,9 +434,9 @@ local CONFIG = {
 	},
 
 -- СЛОЖНОСТЬ
-	sedition_text_colour = {
-		sedition =			"Мятеж",
-	},
+	-- sedition_text_colour = {
+		-- sedition =			"Мятеж",
+	-- },
 	uprising_text_colour = {
 		uprising =			"Восстание",
 	},
@@ -416,6 +451,21 @@ local CONFIG = {
 	},
 	auric_text_colour = {
 		auric =				"Золото",
+	},
+
+-- МУСОРНЫЕ СТАТЫ
+	dump_stat_text_colour = {
+		Mobility =			"Мобильность",
+		Melee_dmg =			"Урон рукопашный",
+		Warp_resist =		"Сопротивление варпу",
+	},
+	dump_stat2_text_colour = {
+		Ammo =				"Боеприпасы",
+		Defences =			"Защита",
+		Heat_mngt =			"Отведение тепла",
+	},
+	dump_stat3_text_colour = {
+		DamageDS =			"Урон",
 	},
 }
 
@@ -451,34 +501,42 @@ local function create_phrs_ru(colors_ru)
 	local Dot_green =	"{#color(35, 255, 5)}•{#reset()}"
 	local Dot_red =		"{#color(255, 35, 5)}•{#reset()}"
 
-	-- local function CKWord(fallback, colors, key)
-		-- return colors[key] or fallback
-	-- end
 	local CKWord = function(fallback, key)
-		return fallback
+		return colors_ru[key] or fallback
 	end
 
 	return {
 		Can_appl_thr_shlds =		Dot_green.." Накладывается через щиты.",
+		Can_appl_thr_shldsb =		Dot_green.." Накладывается через щит бастиона.",
 		Can_be_refr =				Dot_green.." Обновляется во время действия. ",
 		Can_be_refr_drop_1 =		Dot_green.." Заряды обновляются во время действия и сбрасываются по одному. ",
 		Can_proc_mult = 			Dot_green.." Может срабатывать несколько раз за удар при "..CKWord("рассечении", "rassechenii_rgb_ru").." нескольких врагов.\n",
 		Can_proc_mult_str =			Dot_green.." Может срабатывать несколько раз за выстрел при "..CKWord("простреливании", "prostrelivanii_rgb_ru").." нескольких врагов.\n",
 		Refr_dur_stappl =			Dot_green.." Длительность обновляется при наложении заряда. ",
--- Псайкер
-		Doesnt_Stack_Psy_Aura =		Dot_red.." Не суммируется с эффектом такой же ауры другого "..CKWord("псайкера", "cls_psya_rgb_ru")..".",
-		Doesnt_Stack_Psy_eff =		Dot_red.." Не суммируется с таким же ослаблением от другого псайкера.",
--- Ветеран
-		Doesnt_Stack_Vet_Aura =		Dot_red.." Не суммируется с эффектом такой же ауры другого "..CKWord("Ветерана", "cls_veta_rgb_ru")..".",
--- Изувер
-		Doesnt_Stack_Zea_Aura =		Dot_red.." Не суммируется с эффектом такой же ауры другого "..CKWord("Изувера", "cls_zeaa_rgb_ru")..".",
-	Doesnt_Stack_Zea_abil =		Dot_red.." Не суммируется с эффектом такого же таланта другого "..CKWord("Изувера", "cls_zeaa_rgb_ru")..".",
+
 
 		Cant_appl_thr_shlds =		Dot_red.." Не накладывается через щиты.",
+		Cant_be_refr =				Dot_red.." Не обновляется во время действия. ",
 		Cant_Crit =					Dot_red.." Не наносит "..CKWord("критические удары", "krit_udary_rgb_ru")..".\n",
 		Carap_cant_clv =			Dot_red.." Панцирная броня не "..CKWord("рассекается", "rassekaetsa_rgb_ru")..".",
 		Carap_cant_cleave =			Dot_red.." Панцирная броня не "..CKWord("простреливается", "prostrelivaetsa_rgb_ru")..".",
 		Dont_intw_coher_toughn =	Dot_red.." Не влияет на "..CKWord("стойкость", "stoikost_rgb_ru").." от "..CKWord("сплочённости", "splochennosti_rgb_ru")..".",
+
+
+-- Псайкер
+		Doesnt_Stack_Psy_Aura =		Dot_red.." Не суммируется с эффектом такой же ауры другого "..CKWord("псайкера", "cls_psya_rgb_ru")..".",
+		Doesnt_Stack_Psy_eff =		Dot_red.." Не суммируется с таким же ослаблением от другого "..CKWord("псайкера", "cls_psya_rgb_ru")..".",
+-- Ветеран
+		Doesnt_Stack_Vet_Aura =		Dot_red.." Не суммируется с эффектом такой же ауры другого "..CKWord("Ветерана", "cls_veta_rgb_ru")..".",
+-- Изувер
+		Doesnt_Stack_Zea_Aura =		Dot_red.." Не суммируется с эффектом такой же ауры другого "..CKWord("Изувера", "cls_zeaa_rgb_ru")..".",
+		Doesnt_Stack_Zea_abil =		Dot_red.." Не суммируется с эффектом такого же таланта другого "..CKWord("Изувера", "cls_zeaa_rgb_ru")..".",
+-- Огрин
+		Doesnt_Stack_Ogr_Aura =		Dot_red.." Не суммируется с эффектом такой же ауры другого "..CKWord("Огрина", "cls_ogra_rgb_ru")..".",
+		Doesnt_Stack_Ogr_abil =		Dot_red.." Не суммируется с эффектом такого же таланта другого "..CKWord("Огрина", "cls_ogra_rgb_ru")..".",
+-- Отребье
+		Doesnt_Stack_Scm_Aura =		Dot_red.." Не суммируется с эффектом такой же ауры другого "..CKWord("Отребья Улья", "cls_scma_rgb_ru")..".",
+		Doesnt_Stack_Scm_eff =		Dot_red.." Не суммируется с таким же ослаблением от другого "..CKWord("Отребья Улья", "cls_scma_rgb_ru")..".",
 	}
 end
 
@@ -486,11 +544,8 @@ end
 local function create_nts_ru(colors_ru)
 	local Dot_green = "{#color(35, 255, 5)}•{#reset()}"
 
-	-- local function CKWord(fallback, colors, key)
-		-- return colors[key] or fallback
-	-- end
 	local CKWord = function(fallback, key)
-		return fallback
+		return colors_ru[key] or fallback
 	end
 
 	return {

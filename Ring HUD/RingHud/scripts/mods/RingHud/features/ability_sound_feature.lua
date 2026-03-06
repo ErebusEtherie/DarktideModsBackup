@@ -5,15 +5,12 @@ if not mod then return {} end
 -- Public namespace (cross-file): attach to `mod.` per your rule.
 mod.ability_sound        = mod.ability_sound or {}
 local F                  = mod.ability_sound
+local SM                 = mod.sound_manager
 
 --=====================================================================--
 -- Config & helpers
 --=====================================================================--
 -- Events:
--- • NEW_ABILITY_SOUND: Zealot bolstering prayer (RingHud’s preferred cue).
--- • SHIELD_ABILITY_SOUND: Blunt shield impact.
--- • ITEM_TIER3_SOUND: UI item result overlay tier 3.
--- • ORIGINAL_ABILITY_SOUND: vanilla HUD “off cooldown” ping.
 F.NEW_ABILITY_SOUND      = "wwise/events/player/play_ability_zealot_bolstering_prayer"
 F.SHIELD_ABILITY_SOUND   = "wwise/events/weapon/melee_hits_blunt_shield"
 F.ITEM_TIER3_SOUND       = "wwise/events/ui/play_ui_item_result_ovelay_tier_3"
@@ -25,9 +22,6 @@ local function _current_mode()
 end
 
 -- Resolve which RingHud sound to request, if we are handling it ourselves.
--- Returns:
---   • nil      → do not request a custom sound (used only when AAR is absent).
---   • event id → one of the constants above.
 function F.resolve_selected_sound()
     local mode = _current_mode()
 
@@ -45,40 +39,8 @@ function F.resolve_selected_sound()
     end
 end
 
--- AAR-aware sound pick (if AAR exported two different events for 1/2 charges)
-function F.pick_aar_sound_by_charges(charges)
-    local s1 = mod._aar_sound_1 or F.ORIGINAL_ABILITY_SOUND
-    local s2 = mod._aar_sound_2 or s1
-    return (charges == 2) and s2 or s1
-end
-
--- Centralized play that defers to AAR’s injector when present
-function F.play_ready_sound(event_name, self_or_nil)
-    if not event_name or event_name == "" then
-        return false
-    end
-
-    local is_aar_event = (event_name == (mod._aar_sound_1 or "")) or (event_name == (mod._aar_sound_2 or ""))
-    if mod._aar_present and is_aar_event then
-        if mod._aar_play_event then
-            return mod._aar_play_event(event_name)
-        else
-            return false
-        end
-    end
-
-    if self_or_nil and self_or_nil._play_sound then
-        self_or_nil:_play_sound(event_name)
-        return true
-    end
-
-    return false
-end
-
 --=====================================================================--
 -- Hooks
---  NOTE: Per-project rule “one hook per function per mod” — ensure these
---  are the only hooks for the functions below across RingHud.
 --=====================================================================--
 
 -- HudElementPlayerSlotItemAbility:init
@@ -121,7 +83,7 @@ mod:hook(CLASS.HudElementPlayerSlotItemAbility, "init", function(func, self, par
     if mode ~= "default" then
         local event = F.resolve_selected_sound()
         if event then
-            F.play_ready_sound(event, self)
+            SM.play_sound(event, self)
         end
     end
 end)
@@ -194,13 +156,13 @@ mod:hook(CLASS.HudElementPlayerAbility, "update",
             if not on_cooldown and self._on_cooldown and (not uses_charges or has_charges_left) then
                 if mod._aar_present then
                     -- AAR-present path: delegate to AAR’s events for 1/2 charges.
-                    local event = F.pick_aar_sound_by_charges(remaining_ability_charges or 1)
-                    F.play_ready_sound(event, self)
+                    local event = SM.pick_aar_sound_by_charges(remaining_ability_charges or 1)
+                    SM.play_sound(event, self)
                 else
                     -- RingHud-owned sound: use dropdown mode (zealot / shield / item_tier3).
                     local event = F.resolve_selected_sound()
                     if event then
-                        F.play_ready_sound(event, self)
+                        SM.play_sound(event, self)
                     end
                 end
             end

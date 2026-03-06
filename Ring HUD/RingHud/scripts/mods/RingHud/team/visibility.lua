@@ -32,7 +32,7 @@ function V.force_show_requested()
     if not _enabled() then return false end
     return (mod.show_all_hud_hotkey_active == true)
         or (rawget(mod, "ads_force_show_active") == true)
-        or (rawget(mod, "ads_active_force_show") == true) -- alt flag name, if you wire it this way
+        or (rawget(mod, "ads_active_force_show") == true)
 end
 
 -- ###########
@@ -67,7 +67,16 @@ function V.hp_bar(peer, _force_show_unused)
 
     -- Derive a peer_id from common fields used in RingHud ally state.
     local pid = (peer and (peer.peer_id or peer.peer or peer.id)) or "unknown"
-    local res = mod.thv_team_for_peer(pid, peer or {})
+
+    -- Ensure the peer context passed to the central policy contains the proximity flags
+    -- if they weren't already provided.
+    local peer_ctx = peer or {}
+    -- Proximity data now comes from prox_healing integer (set in RingHud_state_team)
+    if peer_ctx.prox_healing == nil then
+        peer_ctx.prox_healing = mod.prox_healing or 0
+    end
+
+    local res = mod.thv_team_for_peer(pid, peer_ctx)
     return res and res.show_bar == true
 end
 
@@ -79,19 +88,19 @@ function V.hp_text(peer, _force_show_unused)
     if not THV or not mod.thv_team_for_peer then return false end
 
     local pid = (peer and (peer.peer_id or peer.peer or peer.id)) or "unknown"
-    local res = mod.thv_team_for_peer(pid, peer or {})
+
+    local peer_ctx = peer or {}
+    if peer_ctx.prox_healing == nil then
+        peer_ctx.prox_healing = mod.prox_healing or 0
+    end
+
+    local res = mod.thv_team_for_peer(pid, peer_ctx)
     return res and res.show_text == true
 end
 
 -- ############
 -- Munitions
 -- ############
--- New semantics:
---   team_munitions_disabled        → never show ammo
---   team_munitions_ammo_always_cd_enabled     → show ammo always (no CD)
---   team_munitions_ammo_context_cd_disabled    → show ammo when contextual (ammo cache, force_show)
---   team_munitions_ammo_always_cd_always  → show ammo always + enable CD text (via V.counters)
---   team_munitions_ammo_context_cd_enabled → show ammo when contextual + enable CD text
 function V.munitions(force_show)
     if not _enabled() then return false end
 
@@ -114,7 +123,6 @@ function V.munitions(force_show)
         return (force_show == true)
     end
 
-    -- Fallback: be conservative
     return false
 end
 
@@ -132,9 +140,6 @@ end
 -- ================================
 -- Wield-latch pocketable gates
 -- ================================
--- IMPORTANT: These latches do not know about pocketable visibility
--- settings: they just report “is a latch active?”. The central
--- pocketables_visibility module decides what to do with them.
 function V.any_stimm_wield_latched()
     if not _enabled() then
         return false
@@ -153,7 +158,6 @@ function V.any_crate_wield_latched()
     return (type(until_t) == "number") and (now < until_t)
 end
 
--- ammo-cache–specific wield latch (drives teammate munitions visibility)
 function V.any_ammo_cache_wield_latched()
     if not _enabled() then
         return false
@@ -166,41 +170,17 @@ end
 -- =========================================
 -- Near-source helpers (pure proximity)
 -- =========================================
--- These just answer “is the local player near any relevant source?”.
--- They deliberately do *not* look at pocketables settings; the central
--- pocketables_visibility module is responsible for deciding whether
--- to use these signals for player/team widgets.
 
 local function _near_any_stimm_source_raw()
-    if type(mod.near_stimm_source) == "function" then
-        if mod.near_stimm_source(mod) then
-            return true
-        end
-    end
-    -- Fallbacks: align with proximity_context.lua published flags
-    return rawget(mod, "near_syringe_corruption_pocketable") == true
-        or rawget(mod, "near_syringe_power_boost_pocketable") == true
-        or rawget(mod, "near_syringe_speed_boost_pocketable") == true
-        or rawget(mod, "near_syringe_ability_boost_pocketable") == true
-        or rawget(mod, "near_health_station") == true
+    -- Directly check the new mod-level boolean flag from proximity_context.lua
+    return mod.prox_stimm == true
 end
 
 local function _near_any_crate_source_raw()
-    if type(mod.near_crate_source) == "function" then
-        if mod.near_crate_source(mod) then
-            return true
-        end
-    end
-    return rawget(mod, "near_medical_crate_pocketable") == true
-        or rawget(mod, "near_medical_crate_deployable") == true
-        or rawget(mod, "near_ammo_cache_pocketable") == true
-        or rawget(mod, "near_ammo_cache_deployable") == true
-        or rawget(mod, "near_tome_pocketable") == true
-        or rawget(mod, "near_grimoire_pocketable") == true
+    -- Directly check the new mod-level boolean flag from proximity_context.lua
+    return mod.prox_crate == true
 end
 
--- audience parameter is retained for compatibility but currently ignored:
--- proximity is global from the POV of visibility rules.
 function V.near_stimm_source(_audience)
     if not _enabled() then return false end
     return _near_any_stimm_source_raw()
@@ -214,16 +194,11 @@ end
 -- ############
 -- Counters
 -- ############
--- New semantics:
---   • Ability cooldown text is enabled only when team_munitions_* is
---     one of the *_ammo_cd_* modes.
---   • Toughness text is no longer driven here; second return is always false.
 function V.counters(force_show)
     if not _enabled() then return false, false end
 
     local v = (mod._settings and mod._settings.team_munitions) or "team_munitions_ammo_context_cd_enabled"
 
-    -- Disabled / ammo-only modes → no CD counters.
     if v == "team_munitions_disabled"
         or v == "team_munitions_ammo_always_cd_enabled"
         or v == "team_munitions_ammo_context_cd_disabled"
@@ -231,13 +206,10 @@ function V.counters(force_show)
         return false, false
     end
 
-    -- Always-on ammo+CD mode → always show CD counters.
     if v == "team_munitions_ammo_always_cd_always" then
         return true, false
     end
 
-    -- Contextual ammo+CD mode → CD counters follow the same
-    -- contextual gate as munitions (ammo cache wield + force_show).
     if v == "team_munitions_ammo_context_cd_enabled" then
         if V.any_ammo_cache_wield_latched() or force_show == true then
             return true, false
@@ -245,7 +217,6 @@ function V.counters(force_show)
         return false, false
     end
 
-    -- Fallback: no counters.
     return false, false
 end
 

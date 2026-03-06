@@ -35,22 +35,43 @@ mod._edge_stack_bias_x     = mod._edge_stack_bias_x or { top = 0, bottom = 0 }
 -- Screen-space gate for top/bottom lane collision (**fragments**, not pixels).
 -- Wider gate so tiles more readily join the same lane.
 -- Override at runtime with: mod.EDGE_COLLIDE_FRAG = <number>
--- (Legacy fallback: mod.EDGE_COLLIDE_PX if you've set it elsewhere.)
+local _cached_gate_frag    = nil
+local _cached_gate_scale   = nil
+
 local function _default_gate_frag()
     local s = (mod._settings and mod._settings.team_tiles_scale) or 1
-    -- Base tile width (fragment units). Use constants when available, otherwise 220.
+    if s == _cached_gate_scale and _cached_gate_frag then
+        return _cached_gate_frag
+    end
     local base_w = (rawget(mod, "TILE_SIZE") and (mod.TILE_SIZE[1] or 220))
         or 220
-    return math.floor(base_w * s * 1.25 + 0.5) -- ~1.25 × tile width
+    _cached_gate_frag = math.floor(base_w * s * 1.25 + 0.5) -- ~1.25 × tile width
+    _cached_gate_scale = s
+    return _cached_gate_frag
 end
 
+local _cached_edges = { frame = -1, L = 0, R = 1920, Tm = 0, B = 1080, margins = nil }
+
 local function _fragment_edges(margins)
-    local fw, fh = UIResolution.width_fragments(), UIResolution.height_fragments() -- 1920,1080
-    local m      = margins or { left = 0.03, right = 0.03, up = 0.06, down = 0.06 }
-    local L      = (m.left or 0) * fw
-    local R      = fw - (m.right or 0) * fw
-    local Tm     = (m.up or 0) * fh
-    local B      = fh - (m.down or 0) * fh
+    local cur_frame = rawget(mod, "_edge_stack_frame_id") or 0
+    if _cached_edges.frame == cur_frame and _cached_edges.margins == margins then
+        return _cached_edges.L, _cached_edges.R, _cached_edges.Tm, _cached_edges.B
+    end
+
+    local fw, fh          = UIResolution.width_fragments(), UIResolution.height_fragments() -- 1920,1080
+    local m               = margins or { left = 0.03, right = 0.03, up = 0.06, down = 0.06 }
+    local L               = (m.left or 0) * fw
+    local R               = fw - (m.right or 0) * fw
+    local Tm              = (m.up or 0) * fh
+    local B               = fh - (m.down or 0) * fh
+
+    _cached_edges.frame   = cur_frame
+    _cached_edges.margins = margins
+    _cached_edges.L       = L
+    _cached_edges.R       = R
+    _cached_edges.Tm      = Tm
+    _cached_edges.B       = B
+
     return L, R, Tm, B
 end
 
@@ -189,11 +210,13 @@ function Edge.update_push(widget, marker, style, step_x, step_y, margins)
 
     -- Fast exit if no push at all
     if STEP_X == 0 and STEP_Y == 0 then
-        local last = marker._edge_stack_last or { 0, 0 }
-        if (last[1] ~= 0 or last[2] ~= 0) and _apply_style_push(marker, style, 0, 0) then
-            widget.dirty = true
+        local last = marker._edge_stack_last
+        if last and (last[1] ~= 0 or last[2] ~= 0) then
+            if _apply_style_push(marker, style, 0, 0) then
+                widget.dirty = true
+            end
+            last[1], last[2] = 0, 0
         end
-        marker._edge_stack_last = { 0, 0 }
         return 0, 0, nil, nil
     end
 

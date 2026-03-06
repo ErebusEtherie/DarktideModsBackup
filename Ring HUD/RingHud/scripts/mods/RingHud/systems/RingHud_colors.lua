@@ -57,7 +57,7 @@ mod.PALETTE_ARGB255  = {
 -- RGBA (0..1) small set we keep here (used elsewhere)
 mod.PALETTE_RGBA1    = {
     HEALTH_GREEN         = { 0.15, 0.80, 0.10, 1.00 },
-    POWER_RED            = { 0.75, 0.00, 0.00, 1.00 }, -- aka STRENGTH/DAMAGE red
+    POWER_RED            = { 0.75, 0.00, 0.00, 1.00 },
     SPEED_BLUE           = { 0.00, 0.00, 0.30, 1.00 },
     COOLDOWN_YELLOW      = { 1.00, 0.20, 0.00, 1.00 },
     AMMO_ORANGE          = { 1.00, 0.51, 0.00, 1.00 },
@@ -115,8 +115,6 @@ mod.PALETTE_RGBA1    = {
     }
 
 }
-
--- ▲ palettes defined; now expose cross-file helpers on `mod.*`
 
 -- Team-mate slot tint (ARGB255). Order of precedence:
 --   1) Explicit color on the player object (table or player:color()).

@@ -5,7 +5,7 @@ if not mod then return {} end
 -- Ensure RingHud palette gets initialized (sets mod.PALETTE_ARGB255 / mod.PALETTE_RGBA1)
 mod:io_dofile("RingHud/scripts/mods/RingHud/systems/RingHud_colors")
 
--- NEW: pull widget factories from feature files (hardened with {} fallback)
+-- Feature widget factories
 local StaminaFeature     = mod:io_dofile("RingHud/scripts/mods/RingHud/features/stamina_feature") or {}
 local ChargeFeature      = mod:io_dofile("RingHud/scripts/mods/RingHud/features/charge_feature") or {}
 local DodgeFeature       = mod:io_dofile("RingHud/scripts/mods/RingHud/features/dodge_feature") or {}
@@ -14,23 +14,18 @@ local ToughnessHpFeature = mod:io_dofile("RingHud/scripts/mods/RingHud/features/
 local AmmoClipFeature    = mod:io_dofile("RingHud/scripts/mods/RingHud/features/ammo_clip_feature") or {}
 local GrenadesFeature    = mod:io_dofile("RingHud/scripts/mods/RingHud/features/grenades_feature") or {}
 
--- Safeguard lookups so this file never errors if palettes/constants aren’t ready yet.
+local TalentFeature      = mod:io_dofile("RingHud/scripts/mods/RingHud/features/talent_feature")
+
+-- Palettes (expected to exist after RingHud_colors, but keep safe fallbacks)
 local ARGB               = mod.PALETTE_ARGB255 or {}
 local RGBA1              = mod.PALETTE_RGBA1 or {}
 setmetatable(ARGB, { __index = function() return { 255, 255, 255, 255 } end })
 setmetatable(RGBA1, { __index = function() return { 1, 1, 1, 1 } end })
 
--- Cross-file constants with sane fallbacks
-local MAX_DODGE_SEGMENTS              = mod.MAX_DODGE_SEGMENTS or 6
-local MAX_GRENADE_SEGMENTS_DISPLAY    = mod.MAX_GRENADE_SEGMENTS_DISPLAY or 6
-local MAX_AMMO_CLIP_LOW_COUNT_DISPLAY = mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY or 6
-local AMMO_CLIP_ARC_MIN               = mod.AMMO_CLIP_ARC_MIN or 0.55
-local AMMO_CLIP_ARC_MAX               = mod.AMMO_CLIP_ARC_MAX or 0.75
-
 -- Darktide UI deps
-local UIWorkspaceSettings             = require("scripts/settings/ui/ui_workspace_settings")
-local UIWidget                        = require("scripts/managers/ui/ui_widget")
-local UIFontSettings                  = require("scripts/managers/ui/ui_font_settings")
+local UIWorkspaceSettings = require("scripts/settings/ui/ui_workspace_settings")
+local UIWidget            = require("scripts/managers/ui/ui_widget")
+local UIFontSettings      = require("scripts/managers/ui/ui_font_settings")
 
 -- Layout constants
 local function _effective_ring_scale()
@@ -73,7 +68,6 @@ ability_buff_text_style.drop_shadow              = true
 ability_buff_text_style.text_color               = { 255, 0, 255, 0 }
 ability_buff_text_style.offset                   = { text_offset, offset_correction, 2 }
 
--- NEW: Stimm timer style (matches buff style but centered on the stimm node)
 local stimm_timer_text_style                     = table.clone(ability_buff_text_style)
 stimm_timer_text_style.text_horizontal_alignment = "center"
 stimm_timer_text_style.text_vertical_alignment   = "center"
@@ -97,9 +91,6 @@ health_text_style.text_horizontal_alignment      = "center"
 health_text_style.text_vertical_alignment        = "center"
 health_text_style.offset                         = { 0, 0, 1 }
 
--- RGBA 0..1
-local AMMO_CLIP_UNFILLED_COLOR                   = { 0.3, 0.3, 0.3, 0.8 }
-
 local Definitions                                = {
     text_offset           = text_offset,
     offset_correction     = offset_correction,
@@ -118,6 +109,7 @@ local Definitions                                = {
         dodge_bar                      = { parent = "container", horizontal_alignment = "center", vertical_alignment = "center", position = { offset_correction, -1 * mod.scalable_unit, 2 }, size = size },
         stamina_bar                    = { parent = "container", horizontal_alignment = "center", vertical_alignment = "center", position = { -offset_correction, -1 * mod.scalable_unit, 3 }, size = size },
         charge_bar                     = { parent = "container", horizontal_alignment = "center", vertical_alignment = "center", position = { offset_correction, 1 * mod.scalable_unit, 4 }, size = size },
+
         ability_timer                  = {
             parent               = "container",
             horizontal_alignment = "center",
@@ -155,11 +147,21 @@ local Definitions                                = {
             position             = { (offset_correction * inner_size_factor) - (1 * mod.scalable_unit), -(offset_correction * inner_size_factor), 7 },
             size                 = { size[1] * inner_size_factor, size[2] * inner_size_factor },
         },
+
         ammo_clip_bar                  = {
             parent               = "container",
             horizontal_alignment = "center",
             vertical_alignment   = "center",
             position             = { -(offset_correction * inner_size_factor) + (1 * mod.scalable_unit), -(offset_correction * inner_size_factor) + (2 * mod.scalable_unit), 8 },
+            size                 = { size[1] * inner_size_factor, size[2] * inner_size_factor },
+        },
+
+        -- Talent bar: explicit node so TalentFeature can parent cleanly.
+        talent_bar                     = {
+            parent               = "container",
+            horizontal_alignment = "center",
+            vertical_alignment   = "center",
+            position             = { (offset_correction * inner_size_factor) - (1 * mod.scalable_unit), -(offset_correction * inner_size_factor) + (2 * mod.scalable_unit), 8 },
             size                 = { size[1] * inner_size_factor, size[2] * inner_size_factor },
         },
 
@@ -170,6 +172,7 @@ local Definitions                                = {
             horizontal_alignment = "center",
             vertical_alignment   = "top",
         },
+
         ammo_clip_text_display_node    = {
             parent               = "container",
             position             = { -(offset_correction + text_offset + 15 * mod.scalable_unit), -(offset_correction * 2.5) - (8 * mod.scalable_unit), 10 },
@@ -182,10 +185,11 @@ local Definitions                                = {
         stimm_indicator                = {
             parent               = "container",
             position             = { offset_correction + text_offset + (21 * mod.scalable_unit), offset_correction + (8 * mod.scalable_unit), 11 },
-            size                 = { 40 * mod.scalable_unit, 15 * mod.scalable_unit }, -- was 15×15; widened for text
+            size                 = { 40 * mod.scalable_unit, 15 * mod.scalable_unit },
             horizontal_alignment = "center",
             vertical_alignment   = "top",
         },
+
         crate_indicator                = {
             parent               = "container",
             position             = { offset_correction + text_offset - (4 * mod.scalable_unit), offset_correction + (8 * mod.scalable_unit), 12 },
@@ -204,15 +208,6 @@ local Definitions                                = {
     },
 
     widget_definitions    = {
-
-        -- (PERIL moved to features/peril_feature.lua)
-        -- (DODGE moved to features/dodge_feature.lua)
-        -- (STAMINA moved to features/stamina_feature.lua)
-        -- (CHARGE moved to features/charge_feature.lua)
-        -- (TOUGHNESS* moved to features/toughness_hp_feature.lua)
-        -- (GRENADES moved to features/grenades_feature.lua)
-        -- (AMMO CLIP moved to features/ammo_clip_feature.lua)
-
         -- ABILITY TIMER
         ability_timer = UIWidget.create_definition({
             { value_id = "ability_text", style_id = "ability_text", pass_type = "text", value = "", style = ability_buff_text_style },
@@ -228,12 +223,11 @@ local Definitions                                = {
         }, "ammo_clip_text_display_node"),
 
         stimm_indicator_widget = UIWidget.create_definition({
-            -- Icon pass: explicitly small, centered within the larger stimm_indicator node
             {
                 pass_type = "texture",
-                value_id = "stimm_icon",
-                style_id = "stimm_icon",
-                style = {
+                value_id  = "stimm_icon",
+                style_id  = "stimm_icon",
+                style     = {
                     color                = ARGB.GENERIC_WHITE,
                     offset               = { 0, 0, 0 },
                     visible              = false,
@@ -242,22 +236,21 @@ local Definitions                                = {
                     size                 = { 15 * mod.scalable_unit, 15 * mod.scalable_unit },
                 },
             },
-            -- Timer text pass: uses the full enlarged node area
             {
                 pass_type = "text",
-                value_id = "stimm_timer_text",
-                style_id = "stimm_timer_text",
-                value = "",
-                style = stimm_timer_text_style
+                value_id  = "stimm_timer_text",
+                style_id  = "stimm_timer_text",
+                value     = "",
+                style     = stimm_timer_text_style
             },
         }, "stimm_indicator"),
 
         crate_indicator_widget = UIWidget.create_definition({
             {
                 pass_type = "texture",
-                value_id = "crate_icon",
-                style_id = "crate_icon",
-                style = { color = ARGB.GENERIC_WHITE, offset = { 0, 0, 0 }, visible = false }
+                value_id  = "crate_icon",
+                style_id  = "crate_icon",
+                style     = { color = ARGB.GENERIC_WHITE, offset = { 0, 0, 0 }, visible = false }
             },
         }, "crate_indicator"),
 
@@ -267,7 +260,7 @@ local Definitions                                = {
     },
 }
 
--- Let features inject their widget(s), but only if they actually loaded
+-- Feature widget injection
 if StaminaFeature.add_widgets then
     StaminaFeature.add_widgets(Definitions.widget_definitions, nil, { size = size }, { ARGB = ARGB, RGBA1 = RGBA1 })
 end
@@ -288,7 +281,7 @@ if ToughnessHpFeature.add_widgets then
     ToughnessHpFeature.add_widgets(
         Definitions.widget_definitions,
         nil,
-        { size = size, outer_size_factor = 1.5 },
+        { size = size, outer_size_factor = outer_size_factor },
         { ARGB = ARGB, RGBA1 = RGBA1 }
     )
 end
@@ -309,6 +302,30 @@ if GrenadesFeature.add_widgets then
         { size = size, inner_size_factor = inner_size_factor },
         { ARGB = ARGB, RGBA1 = RGBA1 }
     )
+end
+
+-- Talent bar is now ALWAYS created so:
+--  • the widget/style IDs always exist (Adamant segs + edges included),
+--  • HudElementRingHud_player strict validation never depends on a setting,
+--  • visibility remains controlled by TalentFeature.update (timer_buff_dropdown == "all").
+do
+    if not (TalentFeature and TalentFeature.add_widgets) then
+        error("RingHud: TalentFeature missing or does not expose add_widgets().")
+    end
+    if not (Definitions.scenegraph_definition and Definitions.scenegraph_definition.talent_bar) then
+        error("RingHud: scenegraph node 'talent_bar' missing from scenegraph_definition.")
+    end
+
+    TalentFeature.add_widgets(
+        Definitions.widget_definitions,
+        nil,
+        { size = size, inner_size_factor = inner_size_factor, scenegraph_id = "talent_bar" },
+        { ARGB = ARGB, RGBA1 = RGBA1 }
+    )
+
+    if not Definitions.widget_definitions.talent_bar then
+        error("RingHud: TalentFeature.add_widgets() did not create widget_definitions.talent_bar.")
+    end
 end
 
 return Definitions

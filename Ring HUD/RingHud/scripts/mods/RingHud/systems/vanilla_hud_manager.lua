@@ -220,7 +220,13 @@ function VanillaHudManager.apply_team_panel_thin_styles(element_instance)
 
     _hide("coherency_indicator", "texture")
     _hide("panel_background", "background")
-    _hide("player_icon", "texture")
+    _hide("panel_background", "hit_indicator")
+    _hide("panel_background", "hit_indicator_armor_break")
+
+    -- ProfilePictures compat: if it is present, do NOT hide the icon texture
+    if not (mod._compat_profile_pictures == true) then
+        _hide("player_icon", "texture")
+    end
 
     -- Enforce slot coloring on player name
     if mod.team_slot_tint_argb then
@@ -328,15 +334,17 @@ function VanillaHudManager.init()
                             or (self._data and self._data.player)
                         local unit = player and player.player_unit
 
-                        if unit then
-                            local kind = Status.for_unit(unit)
+                        local kind = Status.for_unit(unit)
 
-                            if kind then
-                                local mat = C.STATUS_ICON_MATERIALS
-                                    and C.STATUS_ICON_MATERIALS[kind]
+                        if kind then
+                            local mat = C.STATUS_ICON_MATERIALS
+                                and C.STATUS_ICON_MATERIALS[kind]
 
-                                if mat then
-                                    status_icon = mat
+                            if mat then
+                                status_icon = mat
+
+                                if kind == "auspex" then
+                                    status_color = { 255, 216, 237, 190 } -- Light Green
                                 end
                             end
                         end
@@ -382,28 +390,33 @@ function VanillaHudManager.init()
                             local color_to_use = mod.PALETTE_ARGB255.GENERIC_WHITE
 
                             if unit and Unit.alive(unit) then
-                                local unit_data = ScriptUnit.has_extension(unit, "unit_data_system") and
-                                    ScriptUnit.extension(unit, "unit_data_system")
-                                if unit_data then
-                                    local comp = unit_data:read_component("slot_secondary")
-                                    if comp then
-                                        local cur = HudUtils.sum_ammo_field(comp.current_ammunition_reserve)
-                                        local max = HudUtils.sum_ammo_field(comp.max_ammunition_reserve)
+                                local status = Status.for_unit(unit)
+                                local is_disabled = (status == "dead" or status == "hogtied")
 
-                                        if max > 0 then
-                                            local f = math.clamp(cur / max, 0, 1)
-                                            text_to_show = string.format("%.0f%%", f * 100)
+                                if not is_disabled then
+                                    local unit_data = ScriptUnit.has_extension(unit, "unit_data_system") and
+                                        ScriptUnit.extension(unit, "unit_data_system")
+                                    if unit_data then
+                                        local comp = unit_data:read_component("slot_secondary")
+                                        if comp then
+                                            local cur = HudUtils.sum_ammo_field(comp.current_ammunition_reserve)
+                                            local max = HudUtils.sum_ammo_field(comp.max_ammunition_reserve)
 
-                                            if f >= 0.85 then
-                                                color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_HIGH
-                                            elseif f >= 0.65 then
-                                                color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_MEDIUM_H
-                                            elseif f >= 0.45 then
-                                                color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_MEDIUM_L
-                                            elseif f >= 0.25 then
-                                                color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_LOW
-                                            else
-                                                color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_CRITICAL
+                                            if max > 0 then
+                                                local f = math.clamp(cur / max, 0, 1)
+                                                text_to_show = string.format("%.0f%%", f * 100)
+
+                                                if f >= 0.85 then
+                                                    color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_HIGH
+                                                elseif f >= 0.65 then
+                                                    color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_MEDIUM_H
+                                                elseif f >= 0.45 then
+                                                    color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_MEDIUM_L
+                                                elseif f >= 0.25 then
+                                                    color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_LOW
+                                                else
+                                                    color_to_use = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_CRITICAL
+                                                end
                                             end
                                         end
                                     end

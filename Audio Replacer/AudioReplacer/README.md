@@ -213,3 +213,41 @@ Added the following hooks:
 
 Hive Scum Rampage! Ability
 Hive Scum Desperado Ability
+
+
+1.19
+
+Added the following hooks:
+
+Hive Scum Cartel Special Syringe Start/Stop
+Player Downed
+
+Changed the following default sounds:
+
+Hive Scum Rampage! Ability (Old sfx were placed in the OPTIONALS folder)
+Execution Stance to be much longer and have an interrupting End sfx.
+
+
+1.20
+
+Added the following hooks:
+
+Boss Killed
+Zealot Stealth Start/Stop
+
+Changed the following default sounds:
+
+Hive Scum Cartel Special Syringe Start
+
+
+1.21
+
+Renamed "OPTIONALS" folder to "ALTERNATES" to be more accurate
+
+Added the following hooks:
+
+Toughness Break
+
+Changed the following default sounds:
+
+Hive Scum Rampage! Ability (Old sfx were placed in the ALTERNATES folder, similar to last set)

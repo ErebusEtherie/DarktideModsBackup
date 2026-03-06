@@ -1,4 +1,50 @@
 CHANGELOG
+1.13.01 Planned changes
+-- [Fixed] Corruption segment of player toughness/hp bar was misaligned when increasing HUD spread
+
+1.13.00 Paul, ammo and FPS
+-- [New] Charge bar can show ogryn power maul recharge progress
+-- [New] Streamline Popups will show ammo waste (only if you are not running Numeric UI)
+-- [New] Show class icons in assist interaction popups (if using Streamline Popups)
+-- [Better] Shiv charges shown while using other weapons if grenade viz "hide when empty" (suggested by IroskTheOrc)
+-- [Better] Option to show loaded ammo all the time (suggested by Wobin and IroskTheOrc)
+-- [Better] Options to show numeric player toughness ("Always (Toughness and HP Text)")
+-- [Better] Team HUD performance improvement (suggested by POLIVOX)
+-- [Better] Some tooltip improvements
+-- [Better] Player HUD performance improvement
+
+1.12.00 Real ammo for charged weapons
+-- [New] Ammo text options to calculate remaining shots available e.g. for plasma (suggested by jcyl2023)
+-- [New] Option to always have player HP text visible below toughness bar, for those who like clutter
+-- [Better] If stamina viz threshold is 10% or less then the hide threshold will be 50% rather than 100% (inspired by IroskTheOrc)
+-- [Better] Improved handling of player status icons with vanilla hud in spectate mode
+-- [Better] Minor tweaks to team hud aesthetics
+-- [Fixed] Setting always show toughness without hp segments now no longer shows hp segments (reported by jcyl2023)
+
+1.11.00 Grenade icons
+-- [New] Charge bar can now show Pinpoint Targeting blessing stacks (suggested by Bullgryn Onion)
+-- [Better] More noticeable pulsing cartel stimm icon alert 10 secs before Chem Dependency decay
+-- [Better] Stimm visibility contexts improved for Cartel stimm
+-- [Better] Tweaks to vanilla UI streamlining
+-- [Better] Tweaks to status icons
+-- [Better] Overhauled proximity context to be simpler and break less often
+-- [Fixed] Better compatibility with Profile Pictures mod when using minimalist vanilla team panel
+-- [Fixed] Fixed medicae context (again)
+-- [Fixed] Replaced placeholder squares with real grenade icons in docked and nameplate team HUDs
+
+1.10.00 Tracking Major Buffs
+-- [New] Talent buff bar: Ability buff timer option expanded to include second widget for important talent buffs
+-- [New] Talent buff bar: Support for showing remaining cooldown on Until Death/Holy Revenant
+-- [New] Talent buff bar: Support for showing stacks of Terminus Warrant (suggested by Wobin)
+-- [New] Talent buff bar: Support for showing stacks of Empowered Psionics (suggested by Norkkom)
+-- [New] Talent buff bar: Support for showing remaining cooldown on Burst of Energy (suggested by Norkkom)
+-- [New] Charge bar can show Thrust stacks and similar melee buffs eg crowbar (suggested by Bullgryn Onion)
+-- [New] Cartel Stimm visual alert to maintain Chemical Dependency (stimm pulses and grows)
+-- [New] Audible alert when Cartel Stimm comes off cooldown (green stimm injection sound)
+-- [Better] Option to keep loaded ammo visible while wielding ranged weapons (suggested by Algramic)
+-- [Fixed] Fixed grenade bar cap that was stuck on 6 (reported by Simrathe)
+-- [Fixed] Fixed medicae context (again)
+
 1.09.02 More tweaks
 -- [New] If using a needle pistol, loaded ammo bar colour will indicate mode (suggested by Wobin)
 -- [Better] XY offset sliders now bigger (suggested by blayzekiller)
@@ -8,8 +54,8 @@ CHANGELOG
 -- [Better] Updated Chinese localisation from jcyl2023
 -- [Fixed] Boom Bringer (missile launcher) no longer triggers charge bar (reported by Norkkom)
 -- [Fixed] Added some missing localisation
--- [Fixed] Nameplate names fixed for (hopefully) all combos of True Level and Who Are You (suggested by Kaarug)
--- [Known Issue] Sometimes DT bugs and gives invalid team slot colours (RH defaults to white). This will break nameplate names.
+-- [Fixed] Nameplate names fixed for (hopefully) all combos of True Level and Who Are You (reported by Kaarug)
+-- [Known] Sometimes DT bugs and gives invalid team slot colours (RH defaults to white). This will break nameplate names.
 
 1.09.01 Grenade patch and Team Layouts
 -- [New] Alternative layout and positioning settings for docked team panels

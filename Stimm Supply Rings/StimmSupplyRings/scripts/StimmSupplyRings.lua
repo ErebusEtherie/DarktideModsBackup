@@ -6,6 +6,30 @@ local package_name = "content/levels/training_grounds/missions/mission_tg_basic_
 
 local MAX_W = 0.5
 local MAX_INVESTMENT = 5
+local COLOR_SETTINGS_MAP = {
+	["broker_stimm_concentration"] = "cooldown",
+	["broker_stimm_celerity"] = "attack_speed",
+	["broker_stimm_combat"] = "strength",
+	["broker_stimm_durability"] = "toughness",
+}
+
+local function get_stimm_color(stimm_buff_name)
+	local color_setting_name = COLOR_SETTINGS_MAP[stimm_buff_name]
+	return {
+		mod:get(color_setting_name .. "_color_red") / 255,
+		mod:get(color_setting_name .. "_color_green") / 255,
+		mod:get(color_setting_name .. "_color_blue") / 255,
+	}
+end
+
+local function update_color_map()
+	mod._color_map = {
+		["broker_stimm_concentration"] = get_stimm_color("broker_stimm_concentration"),
+		["broker_stimm_celerity"] = get_stimm_color("broker_stimm_celerity"),
+		["broker_stimm_combat"] = get_stimm_color("broker_stimm_combat"),
+		["broker_stimm_durability"] = get_stimm_color("broker_stimm_durability"),
+	}
+end
 
 local function maybe_echo(...)
     if mod:get("enable_logging") then
@@ -36,6 +60,17 @@ local function is_stimm_ready(player)
 	local equipped_abilities = ability_extension:equipped_abilities()
 	local pocketable_ability = equipped_abilities and equipped_abilities["pocketable_ability"]
 	local has_broker_syringe = pocketable_ability and pocketable_ability.ability_group == "broker_syringe"
+
+	local visual_loadout_extension = ScriptUnit.has_extension(player_unit, "visual_loadout_system")
+	local weapon_template = visual_loadout_extension:weapon_template_from_slot("slot_pocketable_small")
+	local keywords = weapon_template and weapon_template.keywords
+	local has_syringe = keywords and table.contains(keywords, "syringe")
+
+	if has_syringe and not has_broker_syringe then
+		local stimm_buff_name = weapon_template.actions.action_use_self.buff_name
+		maybe_echo("has_stimm_pickup", player_name, stimm_buff_name)
+		return stimm_buff_name
+	end
 
 	if not has_broker_syringe then
 		maybe_echo("missing_cartel_stimm", player_name)
@@ -118,7 +153,7 @@ local function unit_spawned(unit, dont_load_package)
 		return
 	end
 
-	-- Count Stimm Lab investment in these three lines
+	-- Count Stimm Lab investment
 	local talent_category_counts = {}
 	if mod:get("show_cooldown") then
 		talent_category_counts["broker_stimm_concentration"] = 0
@@ -141,17 +176,11 @@ local function unit_spawned(unit, dont_load_package)
 	end
 
 	-- Create colors for each investment meeting minimum threshold with w scaled based on investment
-	local color_map = {
-		["broker_stimm_concentration"] = {1, 1, 0},
-		["broker_stimm_celerity"] = {0, 0, 1},
-		["broker_stimm_combat"] = {1,0,0},
-		["broker_stimm_durability"] = {200/255, 0, 1},
-	}
 	local ring_colors = {}
 	for talent_category, talent_count in pairs(talent_category_counts) do
 		if talent_count >= mod:get("min_investment") then
 			local material_value = Quaternion.identity()
-			local rgb = color_map[talent_category]
+			local rgb = mod._color_map[talent_category]
 			local r, g, b = unpack(rgb)
 			local w = math.pow(talent_count / MAX_INVESTMENT, mod:get("opacity_scaling_power")) * MAX_W
 			Quaternion.set_xyzw(material_value, r, g, b, w)
@@ -204,7 +233,6 @@ local function pre_unit_destroyed(unit)
 	end
 end
 
-
 mod.on_all_mods_loaded = function()
 	local is_mod_loading = true
 	mod:hook_require("scripts/extension_systems/unit_templates", function(instance)
@@ -228,9 +256,16 @@ mod.on_all_mods_loaded = function()
 				instance.broker_stimm_field_crate_deployable.pre_unit_destroyed = pre_unit_destroyed
 			end
 
+			-- Set up color map based on mod settings
+			update_color_map()
+
 			-- Preload assets
 			Managers.package:load(package_name, "StimmSupplyRings")
 		end
 		is_mod_loading = false
 	end)
+end
+
+mod.on_setting_changed = function()
+	update_color_map()
 end

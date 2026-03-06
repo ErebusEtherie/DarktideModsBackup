@@ -7,13 +7,6 @@ local PlayerCharacterConstants = require("scripts/settings/player_character/play
 
 local Status                   = {}
 
--- NOTE (RingHud):
---  • This module mirrors vanilla status resolution and intentionally DOES NOT
---    include custom statuses like "stimm". Our custom stimm glyph is injected
---    downstream via the RingHud_state_team/applier as a lowest-priority overlay
---    (RingHud_state_team.status_icon_kind == "stimm"), so any vanilla status returned here
---    will take precedence automatically.
-
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Small safe helpers
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -31,11 +24,17 @@ local function _uds(unit)
         or nil
 end
 
+local function _read_comp(uds, name)
+    return (uds and uds.read_component and uds:read_component(name)) or nil
+end
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Status: returns one of
 --   "dead", "hogtied", "pounced", "netted", "warp_grabbed", "mutant_charged",
---   "consumed", "grabbed", "knocked_down", "ledge_hanging", "luggable", or nil
--- Priority matches the base game’s nameplate logic.
+--   "consumed", "grabbed", "knocked_down", "ledge_hanging", "auspex",
+--   "luggable", or nil
+-- Priority matches the base game’s nameplate logic, with "auspex" inserted
+-- after ledge_hanging and before luggable (active-but-not-disabled).
 -- ─────────────────────────────────────────────────────────────────────────────
 function Status.for_unit(unit)
     -- Treat missing or non-alive unit as dead (avoid relying on HEALTH_ALIVE).
@@ -49,8 +48,8 @@ function Status.for_unit(unit)
     end
 
     local uds            = _uds(unit)
-    local cs             = uds and uds.read_component and uds:read_component("character_state") or nil
-    local ds             = uds and uds.read_component and uds:read_component("disabled_character_state") or nil
+    local cs             = _read_comp(uds, "character_state")
+    local ds             = _read_comp(uds, "disabled_character_state")
 
     local knocked_down   = cs and PlayerUnitStatus.is_knocked_down and PlayerUnitStatus.is_knocked_down(cs) or false
     local hogtied        = cs and PlayerUnitStatus.is_hogtied and PlayerUnitStatus.is_hogtied(cs) or false
@@ -74,8 +73,30 @@ function Status.for_unit(unit)
     if knocked_down then return "knocked_down" end
     if ledge_hanging then return "ledge_hanging" end
 
+    ------------------------------------------------------------------------
+    -- Auspex scanning (active-but-not-disabled)
+    --   • scanning.is_active
+    --   • minigame_character_state.pocketable_device_active
+    --   • or a mod-maintained fallback table keyed by unit
+    ------------------------------------------------------------------------
+    local scanning      = _read_comp(uds, "scanning")
+    local mcs           = _read_comp(uds, "minigame_character_state")
+
+    local auspex_active = false
+    if scanning and scanning.is_active then
+        auspex_active = true
+    elseif mcs and mcs.pocketable_device_active then
+        auspex_active = true
+    elseif mod.auspex_active_units and mod.auspex_active_units[unit] then
+        auspex_active = true
+    end
+
+    if auspex_active then
+        return "auspex"
+    end
+
     -- Luggable (only while alive & not otherwise disabled)
-    local inv = uds and uds.read_component and uds:read_component("inventory")
+    local inv = _read_comp(uds, "inventory")
     if inv and inv.wielded_slot == "slot_luggable" then
         return "luggable"
     end

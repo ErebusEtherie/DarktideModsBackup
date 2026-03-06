@@ -2,36 +2,8 @@
 
 local mod = get_mod("Enhanced_descriptions")
 
--- Загружаем утилиты
-local Utils
-local success, result = pcall(function()
-	return mod:io_dofile("Enhanced_descriptions/Enhanced_descriptions_utils")
-end)
-
-if success and result then
-	Utils = result
-	mod:info("Utils loaded successfully")
-else
-	mod:error("Failed to load utils: %s", tostring(result))
-	Utils = {
-		CKWord = function(fallback, key) return fallback end,
-		CNumb = function(fallback, key) return fallback end,
-		CPhrs = function(key) return "" end,
-		CNote = function(key) return "" end,
-		create_template = function(id, loc_keys, locales, handle_func)
-			return { id = id, loc_keys = loc_keys, locales = locales, handle_func = handle_func }
-		end,
-		loc_text = function(text)
-			if type(text) == "table" then
-				return function(locale) return text[locale] or text["en"] or "" end
-			end
-			return function() return text end 
-		end,
-		DOT_RED = "•",
-		DOT_NC = "•",
-		DOT_GREEN = "•",
-	}
-end
+-- ИСПОЛЬЗУЕМ КЭШИРОВАННЫЕ УТИЛИТЫ
+local Utils = mod.get_utils()
 
 -- ИМПОРТ ВСЕХ НУЖНЫХ ФУНКЦИЙ И КОНСТАНТ
 local create_template = Utils.create_template
@@ -148,13 +120,14 @@ local menus_templates = {
 	["loc_contract_view_intro_title"] = {
 		-- en = "Sire Melk's Requisitorium",
 		ru = "Мелк",
-		["zh-tw"] = "梅爾克", -- 梅爾克
+		["zh-tw"] = "梅爾克領主", -- 梅爾克領主的必備品店
 		-- ["zh-cn"] = "梅尔克大人的采购店", -- 梅尔克大人的采购店
 	},
 	--[+ Melk's Option For Check Contracts +]--
 	["loc_contract_view_option_contracts"] = {
 		-- en = "View Contracts",
 		-- ru = "Смотреть контракты", -- Показать контракты?
+		["zh-tw"] = "查看合約",
 		["zh-cn"] = "查看合同",
 	},
 	--[+ Contracts' Reward +]--
@@ -187,6 +160,7 @@ local menus_templates = {
 	["loc_contracts_view_general_goods_random_melee_weapon"] = {
 		-- en = "Unknown Melee Weapon",
 		ru = "Неизвестное оружие ближнего боя",
+		["zh-tw"] = "未知的近戰武器", -- 未知的近戰武器
 	},
 	["loc_contracts_view_general_goods_random_ranged_weapon"] = {
 		-- en = "Unknown Ranged Weapon",
@@ -196,7 +170,7 @@ local menus_templates = {
 	["loc_contracts_view_general_goods_random_gadget_defensive"] = {
 		-- en = "Unknown Defensive Curio",
 		ru = "Неизвестная защитная реликвия",
-		["zh-tw"] = "未知的防禦性聖物", -- 未知的防禦性聖物
+		["zh-tw"] = "未知的珍品", -- 未知的防禦性珍品
 		["zh-cn"] = "未知的珍品", -- 未知的珍品
 	},
 	--[+ New Contracts Notification Message +]--
@@ -210,16 +184,16 @@ local menus_templates = {
 --[+ +HADRON - 欧姆尼塞亚神龛+ +]--
 	--[+ Max Rarity reached! +]
 	["loc_crafting_error_no_consecrate"] = {
-		en = "Max Rarity reached!",
-		-- ru = "Достигнут максимум редкости!",
-		["zh-tw"] = "以聖化至最高稀有度!",
+		-- en = "Max Rarity reached!",
+		ru = "Достигнут максимум редкости!",
+		["zh-tw"] = "以聖化至最高稀有度!", -- 已達最高稀有度。
 		-- ["zh-cn"] = "已达到最高稀有度。",
 	},
 	--[+ Max Power reached! +]--
 	["loc_crafting_error_max_power"] = {
-		en = "Max Power reached!",
-		-- ru = "Достигнут максимум силы!",
-		["zh-tw"] = "以強化至最高等級!",
+		-- en = "Max Power reached!",
+		ru = "Достигнут максимум силы!",
+		["zh-tw"] = "以強化至最高等級!",  -- 已達最高升級級別。
 		["zh-cn"] = "已达到最高等级。",
 	},
 	--[+ Sacrifice Weapons +]--
@@ -227,6 +201,7 @@ local menus_templates = {
 		-- en = "Sacrifice Weapons",
 		ru = "Пожертвовать оружие", -- руоф Жертвенное оружие
 		-- ["zh-tw"] = ,
+		["zh-tw"] = "獻祭武器", -- 獻祭武器
 		["zh-cn"] = "犧牲武器",
 	},
 
@@ -235,13 +210,13 @@ local menus_templates = {
 	["loc_credits_vendor_view_intro_description"] = {
 		-- en = "Which of my humble services do you require?",
 		ru = "Какая из моих скромных услуг вам требуется?",
-		["zh-tw"] = "你想要我為你提供甚麼服務",
+		["zh-tw"] = "您需要我為您提供甚麼服務?", -- 您需要我為您提供甚麼服務?
 	},
 	--[+ Requisition Weapons & Curios +]--
 	["loc_credits_vendor_view_option_buy"] = {
 		en = "Requisition Weapons and Curios", -- Requisition Weapons & Curios
 		ru = "Запросы на оружие и реликвии",
-		["zh-tw"] = "購買武器和珍品",
+		["zh-tw"] = "購買武器和珍品", 			-- 武器&珍品申請單
 		["zh-cn"] = "武器与珍品采购店", -- 武器与珍品采购店
 	},
 	--[+ Brunt's Armoury +]--
@@ -254,9 +229,10 @@ local menus_templates = {
 	["loc_credits_goods_vendor_description_text"] = {
 		-- en = "Acquire a profane weapon of your choosing.",
 		ru = "Купите нечестивое оружие по вашему выбору.",
-		["zh-tw"] = "獲得一件你選擇的武器，只會是褻瀆級(白武)。",
+		["zh-tw"] = "獲得一件你選擇的武器，只會是褻瀆級(白武)。", -- 獲得一件你選定的褻瀆武器。
 		["zh-cn"] = "获得一件你选择的武器（亵渎级）。",
 	},
+
 
 --[+ ++MAIN MENU++ +]--
 	--[+ Account Wallet +]--
@@ -269,12 +245,12 @@ local menus_templates = {
 	["loc_main_menu_warband_count"] = {
 		-- en = "Strike Team",
 		ru = "Ударная группа",
-		["zh-tw"] = "突擊小隊", -- 突擊小隊
+		["zh-tw"] = "突擊小隊", -- 打擊小隊
 	},
 	["loc_social_menu_roster_view_display_name"] = {
 		-- en = "Strike Team",
 		ru = "Ударная группа",
-		["zh-tw"] = "突擊小隊", -- 突擊小隊
+		["zh-tw"] = "突擊小隊", -- 打擊小隊
 	},
 	--[+ Previous Missions +]--
 	["loc_social_menu_roster_players_from_previous_missions"] = {
@@ -282,6 +258,13 @@ local menus_templates = {
 		-- ru = , -- руоф Предыдущие задания
 		["zh-tw"] = "歷史任務", -- 歷史任務
 	},
+	--[+ STIMM LAB +]--
+	["loc_broker_stimm_builder_view_display_name"] = {
+		-- en = "Stimm Lab",
+		ru = "Стим лаба", -- руоф Стимуляторы
+	},
+
+
 --[+ +MISSIONS MENU++]
 	--[+  +]--
 	-- [""] = {
@@ -306,7 +289,7 @@ local menus_templates = {
 	["loc_havoc_reward_objective_order"] = {
 		-- en = "Complete a Havoc Assignment",
 		ru = "Выполнить задание Хавока",
-		["zh-tw"] = "完成任一浩劫任務", -- 完成任一浩劫任務
+		["zh-tw"] = "完成任一場劫任務", -- 完成任一浩劫任務
 	},
 
 --[+ ++KILLFEED++ +]--
@@ -371,32 +354,32 @@ local menus_templates = {
 	["loc_inventory_title_slot_attachment_1"] = {
 		-- en = "First Curio",
 		ru = "Первая реликвия",
-		["zh-tw"] = "珍品", -- 珍品
+		["zh-tw"] = "第一件珍品", -- 珍品 槽位 1
 		["zh-cn"] = "第一件珍品", -- 珍品 槽位 1
 	},
 	["loc_inventory_title_slot_attachment_2"] = {
 		-- en = "Second Curio",
 		ru = "Вторая реликвия",
-		["zh-tw"] = "珍品", -- 珍品
+		["zh-tw"] = "第二件珍品", -- 珍品 槽位 2
 		["zh-cn"] = "第二件珍品", -- 珍品 槽位 2
 	},
 	["loc_inventory_title_slot_attachment_3"] = {
 		-- en = "Third Curio",
 		ru = "Третья реликвия",
-		["zh-tw"] = "珍品 - 庫存", -- 珍品 - 庫存
+		["zh-tw"] = "第三件珍品", -- 珍品 槽位 3
 		["zh-cn"] = "第三件珍品", -- 珍品 槽位 3
 	},
 	["loc_inventory_view_display_name"] = {
 		-- en = "Loadout",
 		ru = "Снаряжение",
-		["zh-tw"] = "裝備", -- 裝備
+		["zh-tw"] = "裝備", -- 裝備配置
 		["zh-cn"] = "装备", -- 装备
 	},
 	--[+ Cosmetic slots +]--
 	["loc_inventory_title_slot_gear_lowerbody"] = {
 		-- en = "Lower body",
 		ru = "Ноги",
-		["zh-tw"] = "下半身", -- 腿部 
+		["zh-tw"] = "下半身", -- 下身 
 	},
 	["loc_inventory_title_slot_animation_end_of_round"] = {
 		-- en = "Stances",
@@ -442,6 +425,28 @@ local menus_templates = {
 		["zh-tw"] = "神化", -- 紅色
 		["zh-cn"] = "神圣", -- 红
 	},
+	
+--[+ ++STIMS++ +]--
+	--[+ Celerity Stimm - Стим скорости +]--
+	-- ["loc_pickup_syringe_pocketable_4"] = {
+		-- en = "Celerity Stimm",
+		-- ru = "Стим скорости", -- Синий
+	-- },
+	--[+ Combat Stimm - Боевой стим +]--
+	-- ["loc_pickup_syringe_pocketable_3"] = {
+		-- en = "Combat Stimm",
+		-- ru = "Боевой стим", -- Красный
+	-- },
+	--[+ Concentration Stimm - Стим концентрации +]--
+	-- ["loc_pickup_syringe_pocketable_2"] = {
+		-- en = "Concentration Stimm",
+		-- ru = "Стим концентрации", -- Жёлтый
+	-- },
+	--[+ Med Stimm - Мед стим +]--
+	-- ["loc_pickup_pocketable_1"] = {
+		-- en = "Med Stimm",
+		-- ru = "Мед стим", -- Зелёный
+	-- },
 
 --[+ ++WEAPON CARD - КАРТОЧКА ОРУЖИЯ++ +]--
 --[+ +Weapon - Оружие+ +]--
@@ -484,15 +489,44 @@ local menus_templates = {
 	["loc_weapon_special_special_attack"] = {
 		-- en = Special Melee Attack,
 		ru = "Специальная атака",
-		["zh-tw"] = "特殊攻擊", -- 特殊攻擊(近戰)
+		["zh-tw"] = "特殊攻擊", -- 特殊功能(近戰)
 	},
 
-	["loc_stats_display_mobility_stat"] = { -- Mobility is marked red because it's usually the worst stat. It's also convenient for me to buy weapons that way.
-		en = "{#color(255, 35, 5)}Mobility{#reset()}",
-		ru = "{#color(255, 35, 5)}Мобильность{#reset()}", -- руоф 
-		-- ["zh-tw"] = "", -- 
-		-- ["zh-cn"] = "", -- 
+
+--[+ +DUMP STATS+ +]--
+	["loc_stats_display_mobility_stat"] = { -- Mobility
+		en = CKWord("Mobility", "Mobility_rgb"),
+		ru = CKWord("Мобильность", "Mobility_rgb_ru"),
 	},
+	["loc_glossary_term_melee_damage"] = { -- Melee Damage -- Ogryn's Grenadier Gauntlet
+		en = CKWord("Melee Damage", "Melee_dmg_rgb"),
+		ru = CKWord("Урон рукопашный", "Melee_dmg_rgb_ru"),
+	},
+	["loc_stats_display_warp_resist_stat"] = { -- Warp Resistance -- Psyker
+		en = CKWord("Warp Resistance", "Warp_resist_rgb"),
+		ru = CKWord("Сопротивление варпу", "Warp_resist_rgb_ru"),
+	},
+
+--[+ +DUMP STATS 2+ +]--
+	["loc_stats_display_ammo_stat"] = { -- Ammo -- Ogryn's Ripper Gun
+		en = CKWord("Ammo", "Ammo_rgb"),
+		ru = CKWord("Боеприпасы", "Ammo_rgb_ru"),
+	},
+	["loc_stats_display_defense_stat"] = { -- Defences
+		en = CKWord("Defences", "Defences_rgb"),
+		ru = CKWord("Защита", "Defences_rgb_ru"),
+	},
+	["loc_stats_display_heat_management_powersword_2h"] = { -- Heat Management -- Zealot Relic. //Thanks RedF4llc0n
+		en = CKWord("Heat Management", "Heat_mngt_rgb"),
+		ru = CKWord("Отведение тепла", "Heat_mngt_rgb_ru"),
+	},
+
+--[+ +DUMP STATS 3+ +]--
+	["loc_stats_display_damage_stat"] = { -- Damage -- DoT guns: Needle Gun, Flamethrower, etc. This stat only affect direct damage and not DoT. //Thanks Hater
+		en = CKWord("Damage", "DamageDS_rgb"),
+		ru = CKWord("Урон", "DamageDS_rgb_ru"),
+	},
+
 
 	["loc_stats_display_finesse_stat"] = {
 		-- en = "Finesse",

@@ -25,8 +25,8 @@ end
 local _debug_throttle_t = 0
 
 -- Helper to check proximity condition and echo if triggered (throttled 1s)
-local function _check_prox_and_echo_thv(condition, frac, threshold, label)
-    if condition and frac < threshold then
+local function _check_prox_and_echo_thv(prox_level, min_prox_req, frac, threshold, label)
+    if (prox_level or 0) >= min_prox_req and frac < threshold then
         -- local t = _now()
         -- if t > _debug_throttle_t then
         --     mod:echo("RingHud Vis: %s (HP %.0f%%)", label, frac * 100)
@@ -162,33 +162,34 @@ function mod.thv_player(ctx)
 
     -- 2. Define Mode Capabilities
     -- "Always" modes for the BAR
-    local bar_always    = (setting == "toughness_bar_always")
+    local bar_always      = (setting == "toughness_bar_always")
         or (setting == "toughness_bar_always_hp")
         or (setting == "toughness_bar_always_hp_text")
+        or (setting == "toughness_bar_always_text_always")
 
-    -- "Text" modes (if not in this list, text is hidden)
-    local text_possible = (setting == "toughness_bar_auto_hp_text")
+    -- "Text" modes
+    local text_contextual = (setting == "toughness_bar_auto_hp_text")
         or (setting == "toughness_bar_always_hp_text")
 
-    -- Optimization: If we know bar is visible and text is impossible, we can return early without context checks.
-    if bar_always and not text_possible then
+    local text_always     = (setting == "toughness_bar_always_text_always")
+
+    if bar_always and text_always then
+        return { bar = true, text = true }
+    end
+
+    if bar_always and not (text_contextual or text_always) then
         return { bar = true, text = false }
     end
 
     -- 3. Calculate Context (Is the player in a state where HUD is relevant?)
-    -- We need context if the bar is NOT always on, OR if text IS enabled (text is always context-driven per new rules).
     local context_active = false
 
     local now_t          = _now()
     local hp_frac        = tonumber(ctx and ctx.hp_fraction) or 0
     local cor_frac       = tonumber(ctx and ctx.corruption_fraction) or 0
     local tough_frac     = tonumber(ctx and ctx.toughness_fraction) or 0
-    local near_station   = (ctx and ctx.near_health_station) ~= nil and ctx.near_health_station or
-        (rawget(mod, "near_health_station") == true)
-    local near_med_crate = (ctx and ctx.near_med_crate) ~= nil and ctx.near_med_crate or
-        (rawget(mod, "near_medical_crate_deployable") == true)
+    local prox_healing   = (ctx and ctx.prox_healing) or mod.prox_healing or 0
 
-    -- Context Checks
     if _force_show_active() then
         context_active = true
     elseif _reassure_health_active() then
@@ -199,9 +200,9 @@ function mod.thv_player(ctx)
         context_active = true
     elseif ctx and ctx.has_overshield == true then
         context_active = true
-    elseif _check_prox_and_echo_thv(near_station, hp_frac, 0.999, "Near Health Station") then
+    elseif _check_prox_and_echo_thv(prox_healing, 2, hp_frac, 0.999, "Near Health Station") then
         context_active = true
-    elseif _check_prox_and_echo_thv(near_med_crate, hp_frac + cor_frac, 0.999, "Near Med Crate") then
+    elseif _check_prox_and_echo_thv(prox_healing, 1, hp_frac + cor_frac, 0.999, "Near Med Crate") then
         context_active = true
     elseif hp_frac <= TUNE.low_hp_threshold then
         context_active = true
@@ -210,11 +211,9 @@ function mod.thv_player(ctx)
     end
 
     -- 4. Apply Logic
-    -- Bar: Visible if mode is "Always" OR if Context is active
     result.bar = bar_always or context_active
 
-    -- Text: Visible ONLY if text mode is enabled AND Context is active
-    result.text = text_possible and context_active
+    result.text = text_always or (text_contextual and context_active)
 
     return result
 end
@@ -227,8 +226,7 @@ end
 --   tough_overshield       boolean
 --   tough_broken           boolean
 --   is_spectating_local    boolean (optional; falls back to shared helper)
---   near_health_station    boolean (optional)
---   near_med_crate         boolean (optional)
+--   prox_healing           integer (optional; from team state)
 -- returns { show_bar = bool, show_text = bool }
 function mod.thv_team_for_peer(peer_id, peer_ctx)
     local result = { show_bar = false, show_text = false }
@@ -247,19 +245,19 @@ function mod.thv_team_for_peer(peer_id, peer_ctx)
         return result
     end
 
-    local now_t          = _now()
-    local hp_frac        = tonumber(peer_ctx and peer_ctx.hp_fraction) or 0
-    local cor_frac       = tonumber(peer_ctx and peer_ctx.corruption_fraction) or 0
-    local wounds_max     = math.max(tonumber(peer_ctx and peer_ctx.max_wounds_segments) or 0, 0)
-    local near_station   = (peer_ctx and peer_ctx.near_health_station) ~= nil and peer_ctx.near_health_station or
-        (rawget(mod, "near_health_station") == true)
-    local near_med_crate = (peer_ctx and peer_ctx.near_med_crate) ~= nil and peer_ctx.near_med_crate or
-        (rawget(mod, "near_medical_crate_deployable") == true)
-    local spectating     = (peer_ctx and peer_ctx.is_spectating_local) ~= nil and peer_ctx.is_spectating_local or
+    local now_t        = _now()
+    local hp_frac      = tonumber(peer_ctx and peer_ctx.hp_fraction) or 0
+    local cor_frac     = tonumber(peer_ctx and peer_ctx.corruption_fraction) or 0
+    local wounds_max   = math.max(tonumber(peer_ctx and peer_ctx.max_wounds_segments) or 0, 0)
+
+    -- Robust Flag Resolution: Prefer teammate context, fallback to local player's proximity state.
+    local prox_healing = (peer_ctx and peer_ctx.prox_healing) or mod.prox_healing or 0
+
+    local spectating   = (peer_ctx and peer_ctx.is_spectating_local) ~= nil and peer_ctx.is_spectating_local or
         _spectating_active()
 
     -- Global context gates
-    local forced         = _force_show_active() or _reassure_health_active() or _wield_heal_latch_active(now_t)
+    local forced       = _force_show_active() or _reassure_health_active() or _wield_heal_latch_active(now_t)
     if forced then
         result.show_bar  = true
         result.show_text = text_enabled
@@ -280,13 +278,13 @@ function mod.thv_team_for_peer(peer_id, peer_ctx)
         return result
     end
 
-    -- Proximity rules
-    if _check_prox_and_echo_thv(near_station, hp_frac, 0.999, "Team Near Health Station") then
+    -- Proximity rules (Local player near station + teammate HP < 1.0)
+    if _check_prox_and_echo_thv(prox_healing, 2, hp_frac, 0.999, "Team Near Health Station") then
         result.show_bar  = true
         result.show_text = text_enabled
         return result
     end
-    if _check_prox_and_echo_thv(near_med_crate, hp_frac + cor_frac, 0.999, "Team Near Med Crate") then
+    if _check_prox_and_echo_thv(prox_healing, 1, hp_frac + cor_frac, 0.999, "Team Near Med Crate") then
         result.show_bar  = true
         result.show_text = text_enabled
         return result

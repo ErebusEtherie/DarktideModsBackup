@@ -42,7 +42,7 @@ mod._settings = {
 
     -- Ability Timers
     timer_cd_dropdown              = mod:get("timer_cd_dropdown"),
-    timer_buff_enabled             = mod:get("timer_buff_enabled"),
+    timer_buff_dropdown            = mod:get("timer_buff_dropdown"),
     timer_sound_enabled            = mod:get("timer_sound_enabled"), -- Mode string: "default" | "zealot" | "shield"
 
     -- Pocketables
@@ -81,6 +81,11 @@ function mod.on_setting_changed(setting_id)
     -- If scale-driving or position settings change, request a HUD rebuild.
     if setting_id == "ring_scale" or setting_id == "ads_scale_override"
         or setting_id == "player_hud_offset_x" or setting_id == "player_hud_offset_y" then
+        mod._ringhud_needs_rebuild = true
+    end
+
+    -- (Small, safe rebuild trigger) If a feature’s widget existence could depend on this toggle, rebuild.
+    if setting_id == "timer_buff_dropdown" then
         mod._ringhud_needs_rebuild = true
     end
 
@@ -123,8 +128,8 @@ function mod.on_setting_changed(setting_id)
         or setting_id == "ads_visibility_dropdown"
         or setting_id == "pocketable_visibility_dropdown"
         or setting_id == "team_pockets"
-        or setting_id == "toughness_bar_dropdown" -- NEW: Update THV cache
-        or setting_id == "team_hp_bar"            -- NEW: Update THV cache
+        or setting_id == "toughness_bar_dropdown" -- Update THV cache
+        or setting_id == "team_hp_bar"            -- Update THV cache
     then
         if mod.ammo_vis_on_setting_changed then
             mod.ammo_vis_on_setting_changed()
@@ -132,7 +137,7 @@ function mod.on_setting_changed(setting_id)
         if mod.pockets_vis_on_setting_changed then
             mod.pockets_vis_on_setting_changed()
         end
-        if mod.thv_on_setting_changed then -- NEW: Execute THV cache update
+        if mod.thv_on_setting_changed then
             mod.thv_on_setting_changed()
         end
     end

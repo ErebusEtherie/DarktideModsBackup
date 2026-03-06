@@ -3,6 +3,16 @@ local mod = get_mod("RingHud"); if not mod then return end
 local InputUtils = require("scripts/managers/input/input_utils")
 local Colors = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/RingHud_colors")
 
+-- Helper: Safe localization lookup
+-- Defined LOCALLY so it is visible to the table below.
+local function _loc(key)
+    if _G.Localize then
+        local status, result = pcall(_G.Localize, key)
+        if status then return result end
+    end
+    return key
+end
+
 local localizations = {
     mod_name                               = {
         en = "Ring HUD",
@@ -215,7 +225,7 @@ local localizations = {
         "韌性 / HP 顯示方式：\n自動：韌性、血量、接近治療源時顯示\n生命格：生命格分為腐化、扣血、實際血量三個邊框作為分區，填充代表韌性\n生命格（文字）：自動或始終可見模式下，數字血量顯示\n禁用：隱藏韌性、血量",
     },
     toughness_bar_auto_hp_text             = {
-        en = "Contextual (Segments + Text)",
+        en = "Contextual (Segments and Text)",
         ["zh-cn"] = "自动 (生命格 韧性 血量数字)",
         ["zh-tw"] = "自動 (生命格 韌性 血量數字)",
     },
@@ -233,6 +243,9 @@ local localizations = {
         en = "Always (Segments)",
         ["zh-cn"] = "始终可见 (生命格 韧性)",
         ["zh-tw"] = "始終可見 (生命格 韌性)",
+    },
+    toughness_bar_always_text_always       = {
+        en = "Always (Toughness and HP Text)",
     },
     toughness_bar_always                   = {
         en = "Always (Toughness Only)",
@@ -252,9 +265,9 @@ local localizations = {
     },
     stamina_viz_tooltip                    = {
         en =
-        "Stamina bar appears when below this fraction (0.0 - 1.0) and then hides again after it has refilled.\n\n• 0: Always visible.\n• -1: Always hidden.",
-        ["zh-cn"] = "体力在设定值以下显示，之后直到恢复到满体力\n设为0始终显示，-1始终隐藏设置",
-        ["zh-tw"] = "體力在設定值以下顯示，之後直到恢復到滿體力\n設為0始終顯示，-1始終隱藏設置",
+        "Stamina bar appears when below this fraction (0.0 - 1.0) and then hides again after it has refilled.  If the visibility threshold is 0.1 or less, will hide at 0.5s.\n\n• 0: Always visible.\n• -0.01: Always hidden.",
+        ["zh-cn"] = "体力在设定值以下显示，之后直到恢复到满体力\n设为0始终显示，-0.01始终隐藏设置",
+        ["zh-tw"] = "體力在設定值以下顯示，之後直到恢復到滿體力\n設為0始終顯示，-0.01始終隱藏設置",
     },
     dodge_viz_threshold                    = {
         en = "Dodge Threshold",
@@ -292,7 +305,7 @@ local localizations = {
         ["zh-tw"] = "過載值 / 熱量",
     },
     peril_lightning_enabled                = {
-        en = "Bar + Lightning Anim",
+        en = "Bar and Lightning Anim",
         ["zh-cn"] = "启用能量条 和 灵能过热闪电触须",
         ["zh-tw"] = "啟用能量條 和 閃電效果",
     },
@@ -338,12 +351,13 @@ local localizations = {
         ["zh-tw"] = "彈匣剩餘彈藥",
     },
     ammo_clip_dropdown_tooltip             = {
-        en = "Controls display of ammo in the current magazine.",
+        en =
+        "Controls display of ammo in the current magazine.\n\n• Normal: Hides when not in use.\n• Always: Always visible.\n• Forecast: Shows shots remaining based on ammo consumption.",
         ["zh-cn"] = "当前武器弹夹中已装载弹药的显示方式\n'能量条'选项显示一个视觉弧线。\n'数字'选项显示一个数字计数。",
         ["zh-tw"] = "當前武器彈匣中已裝載彈藥的顯示方式\n'能量條'選項顯示一個視覺弧線。\n'數字'選項顯示一個數字計數。",
     },
     ammo_clip_bar_text                     = {
-        en = "Bar + Text",
+        en = "Bar and Text",
         ["zh-cn"] = "能量条 和 数字",
         ["zh-tw"] = "能量條 和 數字",
     },
@@ -357,6 +371,34 @@ local localizations = {
         ["zh-cn"] = "仅限文本（数字）",
         ["zh-tw"] = "僅限文本（數字）",
     },
+    ammo_clip_bar_text_always              = {
+        en = "Bar and Text (Wielded)",
+        -- ["zh-cn"] = "能量条 和 数字（始终）",
+        -- ["zh-tw"] = "能量條 和 數字（始終）",
+    },
+    ammo_clip_bar_always                   = {
+        en = "Bar (Wielded)",
+        -- ["zh-cn"] = "仅限能量条（始终）",
+        -- ["zh-tw"] = "僅限能量條（始終）",
+    },
+    ammo_clip_text_always                  = {
+        en = "Text (Wielded)",
+        -- ["zh-cn"] = "仅限文本（始终）",
+        -- ["zh-tw"] = "僅限文本（始終）",
+    },
+    ammo_clip_bar_forecast                 = {
+        en = "Bar and Forecast",
+    },
+    ammo_clip_forecast                     = {
+        en = "Forecast Only",
+    },
+    ammo_clip_bar_forecast_always          = {
+        en = "Bar and Forecast (Wielded)",
+    },
+    ammo_clip_forecast_always              = {
+        en = "Forecast (Wielded)",
+    },
+
     ammo_clip_disabled                     = {
         en = "Disabled",
         ["zh-cn"] = "关闭",
@@ -370,7 +412,7 @@ local localizations = {
     },
     ammo_reserve_dropdown_tooltip          = {
         en =
-        "Controls display of total reserve ammo.\n\n• Contextual: Shows on low ammo, reload, or near pickups.\n• Always: Permanently visible.",
+        "Controls display of total reserve ammo.\n\n• Contextual: Shows on low ammo, reload, or near pickups.\n• Always: Permanently visible.\n• Forecast: Shows shots remaining based on ammo consumption.",
         ["zh-cn"] = "备弹显示方式\n自动模式在弹药不足、接近弹药包 以及 更换后显示\n始终可见模式一直可见\n分为百分比与实际计数格式",
         ["zh-tw"] = "備彈顯示方式\n自動模式在彈藥不足、接近彈藥包 以及 更換後顯示\n始終可見模式一直可見\n分為百分比與實際計數格式",
     },
@@ -394,6 +436,12 @@ local localizations = {
         ["zh-cn"] = "实际计数（始终）",
         ["zh-tw"] = "實際計數（始終）",
     },
+    ammo_reserve_forecast_auto             = {
+        en = "Forecast (Contextual)",
+    },
+    ammo_reserve_forecast_always           = {
+        en = "Forecast (Always)",
+    },
     ammo_reserve_disabled                  = {
         en = "Disabled",
         ["zh-cn"] = "关闭",
@@ -407,7 +455,7 @@ local localizations = {
     },
     grenade_bar_dropdown_tooltip           = {
         en =
-        "Controls visibility of grenade bar.\n\n• Compact: Only shows filled/regenerating segments.\n\nOther mods: 'Blitz Bar' by Tomohawk5 for more options.",
+        "Controls visibility of grenade bar and shivs charges (if enabled).\n\n• Compact: Only shows filled/regenerating segments.\n\nOther mods: 'Blitz Bar' by Tomohawk5 for more options.",
         ["zh-cn"] =
         "手雷显示方式\n全满隐藏：手雷已满 进度条消失 除非再生雷\n空时隐藏：手雷为空 进度条消失\n紧凑模式：仅仅显示 装备和再生手雷\n如果需要更多选项，请考虑 Tomohawk5 的 Blitz Bar。",
         ["zh-tw"] = "手雷顯示方式\n全滿隱藏：手雷已滿進度條消失，除非再生雷\n空時隱藏：手雷為空進度條消失\n緊湊模式：僅顯示裝備和再生手雷\n如果需要更多選項，請考慮 Tomohawk5 的 Blitz Bar。"
@@ -455,7 +503,7 @@ local localizations = {
         ["zh-tw"] = "替換 靈能巨劍斬擊 渣滓飛刀 充能", -- AI Note: Please do not translate this line
     },
     charge_other_enabled                   = {
-        en = "Other (Helbore/Arbites Shield)",
+        en = "Other (Helbore/Arbites Shield/Thrust/Pinpointing/Ogryn Maul)",
         ["zh-cn"] = "替换 蓄力条（卢修斯）",
         ["zh-tw"] = "替换 蓄力條（盧修斯）",
     },
@@ -473,7 +521,7 @@ local localizations = {
     },
     timer_cd_dropdown_tooltip              = {
         en =
-        "Controls how ability cooldowns are shown.\n\n• Single Timer: Shows when no charges remain.\n• Charge Icons: Adds charge pips () per remaining charge.\n• Count + Timer: Shows charge number + timer.",
+        "Controls how ability cooldowns are shown.\n\n• Single Timer: Shows when no charges remain.\n• Charge Icons: Adds charge pips () per remaining charge.\n• Count and Timer: Shows charge number and timer.",
         ["zh-cn"] = "技能冷却显示方式\n\n• 计时：技能冷却时间\n• 图标：双技能时，显示图标()。\n• 计数+计时：双技能时，显示技能剩余次数，技能和冷却时间",
         ["zh-tw"] = "技能冷卻顯示方式\n\n• 計時：技能冷卻時間\n• 圖標：雙技能時，顯示圖標()。\n• 計數+計時：雙技能時，顯示技能剩餘次數，技能和冷卻時間",
     },
@@ -488,12 +536,12 @@ local localizations = {
         ["zh-tw"] = "計時",
     },
     timer_cd_pips_single                   = {
-        en = "Icons + Timer",
+        en = "Icons and Timer",
         ["zh-cn"] = "计时 + 图标",
         ["zh-tw"] = "圖標 + 計時",
     },
     timer_cd_count_single                  = {
-        en = "Count + Timer",
+        en = "Count and Timer",
         ["zh-cn"] = "技能数 + 计时",
         ["zh-tw"] = "技能数 + 計時",
     },
@@ -503,16 +551,47 @@ local localizations = {
         ["zh-tw"] = "計時 彩色",
     },
 
-    timer_buff_enabled                     = {
-        en = "Buff Timer",
+    timer_buff_dropdown                    = {
+        en = "Buff Timers",
         ["zh-cn"] = "技能生效 倒计时",
         ["zh-tw"] = "技能生效 倒計時",
     },
-    timer_buff_tooltip                     = {
-        en = "Shows remaining duration for abilities like Point Blank Barrage, Executioner's Stance, and Stealth.",
-        ["zh-cn"] = "齐射、占卜、战吼、隐身等类似技能生效剩余时间，会有倒计时",
-        ["zh-tw"] = "顯示近距離彈幕、處決者姿態、亞空間解放和潛行的剩餘時間",
+    timer_buff_dropdown_tooltip            = {
+        en = string.format(
+            "Controls the display of remaining duration for active buffs.\n\n" ..
+            "• Ability: Tracks active ability durations (%s, %s, %s and Stealth).\n\n" ..
+            "• Talents: Also tracks specific talents:\n" ..
+            "  - %s\n" ..
+            "  - %s\n" ..
+            "  - %s\n" ..
+            "  - %s",
+            _loc("loc_talent_ogryn_combat_ability_special_ammo"),
+            _loc("loc_talent_veteran_2_combat_ability"),
+            _loc("loc_class_broker_name"),
+            _loc("loc_talent_zealot_resist_death"),
+            _loc("loc_talent_adamant_bullet_rain"),
+            _loc("loc_talent_psyker_empowered_ability"),
+            _loc("loc_talent_broker_passive_stun_immunity_on_toughness_broken")
+        ),
+        -- ["zh-cn"] = "控制增益持续时间的显示。\n\n• 技能：追踪技能持续时间。\n• + 天赋：同时追踪特定被动天赋的冷却。",
+        -- ["zh-tw"] = "控制增益持續時間的顯示。\n\n• 技能：追蹤技能持續時間。\n• + 天賦：同時追蹤特定被動天賦的冷卻。",
     },
+    timer_buff_disabled                    = {
+        en = "Disabled",
+        -- ["zh-cn"] = "禁用",
+        -- ["zh-tw"] = "禁用",
+    },
+    timer_buff_ability_only                = {
+        en = "Ability Buffs Only",
+        -- ["zh-cn"] = "仅技能增益",
+        -- ["zh-tw"] = "僅技能增益",
+    },
+    timer_buff_all                         = {
+        en = "Ability and Talents",
+        -- ["zh-cn"] = "技能 + 天赋",
+        -- ["zh-tw"] = "技能 + 天賦",
+    },
+
     timer_sound_enabled                    = {
         en = "Ready Sound",
         ["zh-cn"] = "技能刷新 音效",
@@ -622,9 +701,7 @@ local localizations = {
             "Choose teammate HUD layout:\n\n" ..
             "• Darktide Default: Vanilla team panel only.\n" ..
             "• Docked HUDs: RingHud tiles (left side). No bots.\n" ..
-            "• Nameplate HUDs: Floating tiles over teammates. No bots.\n" ..
-            "• Docked + Nameplate: Both styles active.\n",
-
+            "• Nameplate HUDs: Floating tiles over teammates. No bots.\n",
         ["zh-cn"] =
             "选择团队或队友的HUD布局\n\n" ..
             "• 原版\n" ..
@@ -654,17 +731,17 @@ local localizations = {
         ["zh-tw"] = "跟隨", -- AI
     },
     team_hud_floating_docked               = {
-        en = "Docked + Nameplates",
+        en = "Docked and Nameplates",
         ["zh-cn"] = "停靠 + 跟随",
         ["zh-tw"] = "停靠 + 跟隨",
     },
     team_hud_floating_vanilla              = {
-        en = "Default + Nameplates",
+        en = "Default and Nameplates",
         ["zh-cn"] = "原版 + 跟随",
         ["zh-tw"] = "原版 + 跟隨",
     },
     team_hud_floating_thin                 = {
-        en = "Minimal Default + Nameplates",
+        en = "Minimal Default and Nameplates",
         --有点Bug
         ["zh-cn"] = "原版极简 + 跟随(有头像框显示BUG)",
         ["zh-tw"] = "原版極簡 + 跟隨",
@@ -770,7 +847,7 @@ local localizations = {
         ["zh-tw"] = "始終顯示 血條",
     },
     team_hp_bar_always_text_context        = {
-        en = "Bar + Text Always",
+        en = "Bar and Text Always",
         ["zh-cn"] = "始终显示 血条 + 数字",
         ["zh-tw"] = "始終顯示 血條 + 數字",
     },
@@ -780,7 +857,7 @@ local localizations = {
         ["zh-tw"] = "自動顯示 血量條"
     },
     team_hp_bar_context_text_context       = {
-        en = "Bar + Text (Contextual)",
+        en = "Bar and Text (Contextual)",
         ["zh-cn"] = "自动显示 血条 + 数字 ",
         ["zh-tw"] = "自動顯示 血條 + 數字 ",
     },
@@ -848,7 +925,7 @@ local localizations = {
     team_munitions_tooltip                  = {
         en = "Show teammates' reserve ammo and ability cooldown.",
         -- ["zh-cn"] = "显示队友的备弹条和技能冷却计数。", -- AI
-        -- ["zh-tw"] = "顯示隊友的備彈條和技能冷卻計數。", -- AI
+        -- ["zh-tw"] = "顯示隊友的備彈條和技能冷却计数。", -- AI
     },
 
     team_munitions_disabled                 = {
@@ -877,12 +954,12 @@ local localizations = {
         -- ["zh-tw"] = "僅彈藥 (自動)", -- AI
     },
     team_munitions_ammo_always_cd_always    = {
-        en = "Ammo + CD (Always)",
+        en = "Ammo and CD (Always)",
         -- ["zh-cn"] = "弹药+冷却 (始终)", -- AI
         -- ["zh-tw"] = "彈藥+冷卻 (始終)", -- AI
     },
     team_munitions_ammo_context_cd_enabled  = {
-        en = "Ammo + CD (Contextual)",
+        en = "Ammo and CD (Contextual)",
         -- ["zh-cn"] = "弹药+冷却 (自动)", -- AI
         -- ["zh-tw"] = "彈藥+冷卻 (自動)", -- AI
     },
@@ -927,7 +1004,7 @@ local localizations = {
         en =
         "Control visibility of default game HUD elements to reduce clutter.",
         ["zh-cn"] = "控制游戏原版HUD 可见性，如果环形HUD提供相同信息，隐藏它们可以减少界面元素混乱",
-        ["zh-tw"] = "控制遊戲原版HUD可見性，如果環形HUD提供相同信息，隱藏它們可以減少界面元素混亂",
+        ["zh-tw"] = "控制遊戲原版HUD可見性，如果環形HUD提供相同信息，隱藏它們可以減少界面元素混乱",
     },
     hide_default_ability                    = {
         en = "Hide Ability Widget",

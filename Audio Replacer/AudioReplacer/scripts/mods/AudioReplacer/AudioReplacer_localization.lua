@@ -324,4 +324,19 @@ return {
   ganger_focus = {
 	en = "Hive Scum Desperado Ability"
   },
+  ganger_stimm = {
+    en = "Hive Scum Cartel Special Syringe"
+  },
+  player_downed = {
+    en = "Players getting Downed"
+  },
+  boss_killed = {
+    en = "Boss Enemy Killed"
+  },
+  zealot_stealth = {
+	en = "Zealot Shroudfield Ability"
+  },
+  toughness_break = {
+	en = "Toughness Break"
+  },
 }

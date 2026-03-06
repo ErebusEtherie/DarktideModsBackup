@@ -42,6 +42,13 @@ local calc_text_height = function(renderer, style, text, size)
 	)
 end
 
+local sanitize_icon = function(icon)
+	return (icon == "content/ui/materials/icons/mission_types_pj/mission_type_event"
+			or icon == "content/ui/materials/icons/mission_types/mission_type_event")
+		and "content/ui/materials/icons/mission_types/mission_type_side"
+		or icon
+end
+
 mod:hook_safe(CLASS.MissionIntroView, "on_enter", function(self)
 	local widgets = self._widgets_by_name
 	if widgets.display then
@@ -51,19 +58,6 @@ mod:hook_safe(CLASS.MissionIntroView, "on_enter", function(self)
 	self:set_render_scale(mod:get("ui_scale") or 1.0)
 
 	local mech_data = Managers.mechanism:mechanism_data()
-	--[[ DBG
-	mech_data = {
-		challenge = 4,
-		level_name = "content/levels/transit/missions/mission_cm_habs",
-		resistance = 4,
-		circumstance_name = "hunting_grounds_more_resistance_01",
-		backend_mission_id = "123",
-		mission_giver_vo_override = "sergeant_b",
-		mission_name = "fm_resurgence",
-		side_mission = "side_mission_tome",
-		havoc_data = "km_heresy;31;darkness;cultist;mutator_encroaching_garden:mutator_highest_difficulty:mutator_havoc_chaos_rituals:darkness_hunting_grounds_01;26.4:1.5:4.4:13.5:7.5:11.4:10.4:8.4:9.4:6.5:12.5:22.4:23.5:5.4:3.4:2.4:25.4:24.4;5;5",
-	}
-	--]]
 	local havoc_data = mech_data.havoc_data and Havoc.parse_data(mech_data.havoc_data)
 
 	local show_mission = mod:get("show_mission")
@@ -85,7 +79,7 @@ mod:hook_safe(CLASS.MissionIntroView, "on_enter", function(self)
 			local mission_type = MissionTypes[mission.mission_type]
 
 			local mission_content = widgets.mission_info.content
-			mission_content.icon = mission_type and mission_type.icon or mission_content.icon
+			mission_content.icon = sanitize_icon(mission_type and mission_type.icon or mission_content.icon)
 			mission_content.mission_name = Utf8.upper(Localize(mission.mission_name))
 			mission_content.mission_type = Localize(mission_type.name)
 
@@ -130,7 +124,7 @@ mod:hook_safe(CLASS.MissionIntroView, "on_enter", function(self)
 				local circumstance_info_content = havoc_circumstance_info.content
 				local circumstance_info_style = havoc_circumstance_info.style
 				local circumstance_ui_settings = CircumstanceTemplates[mutator_data].ui
-				local circumstance_icon = circumstance_ui_settings.icon
+				local circumstance_icon = sanitize_icon(circumstance_ui_settings.icon)
 
 				circumstance_info_content.icon = circumstance_icon
 				local circumstance_icon_identifer = "icon_0" .. i
@@ -199,7 +193,7 @@ mod:hook_safe(CLASS.MissionIntroView, "on_enter", function(self)
 				local circumstance_ui = circumstance_data and circumstance_data.ui
 				if circumstance_ui then
 					local circumstance_content = circumstance_widget.content
-					circumstance_content.icon = circumstance_ui.icon
+					circumstance_content.icon = sanitize_icon(circumstance_ui.icon)
 					circumstance_content.circumstance_name = Localize(circumstance_ui.display_name)
 					circumstance_content.circumstance_description = Localize(circumstance_ui.description)
 					circumstance_widget.visible = show_mission
@@ -233,15 +227,5 @@ mod.on_setting_changed = function(id)
 	end
 	if id == "panel_alpha" then
 		mod.update_bg_color(mod:get(id))
-	end
-end
-
-mod.DBG_screen = function()
-	local view_name = "mission_intro_view"
-	local view = Managers.ui:view_instance(view_name)
-	if view then
-		Managers.ui:close_view(view_name)
-	else
-		Managers.ui:open_view(view_name)
 	end
 end

@@ -1,5 +1,6 @@
 -- File: RingHud/scripts/mods/RingHud/features/ammo_clip_feature.lua
-local mod = get_mod("RingHud"); if not mod then return {} end
+local mod = get_mod("RingHud")
+if not mod then return {} end
 
 local U                     = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
 local Ammo                  = require("scripts/utilities/ammo")
@@ -11,16 +12,75 @@ local MAX_CLIPS             = (NetworkConstants.ammunition_clip_array
 local AmmoClipFeature       = {}
 
 local AMMO_CLIP_SEGMENT_GAP = 0.015 -- kept local; RingHud constants cover arc min/max and display counts
+local MAX_LOW_COUNT_DISPLAY = mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY or 30
+
+local _multi_style_keys     = {}
+for i = 1, MAX_LOW_COUNT_DISPLAY do
+    _multi_style_keys[i] = "ammo_clip_filled_multi_" .. i
+end
+
+local _cached_arcs = {}
+
+local BAR_MODES    = {
+    ammo_clip_bar                 = "standard",
+    ammo_clip_bar_text            = "standard",
+    ammo_clip_bar_forecast        = "standard",
+    ammo_clip_bar_always          = "always",
+    ammo_clip_bar_text_always     = "always",
+    ammo_clip_bar_forecast_always = "always",
+    -- All others default to nil (disabled)
+}
+
+local TEXT_MODES   = {
+    ammo_clip_text                = "standard",
+    ammo_clip_bar_text            = "standard",
+    ammo_clip_forecast            = "forecast",
+    ammo_clip_bar_forecast        = "forecast",
+    ammo_clip_text_always         = "always",
+    ammo_clip_bar_text_always     = "always",
+    ammo_clip_forecast_always     = "forecast_always",
+    ammo_clip_bar_forecast_always = "forecast_always",
+}
+
+local COL_HIGH     = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_HIGH
+local COL_MED_H    = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_MEDIUM_H
+local COL_MED_L    = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_MEDIUM_L
+local COL_LOW      = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_LOW
+local COL_CRIT     = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_CRITICAL
+local COL_FORECAST = { 180, 100, 100, 100 }
+
+local RGBA_HIGH    = mod.PALETTE_RGBA1.AMMO_BAR_COLOR_HIGH
+local RGBA_MED_H   = mod.PALETTE_RGBA1.AMMO_BAR_COLOR_MEDIUM_H
+local RGBA_MED_L   = mod.PALETTE_RGBA1.AMMO_BAR_COLOR_MEDIUM_L
+local RGBA_LOW     = mod.PALETTE_RGBA1.AMMO_BAR_COLOR_LOW
+local RGBA_CRIT    = mod.PALETTE_RGBA1.AMMO_BAR_COLOR_CRITICAL
+
+local function _get_arcs_for_count(num_segments)
+    if num_segments <= 0 then return nil end
+
+    if _cached_arcs[num_segments] then
+        return _cached_arcs[num_segments]
+    end
+
+    local arcs        = {}
+    local total_arc   = mod.AMMO_CLIP_ARC_MAX - mod.AMMO_CLIP_ARC_MIN
+    local num_gaps    = math.max(0, num_segments - 1)
+    local visual_sp   = math.max(0, total_arc - (num_gaps * AMMO_CLIP_SEGMENT_GAP))
+    local seg_arc     = (num_segments > 0) and (visual_sp / num_segments) or 0
+    local current_bot = mod.AMMO_CLIP_ARC_MIN
+
+    for i = 1, num_segments do
+        local top = math.min(mod.AMMO_CLIP_ARC_MAX, current_bot + seg_arc)
+        if i == num_segments then top = mod.AMMO_CLIP_ARC_MAX end
+        arcs[i] = { top, current_bot }
+        current_bot = top + AMMO_CLIP_SEGMENT_GAP
+    end
+
+    _cached_arcs[num_segments] = arcs
+    return arcs
+end
 
 -- STATE (clip) ---------------------------------------------------------------
--- Populates ammo_data_out with ONLY clip-related fields:
---   - wielded_slot_name
---   - uses_ammo
---   - current_clip
---   - max_clip
---   - is_needle_pistol (new)
---   - special_active (new)
--- Does not touch reserve fields (handled elsewhere / ammo_reserve_feature).
 function AmmoClipFeature.update_state(unit_data_comp_access_point, weapon_ext, inv_comp, ammo_data_out, archetype_name)
     if not ammo_data_out then
         return
@@ -46,7 +106,7 @@ function AmmoClipFeature.update_state(unit_data_comp_access_point, weapon_ext, i
         if uses_flag then
             uses_ammo = true
 
-            -- [RingHud] Broker Needle Pistol Logic
+            -- Broker Needle Pistol Logic
             if archetype_name == "broker" and wielded_template.name then
                 if string.find(wielded_template.name, "needlepistol") then
                     is_needle_pistol = true
@@ -95,21 +155,24 @@ mod.ammo_clip_update_state = AmmoClipFeature.update_state
 function AmmoClipFeature.update_bar(hud_element, widget, hud_state, hotkey_override)
     if not widget or not widget.style then return end
 
-    local ammo_clip_dropdown = mod._settings.ammo_clip_dropdown
-    if ammo_clip_dropdown == "ammo_clip_disabled" or ammo_clip_dropdown == "ammo_clip_text" then
+    local dropdown_val = mod._settings.ammo_clip_dropdown
+    local mode = BAR_MODES[dropdown_val]
+
+    if not mode then
+        -- Fast path: Disable everything if mode is nil
         local style = widget.style
+        local changed = false
         if style.ammo_clip_unfilled_background then
-            if U.set_style_visible(style.ammo_clip_unfilled_background, false) then widget.dirty = true end
+            if U.set_style_visible(style.ammo_clip_unfilled_background, false) then changed = true end
         end
         if style.ammo_clip_filled_single then
-            if U.set_style_visible(style.ammo_clip_filled_single, false) then widget.dirty = true end
+            if U.set_style_visible(style.ammo_clip_filled_single, false) then changed = true end
         end
-        for i = 1, mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY do
-            local m = style["ammo_clip_filled_multi_" .. i]
-            if m and U.set_style_visible(m, false) then
-                widget.dirty = true
-            end
+        for i = 1, MAX_LOW_COUNT_DISPLAY do
+            local m = style[_multi_style_keys[i]]
+            if m and U.set_style_visible(m, false) then changed = true end
         end
+        if changed then widget.dirty = true end
         return
     end
 
@@ -126,7 +189,13 @@ function AmmoClipFeature.update_bar(hud_element, widget, hud_state, hotkey_overr
         current_ammo_disp_normally = data.current_clip
         max_ammo_disp_normally     = data.max_clip
         clip_frac_normally         = data.current_clip / data.max_clip
-        overall_visible_normally   = data.current_clip < data.max_clip
+
+        if mode == "always" then
+            overall_visible_normally = true
+        else
+            local is_wielded = (data.wielded_slot_name == "slot_secondary")
+            overall_visible_normally = is_wielded and (data.current_clip < data.max_clip)
+        end
     elseif hud_element._ammo_clip_latched_low then
         overall_visible_normally   = true
         current_ammo_disp_normally = hud_element._latched_current_clip_ammo
@@ -138,7 +207,7 @@ function AmmoClipFeature.update_bar(hud_element, widget, hud_state, hotkey_overr
         end
     end
 
-    local overall_visible, clip_frac = false, 0
+    local overall_visible, clip_frac       = false, 0
     local current_ammo_disp, max_ammo_disp = 0, 0
 
     if hotkey_override then
@@ -164,7 +233,6 @@ function AmmoClipFeature.update_bar(hud_element, widget, hud_state, hotkey_overr
     if overall_visible then
         local border_color
 
-        -- [RingHud] Broker Needle Pistol override
         if data.is_needle_pistol then
             if data.special_active then
                 border_color = mod.PALETTE_RGBA1.NEEDLE_SPECIAL_ACTIVE
@@ -172,18 +240,18 @@ function AmmoClipFeature.update_bar(hud_element, widget, hud_state, hotkey_overr
                 border_color = mod.PALETTE_RGBA1.NEEDLE_SPECIAL_INACTIVE
             end
         elseif clip_frac >= 0.85 then
-            border_color = mod.PALETTE_RGBA1.AMMO_BAR_COLOR_HIGH
+            border_color = RGBA_HIGH
         elseif clip_frac >= 0.65 then
-            border_color = mod.PALETTE_RGBA1.AMMO_BAR_COLOR_MEDIUM_H
+            border_color = RGBA_MED_H
         elseif clip_frac >= 0.45 then
-            border_color = mod.PALETTE_RGBA1.AMMO_BAR_COLOR_MEDIUM_L
+            border_color = RGBA_MED_L
         elseif clip_frac >= 0.25 then
-            border_color = mod.PALETTE_RGBA1.AMMO_BAR_COLOR_LOW
+            border_color = RGBA_LOW
         else
-            border_color = mod.PALETTE_RGBA1.AMMO_BAR_COLOR_CRITICAL
+            border_color = RGBA_CRIT
         end
 
-        if max_ammo_disp > mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY then
+        if max_ammo_disp > MAX_LOW_COUNT_DISPLAY then
             if single_style then
                 changed       = U.set_style_visible(single_style, true, changed)
                 local arc_len = (mod.AMMO_CLIP_ARC_MAX - mod.AMMO_CLIP_ARC_MIN) * clip_frac
@@ -192,8 +260,8 @@ function AmmoClipFeature.update_bar(hud_element, widget, hud_state, hotkey_overr
                 changed       = U.mv_set_arc(mat, arc_top, mod.AMMO_CLIP_ARC_MIN, changed)
                 changed       = U.mv_set_outline(mat, border_color, changed)
             end
-            for i = 1, mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY do
-                local m = style["ammo_clip_filled_multi_" .. i]
+            for i = 1, MAX_LOW_COUNT_DISPLAY do
+                local m = style[_multi_style_keys[i]]
                 if m then changed = U.set_style_visible(m, false, changed) or changed end
             end
         else
@@ -201,32 +269,19 @@ function AmmoClipFeature.update_bar(hud_element, widget, hud_state, hotkey_overr
                 changed = U.set_style_visible(single_style, false, changed)
             end
 
-            local num_draw_seg = math.min(max_ammo_disp, mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY)
+            local num_draw_seg = math.min(max_ammo_disp, MAX_LOW_COUNT_DISPLAY)
             if max_ammo_disp == 0 and overall_visible then num_draw_seg = 1 end
 
-            local arcs = {}
-            if num_draw_seg > 0 then
-                local total_arc  = mod.AMMO_CLIP_ARC_MAX - mod.AMMO_CLIP_ARC_MIN
-                local num_gaps   = math.max(0, num_draw_seg - 1)
-                local visual_sp  = math.max(0, total_arc - (num_gaps * AMMO_CLIP_SEGMENT_GAP))
-                local seg_arc    = (num_draw_seg > 0) and (visual_sp / num_draw_seg) or 0
-                local cur_bottom = mod.AMMO_CLIP_ARC_MIN
-                for i = 1, num_draw_seg do
-                    local top = math.min(mod.AMMO_CLIP_ARC_MAX, cur_bottom + seg_arc)
-                    if i == num_draw_seg then top = mod.AMMO_CLIP_ARC_MAX end
-                    arcs[i] = { top, cur_bottom }
-                    cur_bottom = top + AMMO_CLIP_SEGMENT_GAP
-                end
-            end
+            local arcs = _get_arcs_for_count(num_draw_seg)
 
-            for i = 1, mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY do
-                local multi_s = style["ammo_clip_filled_multi_" .. i]
+            for i = 1, MAX_LOW_COUNT_DISPLAY do
+                local multi_s = style[_multi_style_keys[i]]
                 if multi_s then
                     local mat     = multi_s.material_values
                     local seg_vis = i <= current_ammo_disp and i <= num_draw_seg and overall_visible
                     changed       = U.set_style_visible(multi_s, seg_vis, changed)
                     if seg_vis then
-                        if arcs[i] then
+                        if arcs and arcs[i] then
                             changed = U.mv_set_arc(mat, arcs[i][1], arcs[i][2], changed)
                         elseif num_draw_seg == 1 and i == 1 then
                             changed = U.mv_set_arc(mat, mod.AMMO_CLIP_ARC_MIN, mod.AMMO_CLIP_ARC_MIN, changed)
@@ -240,8 +295,8 @@ function AmmoClipFeature.update_bar(hud_element, widget, hud_state, hotkey_overr
         if single_style then
             changed = U.set_style_visible(single_style, false, changed)
         end
-        for i = 1, mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY do
-            local m = style["ammo_clip_filled_multi_" .. i]
+        for i = 1, MAX_LOW_COUNT_DISPLAY do
+            local m = style[_multi_style_keys[i]]
             if m then changed = U.set_style_visible(m, false, changed) or changed end
         end
     end
@@ -253,10 +308,12 @@ end
 function AmmoClipFeature.update_text(hud_element, widget, hud_state, hotkey_override)
     if not widget or not widget.style then return end
 
-    local ammo_clip_dropdown = mod._settings.ammo_clip_dropdown
+    local dropdown_val = mod._settings.ammo_clip_dropdown
     if not (widget and widget.content and widget.style and widget.style.ammo_clip_text_style) then return end
 
-    if ammo_clip_dropdown == "ammo_clip_disabled" or ammo_clip_dropdown == "ammo_clip_bar" then
+    local mode = TEXT_MODES[dropdown_val]
+
+    if not mode then
         local c = widget.content
         local s = widget.style.ammo_clip_text_style
         if U.set_style_visible(s, false) then widget.dirty = true end
@@ -265,6 +322,9 @@ function AmmoClipFeature.update_text(hud_element, widget, hud_state, hotkey_over
         end
         return
     end
+
+    local is_forecast_mode         = (mode == "forecast" or mode == "forecast_always")
+    local text_always              = (mode == "always" or mode == "forecast_always")
 
     local content                  = widget.content
     local text_style               = widget.style.ammo_clip_text_style
@@ -277,11 +337,21 @@ function AmmoClipFeature.update_text(hud_element, widget, hud_state, hotkey_over
     local max_clip_for_color_calc  = 0
     local has_valid_clip_for_text  = false
 
+    local shot_cost                = hud_state.most_recent_shot_cost_this_mission or 0
+    local has_forecast_data        = (shot_cost > 0)
+    if not has_forecast_data then shot_cost = 1 end
+
     if data and data.uses_ammo and data.max_clip and data.max_clip > 0 then
         current_clip_for_text   = data.current_clip
         max_clip_for_color_calc = data.max_clip
         has_valid_clip_for_text = true
-        if data.current_clip < data.max_clip then show_text_normally = true end
+
+        if text_always then
+            show_text_normally = true
+        else
+            local is_wielded = (data.wielded_slot_name == "slot_secondary")
+            show_text_normally = is_wielded and (data.current_clip < data.max_clip)
+        end
     elseif hud_element._ammo_clip_latched_low and hud_element._latched_max_clip_ammo and hud_element._latched_max_clip_ammo > 0 then
         current_clip_for_text   = hud_element._latched_current_clip_ammo
         max_clip_for_color_calc = hud_element._latched_max_clip_ammo
@@ -290,16 +360,35 @@ function AmmoClipFeature.update_text(hud_element, widget, hud_state, hotkey_over
     end
 
     if show_text_normally and has_valid_clip_for_text then
-        text_to_display_normally = string.format("%d", current_clip_for_text)
+        if is_forecast_mode then
+            if has_forecast_data then
+                local shots_remaining = current_clip_for_text / shot_cost
+                text_to_display_normally = string.format("%d", math.ceil(shots_remaining))
+            else
+                text_to_display_normally = string.format("%d", current_clip_for_text)
+            end
+        else
+            text_to_display_normally = string.format("%d", current_clip_for_text)
+        end
     end
 
     local show_text_final, text_to_display_final = false, ""
-    local clip_fraction_for_color = 0
+    local clip_fraction_for_color                = 0
 
     if hotkey_override then
         if hud_element._latched_max_clip_ammo > 0 then
-            show_text_final       = true
-            text_to_display_final = string.format("%d", hud_element._latched_current_clip_ammo)
+            show_text_final = true
+            if is_forecast_mode then
+                if has_forecast_data then
+                    local shots_remaining = hud_element._latched_current_clip_ammo / shot_cost
+                    text_to_display_final = string.format("%d", math.ceil(shots_remaining))
+                else
+                    text_to_display_final = string.format("%d", hud_element._latched_current_clip_ammo)
+                end
+            else
+                text_to_display_final = string.format("%d", hud_element._latched_current_clip_ammo)
+            end
+
             if hud_element._latched_max_clip_ammo > 0 then
                 clip_fraction_for_color = hud_element._latched_current_clip_ammo / hud_element._latched_max_clip_ammo
             end
@@ -322,16 +411,19 @@ function AmmoClipFeature.update_text(hud_element, widget, hud_state, hotkey_over
             content.ammo_clip_value_text = text_to_display_final; changed = true
         end
         local new_text_color
-        if clip_fraction_for_color >= 0.85 then
-            new_text_color = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_HIGH
+
+        if is_forecast_mode and not has_forecast_data then
+            new_text_color = COL_FORECAST
+        elseif clip_fraction_for_color >= 0.85 then
+            new_text_color = COL_HIGH
         elseif clip_fraction_for_color >= 0.65 then
-            new_text_color = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_MEDIUM_H
+            new_text_color = COL_MED_H
         elseif clip_fraction_for_color >= 0.45 then
-            new_text_color = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_MEDIUM_L
+            new_text_color = COL_MED_L
         elseif clip_fraction_for_color >= 0.25 then
-            new_text_color = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_LOW
+            new_text_color = COL_LOW
         else
-            new_text_color = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_CRITICAL
+            new_text_color = COL_CRIT
         end
         if U.set_style_text_color(text_style, new_text_color) then
             changed = true
@@ -413,7 +505,7 @@ function AmmoClipFeature.add_widgets(widget_defs, _, layout, palettes)
     }
 
     -- Low-count segments
-    for i = 1, (mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY or 6) do
+    for i = 1, MAX_LOW_COUNT_DISPLAY do
         passes[#passes + 1] = {
             pass_type = "rotated_texture",
             value     = "content/ui/materials/effects/forcesword_bar",

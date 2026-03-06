@@ -167,6 +167,10 @@ local player_killshot_audio = {
 	"player/killshot_1.opus",
 }
 
+local player_killshot_end_audio = {
+	"player/killshot_end.opus",
+}
+
 local player_stealth_audio = {
 	"player/stealth_1.opus",
 	"player/stealth_2.opus",
@@ -479,11 +483,15 @@ local grenadier_yell_audio = {
 
 local ganger_rage_audio = {
 	"player/ganger_rage_1.opus",
+	"player/ganger_rage_2.opus",
+	"player/ganger_rage_3.opus",
+	"player/ganger_rage_4.opus",
+	"player/ganger_rage_5.opus",
+	"player/ganger_rage_6.opus",
 }
 
 local ganger_rage_end_audio = {
 	"player/ganger_rage_end_1.opus",
-	"player/ganger_rage_end_2.opus",
 }
 
 local ganger_focus_audio = {
@@ -495,6 +503,45 @@ local ganger_focus_audio = {
 
 local ganger_focus_end_audio = {
 	"player/ganger_focus_end_1.opus",
+}
+
+local ganger_stimm_audio = {
+	"player/ganger_stimm_1.opus",
+}
+
+local ganger_stimm_end_audio = {
+	"player/ganger_stimm_end.opus",
+}
+
+local player_downed_audio = {
+	"player/downed_1.opus",
+}
+
+local boss_killed_audio = {
+	"horde/boss_killed_1.opus",
+	"horde/boss_killed_2.opus",
+	"horde/boss_killed_3.opus",
+	"horde/boss_killed_4.opus",
+	"horde/boss_killed_5.opus",
+	"horde/boss_killed_6.opus",
+}
+
+local zealot_stealth_audio = {
+	"player/zealot_stealth_1.opus",
+	"player/zealot_stealth_2.opus",
+	"player/zealot_stealth_3.opus",
+	"player/zealot_stealth_4.opus",
+	"player/zealot_stealth_5.opus",
+}
+
+local zealot_stealth_end = {
+	"player/zealot_stealth_end.opus",
+}
+
+local toughness_break_audio = {
+	"player/toughness_break_1.opus",
+	"player/toughness_break_2.opus",
+	"player/toughness_break_3.opus",
 }
 
 local enemies = {
@@ -517,7 +564,10 @@ local enemies = {
 -- In this case the rage_stop is interrupting the rage_start
 local ongoing_sound_replacements = {
 	play_player_ability_broker_rage_stop = "play_player_ability_broker_rage_start",
-	play_player_ability_broker_focus_stop = "play_player_ability_broker_focus_start"
+	play_player_ability_broker_focus_stop = "play_player_ability_broker_focus_start",
+	play_syringe_broker_stop = "play_syringe_broker_start",
+	play_player_ability_veteran_killshot_stance_off = "play_player_ability_veteran_killshot_stance_on",
+	play_zealot_ability_invisible_off = "play_zealot_ability_invisible_on",
 }
 
 local enemy_sound_replacements = {
@@ -625,6 +675,14 @@ local enemy_sound_replacements = {
 		play_player_ability_broker_rage_stop = ganger_rage_end_audio,
 		play_player_ability_broker_focus_start = ganger_focus_audio,
 		play_player_ability_broker_focus_stop = ganger_focus_end_audio,
+		play_syringe_broker_start = ganger_stimm_audio,
+		play_syringe_broker_stop = ganger_stimm_end_audio,
+		play_teammate_knocked_down = player_downed_audio,
+		play_player_ability_veteran_killshot_stance_off = player_killshot_end_audio,
+		play_monster_killed = boss_killed_audio,
+		play_zealot_ability_invisible_on = zealot_stealth_audio,
+		play_zealot_ability_invisible_off = zealot_stealth_end,
+		play_toughness_break = toughness_break_audio,
 	},
 	cultist_flamer = {
 		play_minion_flamethrower_green_start = flamer_flame_audio
@@ -688,6 +746,7 @@ local options_categories = {
 	play_veteran_ability_shout_husk = "player_shout",
 	play_veteran_ability_stealth_on = "player_stealth",
 	play_player_ability_veteran_killshot_stance_on = "player_killshot",
+	play_player_ability_veteran_killshot_stance_off = "player_killshot",
 	play_psyker_ability_shout = "player_shriek",
 	play_psyker_ability_shout_husk = "player_shriek",
 	play_ability_psyker_shield_dome = "player_psyker_shield",
@@ -758,6 +817,13 @@ local options_categories = {
 	play_player_ability_broker_rage_stop = "ganger_rage",
 	play_player_ability_broker_focus_start = "ganger_focus",
 	play_player_ability_broker_focus_stop = "ganger_focus",
+	play_syringe_broker_start = "ganger_stimm",
+	play_syringe_broker_stop = "ganger_stimm",
+	play_teammate_knocked_down = "player_downed",
+	play_monster_killed = "boss_killed",
+	play_zealot_ability_invisible_on = "zealot_stealth",
+	play_zealot_ability_invisible_off = "zealot_stealth",
+	play_toughness_break = "toughness_break",
 
 	-- DOG
 	play_enemy_chaos_hound_vce_leap = "chaos_hound_jump",
@@ -833,10 +899,15 @@ local VOLUME_OVERRIDE = {
 	play_minion_plasmapistol_charge = 25,
 	play_psyker_warp_charge_overload_start = 100,
 	play_warp_charge_build_up_critical = 10,
-	play_player_ability_broker_rage_start = 70,
+	play_player_ability_broker_rage_start = 30,
 	play_player_ability_broker_rage_stop = 30,
 	play_player_ability_broker_focus_start = 70,
 	play_player_ability_broker_focus_stop = 70,
+	play_teammate_knocked_down = 50,
+	play_monster_killed = 50,
+	play_syringe_broker_start = 40,
+	play_syringe_broker_stop = 70,
+	play_toughness_break = 200,
 }
 
 local ongoing_sounds = {}
@@ -872,6 +943,7 @@ local override_paths = {
 	play_veteran_ability_shout_husk = "wwise/events/player/",
 	play_veteran_ability_stealth_on = "wwise/events/player/",
 	play_player_ability_veteran_killshot_stance_on = "wwise/events/player/",
+	play_player_ability_veteran_killshot_stance_off = "wwise/events/player/",
 	play_psyker_ability_shout = "wwise/events/player/",
 	play_psyker_ability_shout_husk = "wwise/events/player/",
 	play_ability_psyker_shield_dome = "wwise/events/player/",
@@ -958,6 +1030,13 @@ local override_paths = {
 	play_player_ability_broker_rage_stop = "wwise/events/player/",
 	play_player_ability_broker_focus_start = "wwise/events/player/",
 	play_player_ability_broker_focus_stop = "wwise/events/player/",
+	play_syringe_broker_start = "wwise/events/player/",
+	play_syringe_broker_stop = "wwise/events/player/",
+	play_teammate_knocked_down = "wwise/events/player/",
+	play_monster_killed = "wwise/events/player/",
+	play_zealot_ability_invisible_on = "wwise/events/player/",
+	play_zealot_ability_invisible_off = "wwise/events/player/",
+	play_toughness_break = "wwise/events/player/",
 	--play_minion_flamethrower_green_start = "wwise/events/weapon/"
 }
 

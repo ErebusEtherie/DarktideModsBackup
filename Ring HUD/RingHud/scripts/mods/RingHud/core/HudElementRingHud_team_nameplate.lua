@@ -1,13 +1,11 @@
 -- File: RingHud/scripts/mods/RingHud/core/HudElementRingHud_team_nameplate.lua
--- Note: Compatible with Option-A edge stacking (style-offset pushes). This file does NOT
+-- Note: Compatible with edge stacking (style-offset pushes). This file does NOT
 -- adjust widget.root offsets; it only hijacks nameplates to our template and handles refresh.
 local mod = get_mod("RingHud")
 if not mod then return {} end
 
--- Expose this module so RingHud.lua can call .on_hewm_ready(...)
 mod.floating_manager           = mod.floating_manager or {}
 
--- Shared state
 mod._deferred_marker_additions = mod._deferred_marker_additions or {}
 mod._tracked_item_units        = mod._tracked_item_units or mod:persistent_table("tracked_item_units")
 
@@ -208,7 +206,9 @@ local function _refresh_existing_nameplates()
                         Managers.event:trigger("remove_world_marker_by_unit", marker_type, m.unit)
                     end
                 end
-                for k in pairs(list) do k = nil end
+                for k in pairs(list) do
+                    list[k] = nil
+                end
             end
         end
     end
@@ -357,9 +357,17 @@ function mod.floating_manager.install()
     if CLASS and CLASS.HudElementWorldMarkers and not mod._floating_hijack_hooked then
         mod:hook(CLASS.HudElementWorldMarkers, "event_add_world_marker_unit",
             function(func, self_hewm, marker_type, unit, callback, data)
-                _ensure_ringhud_template(self_hewm)
-                _sanitize_all_ringhud_templates(self_hewm)
-                _ensure_vanilla_nameplate_buckets(self_hewm)
+                local heavy_check_needed = (marker_type == "nameplate_party" or marker_type == "nameplate_combat" or marker_type == "interaction")
+
+                if heavy_check_needed then
+                    local ui_t = (Managers and Managers.time and Managers.time:time("ui")) or 0
+                    if not self_hewm._rh_last_ensure_t or (ui_t - self_hewm._rh_last_ensure_t) > 1 then
+                        self_hewm._rh_last_ensure_t = ui_t
+                        _ensure_ringhud_template(self_hewm)
+                        _sanitize_all_ringhud_templates(self_hewm)
+                        _ensure_vanilla_nameplate_buckets(self_hewm)
+                    end
+                end
 
                 -- Proximity watcher (ALL syringes via interaction)
                 if marker_type == "interaction" and unit and Unit.alive(unit) then
@@ -443,7 +451,9 @@ function mod.floating_manager.install()
                                 Managers.event:trigger("remove_world_marker_by_unit", marker_type, m.unit)
                             end
                         end
-                        for k in pairs(list) do k = nil end
+                        for k in pairs(list) do
+                            list[k] = nil
+                        end
                     end
                 end
             end
@@ -456,7 +466,6 @@ function mod.floating_manager.install()
                 function(func, self_hewm, dt, t, ui_renderer, render_settings, input_service, ...)
                     prepass_merge_safety(self_hewm)
 
-                    -- NEW: tick a per-frame id for the edge stacker (templates will reset once per frame)
                     mod._edge_stack_frame_id = (mod._edge_stack_frame_id or 0) + 1
 
                     local ret = func(self_hewm, dt, t, ui_renderer, render_settings, input_service, ...)
@@ -464,10 +473,8 @@ function mod.floating_manager.install()
                     _watch_resolution_and_refresh()
                     _refresh_ringhud_marker_names(self_hewm)
 
-                    -- Mirror header_text into the text we actually render (setting-gated).
                     _propagate_header_to_name_text(self_hewm)
 
-                    -- Ensure the pass is visible; text content handles setting-based visibility.
                     _apply_floating_name_visibility(self_hewm)
 
                     return ret
@@ -478,7 +485,6 @@ function mod.floating_manager.install()
                 function(func, self_hewm, ui_renderer, dt, t, ...)
                     prepass_merge_safety(self_hewm)
 
-                    -- NEW: tick a per-frame id for the edge stacker (templates will reset once per frame)
                     mod._edge_stack_frame_id = (mod._edge_stack_frame_id or 0) + 1
 
                     local ret = func(self_hewm, ui_renderer, dt, t, ...)
@@ -495,7 +501,7 @@ function mod.floating_manager.install()
     end
 end
 
--- Called by RingHud.lua’s HEWM init hook
+-- Called by RingHud.lua HEWM init hook
 function mod.floating_manager.on_hewm_ready(hewm_instance)
     mod._hewm_world_markers = hewm_instance
     _sanitize_all_ringhud_templates(hewm_instance)
@@ -512,7 +518,6 @@ function mod.floating_manager.set_enabled(is_enabled)
     end
 end
 
--- Optional helper: force all active floating markers to refresh their names next frame.
 function mod.floating_manager.bump_names()
     local hewm = rawget(mod, "_hewm_world_markers")
     local list = hewm and hewm._markers_by_type and hewm._markers_by_type.ringhud_teammate_tile
@@ -527,11 +532,8 @@ function mod.floating_manager.bump_names()
     end)
 end
 
--- Called by RingHud.lua’s single global on_setting_changed(...)
 function mod.floating_manager.apply_settings(setting_id)
     if setting_id == "team_hud_mode" then
-        -- Any layout change: tear down existing plates so the engine re-adds them
-        -- under the new mode (floating vs non-floating, vanilla vs RingHud, etc.).
         _refresh_existing_nameplates()
     elseif setting_id == "team_tiles_scale" then
         if type(mod.recompute_edge_marker_size) == "function" then

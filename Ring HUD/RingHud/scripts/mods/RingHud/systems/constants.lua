@@ -193,6 +193,9 @@ C.STATUS_ICON_MATERIALS.hogtied        =
 "content/ui/materials/mission_board/circumstances/maelstrom_02" -- maelstrom winged skull, glowing
 -- "content/ui/materials/icons/player_states/dead" -- default skull & crossbones, plain
 
+C.STATUS_ICON_MATERIALS.auspex         =
+"content/ui/materials/icons/pocketables/hud/auspex_scanner"
+
 C.STATUS_ICON_MATERIALS.luggable       =
 "content/ui/materials/icons/player_states/lugged" -- default luggable status icon, included for completeness
 

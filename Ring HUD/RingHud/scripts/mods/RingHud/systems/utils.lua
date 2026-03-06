@@ -5,13 +5,36 @@ if mod.utils then
     return mod.utils
 end
 
-local C = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/constants")
+local C                         = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/constants")
+local FixedFrame                = require("scripts/utilities/fixed_frame")
+local UISettings                = require("scripts/settings/ui/ui_settings")
 
-mod.utils = {}
-local RingHudUtils = mod.utils
+mod.utils                       = {}
+local RingHudUtils              = mod.utils
 
 -- e.g. string.format(RingHudUtils.percent_num_format, 73.2) -> "73%"
 RingHudUtils.percent_num_format = "%01.f%%"
+
+--------------------------------------------------------------------------------
+-- Number helpers (shared) -- TODO check if duplicating math.lua source code
+--------------------------------------------------------------------------------
+
+-- Round to nearest integer (ties away from zero), tolerant of nil/non-number
+function mod.round_int(x)
+    x = tonumber(x)
+    if not x then
+        return 0
+    end
+
+    if x >= 0 then
+        return math.floor(x + 0.5)
+    else
+        return math.ceil(x - 0.5)
+    end
+end
+
+-- Convenience alias for modules using `local U = io_dofile(utils)`
+RingHudUtils.round_int = mod.round_int
 
 --------------------------------------------------------------------------------
 -- Color helpers (shared)
@@ -41,38 +64,50 @@ function RingHudUtils.rgba_or_white(t)
     return { 1, 1, 1, 1 }
 end
 
--- Style text color (ARGB255). Returns true if mutated.
-function RingHudUtils.set_style_text_color(style, argb255)
-    if not style then return false end
+-- Style text color (ARGB255).
+-- Supports optional accumulator arg: set_style_text_color(style, argb255, changed)
+-- Returns: changed (bool)
+function RingHudUtils.set_style_text_color(style, argb255, changed)
+    if not style then return changed or false end
+    local did = false
+
     local nc = RingHudUtils.argb255_or_white(argb255)
     local tc = style.text_color
     if not tc or not RingHudUtils.colors_equal(tc, nc) then
         style.text_color = table.clone(nc)
-        return true
+        did = true
     end
-    return false
+
+    return (changed == true) or did
 end
 
--- Style color (ARGB255). Returns true if mutated.
-function RingHudUtils.set_style_color(style, argb255)
-    if not style then return false end
-    local nc = RingHudUtils.argb255_or_white(argb255)
-    local c  = style.color
+-- Style color (ARGB255).
+-- Supports optional accumulator arg: set_style_color(style, argb255, changed)
+-- Returns: changed (bool)
+function RingHudUtils.set_style_color(style, argb255, changed)
+    if not style then return changed or false end
+    local did = false
+
+    local nc  = RingHudUtils.argb255_or_white(argb255)
+    local c   = style.color
     if not c or not RingHudUtils.colors_equal(c, nc) then
         style.color = table.clone(nc)
-        return true
+        did = true
     end
-    return false
+
+    return (changed == true) or did
 end
 
--- Toggle style.visibility and alpha. Returns true if mutated.
-function RingHudUtils.set_style_visible(style, is_visible)
-    if not style then return false end
-    local changed = false
+-- Toggle style.visible and alpha.
+-- Supports optional accumulator arg: set_style_visible(style, is_visible, changed)
+-- Returns: changed (bool)
+function RingHudUtils.set_style_visible(style, is_visible, changed)
+    if not style then return changed or false end
+    local did = false
 
     if style.visible ~= is_visible then
         style.visible = is_visible
-        changed = true
+        did = true
     end
 
     -- If a color is present, drive the alpha channel (ARGB255)
@@ -80,12 +115,272 @@ function RingHudUtils.set_style_visible(style, is_visible)
         local want_a = is_visible and 255 or 0
         if style.color[1] ~= want_a then
             style.color[1] = want_a
-            changed = true
+            did = true
         end
     end
 
-    return changed
+    return (changed == true) or did
 end
+
+--------------------------------------------------------------------------------
+-- Buff helpers (moved from core/RingHud_state_player.lua)
+--------------------------------------------------------------------------------
+
+-- Safer than the common “tmpl.name or buff:template_name()” pattern, because some
+-- buff instances expose `template_name` as a string field, not a callable method.
+function mod.buff_template_name(buff_instance)
+    if not buff_instance then
+        return nil
+    end
+
+    if buff_instance.template and type(buff_instance.template) == "function" then
+        local tmpl = buff_instance:template()
+        local name = tmpl and tmpl.name
+        if name then
+            return name
+        end
+    end
+
+    if buff_instance.template_name and type(buff_instance.template_name) == "function" then
+        return buff_instance:template_name()
+    end
+
+    return buff_instance._template_name or buff_instance.template_name
+end
+
+function mod.buff_stack_count(buff_instance)
+    if not buff_instance then
+        return 0
+    end
+
+    if buff_instance.stack_count and type(buff_instance.stack_count) == "function" then
+        local sc = buff_instance:stack_count()
+        return sc or 0
+    end
+
+    if buff_instance.visual_stack_count and type(buff_instance.visual_stack_count) == "function" then
+        local sc = buff_instance:visual_stack_count()
+        return sc or 0
+    end
+
+    local ctx = buff_instance._template_context
+    if ctx then
+        local sc = ctx.stack_count or ctx.visual_stack_count
+        return sc or 0
+    end
+
+    return 0
+end
+
+function mod.get_buff_stack_count(buff_extension, buff_names)
+    if not buff_extension or not buff_names then
+        return 0, false
+    end
+
+    local buffs = (buff_extension.buffs and buff_extension:buffs()) or nil
+    if buffs then
+        for i = 1, #buffs do
+            local buff = buffs[i]
+            local template = (buff and buff.template and type(buff.template) == "function") and buff:template() or nil
+            local name = (template and template.name) or mod.buff_template_name(buff)
+
+            if name and buff_names[name] then
+                return mod.buff_stack_count(buff), true
+            end
+        end
+    end
+
+    local by_index = buff_extension._buffs_by_index or buff_extension._buffs
+    if by_index then
+        for _, buff in pairs(by_index) do
+            local name = mod.buff_template_name(buff)
+            if name and buff_names[name] then
+                return mod.buff_stack_count(buff), true
+            end
+        end
+    end
+
+    return 0, false
+end
+
+local function _read_proc_next_allowed_t(buff_instance)
+    if not buff_instance then
+        return nil
+    end
+
+    -- Common direct fields (varies by buff class)
+    local v =
+        buff_instance._next_allowed_proc_t
+        or buff_instance._next_proc_allowed_t
+        or buff_instance._next_proc_t
+        or buff_instance._cooldown_end_t
+        or buff_instance._cooldown_end_time
+        or buff_instance._cooldown_t
+
+    if type(v) == "number" then
+        return v
+    end
+
+    -- Many proc setups stash timing in template_data.
+    local td = buff_instance._template_data or buff_instance.template_data
+    if td then
+        v =
+            td.next_proc_allowed_t
+            or td.next_allowed_proc_t
+            or td.next_proc_t
+            or td.next_proc_time
+            or td.cooldown_end_t
+            or td.cooldown_end_time
+
+        if type(v) == "number" then
+            return v
+        end
+    end
+
+    return nil
+end
+
+local function _read_cooldown_duration(template, buff_instance)
+    local cd = 0
+
+    if template then
+        cd =
+            template.cooldown_duration
+            or template.cooldown
+            or template.cooldown_time
+            or template.proc_cooldown_duration
+    end
+
+    -- Some implementations may mirror these onto template_data.
+    if (tonumber(cd) or 0) <= 0 and buff_instance then
+        local td = buff_instance._template_data or buff_instance.template_data
+        if td then
+            cd =
+                td.cooldown_duration
+                or td.cooldown
+                or td.cooldown_time
+                or td.proc_cooldown_duration
+        end
+    end
+
+    cd = tonumber(cd) or 0
+    if cd < 0 then cd = 0 end
+    return cd
+end
+
+local function _now_time_pair()
+    local t_fixed = (FixedFrame and FixedFrame.get_latest_fixed_time and FixedFrame.get_latest_fixed_time()) or 0
+    local t_game  = (Managers.time and Managers.time.time and Managers.time:time("gameplay")) or t_fixed
+    return t_fixed or 0, t_game or 0
+end
+
+local function _pick_remaining(next_allowed_t, cd_dur, t_fixed, t_game)
+    if not next_allowed_t or next_allowed_t <= 0 or cd_dur <= 0 then
+        return 0
+    end
+
+    local rem_fixed = next_allowed_t - t_fixed
+    local rem_game  = next_allowed_t - t_game
+
+    -- Prefer whichever looks like a real “remaining cooldown” value.
+    local function ok(r)
+        return type(r) == "number" and r > 0 and r <= (cd_dur + 0.25)
+    end
+
+    if ok(rem_fixed) then
+        return rem_fixed
+    end
+    if ok(rem_game) then
+        return rem_game
+    end
+
+    -- Fallback: pick the smallest positive remainder (least wrong).
+    local best = nil
+    if rem_fixed > 0 then best = rem_fixed end
+    if rem_game > 0 then
+        best = (best == nil) and rem_game or math.min(best, rem_game)
+    end
+
+    return best or 0
+end
+
+function mod.get_buff_cooldown_fraction(buff_extension, buff_names)
+    if not buff_extension or not buff_names then
+        return 0, false
+    end
+
+    -- Collect from both public + internal lists (zealot/broker procs can land in either).
+    local candidates = {}
+
+    local buffs = (buff_extension.buffs and buff_extension:buffs()) or nil
+    if buffs then
+        for i = 1, #buffs do
+            candidates[#candidates + 1] = buffs[i]
+        end
+    end
+
+    local by_index = buff_extension._buffs_by_index or buff_extension._buffs
+    if by_index then
+        for _, b in pairs(by_index) do
+            candidates[#candidates + 1] = b
+        end
+    end
+
+    if #candidates == 0 then
+        return 0, false
+    end
+
+    local t_fixed, t_game = _now_time_pair()
+
+    -- IMPORTANT: don’t early-return on a match that lacks client-side timing;
+    -- duplicates across lists can exist, and one may contain the fields we need.
+    local any_match = false
+    local best_frac = 0
+
+    for i = 1, #candidates do
+        local buff = candidates[i]
+        if buff then
+            local template = (buff.template and type(buff.template) == "function") and buff:template() or nil
+            local name = (template and template.name) or mod.buff_template_name(buff)
+
+            if name and buff_names[name] then
+                any_match = true
+
+                local cd_dur = _read_cooldown_duration(template, buff)
+                if cd_dur > 0 then
+                    local next_allowed = _read_proc_next_allowed_t(buff)
+                    if next_allowed and next_allowed > 0 then
+                        local remaining = _pick_remaining(next_allowed, cd_dur, t_fixed, t_game)
+                        if remaining > 0 then
+                            local frac = math.clamp(remaining / cd_dur, 0, 1)
+                            if frac > best_frac then
+                                best_frac = frac
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if best_frac > 0 then
+        return best_frac, true
+    end
+
+    -- If we matched the buff but can’t read a positive remaining cooldown,
+    -- treat as “not active” (either ready, or client doesn’t expose timing).
+    if any_match then
+        return 0, false
+    end
+
+    return 0, false
+end
+
+-- Convenience aliases (so callers using `local U = io_dofile(utils)` can still access them)
+RingHudUtils.buff_template_name         = mod.buff_template_name
+RingHudUtils.buff_stack_count           = mod.buff_stack_count
+RingHudUtils.get_buff_stack_count       = mod.get_buff_stack_count
+RingHudUtils.get_buff_cooldown_fraction = mod.get_buff_cooldown_fraction
 
 --------------------------------------------------------------------------------
 -- Segments / arcs
@@ -105,6 +400,62 @@ end
 --------------------------------------------------------------------------------
 -- Player utilities
 --------------------------------------------------------------------------------
+
+local function _safe_profile_from_player(player)
+    if not player then
+        return nil
+    end
+
+    local prof
+    local profile_member = player.profile
+    if type(profile_member) == "function" then
+        prof = player:profile()
+    else
+        prof = rawget(player, "profile")
+    end
+
+    return (type(prof) == "table") and prof or nil
+end
+
+-- Cross-file API: Resolve archetype glyph from a Player or profile table.
+-- Returns: glyph_string (never nil; uses fallback when unknown).
+function mod.get_archetype_glyph(player_or_profile, fallback_glyph)
+    local fallback = (type(fallback_glyph) == "string" and fallback_glyph ~= "") and fallback_glyph or ""
+
+    if not player_or_profile then
+        return fallback
+    end
+
+    local profile = nil
+
+    -- Accept either a raw profile table or a Player-ish object.
+    if type(player_or_profile) == "table" and player_or_profile.archetype ~= nil then
+        profile = player_or_profile
+    else
+        profile = _safe_profile_from_player(player_or_profile)
+    end
+
+    local archetype_name =
+        profile
+        and profile.archetype
+        and profile.archetype.name
+
+    if type(archetype_name) ~= "string" or archetype_name == "" then
+        return fallback
+    end
+
+    local map = UISettings and UISettings.archetype_font_icon_simple
+    local glyph = map and map[archetype_name]
+
+    if type(glyph) == "string" and glyph ~= "" then
+        return glyph
+    end
+
+    return fallback
+end
+
+-- Convenience alias for modules using `local U = io_dofile(utils)`
+RingHudUtils.get_archetype_glyph = mod.get_archetype_glyph
 
 function RingHudUtils.sorted_teammates()
     local pm = Managers.player

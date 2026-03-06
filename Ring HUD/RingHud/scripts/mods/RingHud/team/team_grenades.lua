@@ -6,32 +6,25 @@ if mod.team_throwables then
     return mod.team_throwables
 end
 
-local MasterItems = require("scripts/backend/master_items")
-local U = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
 -- Ensure visibility helpers are loaded (force-show, interlude, etc.)
 mod:io_dofile("RingHud/scripts/mods/RingHud/team/visibility")
-local V           = mod.team_visibility
+local V                       = mod.team_visibility
 
-local TH          = {}
+local TH                      = {}
 
 -- Central palette (with safe fallbacks so we never crash if palette isn't initialized yet)
-mod.colors        = mod.colors or mod:io_dofile("RingHud/scripts/mods/RingHud/systems/RingHud_colors")
-local Colors      = mod.colors
-local PALETTE     = mod.PALETTE_ARGB255 or (Colors and Colors.PALETTE_ARGB255) or {}
+mod.colors                    = mod.colors or mod:io_dofile("RingHud/scripts/mods/RingHud/systems/RingHud_colors")
+local Colors                  = mod.colors
+local PALETTE                 = mod.PALETTE_ARGB255 or (Colors and Colors.PALETTE_ARGB255) or {}
 
-local RED         = PALETTE.AMMO_TEXT_COLOR_CRITICAL
-local ORANGE      = PALETTE.AMMO_TEXT_COLOR_MEDIUM_L
-local WHITE       = PALETTE.GENERIC_WHITE
+local WHITE                   = PALETTE.GENERIC_WHITE or { 255, 255, 255, 255 }
+local RED                     = PALETTE.AMMO_TEXT_COLOR_CRITICAL or WHITE
+local ORANGE                  = PALETTE.AMMO_TEXT_COLOR_MEDIUM_L or WHITE
 
 ---------------------------------------------------------------------
--- Cache & Hooks
+-- Cache
 ---------------------------------------------------------------------
-local _icon_cache = {}
-
--- Clear cache on game mode init to ensure we don't hold stale peer data across sessions
-mod:hook_safe(CLASS.GameModeManager, "init", function(self, game_mode_context, game_mode_name, ...)
-    _icon_cache = {}
-end)
+local _icon_cache             = {}
 
 ---------------------------------------------------------------------
 -- Configuration
@@ -39,7 +32,7 @@ end)
 
 -- Items in this list only appear when count is < 1 (Empty).
 -- All other valid grenades default to appearing when count is < 2.
-local GROUP_LT1_VISIBLE = {
+local GROUP_LT1_VISIBLE       = {
     -- veteran
     veteran_frag_grenade      = true,
     veteran_krak_grenade      = true,
@@ -57,35 +50,54 @@ local GROUP_LT1_VISIBLE = {
     quick_flash_grenade       = true,
 }
 
--- Mapping table to fix path mismatches when falling back to ability names
-local THROWABLE_ICON_LOOKUP = {
-    -- Veteran
-    veteran_frag_grenade      = "content/ui/materials/icons/throwables/hud/frag_grenade",
-    veteran_krak_grenade      = "content/ui/materials/icons/throwables/hud/krak_grenade",
-    veteran_smoke_grenade     = "content/ui/materials/icons/throwables/hud/smoke_grenade",
-    -- Zealot
-    zealot_shock_grenade      = "content/ui/materials/icons/throwables/hud/stun_grenade",
-    zealot_fire_grenade       = "content/ui/materials/icons/throwables/hud/flame_grenade",
-    zealot_throwing_knives    = "content/ui/materials/icons/throwables/hud/throwing_knife",
-    -- Ogryn
-    ogryn_grenade_friend_rock = "content/ui/materials/icons/throwables/hud/rock_grenade",
-    ogryn_grenade_box_cluster = "content/ui/materials/icons/throwables/hud/ogryn_grenade_box",
-    ogryn_grenade_frag        = "content/ui/materials/icons/throwables/hud/ogryn_frag_grenade",
-    -- Psyker
-    psyker_smite              = "content/ui/materials/icons/throwables/hud/smite",
-    psyker_chain_lightning    = "content/ui/materials/icons/throwables/hud/chain_lightning",
-    psyker_throwing_knives    = "content/ui/materials/icons/throwables/hud/throwing_knives",
-    -- Arbites / Adamant
-    adamant_whistle           = "content/ui/materials/icons/throwables/hud/adamant_whistle",
-    adamant_shock_mine        = "content/ui/materials/icons/throwables/hud/shock_mine",
-    adamant_grenade_improved  = "content/ui/materials/icons/throwables/hud/adamant_grenade",
-    -- Hive Scum / Broker
-    quick_flash_grenade       = "content/ui/materials/icons/throwables/hud/quick_flash_grenade",
-    missile_launcher          = "content/ui/materials/icons/throwables/hud/missile_launcher",
-    tox_grenade               = "content/ui/materials/icons/throwables/hud/tox_grenade",
+-- [UPDATED] Deprecated hardcoded lookup. We now fetch directly from the item instance.
+local THROWABLE_ICON_LOOKUP   = {
+    -- Kept empty to ensure we rely on game data.
+    -- If specific fallbacks are absolutely required in the future, add them here.
 }
 
+---------------------------------------------------------------------
+-- Package retention for throwable icons
+---------------------------------------------------------------------
+local _retained_icon_load_ids = {}
+
+local function _retain_icon_package(icon_path)
+    if type(icon_path) ~= "string" or icon_path == "" then
+        return
+    end
+
+    if _retained_icon_load_ids[icon_path] ~= nil then
+        return
+    end
+
+    local pm = Managers and Managers.package
+    if not (pm and pm.load) then
+        return
+    end
+
+    if pm.package_is_known and not pm:package_is_known(icon_path) then
+        _retained_icon_load_ids[icon_path] = false
+        return
+    end
+
+    local load_id = pm:load(icon_path, "RingHud")
+    _retained_icon_load_ids[icon_path] = load_id or false
+end
+
+local function _preload_throwable_icons()
+    for _, icon_path in pairs(THROWABLE_ICON_LOOKUP) do
+        _retain_icon_package(icon_path)
+    end
+end
+
+mod:hook_safe(CLASS.GameModeManager, "init", function(self, game_mode_context, game_mode_name, ...)
+    _icon_cache = {}
+    _preload_throwable_icons()
+end)
+
+---------------------------------------------------------------------
 -- Internal: return the equipped grenade/blitz ability name (or nil)
+---------------------------------------------------------------------
 local function _equipped_grenade_name(unit)
     if not unit or not Unit.alive(unit) then return nil end
 
@@ -98,7 +110,6 @@ local function _equipped_grenade_name(unit)
         return nil
     end
 
-    -- Direct call (no pcall). Darktide ability_extension guarantees this method.
     local abilities = ability_ext:equipped_abilities()
     if not abilities then
         return nil
@@ -125,62 +136,60 @@ local function _resolve_grenade_icon(unit)
     end
 
     local icon = nil
-    local item_name = nil
 
-    -- 2. Get the specific Item Name from the Ability Extension
-    -- This tells us WHICH grenade is equipped (e.g. "ogryn_grenade_friend_rock")
-    local ability_ext = ScriptUnit.has_extension(unit, "ability_system") and ScriptUnit.extension(unit, "ability_system")
-
-    if ability_ext and ability_ext.equipped_abilities then
-        local equipped_abilities = ability_ext:equipped_abilities()
-        local grenade_ability = equipped_abilities.grenade_ability
-
-        if grenade_ability then
-            item_name = grenade_ability.name
+    -- 2. Extract directly from Visual Loadout (Item or Template)
+    local vl = ScriptUnit.has_extension(unit, "visual_loadout_system") and
+        ScriptUnit.extension(unit, "visual_loadout_system")
+    if vl then
+        -- A. Try Item Instance (Preferred)
+        local item = nil
+        if vl.item_from_slot then
+            item = vl:item_from_slot("slot_grenade_ability")
         end
-    end
+        if not item and vl.item_in_slot then
+            item = vl:item_in_slot("slot_grenade_ability")
+        end
 
-    -- 3. Fallback: Visual Loadout
-    if not item_name then
-        local visual_loadout_ext = ScriptUnit.has_extension(unit, "visual_loadout_system") and
-            ScriptUnit.extension(unit, "visual_loadout_system")
-        if visual_loadout_ext and visual_loadout_ext.weapon_template_from_slot then
-            local template = visual_loadout_ext:weapon_template_from_slot("slot_grenade_ability")
+        if item then
+            icon = item.hud_icon or item.icon
+        end
+
+        -- B. Try Weapon Template (Fallback)
+        if not icon and vl.weapon_template_from_slot then
+            local template = vl:weapon_template_from_slot("slot_grenade_ability")
             if template then
-                item_name = template.name
+                icon = template.hud_icon or template.icon
+                -- Check HUD configuration within template
+                if not icon and template.hud_configuration then
+                    icon = template.hud_configuration.hud_icon or template.hud_configuration.icon
+                end
             end
         end
     end
 
-    -- 4. CRITICAL STEP: Lookup the Master Item configuration
-    -- The Master Item contains the specific HUD icon for this variant
-    -- if item_name then
-    --     local master_item = MasterItems.get_item(item_name)
-    --     if master_item and master_item.hud_icon then
-    --         icon = master_item.hud_icon
-    --     end
-    -- end
-
-    -- 5. Last Resort: Hardcoded Lookup (Keep this for safety/compatibility)
+    -- 3. Hardcoded Lookup (Last Resort / Legacy)
     if not icon then
+        local item_name = _equipped_grenade_name(unit)
         if item_name and THROWABLE_ICON_LOOKUP[item_name] then
             icon = THROWABLE_ICON_LOOKUP[item_name]
         end
     end
 
-    -- Cache and Return
-    if cache_id and icon then
-        _icon_cache[cache_id] = icon
+    -- 4. Retain and Cache
+    if icon then
+        _retain_icon_package(icon)
+        if cache_id then
+            _icon_cache[cache_id] = icon
+        end
     end
 
     return icon
 end
 
 ---------------------------------------------------------------------
--- New: provide an icon override (or nil to keep default)
+-- Public: provide an icon override (or nil to keep default)
 ---------------------------------------------------------------------
 function TH.icon_override_for(unit, archetype_name)
-    -- Now queries the actual weapon template in the slot or fallback to ability
     return _resolve_grenade_icon(unit)
 end
 

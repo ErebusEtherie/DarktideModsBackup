@@ -26,5 +26,11 @@ mod:hook_safe("UIManager", "load_view", function(self, view_name, reference_name
         ensure("packages/ui/views/cosmetics_vendor_view/cosmetics_vendor_view")
         ensure("packages/ui/hud/interaction_hud/interaction_hud")
         ensure("packages/ui/hud/interaction/interaction")
+        ensure("packages/ui/views/barber_vendor_background_view/barber_vendor_background_view")
+        ensure("packages/ui/views/training_grounds_options_view/training_grounds_options_view")
+        ensure("packages/ui/hud/world_markers/world_markers")
+        ensure("packages/ui/hud/player_ability/player_ability")
+        ensure("content/ui/materials/icons/throwables/hud/missile_launcher")
+        -- ensure("packages/ui/hud/weapon_counter/weapon_counter")
     end
 end)

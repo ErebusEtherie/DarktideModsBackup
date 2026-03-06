@@ -26,8 +26,8 @@ end
 local _debug_throttle_t = 0
 
 -- Helper to check proximity condition and echo if triggered (throttled 1s)
-local function _check_prox_and_echo(is_near, current_frac, threshold, label)
-    if is_near and current_frac < threshold then
+local function _check_prox_and_echo(prox_level, min_prox_req, current_frac, threshold, label)
+    if (prox_level or 0) >= min_prox_req and current_frac < threshold then
         -- local t = _now()
         -- if t > _debug_throttle_t then
         --     mod:echo("RingHud Vis: %s (Reserve %.0f%%)", label, current_frac * 100)
@@ -206,7 +206,8 @@ function mod.ammo_vis_player(hud_state)
 
     -- Always-on modes
     if _S.ammo_reserve_dropdown == "ammo_reserve_percent_always"
-        or _S.ammo_reserve_dropdown == "ammo_reserve_actual_always" then
+        or _S.ammo_reserve_dropdown == "ammo_reserve_actual_always"
+        or _S.ammo_reserve_dropdown == "ammo_reserve_forecast_always" then
         return true
     end
 
@@ -217,10 +218,13 @@ function mod.ammo_vis_player(hud_state)
     if now_t < (mod._ammo_vis_player_until_t or 0) then return true end
 
     -- Proximity thresholds
-    -- NOTE: Uses helper to echo debug alerts when these specific rules trigger
-    if _check_prox_and_echo(mod.near_small_clip, reserve_frac, TUNE.near_small_clip_threshold, "Near Small Clip") then return true end
-    if _check_prox_and_echo(mod.near_large_clip, reserve_frac, TUNE.near_large_clip_threshold, "Near Large Clip") then return true end
-    if _check_prox_and_echo(mod.near_ammo_cache_deployable, reserve_frac, TUNE.near_ammo_cache_threshold, "Near Ammo Cache") then return true end
+    -- Reads the new prox_ammo integer value from hud_state.
+    -- 1 = Small Clip, 2 = Large Clip, 3 = Ammo Cache
+    local prox_level = hud_state.prox_ammo or 0
+
+    if _check_prox_and_echo(prox_level, 1, reserve_frac, TUNE.near_small_clip_threshold, "Near Small Clip") then return true end
+    if _check_prox_and_echo(prox_level, 2, reserve_frac, TUNE.near_large_clip_threshold, "Near Large Clip") then return true end
+    if _check_prox_and_echo(prox_level, 3, reserve_frac, TUNE.near_ammo_cache_threshold, "Near Ammo Cache") then return true end
 
     -- Low-reserve failsafe
     if reserve_frac < TUNE.low_reserve_threshold then return true end
@@ -278,9 +282,13 @@ function mod.ammo_vis_team_for_peer(peer_id, reserve_frac_or_nil)
     end
 
     -- Proximity thresholds (mirror player rules)
-    if mod.near_small_clip and reserve_frac < TUNE.near_small_clip_threshold then return true end
-    if mod.near_large_clip and reserve_frac < TUNE.near_large_clip_threshold then return true end
-    if mod.near_ammo_cache_deployable and reserve_frac < TUNE.near_ammo_cache_threshold then return true end
+    -- Note: team visibility logic relies on the LOCAL player's proximity context.
+    -- If I am near ammo, I might want to see if my TEAMMATES need it.
+    local prox_level = mod.prox_ammo or 0
+
+    if prox_level >= 1 and reserve_frac < TUNE.near_small_clip_threshold then return true end
+    if prox_level >= 2 and reserve_frac < TUNE.near_large_clip_threshold then return true end
+    if prox_level >= 3 and reserve_frac < TUNE.near_ammo_cache_threshold then return true end
 
     -- Low-reserve failsafe
     if reserve_frac < TUNE.low_reserve_threshold then return true end

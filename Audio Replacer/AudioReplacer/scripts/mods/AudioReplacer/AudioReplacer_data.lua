@@ -379,6 +379,36 @@ mod_data.options = {
 					default_value = false,
 					sub_widgets   = { --[[...]] } -- optional
 				},
+				{
+					setting_id    = "ganger_stimm",
+					type          = "checkbox",
+					default_value = false,
+					sub_widgets   = { --[[...]] } -- optional
+				},
+				{
+					setting_id    = "player_downed",
+					type          = "checkbox",
+					default_value = false,
+					sub_widgets   = { --[[...]] } -- optional
+				},
+				{
+					setting_id    = "boss_killed",
+					type          = "checkbox",
+					default_value = false,
+					sub_widgets   = { --[[...]] } -- optional
+				},
+				{
+					setting_id    = "zealot_stealth",
+					type          = "checkbox",
+					default_value = false,
+					sub_widgets   = { --[[...]] } -- optional
+				},
+				{
+					setting_id    = "toughness_break",
+					type          = "checkbox",
+					default_value = false,
+					sub_widgets   = { --[[...]] } -- optional
+				},
 			},
 		},
 		{

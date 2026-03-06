@@ -115,11 +115,74 @@ do
     end
 end
 
-local GRENADE_OUTLINE_COLOR = mod.PALETTE_RGBA1.dodge_color_full_rgba -- visual “full” tint
+local SETTINGS              = mod._settings
+local GRENADE_OUTLINE_COLOR = mod.PALETTE_RGBA1.dodge_color_full_rgba
+local COL_DAMAGE            = mod.PALETTE_RGBA1.default_damage_color_rgba
+
 local GRENADE_ARC_MIN       = -0.25
 local GRENADE_ARC_MAX       = 0.25
 local GRENADE_SEGMENT_GAP   = 0.025
-local MAX                   = mod.MAX_GRENADE_SEGMENTS_DISPLAY or 6
+local MAX                   = mod.MAX_GRENADE_SEGMENTS_DISPLAY or 14
+
+local _style_keys_seg       = {}
+local _style_keys_edge      = {}
+for i = 1, MAX do
+    _style_keys_seg[i] = "grenade_segment_" .. i
+    _style_keys_edge[i] = "grenade_segment_edge_" .. i
+end
+
+local _cached_arcs = {}
+
+local function _get_arcs_for_count(num_segments)
+    if num_segments <= 0 then return nil end
+
+    if _cached_arcs[num_segments] then
+        return _cached_arcs[num_segments]
+    end
+
+    local arcs           = {}
+    local total_arc      = GRENADE_ARC_MAX - GRENADE_ARC_MIN
+    local num_gaps       = math.max(0, num_segments - 1)
+    local gap_space      = num_gaps * GRENADE_SEGMENT_GAP
+    local visual_space   = math.max(0, total_arc - gap_space)
+    local seg_arc        = (visual_space / num_segments)
+    local current_bottom = GRENADE_ARC_MIN
+
+    for i = 1, num_segments do
+        local top = math.min(GRENADE_ARC_MAX, current_bottom + seg_arc)
+        if i == num_segments then top = GRENADE_ARC_MAX end
+        arcs[i] = { top, current_bottom }
+        current_bottom = top + GRENADE_SEGMENT_GAP
+    end
+
+    _cached_arcs[num_segments] = arcs
+    return arcs
+end
+
+local function _fast_hide_all(widget, style)
+    local changed = false
+    for i = 1, MAX do
+        local seg = style[_style_keys_seg[i]]
+        local edg = style[_style_keys_edge[i]]
+        if seg then
+            if seg.visible then
+                seg.visible = false; changed = true
+            end
+            if seg.material_values and seg.material_values.amount ~= 0 then
+                seg.material_values.amount = 0; changed = true
+            end
+        end
+        if edg then
+            if edg.visible then
+                edg.visible = false; changed = true
+            end
+            if edg.material_values and edg.material_values.amount ~= 0 then
+                edg.material_values.amount = 0; changed = true
+            end
+        end
+    end
+    if changed then widget.dirty = true end
+end
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Widget factory
@@ -139,7 +202,7 @@ function GrenadesFeature.add_widgets(widget_defs, _, layout, palettes)
         passes[#passes + 1] = {
             pass_type = "rotated_texture",
             value     = "content/ui/materials/effects/forcesword_bar",
-            style_id  = "grenade_segment_" .. i,
+            style_id  = _style_keys_seg[i],
             style     = {
                 uvs                  = { { 0, 0 }, { 1, 1 } },
                 horizontal_alignment = "center",
@@ -164,7 +227,7 @@ function GrenadesFeature.add_widgets(widget_defs, _, layout, palettes)
         passes[#passes + 1] = {
             pass_type = "rotated_texture",
             value     = "content/ui/materials/effects/forcesword_bar",
-            style_id  = "grenade_segment_edge_" .. i,
+            style_id  = _style_keys_edge[i],
             style     = {
                 uvs                  = { { 0, 0 }, { 1, 1 } },
                 horizontal_alignment = "center",
@@ -196,138 +259,119 @@ end
 function GrenadesFeature.update(hud_element, widget, hud_state, hotkey_override)
     if not widget or not widget.style then return end
 
-    local grenade_bar_dropdown = mod._settings.grenade_bar_dropdown
+    local grenade_bar_dropdown = SETTINGS.grenade_bar_dropdown
     local style                = widget.style
     local data                 = hud_state.grenade_data or {}
-    local changed              = false
 
     local current              = data.current or data.current_charges or 0
     local live_max             = data.live_max or data.max or data.max_charges or 0
 
-    -- If the blitz isn’t charge-based, hide everything.
     local charge_based         = (live_max or 0) > 0
-    if not charge_based then
-        for i = 1, MAX do
-            local seg = style["grenade_segment_" .. i]
-            local edg = style["grenade_segment_edge_" .. i]
-            if seg then
-                changed = U.set_style_visible(seg, false, changed)
-                local mv = seg.material_values
-                if mv then
-                    if mv.amount ~= 0 then
-                        mv.amount = 0; changed = true
-                    end
-                    changed = U.mv_set_arc(mv, 0, 0, changed)
-                end
-            end
-            if edg then
-                changed = U.set_style_visible(edg, false, changed)
-                local emv = edg.material_values
-                if emv and emv.amount ~= 0 then
-                    emv.amount = 0; changed = true
-                end
-            end
-        end
-        if changed then widget.dirty = true end
+    if not charge_based or grenade_bar_dropdown == "grenade_disabled" then
+        _fast_hide_all(widget, style)
         return
     end
 
-    -- Visibility policy
     local overall_visible_normally = false
-    if live_max and live_max > 0 then
-        if grenade_bar_dropdown == "grenade_hide_empty_compact"
-            or grenade_bar_dropdown == "grenade_hide_empty" then
-            if (current or 0) > 0 then
+    local is_compact = false
+    local is_hide_empty = false
+
+    if grenade_bar_dropdown == "grenade_hide_empty_compact" or grenade_bar_dropdown == "grenade_hide_empty" then
+        is_hide_empty = true
+        is_compact = (grenade_bar_dropdown == "grenade_hide_empty_compact")
+        if current > 0 then
+            overall_visible_normally = true
+        elseif current == 0 and data.is_regenerating and (data.regen_progress or 0) > 0.001 then
+            overall_visible_normally = true
+        end
+    else
+        is_compact = (grenade_bar_dropdown == "grenade_hide_full_compact")
+        if current < live_max then
+            overall_visible_normally = true
+        elseif current >= live_max then
+            if data.is_regenerating and (data.regen_progress or 0) > 0.001 and (data.regen_progress or 1) < 0.999 then
                 overall_visible_normally = true
-            elseif current == 0 and data.is_regenerating and (data.regen_progress or 0) > 0.001 then
-                overall_visible_normally = true
-            end
-        else
-            if current < live_max then
-                overall_visible_normally = true
-            elseif current >= live_max then
-                if data.is_regenerating and (data.regen_progress or 0) > 0.001 and (data.regen_progress or 1) < 0.999 then
-                    overall_visible_normally = true
-                end
             end
         end
     end
 
-    local should_render_bar_at_all = (hotkey_override or overall_visible_normally)
-        and grenade_bar_dropdown ~= "grenade_disabled"
+    local should_render_bar = hotkey_override or overall_visible_normally
 
-    local num_seg_calc = math.min(live_max or 0, MAX)
-
-    -- Precompute arcs
-    local arcs = {}
-    if num_seg_calc > 0 then
-        local total_arc      = GRENADE_ARC_MAX - GRENADE_ARC_MIN
-        local num_gaps       = math.max(0, num_seg_calc - 1)
-        local gap_space      = num_gaps * GRENADE_SEGMENT_GAP
-        local visual_space   = math.max(0, total_arc - gap_space)
-        local seg_arc        = (num_seg_calc > 0) and (visual_space / num_seg_calc) or 0
-        local current_bottom = GRENADE_ARC_MIN
-        for i = 1, num_seg_calc do
-            local top = math.min(GRENADE_ARC_MAX, current_bottom + seg_arc)
-            if i == num_seg_calc then top = GRENADE_ARC_MAX end
-            arcs[i] = { top, current_bottom }
-            current_bottom = top + GRENADE_SEGMENT_GAP
-        end
+    if not should_render_bar then
+        _fast_hide_all(widget, style)
+        return
     end
+
+    local changed      = false
+    local num_seg_calc = math.min(live_max, MAX)
+    local arcs         = _get_arcs_for_count(num_seg_calc)
+    local fallback_arc = { 0, 0 }
 
     for i = 1, MAX do
-        local seg_style  = style["grenade_segment_" .. i]
-        local edge_style = style["grenade_segment_edge_" .. i]
+        local seg_style  = style[_style_keys_seg[i]]
+        local edge_style = style[_style_keys_edge[i]]
+
         if seg_style and seg_style.material_values then
             local seg_mv = seg_style.material_values
 
-            local vis_final, amt_final, clr_final, arc_final = false, 0, mod.PALETTE_RGBA1.default_damage_color_rgba,
-                { 0, 0 }
+            -- Defaults: hidden, empty, default color
+            local vis_final = false
+            local amt_final = 0
+            local clr_final = COL_DAMAGE
+            local arc_final = fallback_arc
 
-            if should_render_bar_at_all then
-                local vis_norm, amt_norm, clr_norm = false, 0, mod.PALETTE_RGBA1.default_damage_color_rgba
-                if overall_visible_normally and i <= num_seg_calc then
-                    if i <= current then
-                        vis_norm = true; amt_norm = 1; clr_norm = GRENADE_OUTLINE_COLOR
-                    else
-                        local compact = (grenade_bar_dropdown == "grenade_hide_full_compact"
-                            or grenade_bar_dropdown == "grenade_hide_empty_compact")
-                        if compact then
-                            if i == current + 1 then
-                                vis_norm = true
-                                if data.is_regenerating and (data.regen_progress or 0) > 0.001 then
-                                    amt_norm = data.regen_progress
-                                end
-                            end
-                        else
-                            vis_norm = true
-                            if i == current + 1 and data.is_regenerating and (data.regen_progress or 0) > 0.001 then
-                                amt_norm = data.regen_progress
-                            end
-                        end
-                    end
-                end
-
+            if i <= num_seg_calc then
                 if hotkey_override then
-                    vis_final = i <= num_seg_calc
-                    if vis_final then
-                        if i <= current then
-                            amt_final = 1; clr_final = GRENADE_OUTLINE_COLOR
-                        elseif i == current + 1 and data.is_regenerating then
-                            amt_final = data.regen_progress or 0
+                    vis_final = true
+                    if i <= current then
+                        amt_final = 1
+                        clr_final = GRENADE_OUTLINE_COLOR
+                    elseif i == current + 1 and data.is_regenerating then
+                        amt_final = data.regen_progress or 0
+                    end
+                elseif overall_visible_normally then
+                    -- Standard visibility logic
+                    if i <= current then
+                        -- Full segments
+                        if not is_compact or not is_hide_empty then
+                            vis_final = true
+                            amt_final = 1
+                            clr_final = GRENADE_OUTLINE_COLOR
+                        elseif is_compact and i == current then
+                            -- Compact logic: show current filled only?
+                            -- Logic from original:
+                            -- if compact then if i == current+1 then show regen
+                            -- if i <= current then vis=true
+                            vis_final = true
+                            amt_final = 1
+                            clr_final = GRENADE_OUTLINE_COLOR
+                        end
+                    elseif i == current + 1 then
+                        -- Next segment (potentially regenerating)
+                        if is_compact then
+                            vis_final = true -- Compact shows the next empty/regen slot
+                        else
+                            vis_final = true -- Standard shows all empty slots
+                        end
+
+                        if data.is_regenerating and (data.regen_progress or 0) > 0.001 then
+                            amt_final = data.regen_progress
+                        end
+                    else
+                        -- Future empty segments
+                        if not is_compact then
+                            vis_final = true
                         end
                     end
-                else
-                    vis_final, amt_final, clr_final = vis_norm, amt_norm, clr_norm
                 end
 
-                if vis_final and arcs[i] then
+                if vis_final and arcs and arcs[i] then
                     arc_final = arcs[i]
                 end
             end
 
             local arc_top, arc_bottom = arc_final[1], arc_final[2]
-            local want_partial = vis_final and arcs[i] and (amt_final > 0 and amt_final < 1)
+            local want_partial = vis_final and (amt_final > 0 and amt_final < 1)
 
             if want_partial and edge_style and edge_style.material_values then
                 local res = Notch.notch_split(arc_top, arc_bottom, amt_final)
@@ -347,12 +391,18 @@ function GrenadesFeature.update(hud_element, widget, hud_state, hotkey_override)
                 end
                 changed = U.mv_set_outline(emv, clr_final, changed)
 
-                local base_vis = (vis_final and res.base.show)
-                local edge_vis = (vis_final and res.edge.show)
-                changed = U.set_style_visible(seg_style, base_vis, changed)
-                changed = U.set_style_visible(edge_style, edge_vis, changed)
+                local base_vis = res.base.show
+                local edge_vis = res.edge.show
+                if seg_style.visible ~= base_vis then
+                    seg_style.visible = base_vis; changed = true
+                end
+                if edge_style.visible ~= edge_vis then
+                    edge_style.visible = edge_vis; changed = true
+                end
             else
-                changed = U.set_style_visible(seg_style, vis_final, changed)
+                if seg_style.visible ~= vis_final then
+                    seg_style.visible = vis_final; changed = true
+                end
                 if vis_final then
                     if seg_mv.amount ~= amt_final then
                         seg_mv.amount = amt_final; changed = true
@@ -365,10 +415,11 @@ function GrenadesFeature.update(hud_element, widget, hud_state, hotkey_override)
                     end
                     changed = U.mv_set_arc(seg_mv, 0, 0, changed)
                 end
-                if edge_style then
-                    changed = U.set_style_visible(edge_style, false, changed)
+
+                if edge_style and edge_style.visible then
+                    edge_style.visible = false; changed = true
                     if edge_style.material_values and edge_style.material_values.amount ~= 0 then
-                        edge_style.material_values.amount = 0; changed = true
+                        edge_style.material_values.amount = 0
                     end
                 end
             end

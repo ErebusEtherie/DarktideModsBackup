@@ -60,6 +60,11 @@ mod:hook_safe("HudElementPlayerBuffs", "_update_buffs", function(self)
         return
     end
 
+    -- This is to filter out custom buff bars, e.g. from "Better Buff Management"
+    if self.__class_name ~= "HudElementPlayerBuffs" or self._filter then
+        return
+    end
+
     local active_buffs_data = self._active_buffs_data
     local now = mod:now()
 
@@ -93,8 +98,8 @@ function update_removed_buffs(tracked_buffs, currently_active_buffs, now)
         if buff_data.is_active and not currently_active_buffs[buff_title] then
             -- Record a remove event
             table.insert(buff_data.events, {
+                time = now,
                 type = "remove",
-                time = now
             })
 
             -- Mark the buff as inactive
@@ -174,7 +179,6 @@ function init_buff(buff_instance)
         category = template.buff_category,
         related_talents = template.related_talents,
         related_item = get_optional_item_info(buff_instance),
-        instance = buff_instance
     }
 end
 
@@ -209,12 +213,8 @@ function get_optional_item_info(buff_instance)
     local context = (buff_instance._template_context or {})
     local item = context.source_item or context.item
     if not item or not item.traits then
-        mod.buffs_without_item = mod.buffs_without_item or {}
-        mod.buffs_without_item[#mod.buffs_without_item + 1] = buff_instance
         return nil
     end
-    mod.buffs_with_item = mod.buffs_with_item or {}
-    mod.buffs_with_item[#mod.buffs_with_item + 1] = buff_instance
     local blessing
     for _, trait in pairs(item.traits) do
         local trait_item = MasterItems.get_item(trait.id)

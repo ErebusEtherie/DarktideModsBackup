@@ -1,4 +1,4 @@
-mod = get_mod("quick_level_mastery")
+local mod = get_mod("quick_level_mastery")
 
 mod.enable_debug                               = mod:get("debug_setting")
 mod.enable_view_armoury                 = mod:get("store_armoury")

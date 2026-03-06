@@ -2,16 +2,18 @@
 local mod = get_mod("RingHud")
 if not mod then return {} end
 
-local RingHudColors     = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/RingHud_colors")
-local RSBridge          = mod:io_dofile("RingHud/scripts/mods/RingHud/compat/recolor_stimms_bridge")
-local U                 = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
-local PV                = mod:io_dofile("RingHud/scripts/mods/RingHud/context/pocketables_visibility")
-local AbilityFeature    = mod:io_dofile("RingHud/scripts/mods/RingHud/features/ability_feature")
+local RingHudColors                   = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/RingHud_colors")
+local RSBridge                        = mod:io_dofile("RingHud/scripts/mods/RingHud/compat/recolor_stimms_bridge")
+local U                               = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
+local PV                              = mod:io_dofile("RingHud/scripts/mods/RingHud/context/pocketables_visibility")
+local AbilityFeature                  = mod:io_dofile("RingHud/scripts/mods/RingHud/features/ability_feature")
 
-local PocketableFeature = {}
+local PocketableFeature               = {}
+
+local BROKER_STIMM_CD_END_SOUND_EVENT = "wwise/events/player/play_syringe_healed_by_ally"
 
 -- Default tints for known pocketables (ARGB 0..255)
-local pocketable_colors = {
+local pocketable_colors               = {
     syringe_corruption_pocketable    = { color = mod.PALETTE_ARGB255.HEALTH_GREEN },
     syringe_power_boost_pocketable   = { color = mod.PALETTE_ARGB255.POWER_RED },
     syringe_speed_boost_pocketable   = { color = mod.PALETTE_ARGB255.SPEED_BLUE },
@@ -19,7 +21,7 @@ local pocketable_colors = {
     syringe_broker_pocketable        = { color = mod.PALETTE_ARGB255.PUNKY_PINK },
 }
 
-local ALL_COLORS        = {} -- TODO Color? Figure out where this is used
+local ALL_COLORS                      = {}
 do
     local C  = RingHudColors or {}
     local PA = C.PALETTE or mod.PALETTE_ARGB255
@@ -175,6 +177,30 @@ function PocketableFeature.update(widgets, hud_state, hotkey_override)
         return
     end
 
+    -- Broker Stimm CD Sound Logic
+    local hud = mod.hud_instance
+    if hud then
+        local broker = hud_state.broker_stimm_data
+        if broker and broker.is_broker then
+            local cd_remaining = broker.cooldown_remaining
+            if cd_remaining == nil then
+                hud._broker_stimm_cd_was_running = false
+            else
+                local cd = tonumber(cd_remaining) or 0
+                if cd > 0 then
+                    hud._broker_stimm_cd_was_running = true
+                elseif hud._broker_stimm_cd_was_running then
+                    hud._broker_stimm_cd_was_running = false
+                    if hud._play_sound then
+                        hud:_play_sound(BROKER_STIMM_CD_END_SOUND_EVENT)
+                    end
+                end
+            end
+        else
+            hud._broker_stimm_cd_was_running = false
+        end
+    end
+
     local stimm_widget     = widgets.stimm_indicator_widget
     local crate_widget     = widgets.crate_indicator_widget
 
@@ -211,7 +237,7 @@ function PocketableFeature.update(widgets, hud_state, hotkey_override)
     -- Broker Stimm Timer Logic
     local broker_data      = hud_state.broker_stimm_data
     if broker_data and broker_data.is_broker then
-        local buff_enabled     = mod._settings.timer_buff_enabled
+        local buff_enabled     = mod._settings.timer_buff_dropdown
         local cooldown_enabled = mod._settings.timer_cd_dropdown ~= "disabled"
 
         if buff_enabled and broker_data.buff_remaining > 0 then
@@ -294,8 +320,49 @@ function PocketableFeature.update(widgets, hud_state, hotkey_override)
             end
 
             -- Base colour (RecolorStimms + palette), with alpha from PV.
-            local base_color  = _stimm_base_color_argb255(hud_state.stimm_item_name)
-            local final_color = _apply_alpha(base_color, stimm_alpha)
+            local base_color   = _stimm_base_color_argb255(hud_state.stimm_item_name)
+            local final_color  = _apply_alpha(base_color, stimm_alpha)
+
+            -- [Broker Decay Alert Logic]
+            local alert_active = false
+            local settings     = mod._settings
+            local bd           = hud_state.broker_stimm_data
+
+            -- Conditions: Broker, Enabled Settings, Stacks > 0, Decay <= 10s
+            if bd and bd.is_broker and settings.pocketable_visibility_dropdown ~= "pocketable_disabled" and settings.timer_buff_dropdown == "all" then
+                if (bd.chem_stacks or 0) > 0 then
+                    local decay = bd.chem_decay_remaining or 0
+                    if decay > 0 and decay <= 10 then
+                        alert_active = true
+
+                        -- Size: Lerp from 1.0x to 3.0x as time approaches 0
+                        local base_size_px = 15 * (mod.scalable_unit or 1)
+                        local scale = 1.0 + (2.0 * (1.0 - (decay / 10.0))) -- 1.0 at 10s, 3.0 at 0s
+                        local new_size = math.floor(base_size_px * scale + 0.5)
+
+                        if stimm_style.size[1] ~= new_size then
+                            stimm_style.size[1] = new_size
+                            stimm_style.size[2] = new_size
+                            changed = true
+                        end
+
+                        -- Pulse Opacity: 50% to 100% alpha sine wave (20hz)
+                        local t = hud_state.gameplay_t or 0
+                        local pulse = 0.50 + 0.50 * math.sin(t * 20)
+                        final_color[1] = math.floor(255 * pulse)
+                    end
+                end
+            end
+
+            -- Reset size if alert ended
+            if not alert_active then
+                local default_size_px = math.floor(15 * mod.scalable_unit + 0.5)
+                if stimm_style.size[1] ~= default_size_px then
+                    stimm_style.size[1] = default_size_px
+                    stimm_style.size[2] = default_size_px
+                    changed = true
+                end
+            end
 
             if U.set_style_color(stimm_style, final_color) then
                 changed = true

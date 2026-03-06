@@ -4,11 +4,10 @@ if not mod then
     return {}
 end
 
--- Public API surface
 mod.objective_feed_streamliner  = mod.objective_feed_streamliner or {}
 local Streamliner               = mod.objective_feed_streamliner
 
--- Shared HUD helpers now come from mod.utils
+-- Shared HUD helpers
 local U                         = mod.utils
     or mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
 local get_current_hud_instances = U.get_current_hud_instances
@@ -18,10 +17,16 @@ local resolve_element_instance  = U.resolve_element_instance
 -- Local helpers / state
 ----------------------------------------------------------------
 
--- Streamline Rules (Minimal Objective Feed / General Declutter)
+Streamliner._end_event_latched  = false
+
 local STREAMLINE_RULES          = {
     HudElementAreaNotificationPopup = {
         background = { texture = false },
+    },
+    HudElementInteraction = {
+        background = { background = false },
+        frame      = { frame = false },
+        tag_text   = { text = false },
     },
     HudElementMissionObjectiveFeed = {
         background = { background = false, ground_emitter = false },
@@ -55,11 +60,9 @@ local STREAMLINE_RULES          = {
             background_overlay = false,
             text = false,
         },
-        -- spectating_text is intentionally omitted to remain visible
     },
 }
 
--- Enforce streamlined styles during draw
 local function _enforce_streamlined_styles(element_instance)
     if not (mod._settings and mod._settings.minimal_objective_feed_enabled) then
         return
@@ -76,7 +79,6 @@ local function _enforce_streamlined_styles(element_instance)
         return
     end
 
-    -- Apply visibility tweaks from STREAMLINE_RULES
     for widget_name, style_overrides in pairs(rules) do
         local widget = widgets_by_name[widget_name]
         if widget and widget.style then
@@ -89,152 +91,100 @@ local function _enforce_streamlined_styles(element_instance)
             end
         end
     end
+
+    if class_name == "HudElementMissionObjectiveFeed" then
+        for _, widget in pairs(widgets_by_name) do
+            local style = widget.style
+            local content = widget.content
+
+            if style then
+                -- 1. Hazard Stripes (Only visible if Alert is active)
+                if style.hazard_above then
+                    local show_hazard = (content and content.show_alert == true)
+                    if style.hazard_above.visible ~= show_hazard then
+                        style.hazard_above.visible = show_hazard
+                        widget.dirty = true
+                    end
+                end
+
+                -- 2. Overarching Background (Always hidden)
+                if style.overarching_background then
+                    if style.overarching_background.visible ~= false then
+                        style.overarching_background.visible = false
+                        widget.dirty = true
+                    end
+                end
+            end
+        end
+    end
 end
 
 ----------------------------------------------------------------
 -- Mission Objective Feed gating + filtering helpers
 ----------------------------------------------------------------
 
--- Detect Tactical Overlay element "active" state (vanilla sets self._active)
-local function _tactical_overlay_is_active()
-    local hud, const = get_current_hud_instances()
-    local tac = resolve_element_instance(hud, const, "HudElementTacticalOverlay")
-    return tac and tac._active == true or false
+local function _get_obj_property(obj, key)
+    if type(obj) ~= "table" then return nil end
+    local m = obj[key]
+    if type(m) == "function" then return m(obj) end
+    return rawget(obj, key)
 end
 
--- ADS detection to mirror hotkey_active_override exactly
-local function _is_ads_now()
-    local player_manager = Managers.player
-    local local_player = player_manager and player_manager.local_player_safe
-        and player_manager:local_player_safe(1)
+local function _hud_wrapper_is_interesting(hud_wrapper)
+    if not hud_wrapper then return false end
 
-    if local_player and local_player.player_unit then
-        local unit_data_extension = ScriptUnit.has_extension(local_player.player_unit, "unit_data_system")
-            and ScriptUnit.extension(local_player.player_unit, "unit_data_system")
-
-        if unit_data_extension and unit_data_extension.read_component then
-            local alternate_fire_comp = unit_data_extension:read_component("alternate_fire")
-            return (alternate_fire_comp and alternate_fire_comp.is_active) or false
-        end
+    local obj
+    if type(hud_wrapper.objective) == "function" then
+        obj = hud_wrapper:objective()
+    else
+        obj = hud_wrapper._objective
     end
 
+    if not obj then return false end
+
+    -- 1. Rules that Force Retention (Do Not Filter)
+    local cat = _get_obj_property(obj, "objective_category")
+    if cat == "side_mission" then return true end
+
+    local evt = _get_obj_property(obj, "event_type")
+    if evt == "mid_event" or evt == "end_event" then return true end
+
+    local has_bar = _get_obj_property(obj, "progress_bar")
+    if has_bar == true then return true end
+
+    -- 2. Rules per Mission Objective Type
+    local o_type = _get_obj_property(obj, "mission_objective_type")
+    if not o_type then o_type = _get_obj_property(obj, "objective_type") end
+
+    if o_type == "timed" or o_type == "kill" or o_type == "luggable" or
+        o_type == "decode" or o_type == "collect" or o_type == "demolition" then
+        return true
+    end
+
+    -- 3. Filter "goal" type
+    if o_type == "goal" then
+        return false
+    end
+
+    -- 4. Default: Filter out unknown types
     return false
 end
 
--- Force show == the same "hotkey_active_override" RingHud computes:
--- show_all_hud_hotkey_active OR (ads_visibility_dropdown == "ads_vis_hotkey" and ADS is active)
-local function _force_show_is_active()
-    local hotkey = (mod.show_all_hud_hotkey_active == true)
-    local vis_mode = mod._settings and mod._settings.ads_visibility_dropdown
+-- Check if any current objective is an "end_event" to trigger the latch
+local function _check_for_end_event_trigger(hud_wrappers_list)
+    if not hud_wrappers_list then return false end
 
-    if vis_mode == "ads_vis_hotkey" and _is_ads_now() then
-        hotkey = true
-    end
-
-    return hotkey
-end
-
--- Safe read of event_type from mission objective objects (no pcall)
-local function _objective_event_type(obj)
-    if type(obj) ~= "table" then
-        return nil
-    end
-
-    local m = obj.event_type
-    if type(m) == "function" then
-        return m(obj)
-    end
-
-    return rawget(obj, "event_type")
-end
-
-local function _has_active_event_objective()
-    local extm = Managers.state and Managers.state.extension
-    local mos  = extm and extm.system and extm:system("mission_objective_system")
-
-    if not mos then
-        return false
-    end
-
-    local active = mos.active_objectives and mos:active_objectives()
-    if type(active) ~= "table" then
-        return false
-    end
-
-    for objective, _ in pairs(active) do
-        local et = _objective_event_type(objective)
-        if et == "mid_event" or et == "end_event" then
-            return true
-        end
-    end
-
-    return false
-end
-
--- Test if a hud row is interesting and NOT a "goal" type
-local function _is_goal_objective(hud_row_or_obj)
-    if not hud_row_or_obj then
-        return false
-    end
-
-    local underlying = hud_row_or_obj
-
-    if type(hud_row_or_obj.objective) == "function" then
-        local obj = hud_row_or_obj:objective()
+    for i = 1, #hud_wrappers_list do
+        local hud_wrapper = hud_wrappers_list[i]
+        local obj = hud_wrapper and hud_wrapper:objective()
         if obj then
-            underlying = obj
+            local evt = _get_obj_property(obj, "event_type")
+            if evt == "end_event" then
+                return true
+            end
         end
     end
-
-    local function try_callable(obj, name)
-        local m = obj and obj[name]
-        if type(m) == "function" then
-            return m(obj)
-        end
-        return nil
-    end
-
-    local mtype =
-        try_callable(underlying, "objective_type")
-        or try_callable(underlying, "mission_objective_type")
-        or rawget(underlying, "objective_type")
-        or rawget(underlying, "mission_objective_type")
-
-    return mtype == "goal"
-end
-
-local function _hud_row_is_interesting(hud_row)
-    if not hud_row then
-        return false
-    end
-
-    if _is_goal_objective(hud_row) then
-        return false
-    end
-
-    local function _try_row(method_name)
-        local f = hud_row[method_name]
-        if type(f) ~= "function" then
-            return nil
-        end
-        return f(hud_row)
-    end
-
-    if _try_row("progress_bar") == true then
-        return true
-    end
-    if _try_row("progress_timer") == true then
-        return true
-    end
-    if _try_row("use_counter") == true then
-        return true
-    end
-    if _try_row("has_second_progression") == true then
-        return true
-    end
-
-    local cat = _try_row("objective_category") or rawget(hud_row, "_category") or rawget(hud_row, "category")
-    return cat == "luggable" or cat == "collect" or cat == "side"
+    return false
 end
 
 ----------------------------------------------------------------
@@ -242,7 +192,6 @@ end
 ----------------------------------------------------------------
 
 function Streamliner.init()
-    -- Streamline styles for a bunch of vanilla HUD elements (except MissionObjectiveFeed)
     for class_name, _ in pairs(STREAMLINE_RULES) do
         if CLASS[class_name] and class_name ~= "HudElementMissionObjectiveFeed" then
             mod:hook_safe(CLASS[class_name], "draw", function(self)
@@ -251,129 +200,93 @@ function Streamliner.init()
         end
     end
 
-    -- Dynamic gating + filtering for Mission Objective Feed
     if CLASS and CLASS.HudElementMissionObjectiveFeed then
-        -- DRAW: final hide after UPDATE decided (empty after filtering), unless exceptions apply
         mod:hook(CLASS.HudElementMissionObjectiveFeed, "draw",
             function(func, self_element, dt, t, ui_renderer, render_settings, input_service)
                 _enforce_streamlined_styles(self_element)
-
-                local has_event = _has_active_event_objective()
-                if mod.intensity and mod.intensity.objectives_polled_this_frame then
-                    mod.intensity.objectives_polled_this_frame()
-                end
-
-                -- If any exception is active, we never suppress drawing.
-                if _tactical_overlay_is_active() or _force_show_is_active() or has_event then
-                    return func(self_element, dt, t, ui_renderer, render_settings, input_service)
-                end
-
-                -- Otherwise, obey the update-time decision for empty filtered lists
-                if self_element._ringhud_hide_entire_element then
-                    return
-                end
-
                 return func(self_element, dt, t, ui_renderer, render_settings, input_service)
             end
         )
 
-        -- Belt-and-braces: prune stale names before vanilla sorts/aligns to prevent nil lookups.
         mod:hook(CLASS.HudElementMissionObjectiveFeed, "_align_objective_widgets",
             function(func, self_element, ...)
-                local names = self_element._hud_objectives_names_array
-                local map   = self_element._hud_objectives
+                local original_list = self_element._hud_objectives_sorted
 
-                if names and map then
-                    for i = #names, 1, -1 do
-                        if map[names[i]] == nil then
-                            table.remove(names, i)
-                        end
+                if not Streamliner._end_event_latched then
+                    if _check_for_end_event_trigger(original_list) then
+                        Streamliner._end_event_latched = true
                     end
                 end
 
-                return func(self_element, ...)
-            end
-        )
+                local should_filter = true
 
-        -- UPDATE: build filtered list unless any exception applies; hide element if empty after filtering
-        mod:hook(CLASS.HudElementMissionObjectiveFeed, "update",
-            function(func, self_element, dt, t, ui_renderer, render_settings, input_service)
-                local has_event = _has_active_event_objective()
-                if mod.intensity and mod.intensity.objectives_polled_this_frame then
-                    mod.intensity.objectives_polled_this_frame()
+                if not (mod:is_enabled() and mod._settings and mod._settings.minimal_objective_feed_enabled) then
+                    should_filter = false
                 end
 
-                local filtering_allowed =
-                    mod:is_enabled()
-                    and mod._settings
-                    and mod._settings.minimal_objective_feed_enabled
-                    and not has_event
-                    and not _tactical_overlay_is_active()
-                    and not _force_show_is_active()
+                if should_filter then
+                    local gm = Managers.state and Managers.state.game_mode
+                    local gm_name = gm and gm:game_mode_name()
+                    if gm_name == "hub" or gm_name == "shooting_range" or gm_name == "prologue_hub" then
+                        should_filter = false
+                    end
+                end
 
-                local original_names = self_element._hud_objectives_names_array
-                local filtered_names = nil
-                local keep_set = nil
+                if should_filter then
+                    if Streamliner._end_event_latched then
+                        should_filter = false
+                    end
+                end
 
-                if filtering_allowed and original_names and self_element._hud_objectives then
+                local filtered_list = nil
+
+                if original_list then
                     local filtered = {}
 
-                    for i = 1, #original_names do
-                        local name = original_names[i]
-                        local row  = self_element._hud_objectives[name]
+                    for i = 1, #original_list do
+                        local hud_wrapper = original_list[i]
+                        local keep = true
 
-                        if _hud_row_is_interesting(row) then
-                            filtered[#filtered + 1] = name
-                        end
-                    end
-
-                    if #filtered == 0 then
-                        -- Nothing left after filtering: mark whole element hidden this frame.
-                        self_element._ringhud_hide_entire_element = true
-                    else
-                        self_element._ringhud_hide_entire_element = false
-
-                        if #filtered < #original_names then
-                            self_element._hud_objectives_names_array = filtered
-                            filtered_names = filtered
-                            keep_set = {}
-
-                            for i = 1, #filtered do
-                                keep_set[filtered[i]] = true
+                        if should_filter then
+                            if not _hud_wrapper_is_interesting(hud_wrapper) then
+                                keep = false
                             end
                         end
-                    end
-                else
-                    -- Any exception or minimal disabled: ensure element is visible and restored.
-                    self_element._ringhud_hide_entire_element = false
-                end
 
-                local ret = func(self_element, dt, t, ui_renderer, render_settings, input_service)
-
-                -- Post-call: enforce per-row visibility for filtered lists and always restore names
-                if keep_set and self_element._objective_widgets_by_name then
-                    for name, widget in pairs(self_element._objective_widgets_by_name) do
-                        widget.visible = keep_set[name] == true
-                    end
-
-                    if self_element._hud_objectives_names_array == filtered_names then
-                        self_element._hud_objectives_names_array = original_names
-                    end
-
-                    self_element._ringhud_forced_visibility = true
-                else
-                    if self_element._ringhud_forced_visibility and self_element._objective_widgets_by_name then
-                        for _, widget in pairs(self_element._objective_widgets_by_name) do
-                            widget.visible = true
+                        local obj = hud_wrapper:objective()
+                        local widget = self_element._objective_widgets[obj]
+                        if widget then
+                            widget.visible = keep
                         end
 
-                        self_element._ringhud_forced_visibility = false
+                        if keep then
+                            filtered[#filtered + 1] = hud_wrapper
+                        end
                     end
+
+                    if should_filter then
+                        if #filtered < #original_list then
+                            self_element._hud_objectives_sorted = filtered
+                            filtered_list = filtered
+                        end
+                    end
+                end
+
+                local ret = func(self_element, ...)
+
+                if filtered_list then
+                    self_element._hud_objectives_sorted = original_list
                 end
 
                 return ret
             end
         )
+    end
+end
+
+function Streamliner.on_game_state_changed(status, state_name)
+    if state_name == "StateGameplay" and status == "enter" then
+        Streamliner._end_event_latched = false
     end
 end
 

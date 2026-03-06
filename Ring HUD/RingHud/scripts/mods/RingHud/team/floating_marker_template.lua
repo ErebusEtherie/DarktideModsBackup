@@ -1,19 +1,16 @@
 -- File: RingHud/scripts/mods/RingHud/team/floating_marker_template.lua
 local mod = get_mod("RingHud"); if not mod then return end
 
--- Reuse RingHud helpers where still needed in-template
 local C                           = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/constants")
 local WM                          = mod:io_dofile("RingHud/scripts/mods/RingHud/core/RingHud_definitions_team_nameplate")
 
--- View-model + appliers (Option A: move the art, not the container)
+-- View-model + appliers (move the art, not the container)
 local RingHud_state_team          = mod:io_dofile("RingHud/scripts/mods/RingHud/core/RingHud_state_team")
 local Apply                       = mod:io_dofile("RingHud/scripts/mods/RingHud/team/markers/apply")
 
--- Shared edge-packing module (single source of truth)
 local Edge                        = (mod.team_edge_stack or mod:io_dofile("RingHud/scripts/mods/RingHud/systems/edge_stack"))
 mod.team_edge_stack               = Edge -- ensure it's published under mod.*
 
--- NEW: fragment-space helpers (virtual 1920×1080)
 local UIResolution                = require("scripts/managers/ui/ui_resolution")
 
 -- ############################################
@@ -29,7 +26,6 @@ template.screen_clamp             = true
 template.max_distance             = 1000
 template.remove_on_death_duration = 0.25
 
--- Base size for clamping (match constants)
 template.size                     = { C.MARKER_SIZE_BASE[1], C.MARKER_SIZE_BASE[2] }
 
 template.scale_settings           = {
@@ -40,7 +36,6 @@ template.scale_settings           = {
     easing_function = nil, -- linear
 }
 
--- Current mode helper (use cached settings table)
 local function _mode()
     return (mod._settings and mod._settings.team_hud_mode) or "team_hud_docked"
 end
@@ -102,7 +97,7 @@ local function _apply_offset_compensation(widget_def, factor)
     end
 end
 
--- Distance → scale helper (match engine’s marker scale behavior)
+-- Distance to scale helper (match engine’s marker scale behavior)
 local function _distance_scale(dist, ss)
     local dmin, dmax = ss.distance_min or 0, ss.distance_max or 1
     local sf, st = ss.scale_from or 1, ss.scale_to or 1
@@ -120,7 +115,6 @@ template.create_widget_defintion = function(tpl, scenegraph_id)
 
     local def = WM.build_marker_definitions(1.0, scenegraph_id)
 
-    -- Use centralized settings cache (no direct mod:get calls here).
     local s = (mod._settings and mod._settings.team_tiles_scale) or 1
     if s ~= 1 then
         _apply_offset_compensation(def, 1 / s)
@@ -176,7 +170,74 @@ end
 --  1) capture bases (once) + ensure per-frame reset
 --  2) build/apply RingHud_state_team (engine clamp stays on)
 --  3) APPLY EDGE PUSH LAST (so Apply.apply_all can’t overwrite it)
+local _build_opts_pool = { player = false, force_show = false, t = 0, peer_id = false }
+
+local function _hash_state(vm)
+    local hash = 0
+
+    hash = hash + (vm.icon_only and 7 or 0)
+
+    local nm = vm.name_markup or ""
+    hash = hash + #nm * 31
+
+    local hp = vm.hp
+    if hp then
+        hash = hash + (hp.hp_frac or 0) * 10000
+        hash = hash + (hp.cor_frac or 0) * 10000
+        hash = hash + (hp.wounds or 0) * 97
+        hash = hash + (hp.bars_enabled and 13 or 0)
+        local ts = hp.tough_state
+        hash = hash + (ts == "ok" and 1 or ts == "broken" and 2 or ts == "overshield" and 3 or 0) * 41
+    end
+
+    local ct = vm.counters
+    if ct then
+        hash = hash + (ct.reserve_frac or 0) * 10000
+        hash = hash + (ct.ability_secs or 0) * 100
+        hash = hash + (ct.show_cd and 19 or 0)
+        hash = hash + (ct.tough_int or 0) * 53
+    end
+
+    local st = vm.status
+    if st then
+        hash = hash + (st.show_icon and 23 or 0)
+        local sk = st.kind
+        hash = hash + (sk == "netted" and 1 or sk == "hogtied" and 2
+            or sk == "knocked_down" and 3 or sk == "ledge_hanging" and 4
+            or sk == "dead" and 5 or sk == "pounced" and 6 or 0) * 67
+    end
+
+    local as = vm.assist
+    if as then
+        hash = hash + (as.show and 29 or 0)
+        hash = hash + (as.amount or 0) * 1000
+        hash = hash + (as.respawn_digits and tonumber(as.respawn_digits) or 0) * 71
+    end
+
+    local pk = vm.pockets
+    if pk then
+        hash = hash + (pk.stimm_enabled and 37 or 0)
+        hash = hash + (pk.crate_enabled and 43 or 0)
+        local si = pk.stimm_icon
+        if si then hash = hash + #si * 11 end
+        local ci = pk.crate_icon
+        if ci then hash = hash + #ci * 13 end
+    end
+
+    return hash
+end
+
 function template.update_function(parent, ui_renderer, widget, marker, tpl, dt, t)
+    marker._update_timer = (marker._update_timer or 0) + dt
+    local throttle_interval = 0.15
+    if marker.is_clamped then
+        throttle_interval = 0.25 -- 4 FPS for edge-clamped teammates
+    end
+    if marker._update_timer < throttle_interval then
+        return -- Skip this frame
+    end
+    marker._update_timer = 0
+
     local unit = marker.unit
     if not (unit and Unit.alive(unit)) then
         marker.remove = true
@@ -186,10 +247,6 @@ function template.update_function(parent, ui_renderer, widget, marker, tpl, dt, 
     if widget.content.distance then
         marker.draw = true
     end
-
-    -- [CHANGE] Redundant frame counter increment removed.
-    -- We now rely on HudElementRingHud_team_nameplate.lua to handle the
-    -- mod._edge_stack_frame_id increment globally per frame.
 
     -- 1) bases + per-frame reset (do this BEFORE Apply touches any styles)
     _refresh_screen_margins_if_needed()
@@ -209,24 +266,32 @@ function template.update_function(parent, ui_renderer, widget, marker, tpl, dt, 
         end
     end
 
-    local pid = _peer_id_for_player(player_opt)
+    local pid                   = _peer_id_for_player(player_opt)
 
-    local vm = RingHud_state_team.build(unit, marker, {
-        player     = player_opt,
-        force_show = ((mod.show_all_hud_hotkey_active == true) and (_mode() ~= "team_hud_disabled")),
-        t          = t,
-        peer_id    = pid,
-    })
+    _build_opts_pool.player     = player_opt
+    _build_opts_pool.force_show = ((mod.show_all_hud_hotkey_active == true) and (_mode() ~= "team_hud_disabled"))
+    _build_opts_pool.t          = t
+    _build_opts_pool.peer_id    = pid
+
+    local vm                    = RingHud_state_team.build(unit, marker, _build_opts_pool)
 
     if not (vm and vm.ok) then
         marker.remove = true
         return
     end
 
-    Apply.apply_all(widget, marker, vm, {
-        unit           = unit,
-        screen_margins = template.screen_margins,
-    })
+    local state_hash = _hash_state(vm)
+    marker._last_state_hash = marker._last_state_hash or -1
+
+    local did_apply = false
+    if state_hash ~= marker._last_state_hash then
+        marker._last_state_hash = state_hash
+        Apply.apply_all(widget, marker, vm, {
+            unit           = unit,
+            screen_margins = template.screen_margins,
+        })
+        did_apply = true
+    end
 
     -- Freeze distance scaling while clamped (vanilla pattern).
     do
@@ -266,10 +331,12 @@ function template.update_function(parent, ui_renderer, widget, marker, tpl, dt, 
         local STEP_X = math.floor(step_screen_x * style_space * factor + 0.5)
         local STEP_Y = math.floor(step_screen_y * style_space * factor + 0.5)
 
-        Edge.update_push(widget, marker, widget.style, STEP_X, STEP_Y, template.screen_margins)
+        local edge_changed = Edge.update_push(widget, marker, widget.style, STEP_X, STEP_Y, template.screen_margins)
     end
 
-    widget.dirty = true
+    if did_apply then
+        widget.dirty = true
+    end
 end
 
 return template

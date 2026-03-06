@@ -7,6 +7,14 @@ local InputUtils = require("scripts/managers/input/input_utils")
 
 -- LOCALIZATION CONFIGURATION
 local LOCALIZATION_GROUPS = {
+	-- Groups
+	"general_settings_group",
+	"main_modules_group",
+	"language_group",
+
+	-- Language settings
+	"language_override",
+
 	-- Main modules
 	"enable_menus_file",
 	"enable_curious_file",
@@ -75,6 +83,10 @@ local LOCALIZATION_GROUPS = {
 	"heresy",
 	"damnation",
 	"auric",
+
+	"dump_stat",
+	"dump_stat2",
+	"dump_stat3",
 }
 
 -- UTILITY FUNCTIONS
@@ -94,24 +106,22 @@ local function add_color_localizations(localizations)
 	end
 end
 
-
 local function add_localisation_entry(localizations, type_name)
-localizations[type_name .. "_text_colour"] = {
-	en = "Pick color",
-	ru = "Выберите цвет",
-	fr = "Couleur", 
-	["zh-tw"] = "顏色",
-	["zh-cn"] = "颜色",
-	de = "Farbe auswählen",
-	it = "Seleziona colore",
-	ja = "色を選択",
-	ko = "색상 선택",
-	pl = "Wybierz kolor",
-	["pt-br"] = "Escolher cor",
-	es = "Elegir color",
-}
+	localizations[type_name .. "_text_colour"] = {
+		en = "Pick color",
+		ru = "Выберите цвет",
+		fr = "Couleur", 
+		["zh-tw"] = "顏色",
+		["zh-cn"] = "颜色",
+		de = "Farbe auswählen",
+		it = "Seleziona colore",
+		ja = "色を選択",
+		ko = "색상 선택",
+		pl = "Wybierz kolor",
+		["pt-br"] = "Escolher cor",
+		es = "Elegir color",
+	}
 end
-
 
 local localizations = {
 	mod_name = {
@@ -129,9 +139,9 @@ local localizations = {
 	},
 	mod_description = {
 		en = "Improves readability by highlighting numbers and keywords in descriptions of Talents, Blessings, Penances, Curios, and other menu texts. Also fixes localizations and adds clarity to some descriptions.",
-		ru = "Улучшает читаемость за счёт выделения чисел и ключевых слов в описаниях Талантов, Благословений, Искуплений, Реликвий и других текстах меню. Также вносит исправления в локализации и добавляет ясности в некоторые описания.",
+		ru = "Enhanced Descriptions - Улучшает читаемость за счёт выделения чисел и ключевых слов в описаниях Талантов, Благословений, Искуплений, Реликвий и других текстах меню. Также вносит исправления в локализации и добавляет ясности в некоторые описания.",
 		fr = "Améliore la lisibilité en mettant en évidence les nombres et mots-clés dans les descriptions des Talents, Bénédictions, Pénitences, Curiosités et autres textes de menu. Corrige également les localisations et ajoute de la clarté à certaines descriptions.",
-		["zh-tw"] = "透過高亮顯示天賦、祝福、苦行、珍奇物品和其他選單文字描述中的數字和關鍵字來提升可讀性。同時修復在地化問題並為部分描述增加清晰度。",
+		["zh-tw"] = "透過高亮顯示天賦、祝福、苦行、珍品及其他選單文字描述中的數值與效果，提升整體可讀性；同時修正翻譯問題，改善描述內容的清晰度與一致性。",
 		["zh-cn"] = "通过高亮显示天赋、祝福、苦修、珍品和其他菜单文本描述中的数字和关键词来提升可读性。同时修复本地化问题并为部分描述增加清晰度。",
 		de = "Verbessert die Lesbarkeit durch Hervorhebung von Zahlen und Schlüsselwörtern in Beschreibungen von Talenten, Segnungen, Bußen, Kuriositäten und anderen Menütexten. Korrigiert außerdem Lokalisierungsfehler und fügt einigen Beschreibungen mehr Klarheit hinzu.",
 		it = "Migliora la leggibilità evidenziando numeri e parole chiave nelle descrizioni di Talenti, Benedizioni, Penitenze, Curiosità e altri testi di menu. Corregge anche le localizzazioni e aggiunge chiarezza ad alcune descrizioni.",
@@ -143,11 +153,308 @@ local localizations = {
 	},
 
 -- MAIN MODULES
+	general_settings_group = {
+		en = "General settings",
+		ru = "Основные настройки",
+		fr = "Paramètres généraux",
+		["zh-tw"] = "一般設定",
+		["zh-cn"] = "常规设置",
+		de = "Allgemeine Einstellungen",
+		it = "Impostazioni generali",
+		ja = "一般設定",
+		ko = "일반 설정",
+		pl = "Ustawienia ogólne",
+		["pt-br"] = "Configurações gerais",
+		es = "Configuración general",
+	},
+
+	modules_group = {
+		en = "Modules",
+		ru = "Модули",
+		fr = "Modules",
+		["zh-tw"] = "模組",
+		["zh-cn"] = "模块",
+		de = "Module",
+		it = "Moduli",
+		ja = "モジュール",
+		ko = "모듈",
+		pl = "Moduły",
+		["pt-br"] = "Módulos",
+		es = "Módulos",
+	},
+
+	colors_group = {
+		en = "Color settings",
+		ru = "Настройки цветов",
+		fr = "Paramètres de couleur",
+		["zh-tw"] = "顏色設定",
+		["zh-cn"] = "颜色设置",
+		de = "Farbeinstellungen",
+		it = "Impostazioni colore",
+		ja = "カラー設定",
+		ko = "색상 설정",
+		pl = "Ustawienia kolorów",
+		["pt-br"] = "Configurações de cor",
+		es = "Configuración de color",
+	},
+
+	-- Language Override
+	language_group = {
+		en = "Language settings",
+		ru = "Настройки языка",
+		fr = "Paramètres de langue",
+		["zh-tw"] = "語言設定",
+		["zh-cn"] = "语言设置",
+		de = "Spracheinstellungen",
+		it = "Impostazioni lingua",
+		ja = "言語設定",
+		ko = "언어 설정",
+		pl = "Ustawienia języka",
+		["pt-br"] = "Configurações de idioma",
+		es = "Configuración de idioma",
+	},
+	language_override = {
+		en = "Language Override",
+		ru = "Переопределение языка",
+		fr = "Surcharge de langue",
+		["zh-tw"] = "語言覆寫",
+		["zh-cn"] = "语言覆盖",
+		de = "Sprach-Überschreibung",
+		it = "Sovrascrittura lingua",
+		ja = "言語オーバーライド",
+		ko = "언어 재정의",
+		pl = "Nadpisanie języka",
+		["pt-br"] = "Substituição de idioma",
+		es = "Anulación de idioma",
+	},
+	language_override_description = {
+		en = "Choose which language to use for Enhanced Descriptions\n" ..
+			 "• Auto: Use your game language\n" ..
+			 "• Manual: Force a specific language for all descriptions",
+		ru = "Выберите язык для улучшенных описаний\n" ..
+			 "• Авто: Использовать язык игры\n" ..
+			 "• Вручную: Принудительно использовать определенный язык для всех описаний",
+		fr = "Choisissez la langue à utiliser pour les descriptions améliorées\n" ..
+			 "• Auto : Utiliser la langue du jeu\n" ..
+			 "• Manuel : Forcer une langue spécifique pour toutes les descriptions",
+		["zh-tw"] = "選擇用於增強描述的語言\n" ..
+				   "• 自動：使用遊戲語言\n" ..
+				   "• 手動：強制所有描述使用特定語言",
+		["zh-cn"] = "选择用于增强描述的语言\n" ..
+				   "• 自动：使用游戏语言\n" ..
+				   "• 手动：强制所有描述使用特定语言",
+		de = "Wählen Sie die Sprache für erweiterte Beschreibungen\n" ..
+			 "• Auto: Spielsprache verwenden\n" ..
+			 "• Manuell: Bestimmte Sprache für alle Beschreibungen erzwingen",
+		it = "Scegli la lingua da utilizzare per le descrizioni migliorate\n" ..
+			 "• Auto: Usa la lingua di gioco\n" ..
+			 "• Manuale: Forza una lingua specifica per tutte le descrizioni",
+		ja = "拡張説明に使用する言語を選択\n" ..
+			 "• 自動：ゲームの言語を使用\n" ..
+			 "• 手動：すべての説明に特定の言語を強制",
+		ko = "향상된 설명에 사용할 언어 선택\n" ..
+			 "• 자동: 게임 언어 사용\n" ..
+			 "• 수동: 모든 설명에 특정 언어 강제 사용",
+		pl = "Wybierz język używany w rozszerzonych opisach\n" ..
+			 "• Auto: Użyj języka gry\n" ..
+			 "• Ręcznie: Wymuś konkretny język dla wszystkich opisów",
+		["pt-br"] = "Escolha o idioma para usar nas Descrições Aprimoradas\n" ..
+				   "• Auto: Usar o idioma do jogo\n" ..
+				   "• Manual: Forçar um idioma específico para todas as descrições",
+		es = "Elija el idioma para usar en las Descripciones Mejoradas\n" ..
+			 "• Auto: Usar el idioma del juego\n" ..
+			 "• Manual: Forzar un idioma específico para todas las descripciones",
+	},
+
+	-- Language options для dropdown
+	language_auto = {
+		en = "Auto (Game Language)",
+		ru = "Авто (Язык игры)",
+		fr = "Auto (Langue du jeu)",
+		["zh-tw"] = "自動（遊戲語言）",
+		["zh-cn"] = "自动（游戏语言）",
+		de = "Auto (Spielsprache)",
+		it = "Auto (Lingua di gioco)",
+		ja = "自動（ゲーム言語）",
+		ko = "자동 (게임 언어)",
+		pl = "Auto (Język gry)",
+		["pt-br"] = "Auto (Idioma do jogo)",
+		es = "Auto (Idioma del juego)",
+	},
+	language_en = {
+		en = "English",
+		ru = "Английский",
+		fr = "Anglais",
+		["zh-tw"] = "英文",
+		["zh-cn"] = "英语",
+		de = "Englisch",
+		it = "Inglese",
+		ja = "英語",
+		ko = "영어",
+		pl = "Angielski",
+		["pt-br"] = "Inglês",
+		es = "Inglés",
+	},
+	language_ru = {
+		en = "Russian",
+		ru = "Русский",
+		fr = "Russe",
+		["zh-tw"] = "俄文",
+		["zh-cn"] = "俄语",
+		de = "Russisch",
+		it = "Russo",
+		ja = "ロシア語",
+		ko = "러시아어",
+		pl = "Rosyjski",
+		["pt-br"] = "Russo",
+		es = "Ruso",
+	},
+	language_fr = {
+		en = "French",
+		ru = "Французский",
+		fr = "Français",
+		["zh-tw"] = "法文",
+		["zh-cn"] = "法语",
+		de = "Französisch",
+		it = "Francese",
+		ja = "フランス語",
+		ko = "프랑스어",
+		pl = "Francuski",
+		["pt-br"] = "Francês",
+		es = "Francés",
+	},
+	language_zh_tw = {
+		en = "Chinese Traditional",
+		ru = "Китайский (традиционный)",
+		fr = "Chinois traditionnel",
+		["zh-tw"] = "繁體中文",
+		["zh-cn"] = "繁体中文",
+		de = "Traditionelles Chinesisch",
+		it = "Cinese tradizionale",
+		ja = "繁体字中国語",
+		ko = "번체 중국어",
+		pl = "Chiński tradycyjny",
+		["pt-br"] = "Chinês tradicional",
+		es = "Chino tradicional",
+	},
+	language_zh_cn = {
+		en = "Chinese Simplified",
+		ru = "Китайский (упрощенный)",
+		fr = "Chinois simplifié",
+		["zh-tw"] = "簡體中文",
+		["zh-cn"] = "简体中文",
+		de = "Vereinfachtes Chinesisch",
+		it = "Cinese semplificato",
+		ja = "簡体字中国語",
+		ko = "간체 중국어",
+		pl = "Chiński uproszczony",
+		["pt-br"] = "Chinês simplificado",
+		es = "Chino simplificado",
+	},
+	language_de = {
+		en = "German",
+		ru = "Немецкий",
+		fr = "Allemand",
+		["zh-tw"] = "德文",
+		["zh-cn"] = "德语",
+		de = "Deutsch",
+		it = "Tedesco",
+		ja = "ドイツ語",
+		ko = "독일어",
+		pl = "Niemiecki",
+		["pt-br"] = "Alemão",
+		es = "Alemán",
+	},
+	language_it = {
+		en = "Italian",
+		ru = "Итальянский",
+		fr = "Italien",
+		["zh-tw"] = "義大利文",
+		["zh-cn"] = "意大利语",
+		de = "Italienisch",
+		it = "Italiano",
+		ja = "イタリア語",
+		ko = "이탈리아어",
+		pl = "Włoski",
+		["pt-br"] = "Italiano",
+		es = "Italiano",
+	},
+	language_ja = {
+		en = "Japanese",
+		ru = "Японский",
+		fr = "Japonais",
+		["zh-tw"] = "日文",
+		["zh-cn"] = "日语",
+		de = "Japanisch",
+		it = "Giapponese",
+		ja = "日本語",
+		ko = "일본어",
+		pl = "Japoński",
+		["pt-br"] = "Japonês",
+		es = "Japonés",
+	},
+	language_ko = {
+		en = "Korean",
+		ru = "Корейский",
+		fr = "Coréen",
+		["zh-tw"] = "韓文",
+		["zh-cn"] = "韩语",
+		de = "Koreanisch",
+		it = "Coreano",
+		ja = "韓国語",
+		ko = "한국어",
+		pl = "Koreański",
+		["pt-br"] = "Coreano",
+		es = "Coreano",
+	},
+	language_pl = {
+		en = "Polish",
+		ru = "Польский",
+		fr = "Polonais",
+		["zh-tw"] = "波蘭文",
+		["zh-cn"] = "波兰语",
+		de = "Polnisch",
+		it = "Polacco",
+		ja = "ポーランド語",
+		ko = "폴란드어",
+		pl = "Polski",
+		["pt-br"] = "Polonês",
+		es = "Polaco",
+	},
+	language_pt_br = {
+		en = "Portuguese (Brazil)",
+		ru = "Португальский (Бразилия)",
+		fr = "Portugais (Brésil)",
+		["zh-tw"] = "葡萄牙文 (巴西)",
+		["zh-cn"] = "葡萄牙语 (巴西)",
+		de = "Portugiesisch (Brasilien)",
+		it = "Portoghese (Brasile)",
+		ja = "ポルトガル語 (ブラジル)",
+		ko = "포르투갈어 (브라질)",
+		pl = "Portugalski (Brazylia)",
+		["pt-br"] = "Português (Brasil)",
+		es = "Portugués (Brasil)",
+	},
+	language_es = {
+		en = "Spanish",
+		ru = "Испанский",
+		fr = "Espagnol",
+		["zh-tw"] = "西班牙文",
+		["zh-cn"] = "西班牙语",
+		de = "Spanisch",
+		it = "Spagnolo",
+		ja = "スペイン語",
+		ko = "스페인어",
+		pl = "Hiszpański",
+		["pt-br"] = "Espanhol",
+		es = "Español",
+	},
+
 	enable_weapons_file = {
 		en = "\"Weapons\" module",
 		ru = "Модуль «Оружие»",
 		fr = "Module « Armes »",
-		["zh-tw"] = "「武器」模組",
+		["zh-tw"] = "「武器」模組(未翻譯)",
 		["zh-cn"] = "「武器」模块",
 		de = "„Waffen“-Modul",
 		it = "Modulo \"Armi\"",
@@ -161,7 +468,7 @@ local localizations = {
 		en = "This module highlights the keywords and numbers of Weapon Blessings and Perks. You can disable this module if you don't need it.",
 		ru = "Этот модуль выделяет ключевые слова и числа Благословений и Улучшений Оружия. Вы можете отключить этот модуль, если он вам не нужен.",
 		fr = "Ce module met en évidence les mots-clés et les chiffres des Bénédictions et Avantages des armes. Vous pouvez désactiver ce module si vous n'en avez pas besoin.",
-		["zh-tw"] = "此模組會高亮顯示武器祝福和特權的關鍵字與數字。如果不需要，可以停用此模組。",
+		["zh-tw"] = "此模組會高亮顯示武器祝福與附加屬性的效果與數值；若不需要此功能，可將此模組停用。(未翻譯)",
 		["zh-cn"] = "此模块会高亮显示武器祝福和特权的关键词与数字。如果不需要，可以禁用此模块。",
 		de = "Dieses Modul hebt die Schlüsselwörter und Zahlen von Waffensegnungen und Vorteilen hervor. Sie können dieses Modul deaktivieren, wenn Sie es nicht benötigen.",
 		it = "Questo modulo evidenzia le parole chiave e i numeri delle Benedizioni e dei Benefici delle armi. Puoi disattivare questo modulo se non ne hai bisogno.",
@@ -176,7 +483,7 @@ local localizations = {
 		en = "\"Curios\" module",
 		ru = "Модуль «Реликвии»",
 		fr = "Module « Curiosités »",
-		["zh-tw"] = "「珍奇物品」模組",
+		["zh-tw"] = "「珍奇物品」模組(未翻譯)",
 		["zh-cn"] = "「珍品」模块",
 		de = "„Kuriositäten“-Modul",
 		it = "Modulo \"Curiosità\"",
@@ -190,7 +497,7 @@ local localizations = {
 		en = "This module highlights the keywords and numbers of the Blessings and Perks of the Curios. You can disable this module if you don't need it.",
 		ru = "Этот модуль выделяет ключевые слова и числа Благословений и Улучшений Реликвий. Вы можете отключить этот модуль, если он вам не нужен.",
 		fr = "Ce module met en évidence les mots-clés et les chiffres des Bénédictions et Avantages des Curiosités. Vous pouvez désactiver ce module si vous n'en avez pas besoin.",
-		["zh-tw"] = "此模組會高亮顯示珍奇物品的祝福和特權的關鍵字與數字。如果不需要，可以停用此模組。",
+		["zh-tw"] = "此模組會高亮顯示珍品的祝福和附加屬性的效果與數值；若不需要此功能，可將此模組停用。(未翻譯)",
 		["zh-cn"] = "此模块会高亮显示珍品的祝福和特权的关键词与数字。如果不需要，可以禁用此模块。",
 		de = "Dieses Modul hebt die Schlüsselwörter und Zahlen der Segnungen und Vorteile der Kuriositäten hervor. Sie können dieses Modul deaktivieren, wenn Sie es nicht benötigen.",
 		it = "Questo modulo evidenzia le parole chiave e i numeri delle Benedizioni e dei Benefici delle Curiosità. Puoi disattivare questo modulo se non ne hai bisogno.",
@@ -219,7 +526,7 @@ local localizations = {
 		en = "This module fixes labels in various menus and also highlights numbers in Melk's Contracts. You can disable this module if you don't need it.",
 		ru = "Этот модуль исправляет надписи в различных меню, а также подсвечивает цифры в Контрактах Мелка. Вы можете отключить этот модуль, если он вам не нужен.",
 		fr = "Ce module corrige les libellés dans divers menus et met également en évidence les chiffres dans les Contrats de Melk. Vous pouvez désactiver ce module si vous n'en avez pas besoin.",
-		["zh-tw"] = "此模組會修正各種選單中的標籤，並高亮顯示梅爾克合約中的數字。如果不需要，可以停用此模組。",
+		["zh-tw"] = "此模組會修正各種選單中的標籤，並高亮顯示梅爾克合約中的數值；若不需要此功能，可將此模組停用。(未翻譯)",
 		["zh-cn"] = "此模块会修正各种菜单中的标签，并高亮显示梅尔克合约中的数字。如果不需要，可以禁用此模块。",
 		de = "Dieses Modul korrigiert Beschriftungen in verschiedenen Menüs und hebt auch Zahlen in Melks Verträgen hervor. Sie können dieses Modul deaktivieren, wenn Sie es nicht benötigen.",
 		it = "Questo modulo corregge le etichette in vari menu ed evidenzia anche i numeri nei Contratti di Melk. Puoi disattivare questo modulo se non ne hai bisogno.",
@@ -234,7 +541,7 @@ local localizations = {
 		en = "\"Talents\" module",
 		ru = "Модуль «Таланты»",
 		fr = "Module « Talents »",
-		["zh-tw"] = "「天賦」模組",
+		["zh-tw"] = "「天賦」模組(未翻譯)",
 		["zh-cn"] = "「天赋」模块",
 		de = "„Talente“-Modul",
 		it = "Modulo \"Talenti\"",
@@ -248,7 +555,7 @@ local localizations = {
 		en = "This module highlights Talent keywords and slightly improves descriptions of some of them. You can disable this module if you don't need it.",
 		ru = "Этот модуль выделяет ключевые слова Талантов и немного улучшает описания некоторых из них. Вы можете отключить этот модуль, если он вам не нужен.",
 		fr = "Ce module met en évidence les mots-clés des Talents et améliore légèrement les descriptions de certains d'entre eux. Vous pouvez désactiver ce module si vous n'en avez pas besoin.",
-		["zh-tw"] = "此模組會高亮顯示天賦的關鍵字，並稍微改進部分天賦的描述。如果不需要，可以停用此模組。",
+		["zh-tw"] = "此模組會高亮顯示天賦效果，並微調部分天賦的文字描述；若不需要此功能，可將此模組停用。",
 		["zh-cn"] = "此模块会高亮显示天赋的关键词，并稍微改进部分天赋的描述。如果不需要，可以禁用此模块。",
 		de = "Dieses Modul hebt die Schlüsselwörter der Talente hervor und verbessert leicht die Beschreibungen einiger davon. Sie können dieses Modul deaktivieren, wenn Sie es nicht benötigen.",
 		it = "Questo modulo evidenzia le parole chiave dei Talenti e migliora leggermente le descrizioni di alcuni di essi. Puoi disattivare questo modulo se non ne hai bisogno.",
@@ -263,7 +570,7 @@ local localizations = {
 		en = "\"Penances\" module",
 		ru = "Модуль «Искупления»",
 		fr = "Module « Pénitences »",
-		["zh-tw"] = "「苦行」模組",
+		["zh-tw"] = "「苦行」模組(未翻譯)",
 		["zh-cn"] = "「苦修」模块",
 		de = "„Bußen“-Modul",
 		it = "Modulo \"Penitenze\"",
@@ -277,7 +584,7 @@ local localizations = {
 		en = "This module highlights the keywords and numbers of Penances and slightly expands descriptions of some of them. You can disable this module if you don't need it.",
 		ru = "Этот модуль выделяет ключевые слова и цифры Искуплений и немного дополняет описания некоторых из них. Вы можете отключить этот модуль, если он вам не нужен.",
 		fr = "Ce module met en évidence les mots-clés et les chiffres des Pénitences et complète légèrement les descriptions de certaines d'entre elles. Vous pouvez désactiver ce module si vous n'en avez pas besoin.",
-		["zh-tw"] = "此模組會高亮顯示苦行的關鍵字與數字，並稍微擴充部分苦行的描述。如果不需要，可以停用此模組。",
+		["zh-tw"] = "此模組會高亮顯示苦行的關鍵字與數值，並稍微擴充部分苦行的文字描述；若不需要此功能，可將此模組停用。",
 		["zh-cn"] = "此模块会高亮显示苦修的关键词与数字，并稍微扩充部分苦修的描述。如果不需要，可以禁用此模块。",
 		de = "Dieses Modul hebt die Schlüsselwörter und Zahlen der Bußen hervor und erweitert leicht die Beschreibungen einiger davon. Sie können dieses Modul deaktivieren, wenn Sie es nicht benötigen.",
 		it = "Questo modulo evidenzia le parole chiave e i numeri delle Penitenze e amplia leggermente le descrizioni di alcune di esse. Puoi disattivare questo modulo se non ne hai bisogno.",
@@ -292,7 +599,7 @@ local localizations = {
 		en = "{#color(15, 15, 15)}\"Names of Enemies and Weapons\" module{#reset()}",
 		ru = "Модуль «Названия врагов и оружия»",
 		fr = "Module « Noms des ennemis et armes »",
-		["zh-tw"] = "「敵人與武器名稱」模組",
+		["zh-tw"] = "「敵人與武器名稱」模組(未翻譯)",
 		["zh-cn"] = "「敌人与武器名称」模块",
 		de = "„Namen von Feinden und Waffen“-Modul",
 		it = "Modulo \"Nomi di nemici e armi\"",
@@ -307,7 +614,7 @@ local localizations = {
 			.."This module changes the names of weapons and enemies. You can disable this module if you don't need it.",
 		ru = "Этот модуль исправляет названия некоторых врагов, видов брони и тела, а также названия оружия. Вы можете отключить этот модуль, если он вам не нужен.",
 		fr = "Ce module modifie les noms des armes et des ennemis. Vous pouvez désactiver ce module si vous n'en avez pas besoin.",
-		["zh-tw"] = "此模組會更改武器和敵人的名稱。如果不需要，可以停用此模組。",
+		["zh-tw"] = "此模組會更改武器與敵人的名稱；若不需要此功能，可將此模組停用。(未翻譯)",
 		["zh-cn"] = "此模块会更改武器和敌人的名称。如果不需要，可以禁用此模块。",
 		de = "Dieses Modul ändert die Namen von Waffen und Feinden. Sie können dieses Modul deaktivieren, wenn Sie es nicht benötigen.",
 		it = "Questo modulo modifica i nomi di armi e nemici. Puoi disattivare questo modulo se non ne hai bisogno.",
@@ -322,7 +629,7 @@ local localizations = {
 		en = "{#color(15, 15, 15)}\"Names of Talents and Blessings\" module{#reset()}",
 		ru = "Модуль «Названия талантов и благословений»",
 		fr = "Module « Noms des talents et bénédictions »",
-		["zh-tw"] = "「天賦與祝福名稱」模組",
+		["zh-tw"] = "「天賦與祝福名稱」模組(未翻譯)",
 		["zh-cn"] = "「天赋与祝福名称」模块",
 		de = "„Namen von Talenten und Segnungen“-Modul",
 		it = "Modulo \"Nomi di talenti e benedizioni\"",
@@ -337,7 +644,7 @@ local localizations = {
 			.."This module changes the names of Talents and Blessings. You can disable this module if you don't need it.",
 		ru = "Этот модуль исправляет названия некоторых Талантов и Благословений. Вы можете отключить этот модуль, если он вам не нужен.",
 		fr = "Ce module modifie les noms des Talents et Bénédictions. Vous pouvez désactiver ce module si vous n'en avez pas besoin.",
-		["zh-tw"] = "此模組會更改天賦和祝福的名稱。如果不需要，可以停用此模組。",
+		["zh-tw"] = "此模組會更改天賦和祝福的名稱；若不需要此功能，可將此模組停用。(未翻譯)",
 		["zh-cn"] = "此模块会更改天赋和祝福的名称。如果不需要，可以禁用此模块。",
 		de = "Dieses Modul ändert die Namen von Talenten und Segnungen. Sie können dieses Modul deaktivieren, wenn Sie es nicht benötigen.",
 		it = "Questo modulo modifica i nomi di Talenti e Benedizioni. Puoi disattivare questo modulo se non ne hai bisogno.",
@@ -400,6 +707,27 @@ local localizations = {
 		es = "{#color(255, 35, 5)}¡SOLO PARA DESARROLLADORES!{#reset()}\nEste módulo habilita comandos de depuración y utilidades para pruebas y solución de problemas. Usar con precaución.",
 	},
 
+--[+DUMP STATS+]--
+	dump_stat_colour = {
+		en = "Dump Stats"
+			.."\n{#size(17)}{#color(95, 95, 95)}// Mobility, Melee Damage, Warp Resistance{#reset()}",
+		ru = "Мусорные статы"
+			.."\n{#size(17)}{#color(95, 95, 95)}// Мобильность, Урон рукопашный, Сопротивление варпу{#reset()}",
+	},
+--[+DUMP STATS 2+]--
+	dump_stat2_colour = {
+		en = "Dump Stats 2"
+			.."\n{#size(17)}{#color(95, 95, 95)}// Ammo, Defences, Heat Management{#reset()}",
+		ru = "Мусорные статы 2"
+			.."\n{#size(17)}{#color(95, 95, 95)}// Боеприпасы, Защита, Отведение тепла{#reset()}",
+	},
+--[+DUMP STATS 3+]--
+	dump_stat3_colour = {
+		en = "Dump Stats 3"
+			.."\n{#size(17)}{#color(95, 95, 95)}// Damage{#reset()}",
+		ru = "Мусорные статы 3"
+			.."\n{#size(17)}{#color(95, 95, 95)}// Урон {#reset()}", -- {#size(14)}(Игольный пистолет, Огнемёт и др., наносят урон со временем, на который не влияет эта стата).
+	},
 
 --[+MAIN+]--
 	bleed_colour = {
@@ -949,7 +1277,7 @@ local localizations = {
 	class_scum_colour = {
 		en = " Hive Scum",
 		-- fr = "",
-		ru = " Отброс Улья",
+		ru = " Отребье Улья",
 		-- ["zh-tw"] = "",
 		-- ["zh-cn"] = "",
 		-- de = "",
@@ -990,20 +1318,20 @@ local localizations = {
 		["pt-br"] = " Talentos",
 		es = " Talentos",
 	},
-	-- talents_penances_colour = {
-		-- en = " Talents - Penances",
-		-- fr = " Talents - Pénitences",
-		-- ru = " Таланты - Искупления",
-		-- ["zh-tw"] = " 天賦 - 苦修",
-		-- ["zh-cn"] = " 天赋 - 苦修",
-		-- de = " Talente - Bußen",
-		-- it = " Talent - Penitenze",
-		-- ja = " タレント - 苦行",
-		-- ko = " 특성 - 참회",
-		-- pl = " Talenty - Pokuty",
-		-- ["pt-br"] = " Talentos - Penitências",
-		-- es = " Talentos - Penitencias",
-	-- },
+	talents_penances_colour = {
+		en = " Talents - Penances",
+		fr = " Talents - Pénitences",
+		ru = " Таланты - Искупления",
+		["zh-tw"] = " 天賦 - 苦修",
+		["zh-cn"] = " 天赋 - 苦修",
+		de = " Talente - Bußen",
+		it = " Talent - Penitenze",
+		ja = " タレント - 苦行",
+		ko = " 특성 - 참회",
+		pl = " Talenty - Pokuty",
+		["pt-br"] = " Talentos - Penitências",
+		es = " Talentos - Penitencias",
+	},
 	numbers_colour = {
 		en = " Numbers",
 		fr = " Nombres",

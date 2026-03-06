@@ -11,7 +11,7 @@ local mod = get_mod("RingHud"); if not mod then return {} end
 --
 -- It consumes:
 --  • mod._settings.* (pocketable_visibility_dropdown, team_pockets, team_hud_mode)
---  • Proximity context (near_* flags baked into hud_state / team visibility)
+--  • Proximity context (prox_* flags baked into hud_state / team visibility)
 --  • Intensity context (mid-event / high-intensity windows)
 --  • Wield context (short latches after local player wields a stimm/crate)
 --
@@ -342,11 +342,11 @@ function PV.player_flags(hud_state, hotkey_override)
         end
     end
 
-    -- Near pickups: show the corresponding carried item
-    if stimm_exists and _check_prox_and_echo_pv(hud_state.near_any_stimm_source, "Near Stimm Source") then
+    -- Near pickups: show the corresponding carried item (using new prox_* flags)
+    if stimm_exists and _check_prox_and_echo_pv(hud_state.prox_stimm, "Near Stimm Source") then
         stimm_full = true
     end
-    if crate_exists and _check_prox_and_echo_pv(hud_state.near_any_crate_source, "Near Crate Source") then
+    if crate_exists and _check_prox_and_echo_pv(hud_state.prox_crate, "Near Crate Source") then
         crate_full = true
     end
 
@@ -356,6 +356,35 @@ function PV.player_flags(hud_state, hotkey_override)
             stimm_full = true
         elseif hud_state.last_picked_up_pocketable_name == crate_name then
             crate_full = true
+        end
+    end
+
+    -- Broker Stimm Hard Triggers (Ability Cooldown / Chem Dependency Active)
+    if not stimm_full and stimm_kind == "broker" then
+        -- 1. Ability on Cooldown
+        local t_data = hud_state.timer_data
+        if t_data and t_data.is_ability_on_cooldown_for_timer then
+            stimm_full = true
+        end
+
+        -- 2. Chemical Dependency Buff Active
+        if not stimm_full then
+            local bd = hud_state.broker_stimm_data
+            if bd and (bd.chem_stacks or 0) > 0 then
+                stimm_full = true
+            end
+        end
+    end
+
+    -- Broker Chemical Dependency Decay Alert
+    -- Force show if stacks > 0 and decay <= 10s
+    if not stimm_full and stimm_exists and hud_state.broker_stimm_data then
+        local bd = hud_state.broker_stimm_data
+        if bd.is_broker and (bd.chem_stacks or 0) > 0 then
+            local decay = bd.chem_decay_remaining or 0
+            if decay > 0 and decay <= 10 then
+                stimm_full = true
+            end
         end
     end
 

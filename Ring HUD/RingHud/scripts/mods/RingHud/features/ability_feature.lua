@@ -191,7 +191,10 @@ function AbilityFeature.update(widget, hud_state, _hotkey_override)
     ----------------------------------------------------------------
     -- 1) Buff timer always has priority (when enabled)
     ----------------------------------------------------------------
-    if mod._settings.timer_buff_enabled == true
+    local setting = mod._settings and mod._settings.timer_buff_dropdown
+    local buff_enabled = (setting == "ability" or setting == "all")
+
+    if buff_enabled == true
         and (data.buff_timer_value or 0) > 0
         and (data.buff_max_duration or 0) > 0
     then

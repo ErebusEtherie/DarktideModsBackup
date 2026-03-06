@@ -53,20 +53,25 @@ mod.tracker = CombatStatsTracker:new()
 mod.history = CombatStatsHistory:new()
 
 function mod.update(dt)
-    if not mod.tracker:is_tracking() then
-        return
+    if mod.tracker:is_tracking() then
+        mod.tracker:update(dt)
     end
 
-    mod.tracker:update(dt)
+    mod.history:update()
 end
 
 mod:hook(CLASS.StateGameplay, 'on_enter', function(func, self, parent, params, ...)
     -- Start tracking
     local mission_name = params.mission_name
     if mission_name ~= 'hub_ship' then
-        local player = Managers.player:local_player(1)
-        local class_name = player and player:archetype_name()
-        mod.tracker:start(mission_name, class_name)
+        if
+            not mod:get('only_in_psykhanium')
+            or (mission_name == 'tg_shooting_range' or mission_name == 'tg_training_grounds')
+        then
+            local player = Managers.player:local_player(1)
+            local class_name = player and player:archetype_name()
+            mod.tracker:start(mission_name, class_name)
+        end
     end
 
     -- Preload icon packages
@@ -94,7 +99,6 @@ mod:hook(CLASS.StateGameplay, 'on_exit', function(func, self, ...)
 
             local tracker_data = {
                 duration = session.duration,
-                stats = session.stats,
                 buffs = session.buffs,
                 engagements = engagements,
             }
@@ -142,7 +146,8 @@ mod:hook(
                             attack_type,
                             is_critical_strike,
                             hit_weakspot,
-                            damage_profile and damage_profile.name
+                            damage_profile and damage_profile.name,
+                            attack_result
                         )
 
                         if attack_result == 'died' then

@@ -80,10 +80,6 @@ mod.save_entry = function(self, entry)
     local path, file_name = self:create_uptime_history_entry_path()
     local file = assert(_io.open(path, "w+"))
 
-    for _, buff in pairs(entry.buffs) do
-        buff.instance = nil
-    end
-
     local entry_json = json.encode(entry)
     file:write(entry_json)
 

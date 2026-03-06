@@ -5,6 +5,8 @@ return {
 	mod_description = {
 		en = "Adds different color rings to Hive Scum Stimm Supply crates to indicate which buffs they provide",
 	},
+
+	-- Settings
 	show_attack_speed = {
 		en = "Show Attack Speed Ring (Blue)",
 	},
@@ -33,13 +35,39 @@ return {
 		en = "Opacity Scaling Power",
 	},
 	opacity_scaling_power_tooltip = {
-		en = "Determines how dramatically opacity scales up with node investment.\n\n0 = No Scaling. All visible rings at max opacity.\n1 = Linear\n2 = Quadratic\n3 = Cubic"
+		en = "Determines how dramatically opacity scales up with node investment.\n\n0 = No Scaling. All visible rings at max opacity.\n1 = Linear\n2 = Quadratic\n3 = Cubic",
 	},
 	enable_logging = {
 		en = "Enable Logging",
 	},
 	enable_logging_tooltip = {
 		en = "Prints a message to the chat and console explaining why rings are not displayed (e.g. stimm on cooldown). Useful for troubleshooting.",
+	},
+	color_customization = {
+		en = "Ring Color Customization",
+	},
+	attack_speed_color = {
+		en = "Attack Speed Color",
+	},
+	cooldown_color = {
+		en = "Cooldown Color",
+	},
+	strength_color = {
+		en = "Strength Color",
+	},
+	toughness_color = {
+		en = "Toughness Color"
+	},
+
+	-- Colors
+	red = {
+		en = "Red",
+	},
+	green = {
+		en = "Green",
+	},
+	blue = {
+		en = "Blue",
 	},
 
 	-- Echo messages

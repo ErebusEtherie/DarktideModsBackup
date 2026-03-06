@@ -67,28 +67,22 @@ function T.update_text(widget, tough_int, tough_state, _force_show_unused)
 
     local changed = false
 
-    -- Value
     local new_text = tostring(tough_int or 0)
     if content.toughness_text_value ~= new_text then
         content.toughness_text_value = new_text
         changed = true
     end
 
-    -- Color
     local col = mod.PALETTE_ARGB255.TOUGHNESS_TEAL
     if tough_state == "broken" then
-        col = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.TOUGHNESS_BROKEN) or col
+        col = mod.PALETTE_ARGB255.TOUGHNESS_BROKEN or col
     elseif tough_state == "overshield" then
-        col = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.TOUGHNESS_OVERSHIELD) or col
+        col = mod.PALETTE_ARGB255.TOUGHNESS_OVERSHIELD or col
     end
 
     if U.set_style_text_color(style, col) then
         changed = true
     end
-
-    -- NOTE: no visibility gating here anymore.
-    -- style.visible should be controlled by the caller (e.g. RingHud_state_team.hp.text_visible
-    -- from toughness_hp_visibility / team_hp_bar_* modes).
 
     if changed then widget.dirty = true end
 end

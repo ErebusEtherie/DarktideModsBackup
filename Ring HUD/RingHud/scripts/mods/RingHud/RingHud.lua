@@ -3,14 +3,67 @@
 
 local mod = get_mod("RingHud")
 if not mod then return end
-mod.version                            = "RingHud version 1.09.02"
+mod.version                             = "RingHud version 1.13.01"
 
-local MISSION_BOARD_PACKAGE            = "packages/ui/views/mission_board_view/mission_board_view"
+local MISSION_BOARD_PACKAGE             = "packages/ui/views/mission_board_view/mission_board_view"
 
-mod._ringhud_visibility_applied_to_hud = setmetatable({}, { __mode = "k" })
-mod._ringhud_hooked_elements           = setmetatable({}, { __mode = "k" })
+mod._ringhud_visibility_applied_to_hud  = setmetatable({}, { __mode = "k" })
+mod._ringhud_hooked_elements            = setmetatable({}, { __mode = "k" })
 
-local PlayerUnitStatus                 = require("scripts/utilities/attack/player_unit_status")
+local PlayerUnitStatus                  = require("scripts/utilities/attack/player_unit_status")
+
+-------------------------------------------------------------------------------
+-- Global Mod State (non-settings) -- TODO Constants or not constants?
+-------------------------------------------------------------------------------
+-- [Moved to top to ensure availability during io_dofile execution of features]
+mod.AMMO_CLIP_ARC_MIN                   = 0.51
+mod.AMMO_CLIP_ARC_MAX                   = 0.975
+mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY     = 30
+mod.MAX_DODGE_SEGMENTS                  = 8
+mod.MAX_GRENADE_SEGMENTS_DISPLAY        = 14
+
+-- unified force-show flag (computed each frame from manual hotkey OR ADS rule)
+mod.show_all_hud_hotkey_active          = false
+mod._hotkey_manual_active               = false
+
+mod.reassure_health                     = false
+mod.reassure_ammo                       = false
+mod.reassure_health_last_set_time       = 0
+mod.reassure_ammo_last_set_time         = 0
+mod.REASSURE_TIMEOUT                    = 2.0
+
+mod.team_average_health_fraction        = 1.0
+mod.team_average_ammo_fraction          = 1.0
+mod.next_team_stats_poll_time           = 0
+local TEAM_STATS_POLL_INTERVAL          = 10
+
+mod._zealot_resist_death_cd_until_t     = 0
+
+mod._most_recent_shot_cost_this_mission = 0   -- [Perf: negligible] Stores the magnitude of the largest recent ammo_clip decrease for secondary weapon, resets per mission. 0 indicates no data.
+mod._prev_secondary_clip_ammo           = nil -- [Perf: negligible] Tracks previous clip ammo to detect negative changes.
+
+-- Local player archetype cache (optimization for hot-path checks)
+mod._cached_archetype                   = nil
+
+-- Compatibility presence caches (refreshed ONLY on on_all_mods_loaded)
+mod._compat_profile_pictures            = false
+
+function mod.get_local_archetype()
+    if mod._cached_archetype then
+        return mod._cached_archetype
+    end
+
+    local player = Managers.player and Managers.player.local_player_safe and Managers.player:local_player_safe(1)
+    if player and player.archetype_name then
+        local name = player:archetype_name()
+        -- Only cache if we got a valid string
+        if name then
+            mod._cached_archetype = name
+            return name
+        end
+    end
+    return nil
+end
 
 mod:io_dofile("RingHud/scripts/mods/RingHud/systems/settings_manager")
 
@@ -22,28 +75,26 @@ local VanillaHudManager = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/va
 local ReassuranceSystem = mod:io_dofile("RingHud/scripts/mods/RingHud/context/reassurance_context")
 local ScannerContext    = mod:io_dofile("RingHud/scripts/mods/RingHud/context/scanner_context")
 
--- Load GrenadesFeature early so its broker blitz template patch + mod.grenades_update_state are installed ASAP
 mod:io_dofile("RingHud/scripts/mods/RingHud/features/grenades_feature")
 
--- ★ New: centralised ammo visibility policy (after proximity/reassurance/wield)
 mod:io_dofile("RingHud/scripts/mods/RingHud/context/ammo_visibility")
 
--- ★ New: centralised pocketable visibility policy
 mod:io_dofile("RingHud/scripts/mods/RingHud/context/pocketables_visibility")
 
 local CrosshairFeature = mod:io_dofile("RingHud/scripts/mods/RingHud/features/crosshair_feature")
 if CrosshairFeature and CrosshairFeature.init then CrosshairFeature.init() end
 
--- Floating teammates (world markers)
 mod.floating_manager = mod:io_dofile("RingHud/scripts/mods/RingHud/core/HudElementRingHud_team_nameplate")
 
 mod:io_dofile("RingHud/scripts/mods/RingHud/systems/player_assistance_suppress")
 
--- Compatibility
 local RSBridge = mod:io_dofile("RingHud/scripts/mods/RingHud/compat/recolor_stimms_bridge")
-mod:io_dofile("RingHud/scripts/mods/RingHud/compat/audible_ability_recharge_bridge")
+
+mod:io_dofile("RingHud/scripts/mods/RingHud/systems/sound_manager")
+mod:io_dofile("RingHud/scripts/mods/RingHud/systems/buff_handler")
 
 mod:io_dofile("RingHud/scripts/mods/RingHud/features/ability_sound_feature")
+mod:io_dofile("RingHud/scripts/mods/RingHud/features/talent_feature")
 
 -- Ensure edge-packing constants are loaded and alias the recompute helper
 do
@@ -69,30 +120,6 @@ mod:hook(CLASS.MechanismManager, "mechanism_data", function(func, self)
         return func(self)
     end
 end)
-
--------------------------------------------------------------------------------
--- Global Mod State (non-settings) -- TODO Constants or not constants?
--------------------------------------------------------------------------------
-mod.AMMO_CLIP_ARC_MIN               = 0.51
-mod.AMMO_CLIP_ARC_MAX               = 0.99
-mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY = 30
-mod.MAX_DODGE_SEGMENTS              = 8
-mod.MAX_GRENADE_SEGMENTS_DISPLAY    = 14
-
--- unified force-show flag (computed each frame from manual hotkey OR ADS rule)
-mod.show_all_hud_hotkey_active      = false
-mod._hotkey_manual_active           = false
-
-mod.reassure_health                 = false
-mod.reassure_ammo                   = false
-mod.reassure_health_last_set_time   = 0
-mod.reassure_ammo_last_set_time     = 0
-mod.REASSURE_TIMEOUT                = 2.0
-
-mod.team_average_health_fraction    = 1.0
-mod.team_average_ammo_fraction      = 1.0
-mod.next_team_stats_poll_time       = 0
-local TEAM_STATS_POLL_INTERVAL      = 10
 
 if mod._ringhud_accumulated_time == nil then mod._ringhud_accumulated_time = 0 end
 
@@ -397,19 +424,35 @@ mod.on_game_state_changed = function(status, state_name)
     if not mod:is_enabled() then return end
 
     if state_name == "StateGameplay" and status == "enter" then
-        mod._grenade_max_override = nil
+        mod._grenade_max_override               = nil
 
-        -- Reset broker blitz mirror state on mission entry (prevents stale progress/ghost partials)
-        mod._broker_blitz_tracked_kills = 0
-        mod._broker_blitz_prev_grenade_cur = 0
+        -- Reset broker blitz mirror state
+        mod._broker_blitz_tracked_kills         = 0
+        mod._broker_blitz_prev_grenade_cur      = 0
+
+        -- Reset zealot resist-death state
+        mod._zealot_resist_death_cd_until_t     = 0
+
+        -- Reset cached archetype
+        mod._cached_archetype                   = nil
+
+        -- NEW: Reset ammo forecast tracking for new mission
+        mod._most_recent_shot_cost_this_mission = 0
+        mod._prev_secondary_clip_ammo           = nil
+
+        mod._latched_dual_shiv_max              = 0
+        mod._latched_dual_shiv_current          = 0
 
         _refresh_compat_caches()
         _apply_team_mode_runtime()
         mod._refresh_assistance_markers_visibility()
         if ScannerContext and ScannerContext.on_game_state_changed then
-            ScannerContext.on_game_state_changed(status,
-                state_name)
+            ScannerContext.on_game_state_changed(status, state_name)
         end
+        if mod.objective_feed_streamliner and mod.objective_feed_streamliner.on_game_state_changed then
+            mod.objective_feed_streamliner.on_game_state_changed(status, state_name)
+        end
+
         -- Keep ammo-visibility caches fresh on state entry
         if mod.ammo_vis_on_setting_changed then mod.ammo_vis_on_setting_changed() end
         -- Keep pocketable-visibility caches fresh on state entry
@@ -430,6 +473,9 @@ end
 
 mod.on_all_mods_loaded = function()
     mod:info(mod.version)
+
+    mod._compat_profile_pictures = (get_mod("ProfilePictures") ~= nil)
+    mod._numeric_ui_installed = (get_mod("NumericUI") ~= nil)
 
     if ProximitySystem and ProximitySystem.on_all_mods_loaded then ProximitySystem.on_all_mods_loaded() end
     if VanillaHudManager and VanillaHudManager.on_all_mods_loaded then VanillaHudManager.on_all_mods_loaded() end
@@ -452,14 +498,17 @@ mod.on_all_mods_loaded = function()
 end
 
 mod.on_disabled = function(initial_call)
-    mod.show_all_hud_hotkey_active = false
-    mod._hotkey_manual_active = false
-    mod.reassure_health = false
-    mod.reassure_ammo = false
+    mod.show_all_hud_hotkey_active      = false
+    mod._hotkey_manual_active           = false
+    mod.reassure_health                 = false
+    mod.reassure_ammo                   = false
 
     -- Broker blitz mirror state
-    mod._broker_blitz_tracked_kills = 0
-    mod._broker_blitz_prev_grenade_cur = 0
+    mod._broker_blitz_tracked_kills     = 0
+    mod._broker_blitz_prev_grenade_cur  = 0
+
+    -- Zealot resist-death state
+    mod._zealot_resist_death_cd_until_t = 0
 
     if VanillaHudManager and VanillaHudManager.on_mod_disabled then
         VanillaHudManager.on_mod_disabled()
@@ -481,7 +530,6 @@ mod.on_enabled = function(initial_call)
 
     mod._ringhud_visibility_applied_to_hud = setmetatable({}, { __mode = "k" })
     _apply_team_mode_runtime()
-    -- Ensure new modules have the latest settings cache on enable
     if mod.ammo_vis_on_setting_changed then mod.ammo_vis_on_setting_changed() end
     if mod.pockets_vis_on_setting_changed then mod.pockets_vis_on_setting_changed() end
 end

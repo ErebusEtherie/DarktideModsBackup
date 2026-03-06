@@ -2,59 +2,60 @@
 local mod = get_mod("RingHud")
 if not mod then return {} end
 
-local ProximitySystem = {}
+local ProximitySystem                      = {}
 
 -------------------------------------------------------------------------------
 -- System State & Constants
 -------------------------------------------------------------------------------
 
--- Which pickup/deployable names we track.
--- NOTE: We track-by-unit for ALL of these; we only create a RingHud marker
--- for "medical_crate_deployable" because vanilla does not provide one.
-mod._item_configs = mod._item_configs or {
-    -- Syringes / pocketables (tracked via vanilla interaction marker path)
+-- New mapping for proximity items to their corresponding values.
+-- This replaces the old _item_configs and _proximity_types tables.
+-- Performance: A single table lookup is very efficient.
+local ITEM_VALUES                          = {
+    -- Healing (Value: 1-2)
+    medical_crate_pocketable = { healing = 1, crate = true },
+    medical_crate_deployable = { healing = 1 },
+    health_station = { healing = 2 },
+
+    -- Ammo (Value: 1-3)
+    small_clip = { ammo = 1 },
+    large_clip = { ammo = 2 },
+    ammo_cache_pocketable = { ammo = 3, crate = true },
+    ammo_cache_deployable = { ammo = 3 },
+
+    -- Stimms (Boolean)
+    syringe_corruption_pocketable = { healing = 2, stimm = true }, -- Has both healing and stimm properties
+    syringe_power_boost_pocketable = { stimm = true },
+    syringe_speed_boost_pocketable = { stimm = true },
+    syringe_ability_boost_pocketable = { stimm = true },
+
+    -- Other Crates (Boolean)
+    tome_pocketable = { crate = true },
+    grimoire_pocketable = { crate = true }, -- Grimoires are not technically crates but are pocketable items found in similar locations.
+}
+
+-- Initialize the new mod-level variables.
+mod.prox_healing                           = 0
+mod.prox_ammo                              = 0
+mod.prox_stimm                             = false
+mod.prox_crate                             = false
+
+-- This table is now only used to identify which items should be tracked.
+mod._item_configs                          = mod._item_configs or {
     { name = "syringe_corruption_pocketable" },
     { name = "syringe_power_boost_pocketable" },
     { name = "syringe_speed_boost_pocketable" },
     { name = "syringe_ability_boost_pocketable" },
-
-    -- Ammo
     { name = "small_clip" },
     { name = "large_clip" },
     { name = "ammo_cache_pocketable" },
-    { name = "ammo_cache_deployable" }, -- tagged via interaction marker
-
-    -- Healing
+    { name = "ammo_cache_deployable" },
     { name = "medical_crate_pocketable" },
-    { name = "medical_crate_deployable" }, -- the ONLY thing we (may) mark
+    { name = "medical_crate_deployable" },
     { name = "health_station" },
-
-    -- Scriptures
     { name = "tome_pocketable" },
     { name = "grimoire_pocketable" },
 }
-
--- Proximity flags exported to the rest of the mod.
-mod._proximity_types = mod._proximity_types or {
-    small_clip                       = "near_small_clip",
-    large_clip                       = "near_large_clip",
-    ammo_cache_deployable            = "near_ammo_cache_deployable",
-    syringe_corruption_pocketable    = "near_syringe_corruption_pocketable",
-    syringe_power_boost_pocketable   = "near_syringe_power_boost_pocketable",
-    syringe_speed_boost_pocketable   = "near_syringe_speed_boost_pocketable",
-    syringe_ability_boost_pocketable = "near_syringe_ability_boost_pocketable",
-    medical_crate_deployable         = "near_medical_crate_deployable",
-    health_station                   = "near_health_station",
-    medical_crate_pocketable         = "near_medical_crate_pocketable",
-    ammo_cache_pocketable            = "near_ammo_cache_pocketable",
-    tome_pocketable                  = "near_tome_pocketable",
-    grimoire_pocketable              = "near_grimoire_pocketable",
-}
-for _, varname in pairs(mod._proximity_types) do
-    if mod[varname] == nil then
-        mod[varname] = false
-    end
-end
 
 -- Timers / queues
 mod._next_proximity_scan_time              = mod._next_proximity_scan_time or 0
@@ -87,12 +88,8 @@ end
 
 local function _is_tracked_item_type(name)
     if not name then return false end
-    for i = 1, #mod._item_configs do
-        if mod._item_configs[i].name == name then
-            return true
-        end
-    end
-    return false
+    -- Check against our new simplified value map. Performance is excellent.
+    return ITEM_VALUES[name] ~= nil
 end
 
 local function _is_notified(unit) return Unit.get_data(unit, "rh_notified") end
@@ -212,39 +209,27 @@ local function _handle_deployable_spawn(unit, deployable_name)
     end
 end
 
--- Adopt any existing markers_aio medical-crate markers we see (ensures tracking even if spawn hook missed).
-local function _adopt_external_medcrate_markers()
+-- Adopt any existing markers we see from external mods (ensures tracking even if spawn hook missed).
+local function _adopt_external_markers()
     local hewm = _hewm()
     if not hewm then return end
     local by_unit = hewm._markers_by_unit or hewm._markers or hewm._active_markers
     if type(by_unit) ~= "table" then return end
 
-    for unit, marker_or_list in pairs(by_unit) do
-        if unit and Unit.alive(unit) then
+    for unit, _ in pairs(by_unit) do
+        if unit and Unit.alive(unit) and not mod._tracked_item_units[unit] then
             local m = _get_marker_for_unit(unit)
-            if m and _unit_has_markers_aio_medcrate_marker(unit) then
-                _set_rh_tracking_status(unit, true)
-                Unit.set_data(unit, "rh_marker_type", "medical_crate_deployable")
-                mod._tracked_item_units[unit] = unit
+            local data = m and m.data
+            if data then
+                -- Adopt if it's a medcrate or a health station handled by markers_aio or similar
+                if data.type == "medical_crate_deployable" or data.type == "health_station" then
+                    _set_rh_tracking_status(unit, true)
+                    Unit.set_data(unit, "rh_marker_type", data.type)
+                    mod._tracked_item_units[unit] = unit
+                end
             end
         end
     end
-end
-
--- Combined proximity predicates (no settings logic here)
-local function _near_stimm_source_now()
-    return (mod.near_syringe_corruption_pocketable == true)
-        or (mod.near_syringe_power_boost_pocketable == true)
-        or (mod.near_syringe_speed_boost_pocketable == true)
-        or (mod.near_syringe_ability_boost_pocketable == true)
-        or (mod.near_health_station == true)
-end
-
-local function _near_crate_source_now()
-    return (mod.near_medical_crate_pocketable == true)
-        or (mod.near_medical_crate_deployable == true)
-        or (mod.near_ammo_cache_pocketable == true)
-        or (mod.near_ammo_cache_deployable == true)
 end
 
 -- Sweep existing active markers (Fix for Ration Pack / Markers AIO keeping markers alive)
@@ -361,10 +346,6 @@ function ProximitySystem.init()
             end
         end
     )
-
-    -- Expose compat shims so other modules can call mod.near_* as functions.
-    mod.near_stimm_source = function() return ProximitySystem.near_stimm_source() end
-    mod.near_crate_source = function() return ProximitySystem.near_crate_source() end
 end
 
 function ProximitySystem.update(dt)
@@ -404,17 +385,29 @@ function ProximitySystem.update(dt)
     end
     mod._next_proximity_scan_time = t_now + (mod._PROXIMITY_SCAN_INTERVAL or 0.5)
 
-    -- Adopt any late-arriving external med-crate markers (e.g. markers_aio).
-    _adopt_external_medcrate_markers()
+    -- Rescue discovery for health stations (finds them even if UI suppressed or reload missed init)
+    local extension_system = Managers.state.extension
+    if extension_system then
+        local interactees = extension_system:get_entities("InteracteeExtension")
+        for unit, ext in pairs(interactees) do
+            if not mod._tracked_item_units[unit] and ext:interaction_type() == "health_station" then
+                mod._tracked_item_units[unit] = unit
+            end
+        end
+    end
+
+    -- Adopt any late-arriving external markers (e.g. markers_aio).
+    _adopt_external_markers()
 
     -- Sweep existing markers (fixes compatibility with Ration Pack / Markers AIO)
     _scan_existing_interaction_markers()
 
-    -- Reset flags
-    -- MOVED UP: Ensure we clear flags before potentially returning early due to game mode.
-    for _, flag_name in pairs(mod._proximity_types) do
-        mod[flag_name] = false
-    end
+    -- Reset new mod-level variables at the start of each scan.
+    -- Performance: This is a fast operation with negligible impact.
+    mod.prox_healing = 0
+    mod.prox_ammo = 0
+    mod.prox_stimm = false
+    mod.prox_crate = false
 
     -- Only run in missions / range
     local gm = Managers.state and Managers.state.game_mode
@@ -433,7 +426,7 @@ function ProximitySystem.update(dt)
     if range <= 0 then return end
     local range_sq = range * range
 
-    -- Walk tracked units and set near_* flags
+    -- Walk tracked units and set new prox flags
     for unit in pairs(mod._tracked_item_units) do
         if unit and Unit.alive(unit) then
             local pickup_name = Unit.get_data(unit, "pickup_type") or Unit.get_data(unit, "rh_marker_type")
@@ -444,7 +437,7 @@ function ProximitySystem.update(dt)
                 end
             end
 
-            if pickup_name and _is_tracked_item_type(pickup_name) then
+            if pickup_name then
                 local upos = Unit.world_position(unit, 1)
                 local dx = upos.x - player_pos.x
                 local dy = upos.y - player_pos.y
@@ -452,10 +445,20 @@ function ProximitySystem.update(dt)
                 local dist_sq = dx * dx + dy * dy + dz * dz
 
                 if dist_sq <= range_sq then
-                    local flag = mod._proximity_types[pickup_name]
-                    if flag then
-                        mod[flag] = true
-                        -- mod:echo("Proximity Active: %s", pickup_name)
+                    local values = ITEM_VALUES[pickup_name]
+                    if values then
+                        if values.healing then
+                            mod.prox_healing = math.max(mod.prox_healing, values.healing)
+                        end
+                        if values.ammo then
+                            mod.prox_ammo = math.max(mod.prox_ammo, values.ammo)
+                        end
+                        if values.stimm then
+                            mod.prox_stimm = true
+                        end
+                        if values.crate then
+                            mod.prox_crate = true
+                        end
                     end
                 end
             end
@@ -463,10 +466,6 @@ function ProximitySystem.update(dt)
             mod._tracked_item_units[unit] = nil
         end
     end
-
-    -- Aggregates
-    mod.near_any_stimm        = _near_stimm_source_now()
-    mod.near_crate_source_any = _near_crate_source_now()
 end
 
 function ProximitySystem.on_all_mods_loaded()
@@ -496,15 +495,6 @@ function ProximitySystem.on_all_mods_loaded()
             end
         end)
     end
-end
-
--- Public accessors
-function ProximitySystem.near_stimm_source()
-    return _near_stimm_source_now()
-end
-
-function ProximitySystem.near_crate_source()
-    return _near_crate_source_now()
 end
 
 return ProximitySystem

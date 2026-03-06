@@ -51,6 +51,7 @@ local CONFIG = {
 		Crt_hit_col =	"Critical Hit Damage",
 
 		Crit_strike =	"Critical Strike",
+		Crit_strikes =	"Critical Strikes",
 		Crt_chnc_r =	"Critical Strike Chance",
 		Crt_strk_dmg =	"Critical Strike Damage",
 
@@ -60,10 +61,13 @@ local CONFIG = {
 		Crit_dmg_r =	"Critical Damage",
 		Crt_dmg_r =		"Crit Damage",
 
+		Conc_Stimm =	"Concentration Stimm",
 	},
 	damage_text_colour = {
 		Damage =		"Damage",
 		Damagewrp =		"Warp-Damage",
+
+		Combat_Stimm =	"Combat Stimm",
 	},
 	electrocuted_text_colour = {
 		Electrocute =	"Electrocute",
@@ -98,6 +102,8 @@ local CONFIG = {
 	},
 	rending_text_colour = {
 		Rending =		"Rending",
+
+		Cartel_Stimm =	"Cartel Special Stimm",
 	},
 	soulblaze_text_colour = {
 		Soulblaze =		"Soulblaze",
@@ -117,6 +123,8 @@ local CONFIG = {
 	},
 	toughness_text_colour = {
 		TDR =			"TDR",
+		TGHN =			"TGHN",
+		Tghns_dmg =		"Toughness Damage",
 		Tghns_dmg_red =	"Toughness Damage Reduction",
 		Toughness =		"Toughness",
 	},
@@ -140,6 +148,8 @@ local CONFIG = {
 	},
 		precision_text_colour = {
 			Precision =		"Precision",
+
+			Celerity_Stimm = "Celerity Stimm",
 		},
 	-- Ogryn
 	class_ogryn_text_colour = {
@@ -148,6 +158,7 @@ local CONFIG = {
 	},
 		fnp_text_colour = {
 			Feel_no_pain =	"Feel No Pain",
+
 			Desperado =		"Desperado",			-- Hive Scum
 		},
 		luckyb_text_colour = {
@@ -173,7 +184,11 @@ local CONFIG = {
 		momentum_text_colour = {
 			Momentum =		"Momentum",
 
-			Adren =			"Adrenaline",			-- Hive Scum
+			Taunt =			"Taunt",				-- Ogryn
+			Taunted =		"Taunted",				-- Ogryn
+			Taunting =		"Taunting",				-- Ogryn
+
+			Adren =			"Adrenaline",			-- Hive Scum ???
 			AdrenFr =		"Adrenaline Frenzy",	-- Hive Scum
 		},
 		stealth_text_colour = {
@@ -190,6 +205,8 @@ local CONFIG = {
 		focus_text_colour = {
 			Forceful =		"Forceful",
 			Focus =			"Focus",
+
+			Shout =			"Shout",				-- Hive Scum
 		},
 		focust_text_colour = {
 			Focus_Target =	"Focus Target",
@@ -202,6 +219,8 @@ local CONFIG = {
 			Meleespec =		"Melee Specialist",
 
 			Meleejust =		"Melee Justice",		-- Arbites
+
+			Exhausted =		"Exhausted",			-- Hive Scum
 		},
 		rangedspec_text_colour = {
 			Rangedspec =	"Ranged Specialist",
@@ -220,6 +239,8 @@ local CONFIG = {
 	},
 		chemtox_text_colour = {
 			Chem_Tox =		"Chem Toxin",
+
+			Med_Stimm =		"Med Stimm",
 		},
 
 -- TALENTS
@@ -243,16 +264,17 @@ local CONFIG = {
 		Fragm_gren =	"Fragmentation Grenade",
 		Rangd_stnc =	"Ranged Stance",
 		Duty_honor =	"Duty and Honour",
+-- Ogryn
+		Att_Seeker =	"Attention Seeker",
 
 -- PENANCES
 		Base_tut_p =	"Basic Training",
 		Curio_p =		"Curio",
 		Omnissia_p =	"Shrine of the Omnissiah",
+		PthOTrst_p =	"Path of Trust",
 		Prologue_p =	"Prologue",
 		Sir_melk_p =	"Sire Melk's Requisitorium",
-	-- },
 
-	-- talents_penances_text_colour = {
 	-- Psyker
 		assail =		"Assail",
 		bburst =		"Brain Burst",
@@ -318,9 +340,9 @@ local CONFIG = {
 	},
 
 -- DIFFICULTY
-	sedition_text_colour = {
-		sedition =		"Sedition",
-	},
+	-- sedition_text_colour = {
+		-- sedition =		"Sedition",
+	-- },
 	uprising_text_colour = {
 		uprising =		"Uprising",
 	},
@@ -335,6 +357,21 @@ local CONFIG = {
 	},
 	auric_text_colour = {
 		auric =			"Auric",
+	},
+
+-- DUMP STATS
+	dump_stat_text_colour = {
+		Mobility =		"Mobility",
+		Melee_dmg =		"Melee Damage",
+		Warp_resist =	"Warp Resistance",
+	},
+	dump_stat2_text_colour = {
+		Ammo =			"Ammo",
+		Defences =		"Defences",
+		Heat_mngt =		"Heat Management",
+	},
+	dump_stat3_text_colour = {
+		DamageDS =		"Damage",
 	},
 }
 
@@ -365,25 +402,24 @@ local function create_colored_keywords()
 	return result
 end
 
---[+ +FREQUENTLY REPEATED PHRASES+ +]--
+--[+ +FREQUENTLY REPEATED PHRASES+ +]-- CPhrs("")
 local function create_phrs_en(colors_en)
 	-- Local constants for this file
 	local Dot_green =	"{#color(35, 255, 5)}•{#reset()}"
 	local Dot_red =		"{#color(255, 35, 5)}•{#reset()}"
 
-	-- local function CKWord(fallback, colors, key)
-		-- return colors[key] or fallback
-	-- end
 	local CKWord = function(fallback, key)
-		return fallback
+		return colors_en[key] or fallback
 	end
 
 	return {
 	Can_appl_thr_shlds =		Dot_green.." Can be applied through shields.",
+	Can_appl_thr_shldsb =		Dot_green.." Can be applied through Bulwark shield.",
 	Can_be_refr =				Dot_green.." Can be refreshed during active duration. ",
 	Can_be_refr_drop_1 =		Dot_green.." Stacks can be refreshed during active duration, and are dropped one by one.",
+	Can_gen_mult =				Dot_green.." Can generate multiple Stacks per Swing.\n",
 	Can_proc_mult =				Dot_green.." Can proc multiple times per swing when "..CKWord("Cleaving", "Cleaving_rgb")..".\n",
-	Can_proc_mult_str =			Dot_green.." Can proc multiple times per swing when "..CKWord("Cleaving", "Cleaving_rgb")..".\n",
+	Can_proc_mult_str =			Dot_green.." Can proc multiple times when "..CKWord("Cleaving", "Cleaving_rgb")..".\n",
 	Refr_dur_stappl =			Dot_green.." Refreshes duration on Stack application. ",
 -- Psyker
 	Doesnt_Stack_Psy_Aura =		Dot_red.." Does not Stack with the same Aura from another "..CKWord("Psyker", "cls_psy_rgb")..".",
@@ -393,24 +429,28 @@ local function create_phrs_en(colors_en)
 -- Zealot
 	Doesnt_Stack_Zea_Aura =		Dot_red.." Does not Stack with the same Aura from another "..CKWord("Zealot", "cls_zea_rgb")..".",
 	Doesnt_Stack_Zea_abil =		Dot_red.." Does not Stack with the same talent from another "..CKWord("Zealot", "cls_zea_rgb")..".",
+-- Ogryn
+	Doesnt_Stack_Ogr_Aura =		Dot_red.." Does not Stack with the same Aura from another "..CKWord("Ogryn", "cls_ogr_rgb")..".",
+	Doesnt_Stack_Ogr_abil =		Dot_red.." Does not Stack with the same talent from another "..CKWord("Ogryn", "cls_ogr_rgb")..".",
+-- Hive Scum
+	Doesnt_Stack_Scm_Aura =		Dot_red.." Does not Stack with the same Aura from another "..CKWord("Hive Scum", "cls_scm_rgb")..".",
+	Doesnt_Stack_Scm_eff =		Dot_red.." Does not Stack with the same debuff from another "..CKWord("Hive Scum", "cls_scm_rgb")..".",
 
 	Cant_appl_thr_shlds =		Dot_red.." Can't apply through shields.",
+	Cant_be_refr =				Dot_red.." Cannot be refreshed during active duration. ",
 	Cant_Crit =					Dot_red.." Cannot "..CKWord("Crit", "Crit_rgb")..".\n",
 	Carap_cant_clv =			Dot_red.." Carapace armor cannot be "..CKWord("Cleaved", "Cleaved_rgb").." by default.",
 	Carap_cant_cleave =			Dot_red.." Carapace armor cannot be "..CKWord("Cleaved", "Cleaved_rgb").." by default.",
-	Dont_intw_coher_toughn =	Dot_red.." Does not interact with "..CKWord("Coherency", "Coherency_rgb").." "..CKWord("Toughness", "Toughness_rgb")..".",
+	Dont_intw_coher_toughn =	Dot_red.." Does not interact with "..CKWord("Coherency", "Coherency_rgb").." "..CKWord("Toughness", "Toughness_rgb").." Regeneration.",
 	}
 end
 
---[+ +NOTES+ +]--
+--[+ +NOTES+ +]-- CNote("")
 local function create_nts_en(colors_en)
 	local Dot_green = "{#color(35, 255, 5)}•{#reset()}"
 
-	-- local function CKWord(fallback, colors, key)
-		-- return colors[key] or fallback
-	-- end
 	local CKWord = function(fallback, key)
-		return fallback
+		return colors_en[key] or fallback
 	end
 
 	return {

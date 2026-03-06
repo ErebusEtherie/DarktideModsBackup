@@ -41,6 +41,12 @@ mod.BL.DEFAULT_CUSTOM_ICON_PATHS = {
     "content/ui/materials/icons/circumstances/nurgle_manifestation_01",
     "content/ui/materials/icons/pocketables/hud/scripture",
     "content/ui/materials/icons/pocketables/hud/corrupted_auspex_scanner",
+    "content/ui/materials/hud/interactions/icons/barber",
+    "content/ui/materials/hud/interactions/icons/forge",
+    "content/ui/materials/hud/interactions/icons/mission_board",
+    "content/ui/materials/icons/throwables/hud/missile_launcher",
+    "content/ui/materials/icons/pocketables/hud/syringe_power",
+
     -- "content/ui/materials/icons/traits/weapon_trait_119_small",
     -- "content/ui/materials/icons/traits/weapon_trait_076_small",
     -- "content/ui/materials/icons/traits/weapon_trait_167_small",

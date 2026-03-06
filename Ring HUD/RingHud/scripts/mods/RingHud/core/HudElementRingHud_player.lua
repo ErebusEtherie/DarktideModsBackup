@@ -5,19 +5,21 @@ if not mod then return end
 
 -- ## 1. DEPENDENCIES ##
 local RingHudState       = mod:io_dofile("RingHud/scripts/mods/RingHud/core/RingHud_state_player")
-local Definitions        = mod:io_dofile("RingHud/scripts/mods/RingHud/core/RingHud_definitions_player") or {}
+local Definitions        = mod:io_dofile("RingHud/scripts/mods/RingHud/core/RingHud_definitions_player")
 local PlayerUnitStatus   = require("scripts/utilities/attack/player_unit_status")
 
-local PerilFeature       = mod:io_dofile("RingHud/scripts/mods/RingHud/features/peril_feature") or {}
-local DodgeFeature       = mod:io_dofile("RingHud/scripts/mods/RingHud/features/dodge_feature") or {}
-local StaminaFeature     = mod:io_dofile("RingHud/scripts/mods/RingHud/features/stamina_feature") or {}
-local ToughnessHpFeature = mod:io_dofile("RingHud/scripts/mods/RingHud/features/toughness_hp_feature") or {}
-local GrenadesFeature    = mod:io_dofile("RingHud/scripts/mods/RingHud/features/grenades_feature") or {}
-local AmmoReserveFeature = mod:io_dofile("RingHud/scripts/mods/RingHud/features/ammo_reserve_feature") or {}
-local AmmoClipFeature    = mod:io_dofile("RingHud/scripts/mods/RingHud/features/ammo_clip_feature") or {}
-local ChargeFeature      = mod:io_dofile("RingHud/scripts/mods/RingHud/features/charge_feature") or {}
-local AbilityFeature     = mod:io_dofile("RingHud/scripts/mods/RingHud/features/ability_feature") or {}
-local PocketableFeature  = mod:io_dofile("RingHud/scripts/mods/RingHud/features/pocketable_feature") or {}
+local PerilFeature       = mod:io_dofile("RingHud/scripts/mods/RingHud/features/peril_feature")
+local DodgeFeature       = mod:io_dofile("RingHud/scripts/mods/RingHud/features/dodge_feature")
+local StaminaFeature     = mod:io_dofile("RingHud/scripts/mods/RingHud/features/stamina_feature")
+local ToughnessHpFeature = mod:io_dofile("RingHud/scripts/mods/RingHud/features/toughness_hp_feature")
+local GrenadesFeature    = mod:io_dofile("RingHud/scripts/mods/RingHud/features/grenades_feature")
+local AmmoReserveFeature = mod:io_dofile("RingHud/scripts/mods/RingHud/features/ammo_reserve_feature")
+local AmmoClipFeature    = mod:io_dofile("RingHud/scripts/mods/RingHud/features/ammo_clip_feature")
+local ChargeFeature      = mod:io_dofile("RingHud/scripts/mods/RingHud/features/charge_feature")
+local AbilityFeature     = mod:io_dofile("RingHud/scripts/mods/RingHud/features/ability_feature")
+local PocketableFeature  = mod:io_dofile("RingHud/scripts/mods/RingHud/features/pocketable_feature")
+
+local TalentFeature      = mod:io_dofile("RingHud/scripts/mods/RingHud/features/talent_feature")
 
 local Intensity          = mod:io_dofile("RingHud/scripts/mods/RingHud/context/intensity_context")
 local U                  = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
@@ -25,11 +27,11 @@ local U                  = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/u
 mod:io_dofile("RingHud/scripts/mods/RingHud/context/wield_context")
 
 -- ## 2. CLASS DEFINITION ##
-local HudElementRingHud_player = class("HudElementRingHud_player", "HudElementBase")
+local HudElementRingHud_player         = class("HudElementRingHud_player", "HudElementBase")
 
 -- ## 3. PUBLIC LIFECYCLE METHODS ##
 
-HudElementRingHud_player.init = function(self, parent, draw_layer, start_scale)
+HudElementRingHud_player.init          = function(self, parent, draw_layer, start_scale)
     HudElementRingHud_player.super.init(self, parent, draw_layer, start_scale, Definitions)
 
     self._remaining_efficient_dodges             = 0
@@ -55,6 +57,8 @@ HudElementRingHud_player.init = function(self, parent, draw_layer, start_scale)
     -- Cache state for draw
     self._ads_active                             = false
     self._apply_shake                            = false
+    self._force_show_active                      = false
+    self._is_player_dead                         = false
 
     if mod then
         mod.hud_instance = self
@@ -65,7 +69,7 @@ HudElementRingHud_player.init = function(self, parent, draw_layer, start_scale)
     end
 end
 
-HudElementRingHud_player.update = function(self, dt, t, ui_renderer, render_settings, input_service)
+HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, render_settings, input_service)
     if not (mod and mod.is_enabled and mod:is_enabled()) then
         return
     end
@@ -111,7 +115,7 @@ HudElementRingHud_player.update = function(self, dt, t, ui_renderer, render_sett
     HudElementRingHud_player.super.update(self, dt, t, ui_renderer, render_settings, input_service)
 
     local widgets = self._widgets_by_name
-    if not widgets or not widgets.peril_bar then return end
+    if not widgets then return end
 
     if self._pocketable_pickup_visibility_timer > 0 then
         self._pocketable_pickup_visibility_timer = math.max(0, self._pocketable_pickup_visibility_timer - dt)
@@ -120,20 +124,24 @@ HudElementRingHud_player.update = function(self, dt, t, ui_renderer, render_sett
     local hud_state = RingHudState.get_hud_data_state(self)
     if not hud_state then return end
 
-    -- Determine shake (cached for draw)
     self._apply_shake = false
+    self._is_player_dead = false
+
     local shake_mode = mod._settings.crosshair_shake_dropdown
-    if shake_mode == "crosshair_shake_ads" then
-        self._apply_shake = ads_active
-    elseif shake_mode == "crosshair_shake_always" then
-        -- Fast alive check using cached extensions
-        if hud_state.player_extensions then
-            local ud = hud_state.player_extensions.unit_data
-            local he = hud_state.player_extensions.health
-            if ud and he then
-                local cs = ud:read_component("character_state")
-                if cs and not PlayerUnitStatus.is_dead(cs, he) then
+
+    if hud_state.player_extensions then
+        local ud = hud_state.player_extensions.unit_data
+        local he = hud_state.player_extensions.health
+        if ud and he then
+            local cs = ud:read_component("character_state")
+            local is_dead = PlayerUnitStatus.is_dead(cs, he)
+            self._is_player_dead = is_dead
+
+            if not is_dead then
+                if shake_mode == "crosshair_shake_always" then
                     self._apply_shake = true
+                elseif shake_mode == "crosshair_shake_ads" then
+                    self._apply_shake = ads_active
                 end
             end
         end
@@ -141,7 +149,8 @@ HudElementRingHud_player.update = function(self, dt, t, ui_renderer, render_sett
 
     -- Update logic (unchanged)
     if math.abs(hud_state.health_data.current_fraction - self._previous_health_fraction) > 0.001 or
-        math.abs(hud_state.health_data.corruption_fraction - self._previous_corruption_fraction) > 0.001 then
+        math.abs(hud_state.health_data.corruption_fraction - self._previous_corruption_fraction) > 0.001
+    then
         if mod.thv_player_recent_change_bump then
             mod.thv_player_recent_change_bump()
         end
@@ -161,10 +170,18 @@ HudElementRingHud_player.update = function(self, dt, t, ui_renderer, render_sett
     end
     self._previous_crate_item_name = hud_state.crate_item_name
 
-    if self._stamina_bar_latched_on and hud_state.stamina_fraction >= 1.0 then
+    local stamina_threshold = tonumber(mod._settings.stamina_viz_threshold) or 1.0
+
+    local hide_threshold = 1.0
+    if stamina_threshold >= 0.01 and stamina_threshold <= 0.10 then
+        hide_threshold = 0.5
+    end
+
+    if self._stamina_bar_latched_on and hud_state.stamina_fraction >= hide_threshold then
         self._stamina_bar_latched_on = false
     elseif (not self._stamina_bar_latched_on) and hud_state.stamina_fraction < 1.0 and
-        hud_state.stamina_fraction <= (tonumber(mod._settings.stamina_viz_threshold) or 1.0) then
+        hud_state.stamina_fraction <= stamina_threshold
+    then
         self._stamina_bar_latched_on = true
     end
 
@@ -206,6 +223,7 @@ HudElementRingHud_player.update = function(self, dt, t, ui_renderer, render_sett
     if vis_mode == "ads_vis_hotkey" and ads_active then
         hotkey_active_override = true
     end
+    self._force_show_active = hotkey_active_override
 
     -- Feature Updates
     if PerilFeature.update then PerilFeature.update(self, widgets.peril_bar, hud_state, hotkey_active_override) end
@@ -217,8 +235,7 @@ HudElementRingHud_player.update = function(self, dt, t, ui_renderer, render_sett
     end
     if GrenadesFeature.update then GrenadesFeature.update(self, widgets.grenade_bar, hud_state, hotkey_active_override) end
     if AmmoClipFeature.update_bar then
-        AmmoClipFeature.update_bar(self, widgets.ammo_clip_bar, hud_state,
-            hotkey_active_override)
+        AmmoClipFeature.update_bar(self, widgets.ammo_clip_bar, hud_state, hotkey_active_override)
     end
     if AmmoReserveFeature.update_text then
         AmmoReserveFeature.update_text(self, widgets.ammo_reserve_display_widget, hud_state, hotkey_active_override)
@@ -229,6 +246,9 @@ HudElementRingHud_player.update = function(self, dt, t, ui_renderer, render_sett
     if ChargeFeature.update then ChargeFeature.update(widgets.charge_bar, hud_state, hotkey_active_override) end
     if AbilityFeature.update then AbilityFeature.update(widgets.ability_timer, hud_state, hotkey_active_override) end
     if PocketableFeature.update then PocketableFeature.update(widgets, hud_state, hotkey_active_override) end
+
+    -- Talent: explicitly uses the same hotkey override pipeline as the rest of RingHud.
+    TalentFeature.update(widgets.talent_bar, hud_state, hotkey_active_override)
 
     if not hud_state.player_extensions then
         self._previous_health_fraction      = -1
@@ -382,7 +402,7 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         local tcor = widgets.toughness_bar_corruption
         if tcor and tcor.style and tcor.style.corruption_segment then
             if U.apply_shake_to_style_offset(tcor.style.corruption_segment, 0, 0, 0, apply_shake, dx, dy,
-                    0, (user_bias_px * 1.1)) then
+                    0, (user_bias_px * 1.5)) then
                 tcor.dirty = true
             end
             if tcor.style.corruption_segment_edge and
@@ -424,7 +444,7 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         local gb = widgets.grenade_bar
         if gb and gb.style then
             local changed = false
-            for i = 1, (mod.MAX_GRENADE_SEGMENTS_DISPLAY or 6) do
+            for i = 1, (mod.MAX_GRENADE_SEGMENTS_DISPLAY or 14) do
                 local st  = gb.style["grenade_segment_" .. i]
                 local ste = gb.style["grenade_segment_edge_" .. i]
                 if st and U.apply_shake_to_style_offset(st, 0, 0, 1, apply_shake, dx, dy,
@@ -445,12 +465,14 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         local acb = widgets.ammo_clip_bar
         if acb and acb.style then
             local changed = false
-            if acb.style.ammo_clip_unfilled_background and U.apply_shake_to_style_offset(acb.style.ammo_clip_unfilled_background, 0, 0, 0, apply_shake, dx, dy,
-                    -user_bias_px, -user_bias_px) then
+            if acb.style.ammo_clip_unfilled_background and U.apply_shake_to_style_offset(
+                    acb.style.ammo_clip_unfilled_background, 0, 0, 0, apply_shake, dx, dy, -user_bias_px, -user_bias_px
+                ) then
                 changed = true
             end
-            if acb.style.ammo_clip_filled_single and U.apply_shake_to_style_offset(acb.style.ammo_clip_filled_single, 0, 0, 1, apply_shake, dx, dy,
-                    -user_bias_px, -user_bias_px) then
+            if acb.style.ammo_clip_filled_single and U.apply_shake_to_style_offset(
+                    acb.style.ammo_clip_filled_single, 0, 0, 1, apply_shake, dx, dy, -user_bias_px, -user_bias_px
+                ) then
                 changed = true
             end
             for i = 1, (mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY or 5) do
@@ -461,6 +483,54 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
                 end
             end
             if changed then acb.dirty = true end
+        end
+    end
+
+    -- -------------- TALENT BAR --------------
+    do
+        local tb = widgets.talent_bar
+        if tb and tb.style then
+            local changed = false
+
+            if tb.style.talent_bar and U.apply_shake_to_style_offset(
+                    tb.style.talent_bar, 0, 0, 1, apply_shake, dx, dy, user_bias_px, -user_bias_px
+                ) then
+                changed = true
+            end
+            if tb.style.talent_bar_edge and U.apply_shake_to_style_offset(
+                    tb.style.talent_bar_edge, 0, 0, 2, apply_shake, dx, dy, user_bias_px, -user_bias_px
+                ) then
+                changed = true
+            end
+
+            -- Psyker segmented passes (so shake/bias affects them too)
+            for i = 1, 3 do
+                local st = tb.style["talent_seg_" .. i]
+                if st and U.apply_shake_to_style_offset(
+                        st, 0, 0, 1, apply_shake, dx, dy, user_bias_px, -user_bias_px
+                    ) then
+                    changed = true
+                end
+            end
+
+            -- Adamant segmented passes (base + notch edge)
+            for i = 1, 4 do
+                local st  = tb.style["talent_adamant_seg_" .. i]
+                local ste = tb.style["talent_adamant_seg_" .. i .. "_edge"]
+
+                if st and U.apply_shake_to_style_offset(
+                        st, 0, 0, 1, apply_shake, dx, dy, user_bias_px, -user_bias_px
+                    ) then
+                    changed = true
+                end
+                if ste and U.apply_shake_to_style_offset(
+                        ste, 0, 0, 2, apply_shake, dx, dy, user_bias_px, -user_bias_px
+                    ) then
+                    changed = true
+                end
+            end
+
+            if changed then tb.dirty = true end
         end
     end
 
@@ -526,7 +596,7 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         local ht = widgets.health_text_display_widget
         if ht and ht.style and ht.style.health_text_style then
             if U.apply_shake_to_style_offset(ht.style.health_text_style, 0, 0, 1, apply_shake, dx, dy,
-                    0, user_bias_px) then
+                    0, (user_bias_px * 1.5)) then
                 ht.dirty = true
             end
         end
@@ -540,29 +610,19 @@ function HudElementRingHud_player:draw(dt, t, ui_renderer, render_settings, inpu
         return
     end
 
-    local is_dead = false
-    -- Optimized dead check using cached state if possible, or fast lookup
-    if self._apply_shake then
-        is_dead = false
-    else
-        -- Fallback check similar to before but simpler
-        local player = Managers.player:local_player_safe(1)
-        if player and player.player_unit then
-            local unit_data_extension = ScriptUnit.has_extension(player.player_unit, "unit_data_system")
-            local health_extension = ScriptUnit.has_extension(player.player_unit, "health_system")
-            if unit_data_extension and health_extension then
-                local cs = unit_data_extension:read_component("character_state")
-                is_dead = PlayerUnitStatus.is_dead(cs, health_extension)
-            end
-        end
+    if self._is_player_dead then
+        return
     end
-    if is_dead then return end
 
     local ads_active = self._ads_active -- cached
+    local force_show = (self._force_show_active == true)
     local vis_mode   = mod._settings.ads_visibility_dropdown
-    if (vis_mode == "ads_vis_hide_in_ads" and ads_active) or
-        (vis_mode == "ads_vis_hide_outside_ads" and not ads_active) then
-        return
+
+    if not force_show then
+        if (vis_mode == "ads_vis_hide_in_ads" and ads_active) or
+            (vis_mode == "ads_vis_hide_outside_ads" and not ads_active) then
+            return
+        end
     end
 
     HudElementRingHud_player.super.draw(self, dt, t, ui_renderer, render_settings, input_service)

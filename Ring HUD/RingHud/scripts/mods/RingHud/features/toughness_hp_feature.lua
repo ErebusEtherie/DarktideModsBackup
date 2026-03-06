@@ -22,6 +22,15 @@ local TOUGH_ARC_MIN      = -0.19
 local TOUGH_ARC_MAX      = 0.19
 local TOUGH_TOTAL        = (TOUGH_ARC_MAX - TOUGH_ARC_MIN)
 
+local _shared_ctx_pool   = {
+    hp_fraction         = 0,
+    corruption_fraction = 0,
+    toughness_fraction  = 0,
+    has_overshield      = false,
+    near_health_station = false,
+    near_med_crate      = false,
+}
+
 -- Helper: drive base+edge with a notch split for a segment
 local function _drive_notch(base_style, base_mv, edge_style, edge_mv, seg_top, seg_bottom, seg_fill, edge_color)
     local changed = false
@@ -135,23 +144,23 @@ function ToughnessHpFeature.update(hud_element, widgets, hud_state, _hotkey_over
     end
 
     -- Edge passes
-    local cor_e      = cor_w.style.corruption_segment_edge
-    local hp_e       = hp_w.style.health_segment_edge
-    local dmg_e      = dmg_w.style.damage_segment_edge
-    local cor_e_mv   = cor_e and cor_e.material_values
-    local hp_e_mv    = hp_e and hp_e.material_values
-    local dmg_e_mv   = dmg_e and dmg_e.material_values
+    local cor_e             = cor_w.style.corruption_segment_edge
+    local hp_e              = hp_w.style.health_segment_edge
+    local dmg_e             = dmg_w.style.damage_segment_edge
+    local cor_e_mv          = cor_e and cor_e.material_values
+    local hp_e_mv           = hp_e and hp_e.material_values
+    local dmg_e_mv          = dmg_e and dmg_e.material_values
 
     -- ── Visibility: delegate to centralized context module ────────────────────
-    local ctx        = {
-        hp_fraction         = (hud_state.health_data and hud_state.health_data.current_fraction) or 0,
-        corruption_fraction = (hud_state.health_data and hud_state.health_data.corruption_fraction) or 0,
-        toughness_fraction  = (hud_state.toughness_data and hud_state.toughness_data.display_fraction) or 0,
-        has_overshield      = hud_state.toughness_data and hud_state.toughness_data.has_overshield or false,
-        -- near_* left nil → THV can read mod.near_* if needed
-    }
+    local ctx               = _shared_ctx_pool
+    ctx.hp_fraction         = (hud_state.health_data and hud_state.health_data.current_fraction) or 0
+    ctx.corruption_fraction = (hud_state.health_data and hud_state.health_data.corruption_fraction) or 0
+    ctx.toughness_fraction  = (hud_state.toughness_data and hud_state.toughness_data.display_fraction) or 0
+    ctx.has_overshield      = hud_state.toughness_data and hud_state.toughness_data.has_overshield or false
+    ctx.near_health_station = hud_state.near_health_station == true
+    ctx.near_med_crate      = mod.near_medical_crate_deployable == true
 
-    local vis_result = { bar = true, text = false }
+    local vis_result        = { bar = true, text = false }
     if THV and mod.thv_player then
         vis_result = mod.thv_player(ctx)
     end
@@ -169,12 +178,17 @@ function ToughnessHpFeature.update(hud_element, widgets, hud_state, _hotkey_over
     end
 
     -- ── Presentation logic ────────────────────────────────────────────────────
-    local changed         = false
+    local changed        = false
 
-    local display_tough   = math.clamp(ctx.toughness_fraction or 0, 0, 1)
-    local health_frac     = math.clamp(ctx.hp_fraction or 0, 0, 1)
-    local corrupt_frac    = math.clamp(ctx.corruption_fraction or 0, 0, 1)
-    local has_overshield  = ctx.has_overshield == true
+    local display_tough  = math.clamp(ctx.toughness_fraction or 0, 0, 1)
+    local health_frac    = math.clamp(ctx.hp_fraction or 0, 0, 1)
+    local corrupt_frac   = math.clamp(ctx.corruption_fraction or 0, 0, 1)
+    local has_overshield = ctx.has_overshield == true
+
+    if mod._settings.toughness_bar_dropdown == "toughness_bar_always" then
+        health_frac = 1.0
+        corrupt_frac = 0.0
+    end
 
     -- Envelopes for health/damage/corruption
     local HP_GAP, COR_GAP = 0.025, 0.025
@@ -284,14 +298,15 @@ function ToughnessHpFeature.update_health_text(_hud_element, widget, hud_state, 
     if not style then return end
 
     -- Delegate visibility to THV (same ctx as the ring)
-    local ctx = {
-        hp_fraction         = (hud_state.health_data and hud_state.health_data.current_fraction) or 0,
-        corruption_fraction = (hud_state.health_data and hud_state.health_data.corruption_fraction) or 0,
-        toughness_fraction  = (hud_state.toughness_data and hud_state.toughness_data.display_fraction) or 0,
-        has_overshield      = hud_state.toughness_data and hud_state.toughness_data.has_overshield or false,
-    }
+    local ctx               = _shared_ctx_pool
+    ctx.hp_fraction         = (hud_state.health_data and hud_state.health_data.current_fraction) or 0
+    ctx.corruption_fraction = (hud_state.health_data and hud_state.health_data.corruption_fraction) or 0
+    ctx.toughness_fraction  = (hud_state.toughness_data and hud_state.toughness_data.display_fraction) or 0
+    ctx.has_overshield      = hud_state.toughness_data and hud_state.toughness_data.has_overshield or false
+    ctx.near_health_station = hud_state.near_health_station == true
+    ctx.near_med_crate      = mod.near_medical_crate_deployable == true
 
-    local visible = false
+    local visible           = false
     if THV and mod.thv_player then
         local res = mod.thv_player(ctx)
         visible = res.text
@@ -304,8 +319,43 @@ function ToughnessHpFeature.update_health_text(_hud_element, widget, hud_state, 
     end
 
     if visible then
-        local text = string.format("%d",
-            math.floor((hud_state.health_data and hud_state.health_data.current_health) or 0))
+        local health = math.floor((hud_state.health_data and hud_state.health_data.current_health) or 0)
+        local text = string.format("%d", health)
+
+        if mod._settings and mod._settings.toughness_bar_dropdown == "toughness_bar_always_text_always" then
+            local toughness = 0
+
+            local t_ext = hud_state.player_extensions and hud_state.player_extensions.toughness
+
+            if not t_ext then
+                local player = Managers.player:local_player_safe(1)
+                local unit = player and player.player_unit
+                if unit and Unit.alive(unit) then
+                    t_ext = ScriptUnit.has_extension(unit, "toughness_system") and
+                        ScriptUnit.extension(unit, "toughness_system")
+                end
+            end
+
+            if t_ext then
+                if t_ext.current_toughness_visual then
+                    toughness = t_ext:current_toughness_visual()
+                elseif t_ext.current_toughness then
+                    toughness = t_ext:current_toughness()
+                elseif t_ext.remaining_toughness then
+                    toughness = t_ext:remaining_toughness()
+                end
+            end
+            toughness = math.floor((toughness or 0) + 0.5)
+
+            local c = mod.PALETTE_ARGB255.TOUGHNESS_TEAL
+            if ctx.has_overshield then
+                c = mod.PALETTE_ARGB255.TOUGHNESS_OVERSHIELD
+            end
+
+            -- Format: Health (white) + Space + Toughness (colored)
+            text = string.format("%d {#color(%d,%d,%d)}%d{#reset()}", health, c[2], c[3], c[4], toughness)
+        end
+
         if content.health_text_value ~= text then
             content.health_text_value = text
             changed                   = true
