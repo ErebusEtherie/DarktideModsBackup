@@ -31,6 +31,31 @@ local function _palette_options()
     return opts
 end
 
+local function _get_font_options()
+    local FontDefinitions = require("scripts/managers/ui/ui_fonts_definitions")
+    local fonts = FontDefinitions.fonts or {}
+    local options = {}
+    local i = 1
+
+    for font_name, _ in pairs(fonts) do
+        -- Convert snake_case to Title Case for display (e.g. proxima_nova_bold -> Proxima Nova Bold)
+        local readable = font_name:gsub("_", " "):gsub("(%a)([%w]*)", function(first, rest)
+            return first:upper() .. rest
+        end)
+
+        -- Apply the font itself to the dropdown text
+        local text = string.format("{#font(%s)}%s{#reset()}", font_name, readable)
+
+        options[i] = { text = text, value = font_name }
+        i = i + 1
+    end
+
+    -- Sort alphabetically by the underlying font name for consistency
+    table.sort(options, function(a, b) return a.value < b.value end)
+
+    return options
+end
+
 --========================
 -- Options schema
 --========================
@@ -129,6 +154,37 @@ local DATA = {
                                 default_value = 0,
                                 range         = { 0, 200 },
                                 tooltip       = "scanner_offset_bias_override_tooltip",
+                            },
+                        },
+                    },
+                    {
+                        setting_id  = "text_settings",
+                        type        = "group",
+                        sub_widgets = {
+                            {
+                                setting_id    = "player_hud_font",
+                                title         = mod:localize("player_hud_font"),
+                                type          = "dropdown",
+                                default_value = "proxima_nova_bold",
+                                tooltip       = mod:localize("player_hud_font_tooltip"),
+                                options       = _get_font_options(),
+                                localize      = false,
+                            },
+                            {
+                                setting_id      = "player_hud_text_size",
+                                type            = "numeric",
+                                default_value   = 18,
+                                range           = { 10, 40 },
+                                decimals_number = 0,
+                                tooltip         = "player_hud_text_size_tooltip",
+                            },
+                            {
+                                setting_id      = "player_hud_text_offset",
+                                type            = "numeric",
+                                default_value   = 0,
+                                range           = { -100, 100 },
+                                decimals_number = 0,
+                                tooltip         = "player_hud_text_offset_tooltip",
                             },
                         },
                     },
@@ -438,7 +494,7 @@ local DATA = {
                             {
                                 setting_id    = "team_hud_mode",
                                 type          = "dropdown",
-                                default_value = "team_hud_docked",
+                                default_value = "team_hud_floating_thin",
                                 tooltip       = "team_hud_mode_tooltip",
                                 options       = {
                                     { text = "team_hud_disabled",         value = "team_hud_disabled" },
@@ -517,7 +573,7 @@ local DATA = {
                             {
                                 setting_id    = "team_name_icon",
                                 type          = "dropdown",
-                                default_value = "name1_icon1_status1",
+                                default_value = "name0_icon1_status1",
                                 tooltip       = "team_name_icon_tooltip",
                                 options       = {
                                     { text = "name0_icon1_status1", value = "name0_icon1_status1" }, -- nameplate no name, archetype icon big, status icons special

@@ -15,6 +15,6 @@ return {
 	load_after = {
 		"Audio",
 	},
-	version = "1.0.3",
+	version = "1.2.0",
 	packages = {},
 }

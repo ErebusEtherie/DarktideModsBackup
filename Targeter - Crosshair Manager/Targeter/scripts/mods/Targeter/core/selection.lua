@@ -14,7 +14,8 @@ local WeaponTemplate_is_melee                = WeaponTemplate.is_melee
 local string_find                            = string.find
 local slot_configuration                     = PlayerCharacterConstants.slot_configuration
 
--- Optimization: O(1) Constant Lookup Tables
+local WEAPON_DEFAULT_CROSSHAIR               = mod.WEAPON_DEFAULT_CROSSHAIR or "weapon_default"
+
 local TARGET_STATE_MAP                       = {
     weakspot_locked = "weakspot",
     target_locked = "enemy",
@@ -28,9 +29,53 @@ local RELOAD_ACTIONS                         = {
 }
 
 local function _get_ammo(val)
+    if type(val) == "table" then val = val[1] end
     if type(val) == "number" then return val end
-    if type(val) == "table" then return val[1] or 0 end
     return 0
+end
+
+local function _weapon_default_crosshair_type(self, player_extensions, weapon_template, action_settings,
+                                              alternate_fire_component, wielded_slot, slot_type)
+    -- Mirror vanilla preference order:
+    -- 1) action_settings.crosshair
+    -- 2) alternate_fire_settings.crosshair (if alternate fire active)
+    -- 3) weapon_template.crosshair
+    local crosshair_settings = action_settings and action_settings.crosshair
+
+    if not crosshair_settings then
+        local alternate_fire_settings = weapon_template and weapon_template.alternate_fire_settings
+        if alternate_fire_component and alternate_fire_component.is_active and alternate_fire_settings then
+            crosshair_settings = alternate_fire_settings.crosshair
+        end
+    end
+
+    crosshair_settings = crosshair_settings or (weapon_template and weapon_template.crosshair)
+
+    local crosshair_type
+
+    if crosshair_settings then
+        local crosshair_type_func = crosshair_settings.crosshair_type_func
+
+        if crosshair_type_func and slot_type == "weapon" then
+            local weapon_extension = player_extensions and player_extensions.weapon
+            if weapon_extension and weapon_extension.condition_func_params then
+                local condition_func_params = weapon_extension:condition_func_params(wielded_slot)
+                crosshair_type = crosshair_type_func(condition_func_params)
+            end
+        end
+
+        crosshair_type = crosshair_type or crosshair_settings.crosshair_type
+    end
+
+    if self._crosshair_enabled == false then
+        crosshair_type = "ironsight"
+    end
+
+    if self._forced_dot_crosshair and (not crosshair_type or crosshair_type == "none") then
+        crosshair_type = "dot"
+    end
+
+    return crosshair_type or "none"
 end
 
 mod:hook_origin("HudElementCrosshair", "_get_current_crosshair_type", function(self)
@@ -128,16 +173,38 @@ mod:hook_origin("HudElementCrosshair", "_get_current_crosshair_type", function(s
     end
 
     if mod._ads_poll_active then
-        local now = mod._last_t or (mod.now and mod.now() or 0)
-        local last_true = mod._ads_state.last_true_t
-        if type(last_true) ~= "number" then
-            last_true = 0
-            mod._ads_state.last_true_t = 0
+        local ads_state = mod._ads_state
+        if type(ads_state) ~= "table" then
+            ads_state = { last_true_t = 0, started_by = nil }
+            mod._ads_state = ads_state
         end
 
+        local now = mod._last_t
+        if type(now) == "table" then
+            now = now[1]
+        end
+        if type(now) ~= "number" then
+            now = (mod.now and mod.now()) or 0
+            if type(now) == "table" then
+                now = now[1]
+            end
+            if type(now) ~= "number" then
+                now = 0
+            end
+        end
+
+        local last_true = ads_state.last_true_t
+        if type(last_true) == "table" then
+            last_true = last_true[1]
+        end
+        if type(last_true) ~= "number" then
+            last_true = 0
+        end
+        ads_state.last_true_t = last_true
+
         if ads_condition_ranged then
-            mod._ads_state.last_true_t = now
-        elseif (now - last_true) > (mod.ADS_END_GRACE or 0.2) then
+            ads_state.last_true_t = now
+        elseif type(now) == "number" and type(last_true) == "number" and (now - last_true) > (mod.ADS_END_GRACE or 0.2) then
             mod._ads_poll_active = false
         end
     end
@@ -156,5 +223,13 @@ mod:hook_origin("HudElementCrosshair", "_get_current_crosshair_type", function(s
     local profile = (mod.shape_profiles and mod.shape_profiles[weapon_class]) or default_profile
     local action_tbl = profile[action_key] or default_profile[action_key]
 
-    return action_tbl and action_tbl[target_state] or default_profile[action_key][target_state] or "dot"
+    local chosen = (action_tbl and action_tbl[target_state]) or
+        (default_profile[action_key] and default_profile[action_key][target_state]) or "dot"
+
+    if chosen == WEAPON_DEFAULT_CROSSHAIR then
+        return _weapon_default_crosshair_type(self, player_extensions, weapon_template, action_settings,
+            alternate_fire_component, wielded_slot, slot_type)
+    end
+
+    return chosen
 end)

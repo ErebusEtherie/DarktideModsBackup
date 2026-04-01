@@ -11,6 +11,11 @@ return {
 				type = "checkbox",
 				default_value = true
 			},
+			{
+				setting_id = "autoJump",
+				type = "checkbox",
+				default_value = true
+			}
 	}
 }
 }

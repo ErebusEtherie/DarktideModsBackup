@@ -101,6 +101,9 @@ mod:hook("FxSystem", "start_template_effect", function(func, self, template, opt
             return
         end
     end
+	-- if template_name == "chaos_mutator_ritualist_chanting" then
+	-- 	return
+	-- end
     return func(self, template, optional_unit, optional_node, optional_position)
 end)
 
@@ -113,6 +116,9 @@ mod:hook("FxSystem", "rpc_start_template_effect", function(func, self, channel_i
             return
         end
     end
+	-- if template_name == "chaos_mutator_ritualist_chanting" then
+	-- 	return
+	-- end
     return func(self, channel_id, buffer_index, template_id, optional_unit_id, optional_node, optional_position)
 end)
 
@@ -244,6 +250,11 @@ mod.havoc_enemy_vfx = function(self)
     
     if mod:get("disable_corrupted_enemies_vfx") then
         HavocTemplates.havoc_corrupted_enemies.minion_effects.node_effects = nil
+		HavocTemplates.havoc_toughened_skin.minion_effects.node_effects = nil
+		HavocTemplates.havoc_toughened_skin.start_func = function()
+		end
+		HavocTemplates.havoc_toughened_skin.stop_func = function()
+		end
     end
 end
 

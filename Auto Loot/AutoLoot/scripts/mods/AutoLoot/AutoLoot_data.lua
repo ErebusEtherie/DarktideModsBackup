@@ -18,6 +18,11 @@ return {
 			default_value = true,
 		},
 		{
+			setting_id = "pickup_expedition_materials",
+			type = "checkbox",
+			default_value = true,
+		},
+		{
 			setting_id = "pickup_stimms",
 			type = "checkbox",
 			default_value = true,

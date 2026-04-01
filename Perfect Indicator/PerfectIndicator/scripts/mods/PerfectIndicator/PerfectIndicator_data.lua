@@ -30,11 +30,13 @@ local widgets = {
                 type          = "checkbox",
                 default_value = false,
             },
+            --[[]
             {
                 setting_id    = "PARTICLE",
                 type          = "checkbox",
                 default_value = false,
             },
+            --]]
             {
                 setting_id    = "AUDIO",
                 type          = "dropdown",

@@ -1,5 +1,19 @@
 CHANGELOG
-1.13.01 Planned changes
+1.15.00 Text options
+
+1.15.00 Planned changes
+-- [ ] Terminus Warrant changes
+-- [ ] Performance pass
+-- [ ] Text alignment tweaks
+
+1.14.2 Beyond the Hive first update
+-- [Fixed] Fixed ALIVE check error from Fatshark hotfix (with help from POLIVOX)
+
+1.14.1 Beyond the Hive first update
+-- [Updated] Ogryn power maul recharge 10s
+-- [Fixed] Fixed potential crash if FS retires a font
+
+1.14.00 Bugfix
 -- [Fixed] Corruption segment of player toughness/hp bar was misaligned when increasing HUD spread
 
 1.13.00 Paul, ammo and FPS

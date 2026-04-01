@@ -468,9 +468,7 @@ mod:hook_safe(CLASS.InventoryWeaponCosmeticsView, "_preview_element", function(s
 	end
 end)
 
-mod:hook(CLASS.InventoryView, "on_enter", function(func, self, ...)
-	func(self, ...)
-
+mod:hook_safe(CLASS.InventoryView, "on_enter", function(self)
 	-- cache available commodores shop items when entering the inventory...
 	mod.grab_current_commodores_items(self)
 end)
@@ -479,9 +477,7 @@ mod:hook_require("scripts/ui/pass_templates/item_pass_templates", function(insta
 	instance.item_icon = {}
 end)
 
-mod:hook(CLASS.InventoryWeaponCosmeticsView, "on_enter", function(func, self, ...)
-	func(self, ...)
-
+mod:hook_safe(CLASS.InventoryWeaponCosmeticsView, "on_enter", function(self)
 	mod.get_wishlist()
 
 	-- Updating the default widgets for the grid entries to add custom icons for wishlists, store prices etc...
@@ -1332,6 +1328,9 @@ StoreView._on_page_index_selected = function(self, page_index)
 
 	self._selected_page_index = page_index
 
+	self._widgets_by_name.navigation_arrow_left.content.visible = page_index > 1
+	self._widgets_by_name.navigation_arrow_right.content.visible = page_index < #self._category_pages_layout_data
+
 	if self._page_panel then
 		self._page_panel:set_selected_index(page_index)
 	end
@@ -1549,7 +1548,7 @@ InventoryWeaponCosmeticsView._prepare_layout_data = function(self)
 					local real_item = not is_empty and item or nil
 
 					-- set rarity of item based on source...
-					if item.__master_item and item.__master_item.source then
+					--[[if item.__master_item and item.__master_item.source then
 						local new_rarity = -1
 						if item.__master_item.source == 1 then
 							new_rarity = 3
@@ -1565,7 +1564,7 @@ InventoryWeaponCosmeticsView._prepare_layout_data = function(self)
 
 						visual_item.rarity = new_rarity
 						real_item.__master_item.rarity = new_rarity
-					end
+					end]]
 
 					layout_count = layout_count + 1
 					layout[layout_count] = {
@@ -1883,7 +1882,7 @@ InventoryWeaponCosmeticsView._fetch_inventory_items = function(self)
 					end
 
 					-- set rarity of item based on source...
-					if item.source == 1 then
+					--[[if item.source == 1 then
 						item.rarity = 3
 					elseif item.source == 2 then
 						item.rarity = 4
@@ -1891,7 +1890,7 @@ InventoryWeaponCosmeticsView._fetch_inventory_items = function(self)
 						item.rarity = 5
 					else
 						item.rarity = 2
-					end
+					end]]
 
 					if continue then
 						table.insert(custom_items[selected_item_slot], {
@@ -2051,8 +2050,6 @@ InventoryWeaponCosmeticsView._fetch_inventory_items = function(self)
 		-- Consolidate per-tab
 		promises[i] = Promise.all(unpack(slot_promises)):next(function(items)
 			local newitems = {}
-
-			dbg_cust = custom_items
 
 			if tab_content.slot_name == "slot_weapon_skin" then
 				newitems = custom_items["slot_weapon_skin"]

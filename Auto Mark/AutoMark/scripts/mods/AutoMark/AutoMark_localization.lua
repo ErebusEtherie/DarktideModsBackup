@@ -95,7 +95,7 @@ local localization = {
     },
     companion_health_threshold = {
         en = "Health Threshold",
-        ["zh-cn"] = "生命值阈值",
+        ["zh-cn"] = "生命阈值",
     },
     companion_health_threshold_description = {
         en =
@@ -267,6 +267,18 @@ local localization = {
         en = "Veteran Focus Target",
         ["zh-cn"] = "老兵聚焦目标",
     },
+    apply_to_all_classes = {
+        en = "Apply to All Classes",
+        ["zh-cn"] = "应用于所有职业",
+    },
+    apply_button = {
+        en = "Apply Button",
+        ["zh-cn"] = "应用键",
+    },
+    apply_button_description = {
+        en = "Apply current settings to all classes.",
+        ["zh-cn"] = "将当前设置应用于所有职业。",
+    },
     reset_auto_mark_settings = {
         en = "Reset Auto Mark Settings",
         ["zh-cn"] = "重置自动标记设置",
@@ -283,11 +295,22 @@ local localization = {
         en = " ",
         ["zh-cn"] = " ",
     },
+    apply = {
+        en = "Apply",
+        ["zh-cn"] = "应用",
+    },
     reset = {
         en = "Reset",
         ["zh-cn"] = "重置",
     },
 }
+
+local function is_localization_valid(text)
+    if string.find(text, "string not found") then
+        return false
+    end
+    return true
+end
 
 for breed_name, breed_data in pairs(breeds) do
     if Breed.is_minion(breed_data) then
@@ -297,9 +320,11 @@ for breed_name, breed_data in pairs(breeds) do
                 and breed_data.boss_display_name
                 or breed_data.display_name
             )
+            text = is_localization_valid(text) and text or breed_name
             localization[breed_name] = { en = text }
         else
             local text = Localize(breed_data.display_name)
+            text = is_localization_valid(text) and text or breed_name
             if string.find(breed_name, "mutator") then
                 localization[breed_name] = {
                     en = text .. " (Mutator)",

@@ -51,7 +51,10 @@ mod:hook_safe(CLASS.PlayerUnitFirstPersonExtension, "fixed_update", function(sel
             0.0167
     end
 
-    local trace_interval = mod._trace_interval or 0.03333333333 -- (1 / 30)
+    if type(dt) == "table" then dt = dt[1] end
+    if type(dt) ~= "number" then dt = 0.0167 end
+
+    local trace_interval = mod._trace_interval or 0.03333333333
     local trace_accum = (mod._trace_accum or 0) + dt
     if trace_accum < trace_interval then
         mod._trace_accum = trace_accum

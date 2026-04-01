@@ -12,6 +12,69 @@ local localizations = {
 		["zh-tw"] = "當狂信徒持有投擲飛刀時，切換到遠程武器時自動投擲飛刀。",
 		["zh-cn"] = "当狂信徒持有投掷飞刀时，切换到远程武器时自动投掷飞刀。",
 	},
+	-- Global settings
+	mod_enabled = {
+		en = "Mod Enabled",
+		["zh-tw"] = "啟用模組",
+		["zh-cn"] = "启用模组",
+	},
+	mod_enabled_tooltip = {
+		en = "Toggle the entire mod on or off",
+		["zh-tw"] = "開啟或關閉整個模組",
+		["zh-cn"] = "开启或关闭整个模组",
+	},
+	mod_enable_toggle = {
+		en = "Toggle Key",
+		["zh-tw"] = "切換鍵",
+		["zh-cn"] = "切换键",
+	},
+	mod_enable_toggle_tooltip = {
+		en = "Keybind to quickly toggle the mod on or off",
+		["zh-tw"] = "快速開啟或關閉模組的按鍵綁定",
+		["zh-cn"] = "快速开启或关闭模组的按键绑定",
+	},
+	switch_ranged_no_throw = {
+		en = "Switch to Ranged (No Throw)",
+		["zh-tw"] = "切換到遠程武器（不投擲）",
+		["zh-cn"] = "切换到远程武器（不投掷）",
+	},
+	switch_ranged_no_throw_tooltip = {
+		en = "Switch to ranged weapon without auto-throwing knife. Only works for weapons with auto-throw enabled.",
+		["zh-tw"] = "切換到遠程武器但不自動投擲飛刀。僅對啟用了自動投擲的武器生效。",
+		["zh-cn"] = "切换到远程武器但不自动投掷飞刀。仅对启用了自动投掷的武器生效。",
+	},
+	mod_enable_verbose = {
+		en = "Enable Notifications",
+		["zh-tw"] = "啟用通知",
+		["zh-cn"] = "启用通知",
+	},
+	mod_enable_verbose_tooltip = {
+		en = "Show notifications when toggling the mod",
+		["zh-tw"] = "切換模組時顯示通知",
+		["zh-cn"] = "切换模组时显示通知",
+	},
+	mod_enable_debug = {
+		en = "Enable Debug Mode",
+		["zh-tw"] = "啟用調試模式",
+		["zh-cn"] = "启用调试模式",
+	},
+	mod_enable_debug_tooltip = {
+		en = "Show detailed debug logs in the console",
+		["zh-tw"] = "在控制台顯示詳細的調試日誌",
+		["zh-cn"] = "在控制台显示详细的调试日志",
+	},
+	-- Mod Control Settings
+	mod_control_settings = {
+		en = "MOD CONTROL SETTINGS",
+		["zh-tw"] = "模組啟停設定",
+		["zh-cn"] = "模组启停设置",
+	},
+	-- Global settings
+	global_settings = {
+		en = "Mod Settings",
+		["zh-tw"] = "模組設定",
+		["zh-cn"] = "模组设置",
+	},
 	-- Debug
 	enable_debug = {
 		en = "DEBUG MODE",
@@ -22,17 +85,6 @@ local localizations = {
 		en = "Enable debug logging to console. Use for troubleshooting.",
 		["zh-tw"] = "啟用控制台調試日誌，用於故障排查。",
 		["zh-cn"] = "启用控制台调试日志，用于故障排查。",
-	},
-	-- Throw Delay
-	throw_delay_title = {
-		en = "THROW DELAY (S)",
-		["zh-tw"] = "投擲延遲（秒）",
-		["zh-cn"] = "投掷延迟（秒）",
-	},
-	throw_delay_tooltip = {
-		en = "Delay before automatically throwing knife after switching to a ranged weapon.\n0.0 = throw immediately when switching\n2.0 = throw 2 seconds after switching",
-		["zh-tw"] = "切換到遠程武器後自動投擲飛刀的延遲時間。\n0.0 = 切換時立即投擲\n2.0 = 切換後延遲2秒投擲",
-		["zh-cn"] = "切换到远程武器后自动投掷飞刀的延迟时间。\n0.0 = 切换时立即投掷\n2.0 = 切换后延迟2秒投掷",
 	},
 	-- Keybinds
 	mod_settings = {

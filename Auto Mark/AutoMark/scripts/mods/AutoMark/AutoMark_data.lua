@@ -264,6 +264,21 @@ local widgets = {
         }
     },
     {
+        setting_id  = "apply_to_all_classes",
+        type        = "group",
+        sub_widgets = {
+            {
+                setting_id    = "apply_button",
+                type          = "dropdown",
+                default_value = "blank",
+                options       = {
+                    { text = "apply", value = "apply" },
+                    { text = "blank", value = "blank" },
+                }
+            },
+        }
+    },
+    {
         setting_id  = "reset_auto_mark_settings",
         type        = "group",
         sub_widgets = {

@@ -84,7 +84,7 @@
 --FullAuto
 --GasOutline
 --GetOutOfTheWay
---GlobalStat
+--PlayerProgression
 --GlobalStore
 --GoToMastery
 --guarantee_ability_activation
@@ -236,3 +236,22 @@
 --WhatTheLocalization
 --who_are_you
 --ZipIt
+--AbilityGod
+--AuspexHelper
+--AutoMark
+--BetterMovement
+--Compass Range Finder
+--DiscordRichPresence
+--ExpeditionsMissionGrid
+--HavocPost
+--IWantToHear
+--kill_counter
+--QuickLeave
+--RearGuard
+--SortModMenu
+--Targeter
+--veil_shield
+--voc_outline
+--whats_in_the_box
+--ZealotThrowingKnife
+--ZipIt2

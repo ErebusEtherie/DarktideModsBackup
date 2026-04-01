@@ -1,7 +1,4 @@
 local mod = get_mod("Mourningstar_dialogue_improved")
-local Definitions = mod:io_dofile(
-	"Mourningstar_dialogue_improved/scripts/mods/Mourningstar_dialogue_improved/Mourningstar_dialogue_improved_definitions"
-)
 
 local DialogueBreedSettings = require("scripts/settings/dialogue/dialogue_breed_settings")
 local DialogueCategoryConfig = require("scripts/settings/dialogue/dialogue_category_config")
@@ -299,7 +296,10 @@ mod.updateCustomRadio = function(self, dt)
 				local speaker_voice_settings = DialogueSpeakerVoiceSettings[speaker_name]
 				mission_giver_icon = speaker_voice_settings and speaker_voice_settings.icon
 				local mission_giver_full_name = speaker_voice_settings and speaker_voice_settings.full_name
-				mission_giver_full_name_localized = instance:_localize(mission_giver_full_name)
+					or "++REDACTED++"
+				if mission_giver_full_name then
+					mission_giver_full_name_localized = instance:_localize(mission_giver_full_name)
+				end
 			end
 
 			mod.customradio_update_widget(mission_giver_full_name_localized, mission_giver_icon, dt)

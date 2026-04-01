@@ -4,26 +4,37 @@
 local mod = get_mod("Targeter")
 if not mod then return end
 
-mod.crosshair_ui_hud         = mod.crosshair_ui_hud or nil
-mod.crosshair_state          = mod.crosshair_state or "default"
+local CROSSHAIR_TEMPLATE_ROOT = "Targeter/scripts/mods/Targeter/crosshairs/"
 
-mod.game_mode_is_hub         = (mod.game_mode_is_hub ~= nil) and mod.game_mode_is_hub or false
+mod.crosshair_ui_hud          = mod.crosshair_ui_hud or nil
+mod.crosshair_state           = mod.crosshair_state or "default"
 
-mod._carried_ranged_template = mod._carried_ranged_template or nil
-mod._carried_ranged_class    = mod._carried_ranged_class or nil
+mod.game_mode_is_hub          = (mod.game_mode_is_hub ~= nil) and mod.game_mode_is_hub or false
 
-mod.inventory_slot_component = mod.inventory_slot_component or nil
+mod._carried_ranged_template  = mod._carried_ranged_template or nil
+mod._carried_ranged_class     = mod._carried_ranged_class or nil
 
-mod.ADS_END_GRACE            = mod.ADS_END_GRACE or 0.2
+mod.inventory_slot_component  = mod.inventory_slot_component or nil
 
-mod.template_paths           = mod.template_paths or {
-    "Targeter/scripts/mods/Targeter/crosshairs/larger_dot",
-    "Targeter/scripts/mods/Targeter/crosshairs/chevron",
-    "Targeter/scripts/mods/Targeter/crosshairs/crosshair_template_charge_up_peril",
-    "Targeter/scripts/mods/Targeter/crosshairs/crosshair_template_charge_up_ads_peril",
-    "Targeter/scripts/mods/Targeter/crosshairs/crosshair_template_charge_up_peril_larger_dot",
-    "Targeter/scripts/mods/Targeter/crosshairs/crosshair_template_charge_up_ads_peril_larger_dot",
-}
+mod.ADS_END_GRACE             = mod.ADS_END_GRACE or 0.2
+
+function mod.get_targeter_template_paths()
+    local manifest = mod.get_targeter_crosshair_manifest and mod.get_targeter_crosshair_manifest() or {}
+    local paths = Script.new_array(#manifest)
+    local count = 0
+
+    for i = 1, #manifest do
+        local name = manifest[i]
+        if type(name) == "string" and name ~= "" then
+            count = count + 1
+            paths[count] = CROSSHAIR_TEMPLATE_ROOT .. name
+        else
+            mod:error("Targeter crosshair manifest entry %d must be a non-empty string", i)
+        end
+    end
+
+    return paths
+end
 
 function mod.now()
     local tman = Managers and Managers.time
@@ -106,7 +117,7 @@ function mod.current_weapon_class_or_fallback()
 end
 
 mod.DEFAULT_PROFILE = mod.DEFAULT_PROFILE or {
-    primary   = { default = "dot", enemy = "larger_dot", weakspot = "larger_dot" },
-    secondary = { default = "dot", enemy = "larger_dot", weakspot = "larger_dot" },
-    special   = { default = "none", enemy = "none", weakspot = "none" },
+    primary   = { default = "weapon_default", enemy = "weapon_default", weakspot = "weapon_default" },
+    secondary = { default = "weapon_default", enemy = "weapon_default", weakspot = "weapon_default" },
+    special   = { default = "weapon_default", enemy = "weapon_default", weakspot = "weapon_default" },
 }

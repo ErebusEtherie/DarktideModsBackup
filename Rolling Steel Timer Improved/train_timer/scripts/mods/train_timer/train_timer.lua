@@ -55,7 +55,7 @@ local add_definitions = function(definitions)
 		},
 		position = {
 			-500,
-			-16,
+			0,
 			1,
 		},
 	}
@@ -225,6 +225,7 @@ HudElementMissionObjectiveFeed._update_widgets = function(self, dt, t)
 			local content = widget.content
 			local ui_state = hud_objective:state()
 			local objective_name = hud_objective._objective_name
+			content.ui_state = ui_state
 
 			-- If train mission with timer then add clock
 			if
@@ -305,14 +306,14 @@ HudElementMissionObjectiveFeed._update_widgets = function(self, dt, t)
 			end
 
 			if ui_state == "alert" then
+				local style = widget.style
 				local neutral_color = HudElementMissionObjectiveFeedSettings.colors_by_category.default.bar
+				local alert_color = style.bar.alert_color or HudElementMissionObjectiveFeedSettings.alert_color
 				local lerp = math.sin(t * 10) / 2 + 0.5
 
-				ALERT_COLOR[2] = math.lerp(neutral_color[2], 255, lerp)
-				ALERT_COLOR[3] = math.lerp(neutral_color[3], 151, lerp)
-				ALERT_COLOR[4] = math.lerp(neutral_color[4], 29, lerp)
-
-				local style = widget.style
+				ALERT_COLOR[2] = math.lerp(neutral_color[2], alert_color[2], lerp)
+				ALERT_COLOR[3] = math.lerp(neutral_color[3], alert_color[3], lerp)
+				ALERT_COLOR[4] = math.lerp(neutral_color[4], alert_color[4], lerp)
 
 				if content.show_bar then
 					style.bar.color = ALERT_COLOR
@@ -361,7 +362,7 @@ local function get_text_width_safe(ui_renderer, text, text_style, optional_size)
 	return 0
 end
 
-HudElementMissionObjectiveFeed._update_timer_progress = function(self, hud_objective, widget, dt, realign)
+--[[HudElementMissionObjectiveFeed._update_timer_progress = function(self, hud_objective, widget, dt, realign)
 	local content = widget.content
 	local show_minutes = content.show_minutes
 	local show_hours = content.show_hours
@@ -405,10 +406,12 @@ HudElementMissionObjectiveFeed._update_timer_progress = function(self, hud_objec
 		local width = get_text_width_safe(ui_renderer, realignment_text, text_style, optional_size)
 
 		-- Guard default_offset access
-		local base_x = (text_style.default_offset and text_style.default_offset[1]) or (text_style.offset and text_style.offset[1]) or 0
+		local base_x = (text_style.default_offset and text_style.default_offset[1])
+			or (text_style.offset and text_style.offset[1])
+			or 0
 		text_style.offset = text_style.offset or { 0, 0, 0 }
 		text_style.offset[1] = base_x - (width or 0)
 	end
 
 	content.timer_text = text
-end
+end]]

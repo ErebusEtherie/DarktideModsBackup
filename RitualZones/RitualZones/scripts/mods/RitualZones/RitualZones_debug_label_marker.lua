@@ -1,8 +1,8 @@
 --[[
 	File: RitualZones_debug_label_marker.lua
 	Description: Debug label marker used for through-wall text.
-	Overall Release Version: 1.2.0
-	File Version: 1.2.0
+	Overall Release Version: 1.3.0
+	File Version: 1.3.0
 	Last Updated: 2026-01-07
 	Author: LAUREHTE
 ]]

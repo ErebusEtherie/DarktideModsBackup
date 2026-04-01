@@ -1,4 +1,4 @@
--- valkyrie.mod
+-- valkyrie.mod by xxbellatrix
 return {
   run = function()
     fassert(rawget(_G, "new_mod"), "`valkyrie` needs Darktide Mod Framework.")

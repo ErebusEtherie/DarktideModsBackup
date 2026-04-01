@@ -47,6 +47,7 @@ mod.disablers = {
     "cultist_mutant",
     "cultist_mutant_mutator",
     "renegade_netgunner",
+    "chaos_armored_hound",
 }
 mod.bosses = {
     "chaos_beast_of_nurgle",
@@ -59,10 +60,12 @@ mod.bosses = {
     "renegade_twin_captain_two",
     "cultist_captain",
     "chaos_mutator_daemonhost",
+    "chaos_ogryn_houndmaster",
 }
 mod.skip = {
     "chaos_mutator_ritualist",
     "cultist_ritualist",
+    -- what the fuck is "nurgle_flies",
 }
 -- ------------
 -- Damage Types
@@ -174,7 +177,11 @@ mod.electrocution_damage_profiles = {
     "psyker_smite_kill",
 }
 mod.toxin_damage_profiles = {
-    "toxin_variant_3",	
+    "toxin_variant_1",	
+    "toxin_variant_2",	
+    "toxin_variant_3",
+    "horde_mode_self_propagating_toxin", -- hordes_buff_broker_tox_grenade_applies_self_propagating_toxin applies a toxin that's this?
+    --"broker_toxin_stacks_stun_interval", -- stun only?
 }
 mod.environmental_damage_profiles = {
     "barrel_explosion",
@@ -219,6 +226,9 @@ mod.ammunition = {
     loc_pickup_consumable_large_clip_01 = "large_clip",
     loc_pickup_deployable_ammo_crate_01 = "crate",
     loc_pickup_consumable_small_grenade_01 = "grenades",
+    -- Expeditions
+    --  These count as Ammunition
+    loc_game_mode_expedition_pickup_price_desc = "expedition_pocketable",
 }
 -- scripts/settings/pickup/pickups/consumable large_clip_pickup and small_clip_pickup
 mod.ammunition_percentage = {

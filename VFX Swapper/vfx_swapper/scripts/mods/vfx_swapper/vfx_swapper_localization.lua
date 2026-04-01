@@ -224,11 +224,11 @@ return {
 		["zh-cn"] = "包括来自手榴弹和某些针刺器替代射击模式的爆炸。",
 	},
 	rampaging_tip = {
-		en = "*Turning this setting off requires restart. Includes orange glow FX and shockwave on death. Enemies will still grow.",
+		en = "{#color(255, 35, 5)}*Turning this setting off requires restart. {#color(208, 208, 208)}\nIncludes orange glow FX and shockwave on death. Enemies will still grow.",
 		["zh-cn"] = "包括死亡时的橙色光辉特效和冲击波。敌人仍然会变大。",
 	},
 	corrupted_vfx_tip = {
-		en = "*Turning this setting off requires restart. Disables Green Flies effect on Blight Spreads enemies.",
+		en = "{#color(255, 35, 5)}*Turning this setting off requires restart. {#color(208, 208, 208)}\nDisables Green Flies effect on Blight Spreads enemies.",
 		["zh-cn"] = "禁用瘟疫扩散敌人的绿色苍蝇特效。关闭此选项需要重启。",
 	},
 	disable_death_vfx = {
@@ -266,5 +266,61 @@ return {
 	disable_coral_vfx_tip = {
 		en = "Disables the toxic gas spewing out from geysers/corals.",
 		["zh-cn"] = "禁用喷泉/珊瑚喷出的毒气。",
+	},
+	vfx_limiter_group = {
+		en = "OG VFX Limiter Options",
+		["zh-cn"] = "原版特效限制器选项",
+	},
+	frag_grenade_vfx = {
+		en = "Disable Shredder Frag/Rumbler/Arbites Grenades VFX",
+		["zh-cn"] = "禁用老兵手雷/榴弹发射器/法务手雷特效",
+	},
+	krak_grenade_vfx = {
+		en = "Disable Krak Grenade VFX",
+		["zh-cn"] = "禁用穿甲手雷特效",
+	},
+	box_grenade_ogryn_vfx = {
+		en = "Disable Box Grenade VFX",
+		["zh-cn"] = "禁用欧格林盒子雷特效",
+	},
+	frag_bomb_ogryn_vfx = {
+		en = "Disable Frag Bomb VFX",
+		["zh-cn"] = "禁用欧格林胖男孩特效",
+	},
+	stumm_grenade_vfx = {
+		en = "Disable Stun Grenade VFX",
+		["zh-cn"] = "禁用晕眩手雷特效",
+	},
+	fire_grenade_vfx = {
+		en = "Disable Immolation Grenade VFX (Explosion)",
+		["zh-cn"] = "禁用狂信火雷爆炸特效",
+	},
+	net_electric_vfx = {
+		en = "Disable Trapper's net lightning effect",
+		["zh-cn"] = "禁用陷阱兵的電網效果",
+	},
+	netgunner_vfx = {
+		en = "Disable Netgunner muzzle flash",
+		["zh-cn"] = "禁用网枪开火特效",
+	},
+	voidstrike_explosion_vfx = {
+		en = "Disable Voidstrike Staff explosion effect",
+		["zh-cn"] = "禁用虚空打击法杖爆炸特效",
+	},
+	ritual_vfx = {
+		en = "Disable Heinous Ritual effects",
+		["zh-cn"] = "禁用邪恶仪式特效",
+	},
+	scum_stimm_screen = {
+		en = "Disable Scum's Stimm Smoke screen effect",
+		["zh-cn"] = "禁用兴奋剂烟雾屏幕特效",
+	},
+	scum_rampage_screen = {
+		en = "Disable Scum's Rampage screen effect",
+		["zh-cn"] = "禁用狂暴状态屏幕特效",
+	},
+	lasgun_vfx = {
+		en = "Disable Hellbore Lasgun VFX",
+		["zh-cn"] = "禁用地狱管激光枪特效",
 	},
 }

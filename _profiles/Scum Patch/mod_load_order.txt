@@ -2,7 +2,7 @@ DarktideLocalServer
 AFK
 --Ammonia
 --AncestorsGuidance
-animation_events
+--animation_events
 Archivum Messelina
 --ArtificialLatency
 Audio
@@ -10,6 +10,7 @@ AudioReplacer
 --auto_rations
 --AutoVault
 --AutoTag
+AuspexHelper
 --BackstabColor
 barrels
 --better_buff_management
@@ -26,7 +27,7 @@ character_cosmetics_view_improved
 BetterMelk
 CharacterGrid
 ChatBlock
-CleanForceBlocking
+--CleanForceBlocking
 clear_smoke
 CollectibleFinder
 --ColorSelection
@@ -36,27 +37,26 @@ commodores_vestures_improved
 --contextual_audio_settings
 CorrectMissionVotingInfo
 --creature_spawner
---crosshair_hud
+crosshair_hud
 crosshair_remap
---crosshairs_fix
+crosshairs_fix
 crusher_attack_indicator
 Crystalline Focus
 --custom_hud
 --CustomLoadingBackground
 danger_zone
 debuff_indicator
-Decode_Helper
-DecodeMinigameSolver
+--Decode_Helper
+--DecodeMinigameSolver
 DefaultToHighestBlessingTier
 default_to_strike_team
-DefaultSprint
 DifficultyColor
 DisableScreenEffects
 --Disconnect
 --DisplayPing
 Power_DI
 true_level
-teammate_tracker
+--teammate_tracker
 --Do I Know You
 --DodgeSlide
 --DogWhistle
@@ -70,8 +70,6 @@ EquippedIconPlus
 --weapon_customization
 Favourite Child
 FilterSacrifice
---FoundYa
---FullAuto
 GasOutline
 GetOutOfTheWay
 GoToMastery
@@ -79,7 +77,6 @@ guarantee_ability_activation
 guarantee_special_action
 guarantee_weapon_swap
 Healthbars
---HealthScaling
 HeatPercentage
 how_did_I_get_that
 hub_hotkey_menus
@@ -103,7 +100,7 @@ LessAnnoyingPing
 LessDoT
 LetMePlayHavoc
 --LoadoutMonitor
-LoadoutNames
+--LoadoutNames
 ManyMoreTry
 markers_aio
 MarkPreview
@@ -114,7 +111,7 @@ minimap
 MissionBrief
 MissionGrid
 modular_menu_buttons
-more_characters_and_loadouts
+--more_characters_and_loadouts
 MoreGraphicsOptions
 Mourningstar_dialogue_improved
 MultiBind
@@ -123,6 +120,7 @@ MyFavorites
 NoNews
 NumericUI
 outline_colours
+--ovenproof_scoreboard_plugin
 party_finder_auto_refresh
 party_finder_menu
 penances_improved
@@ -152,7 +150,7 @@ RetainSelection
 ReviveSuccessSound
 --train_timer
 ScannerSuccessSound
-scoreboard
+--scoreboard
 ScoreboardExplosive
 --servo_friend
 --ServoTempus
@@ -172,14 +170,14 @@ smaller_talent_tree
 --SpecialsTracker
 Spidey Sense
 --StickyFingers
-StickySprint
-SuperFlashlight
+--StickySprint
+--SuperFlashlight
 TalentRefundBelow
 CareerColourOutlines
 --TeamKills
-TrainSolver
+--TrainSolver
 --TraumaOutlines
-Tree_Helper
+--Tree_Helper
 --Triage
 ui_extension
 --UngaBunga
@@ -202,7 +200,6 @@ DistinctSideMissionIcons
 BrokerAutoStim
 --AfterGrenade
 BrokerStimTimer
-ovenproof_scoreboard_plugin
 ScanHelper
 FilterTrash
 --PlayerProgression
@@ -236,14 +233,30 @@ FaithMeter
 GlobalStore
 --mission_progress
 TalentPreview
---BetterMovement
+BetterMovement
 QuickLeave
 --AbilityGod
 --DiscordRichPresence
 IWantToHear
-SortModMenu
 AutoMark
 ZealotThrowingKnife
 --ZipIt2
 --Targeter
-veil_shield
+--veil_shield
+--kill_counter
+HavocPost
+RearGuard
+voc_outline
+ExpeditionsMissionGrid
+--whats_in_the_box
+Compass Range Finder
+SortModMenu
+--map_out
+--TraversalAssist
+Inferno_Sprint_Cancel
+Extra Opportunities
+Radar
+ColorMyStamina
+--cooldown_analysis
+--peril_tracker
+--SmoothTide

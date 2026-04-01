@@ -5,7 +5,7 @@ local decal_unit_name = "content/levels/training_grounds/fx/decal_aoe_indicator"
 local bubble_decals = mod:persistent_table("shield_bubble_decals")
 local SpecialRulesSetting = require("scripts/settings/ability/special_rules_settings")
 local TalentSettings = require("scripts/settings/talent/talent_settings")
-local ForceFieldExtension = require("scripts/extension_systems/force_field/force_field_extension")
+local PsykerForceFieldUnitExtension = require("scripts/extension_systems/force_field/psyker_force_field_unit_extension")
 local special_rules = SpecialRulesSetting.special_rules
 local talent_settings = TalentSettings.psyker_3.combat_ability
 local SOUND_EVENTS_WALL = {
@@ -17,8 +17,8 @@ local SOUND_EVENTS_SPHERE = {
 	stop = "wwise/events/player/stop_ability_psyker_shield_dome",
 }
 local PARTICLES_WALL = {
-	start = "content/fx/particles/abilities/protectorate_forward_shield_init",
-	stop = "content/fx/particles/abilities/protectorate_forward_shield_fade",
+	start = "content/fx/particles/abilities/protectorate_forward_shield_init_wide",
+	stop = "content/fx/particles/abilities/protectorate_forward_shield_fade_wide",
 }
 local PARTICLES_SPHERE = {
 	start = "content/fx/particles/abilities/protectorate_sphere_shield_init",
@@ -72,7 +72,7 @@ local function shield_spawned(unit, dont_load_package)
 	bubble_decals[unit] = get_decal_unit(unit, mod:get("R"), mod:get("G"), mod:get("B"))
 end
 
-mod:hook(CLASS.ForceFieldExtension, "init", function (func, self, extension_init_context, unit, extension_init_data, game_object_data_or_game_session, unit_spawn_parameter_or_game_object_id)
+mod:hook(CLASS.PsykerForceFieldUnitExtension, "init", function (func, self, extension_init_context, unit, extension_init_data, game_object_data_or_game_session, unit_spawn_parameter_or_game_object_id)
 	self._unit = unit
 
 	local world = extension_init_context.world
@@ -187,7 +187,7 @@ mod:hook(CLASS.ForceFieldExtension, "init", function (func, self, extension_init
 	end
 end)
 
-mod:hook(CLASS.ForceFieldExtension, "_trigger_death_effects", function (func, self)
+mod:hook(CLASS.PsykerForceFieldUnitExtension, "_trigger_death_effects", function (func, self)
 	local world = self._world
 	local wwise_world = self._wwise_world
 	local source_id = self._source_id

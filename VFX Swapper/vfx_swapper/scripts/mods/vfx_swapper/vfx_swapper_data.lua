@@ -132,6 +132,77 @@ return {
 				},
 			},
 			{
+				setting_id = "vfx_limiter_group",
+				type = "group",
+				sub_widgets = {
+					{
+						setting_id = "frag_grenade_vfx",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "krak_grenade_vfx",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "box_grenade_ogryn_vfx",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "frag_bomb_ogryn_vfx",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "stumm_grenade_vfx",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "fire_grenade_vfx",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "netgunner_vfx",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "net_electric_vfx",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "voidstrike_explosion_vfx",
+						type = "checkbox",
+						default_value = false,
+					},
+					-- {
+					-- 	setting_id = "ritual_vfx",
+					-- 	type = "checkbox",
+					-- 	default_value = false,
+					-- },
+					{
+						setting_id = "scum_stimm_screen",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "scum_rampage_screen",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "lasgun_vfx",
+						type = "checkbox",
+						default_value = false,
+					},
+				},
+			},
+			{
 				setting_id = "havoc_toggle_group",
 				type = "group",
 				sub_widgets = {

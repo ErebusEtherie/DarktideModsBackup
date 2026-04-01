@@ -16,6 +16,7 @@ local Managers                      = Managers
 local callback                      = callback
 local unit_world_position           = Unit.world_position
 local vector3_distance_squared      = Vector3.distance_squared
+local table_clone                   = table.clone
 
 -- Smart Tag Names
 local TAG_NAMES                     = {
@@ -30,6 +31,7 @@ local VALID_GAME_MODES              = {
     shooting_range = true,
     survival = true,
     coop_complete_objective = true,
+    expedition = true,
 }
 
 -- Additional Class Name for Arbites and Veteran
@@ -241,6 +243,16 @@ local function reset_auto_mark_settings()
             else
                 class_settings[setting_name] = default_setting
             end
+        end
+    end
+    mod:set("auto_mark_settings", auto_mark_settings, false)
+end
+
+-- Apply Settings to All Classes
+local function apply_to_all_classes(class_name)
+    for other_class_name, _ in pairs(VALID_CLASSES) do
+        if other_class_name ~= class_name then
+            auto_mark_settings[other_class_name] = table_clone(auto_mark_settings[class_name])
         end
     end
     mod:set("auto_mark_settings", auto_mark_settings, false)
@@ -478,12 +490,14 @@ local function find_target_unit(smart_targeting_template)
     end
 
     local ray_origin, forward, right, up = playerSmartTargetingExtension:_targeting_parameters()
-    playerSmartTargetingExtension:_update_precision_target(
+    playerSmartTargetingExtension._precision_target_aim_assist:update_precision_target(
         playerSmartTargetingExtension._unit,
         smart_targeting_template,
         ray_origin, forward, right, up,
         playerSmartTargetingExtension._smart_tag_targeting_data,
-        playerSmartTargetingExtension._latest_fixed_frame
+        playerSmartTargetingExtension._latest_fixed_frame,
+        playerSmartTargetingExtension._visibility_cache,
+        playerSmartTargetingExtension._visibility_check_frame
     )
     local targeting_data = playerSmartTargetingExtension:smart_tag_targeting_data()
     local target_unit = targeting_data and targeting_data.unit
@@ -619,6 +633,11 @@ mod.on_setting_changed = function(setting_id)
     local class_name = mod:get("class_selection")
     if mod_settings[setting_id] ~= nil then
         mod_settings[setting_id] = mod:get(setting_id)
+    elseif setting_id == "apply_button" then
+        if mod:get(setting_id) == "apply" then
+            apply_to_all_classes(class_name)
+            mod:set("apply_button", "blank", false)
+        end
     elseif setting_id == "reset_button" then
         if mod:get(setting_id) == "reset" then
             reset_auto_mark_settings()
@@ -788,7 +807,8 @@ local function is_target_valid(tag_name, target_tag, target_unit)
             return true
         end
 
-        local companion_unit = companionSpawnerExtension and companionSpawnerExtension:companion_unit()
+        local companion_units = companionSpawnerExtension and companionSpawnerExtension:companion_units()
+        local companion_unit = companion_units and companion_units[1]
         if not companion_unit then
             return false
         end
@@ -1119,7 +1139,8 @@ mod:hook_safe(CLASS.AttackReportManager, "add_attack_result",
         end
 
         local mark_info = mark_infos[TAG_NAMES.COMPANION_TAG]
-        if not mark_info.tag or mark_info.pounce_start_time then
+        local marked_tag = mark_info.tag
+        if not marked_tag or marked_tag._target_unit ~= attacked_unit or mark_info.pounce_start_time ~= nil then
             return
         end
 

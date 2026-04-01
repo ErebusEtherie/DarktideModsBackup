@@ -91,7 +91,7 @@ local POLL_INTERVAL = 0.2 --time (secs) between shield hp & time updates
 mod.ACTIVE_BUBBLES = mod:persistent_table("ACTIVE_BUBBLES") --for keeping track of alive/relevant shield(s)
 
 -- bubble 'constructor'
-mod:hook_safe(CLASS.ForceFieldExtension, "init", function(self, _ext_context, unit, _ext_data, game_session, game_object_id)
+mod:hook_safe(CLASS.PsykerForceFieldUnitExtension, "init", function(self, _ext_context, unit, _ext_data, game_session, game_object_id)
 	local show_non_psyker = false
 
 	if not helper.player_is_psyker() then
@@ -142,7 +142,7 @@ mod:hook_safe(CLASS.ForceFieldExtension, "init", function(self, _ext_context, un
 end)
 
 -- throttling polling to make a bit less of a performance impact
-mod:hook_safe(CLASS.ForceFieldExtension, "fixed_update", function(self, _unit, _dt, currtime)
+mod:hook_safe(CLASS.PsykerForceFieldUnitExtension, "fixed_update", function(self, _unit, _dt, currtime)
 	local bubble = mod.ACTIVE_BUBBLES[self._unit]
 	if not bubble then return end
 	if (currtime - bubble.last_poll_time) <= POLL_INTERVAL then return end
@@ -177,7 +177,7 @@ local destroy_bubble = function(unit)
 end
 
 -- upon shield death nullify it for garbage collection
-mod:hook_safe(CLASS.ForceFieldExtension, "on_death", function(self)
+mod:hook_safe(CLASS.PsykerForceFieldUnitExtension, "on_death", function(self)
 	destroy_bubble(self._unit)
 end)
 

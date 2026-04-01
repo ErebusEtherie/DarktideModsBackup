@@ -10,10 +10,14 @@ mod:io_dofile("Targeter/scripts/mods/Targeter/Targeter_init")
 local function _clone_options(opts)
     local len = #opts
     local clone = Script.new_array(len)
+
     for i = 1, len do
         local opt = opts[i]
         clone[i] = { text = opt.text, value = opt.value }
     end
+
+    clone.localize = opts.localize
+
     return clone
 end
 
@@ -133,9 +137,9 @@ mod._default_settings = {
     weakspot_locked_color       = _pick_color("ui_zealot", "ui_red_medium"),
 
     shape_editor_action_state   = "primary",
-    shape_editor_default_shape  = "dot",
-    shape_editor_enemy_shape    = "larger_dot",
-    shape_editor_weakspot_shape = "larger_dot",
+    shape_editor_default_shape  = "weapon_default",
+    shape_editor_enemy_shape    = "weapon_default",
+    shape_editor_weakspot_shape = "weapon_default",
     shape_editor_weapon_class   = "melee_class",
     use_current_ranged_weapon   = false,
 }
@@ -184,9 +188,9 @@ return {
                         options       = _clone_options(action_state_options),
                         description   = "shape_editor_action_state_description",
                     },
-                    _dropdown("shape_editor_default_shape", "dot", crosshair_options),
-                    _dropdown("shape_editor_enemy_shape", "larger_dot", crosshair_options),
-                    _dropdown("shape_editor_weakspot_shape", "larger_dot", crosshair_options),
+                    _dropdown("shape_editor_default_shape", "weapon_default", crosshair_options),
+                    _dropdown("shape_editor_enemy_shape", "weapon_default", crosshair_options),
+                    _dropdown("shape_editor_weakspot_shape", "weapon_default", crosshair_options),
                 }
             },
         }

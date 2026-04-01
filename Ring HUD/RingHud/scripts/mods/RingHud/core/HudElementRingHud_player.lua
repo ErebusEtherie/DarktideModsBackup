@@ -41,6 +41,7 @@ HudElementRingHud_player.init          = function(self, parent, draw_layer, star
     self._previous_dmg_effective_length          = -1
     self._previous_peril_fraction                = -1
     self._current_peril_color_argb               = { 200, 138, 201, 38 }
+    self._ammo_clip_has_latched_data             = false
     self._ammo_clip_latched_low                  = false
     self._latched_current_clip_ammo              = 0
     self._latched_max_clip_ammo                  = 0
@@ -192,9 +193,10 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
         local max_clip     = tonumber(ad.max_clip) or 0
 
         if uses_ammo and max_clip > 0 then
-            self._latched_current_clip_ammo = current_clip
-            self._latched_max_clip_ammo     = max_clip
-            self._ammo_clip_latched_low     = (current_clip / max_clip) < 0.45 and current_clip < max_clip
+            self._ammo_clip_has_latched_data = true
+            self._latched_current_clip_ammo  = current_clip
+            self._latched_max_clip_ammo      = max_clip
+            self._ammo_clip_latched_low      = (current_clip / max_clip) < 0.45 and current_clip < max_clip
         end
     end
 
@@ -226,7 +228,7 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
     self._force_show_active = hotkey_active_override
 
     -- Feature Updates
-    if PerilFeature.update then PerilFeature.update(self, widgets.peril_bar, hud_state, hotkey_active_override) end
+    if PerilFeature.update then PerilFeature.update(self, widgets, hud_state, hotkey_active_override) end
     if DodgeFeature.update then DodgeFeature.update(widgets.dodge_bar, hud_state, hotkey_active_override) end
     if StaminaFeature.update then StaminaFeature.update(self, widgets.stamina_bar, hud_state, hotkey_active_override) end
     if ToughnessHpFeature.update then ToughnessHpFeature.update(self, widgets, hud_state, hotkey_active_override) end
@@ -255,9 +257,6 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
         self._previous_corruption_fraction  = -1
         self._previous_dmg_effective_length = -1
         self._prev_reserve_frac_for_bump    = nil
-        self._latched_current_clip_ammo     = 0
-        self._latched_max_clip_ammo         = 0
-        self._ammo_clip_latched_low         = false
     end
 end
 
@@ -273,9 +272,12 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
     end
 
     -- Use cached state from update()
-    local ads_active   = self._ads_active
-    local apply_shake  = self._apply_shake
-    local user_bias_px = U.effective_bias(ads_active)
+    local ads_active        = self._ads_active
+    local apply_shake       = self._apply_shake
+    local user_bias_px      = U.effective_bias(ads_active)
+
+    local text_bias_setting = tonumber(mod._settings and mod._settings.player_hud_text_offset) or 0
+    local text_bias_px      = text_bias_setting * (mod.scalable_unit or 1)
 
     -- -------------- PERIL BAR + TEXT --------------
     do
@@ -296,14 +298,6 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
             end
             if pb.style.peril_other_edge then
                 if U.apply_shake_to_style_offset(pb.style.peril_other_edge, 0, 0, 1, apply_shake, dx, dy,
-                        -user_bias_px, user_bias_px) then
-                    changed = true
-                end
-            end
-            if pb.style.percent_text then
-                local base_x = -Definitions.text_offset - 3
-                local base_y = Definitions.offset_correction
-                if U.apply_shake_to_style_offset(pb.style.percent_text, base_x, base_y, 2, apply_shake, dx, dy,
                         -user_bias_px, user_bias_px) then
                     changed = true
                 end
@@ -548,7 +542,7 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
 
             if stw.style.stimm_timer_text then
                 if U.apply_shake_to_style_offset(stw.style.stimm_timer_text, 0, 0, 1, apply_shake, dx, dy,
-                        user_bias_px, -user_bias_px) then
+                        (user_bias_px + text_bias_px), -(user_bias_px + text_bias_px)) then
                     changed = true
                 end
             end
@@ -567,12 +561,20 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
 
     -- -------------- TEXT WIDGETS --------------
     do
+        local pt = widgets.peril_text_display_widget
+        if pt and pt.style and pt.style.percent_text_style then
+            if U.apply_shake_to_style_offset(pt.style.percent_text_style, 0, 0, 2, apply_shake, dx, dy,
+                    -(user_bias_px + text_bias_px), (user_bias_px + text_bias_px)) then
+                pt.dirty = true
+            end
+        end
+
         local at = widgets.ability_timer
         if at and at.style and at.style.ability_text then
             local base_x = Definitions.text_offset
             local base_y = Definitions.offset_correction
             if U.apply_shake_to_style_offset(at.style.ability_text, base_x, base_y, 2, apply_shake, dx, dy,
-                    user_bias_px, user_bias_px) then
+                    (user_bias_px + text_bias_px), (user_bias_px + text_bias_px)) then
                 at.dirty = true
             end
         end
@@ -580,7 +582,7 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         local ar = widgets.ammo_reserve_display_widget
         if ar and ar.style and ar.style.reserve_text_style then
             if U.apply_shake_to_style_offset(ar.style.reserve_text_style, 0, 0, 2, apply_shake, dx, dy,
-                    -user_bias_px, -user_bias_px) then
+                    -(user_bias_px + text_bias_px), -(user_bias_px + text_bias_px)) then
                 ar.dirty = true
             end
         end
@@ -588,7 +590,7 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         local act = widgets.ammo_clip_text_display_widget
         if act and act.style and act.style.ammo_clip_text_style then
             if U.apply_shake_to_style_offset(act.style.ammo_clip_text_style, 0, 0, 1, apply_shake, dx, dy,
-                    -user_bias_px, 0) then
+                    -(user_bias_px + text_bias_px), 0) then
                 act.dirty = true
             end
         end
@@ -596,7 +598,7 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         local ht = widgets.health_text_display_widget
         if ht and ht.style and ht.style.health_text_style then
             if U.apply_shake_to_style_offset(ht.style.health_text_style, 0, 0, 1, apply_shake, dx, dy,
-                    0, (user_bias_px * 1.5)) then
+                    0, (user_bias_px * 1.5) + text_bias_px) then
                 ht.dirty = true
             end
         end

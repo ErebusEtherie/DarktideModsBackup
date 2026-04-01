@@ -143,6 +143,30 @@ local localizations = {
         ["zh-cn"] = "调整环形HUD的垂直位置",
         ["zh-tw"] = "調整環形HUD的垂直位置",
     },
+    text_settings                          = {
+        en = "Text",
+    },
+    player_hud_font                        = {
+        en = "Player HUD Font",
+    },
+    player_hud_font_tooltip                = {
+        en =
+        "Select the font used for text elements on the player ring (Health, Ammo, etc).\n\nDoes not affect Ability Buff timers.",
+    },
+
+    player_hud_text_size                   = {
+        en = "Font Size",
+    },
+    player_hud_text_size_tooltip           = {
+        en = "Adjust the size of the text elements on the player ring. Default = 18.",
+    },
+
+    player_hud_text_offset                 = {
+        en = "Text Separation",
+    },
+    player_hud_text_offset_tooltip         = {
+        en = "Adjusts the distance of text elements from the center of the ring. Additive with 'Separation'.",
+    },
 
     ads_settings                           = { -- ADS(Aim Down Sights) = 开镜瞄
         en = "ADS",
@@ -362,27 +386,27 @@ local localizations = {
         ["zh-tw"] = "能量條 和 數字",
     },
     ammo_clip_bar                          = {
-        en = "Bar Only",
+        en = "Bar",
         ["zh-cn"] = "仅限能量条",
         ["zh-tw"] = "僅限能量條",
     },
     ammo_clip_text                         = {
-        en = "Text Only",
+        en = "Text",
         ["zh-cn"] = "仅限文本（数字）",
         ["zh-tw"] = "僅限文本（數字）",
     },
     ammo_clip_bar_text_always              = {
-        en = "Bar and Text (Wielded)",
+        en = "Bar and Text (Always)",
         -- ["zh-cn"] = "能量条 和 数字（始终）",
         -- ["zh-tw"] = "能量條 和 數字（始終）",
     },
     ammo_clip_bar_always                   = {
-        en = "Bar (Wielded)",
+        en = "Bar (Always)",
         -- ["zh-cn"] = "仅限能量条（始终）",
         -- ["zh-tw"] = "僅限能量條（始終）",
     },
     ammo_clip_text_always                  = {
-        en = "Text (Wielded)",
+        en = "Text (Always)",
         -- ["zh-cn"] = "仅限文本（始终）",
         -- ["zh-tw"] = "僅限文本（始終）",
     },
@@ -390,13 +414,13 @@ local localizations = {
         en = "Bar and Forecast",
     },
     ammo_clip_forecast                     = {
-        en = "Forecast Only",
+        en = "Forecast",
     },
     ammo_clip_bar_forecast_always          = {
-        en = "Bar and Forecast (Wielded)",
+        en = "Bar and Forecast (Always)",
     },
     ammo_clip_forecast_always              = {
-        en = "Forecast (Wielded)",
+        en = "Forecast (Always)",
     },
 
     ammo_clip_disabled                     = {

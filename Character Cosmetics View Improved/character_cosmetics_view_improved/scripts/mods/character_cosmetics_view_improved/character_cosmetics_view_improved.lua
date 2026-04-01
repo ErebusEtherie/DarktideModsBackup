@@ -1,7 +1,3 @@
---[[
-    Name: View Premium Character Cosmetics
-    Author: Alfthebigheaded
-]]
 local mod = get_mod("character_cosmetics_view_improved")
 local MasterItems = require("scripts/backend/master_items")
 
@@ -353,6 +349,10 @@ mod.remove_item_from_wishlist = function(item)
 	end
 end
 
+function string.starts(String, Start)
+	return string.sub(String, 1, string.len(Start)) == Start
+end
+
 mod:hook_safe(CLASS.InventoryCosmeticsView, "_preview_element", function(self, element)
 	local is_locked = element.locked
 	if is_locked then
@@ -362,6 +362,8 @@ mod:hook_safe(CLASS.InventoryCosmeticsView, "_preview_element", function(self, e
 	-- find if item is on wishlist
 	local item_on_wishlist = false
 	local widgets_by_name = self._widgets_by_name
+
+	dbg_previewed_item = self._previewed_item
 
 	if self._previewed_item and self._previewed_item.__master_item then
 		local previewed_item = self._previewed_item
@@ -924,9 +926,6 @@ StoreView._on_page_index_selected = function(self, page_index)
 	local category_index = self._selected_category_index
 	local category_layout = STORE_LAYOUT[category_index]
 	local category_name = category_layout.telemetry_name
-
-	self:_set_telemetry_name(category_name, page_index)
-
 	local category_pages_layout_data = self._category_pages_layout_data
 
 	if not category_pages_layout_data then
@@ -942,6 +941,11 @@ StoreView._on_page_index_selected = function(self, page_index)
 	local previous_page_index = self._selected_page_index
 
 	self._selected_page_index = page_index
+
+	self:_set_telemetry_name(category_name, page_index)
+
+	self._widgets_by_name.navigation_arrow_left.content.visible = page_index > 1
+	self._widgets_by_name.navigation_arrow_right.content.visible = page_index < #self._category_pages_layout_data
 
 	if self._page_panel then
 		self._page_panel:set_selected_index(page_index)
@@ -1138,7 +1142,6 @@ mod.get_item_in_current_commodores = function(self, gearid, item_name)
 		return
 	end
 
-	dbg_cco = current_commodores_offers
 	for i = 1, #current_commodores_offers do
 		if current_commodores_offers[i].bundleInfo then
 			-- For bundles
@@ -1357,6 +1360,7 @@ mod.list_premium_cosmetics = function(self)
 							item.offer = purchase_offer
 						end
 
+						-- show only available
 						if
 							self._commodores_toggle == "loc_VPCC_show_available_commodores"
 							and item.source == 3
@@ -1381,6 +1385,15 @@ mod.list_premium_cosmetics = function(self)
 						-- remove purchased items from wishlist
 						if item_on_wishlist and item.__locked and item.__locked == false then
 							mod.remove_item_from_wishlist(item.__master_item)
+						end
+
+						-- show only wishlisted 
+						if
+							self._commodores_toggle == "loc_VPCC_show_wishlisted_commodores"
+							and item.source == 3
+							and not item_on_wishlist
+						then
+							continue = false
 						end
 
 						-- categorise locked items by their source
@@ -1434,7 +1447,6 @@ mod.list_premium_cosmetics = function(self)
 						}
 					end
 				end
-				dbg_layout = layout
 
 				if layout ~= nil then
 					self._offer_items_layout = table.clone_instance(layout)
@@ -1554,6 +1566,21 @@ mod.list_premium_cosmetics = function(self)
 									end
 								end
 
+								-- filter out broken/placeholder frames
+								if not mod:get("show_unobtainable") then
+									if selected_item_slot.name == "slot_portrait_frame" then
+										local localized_name = Localize(item.display_name)
+										-- unlocalised achievement frames
+										if item.dev_name and string.starts(localized_name, "achievements_") then
+											continue = false
+										end
+										-- unlocalized expedition frame
+										if item.dev_name and string.starts(localized_name, "portrait_frame") then
+											continue = false
+										end
+									end
+								end
+
 								if continue == true then
 									local gear_id = item.gear_id
 									local is_new = self._context
@@ -1646,6 +1673,8 @@ InventoryCosmeticsView.cb_on_commodores_toggle_pressed = function(self)
 	if self._commodores_toggle == "loc_VPCC_show_all_commodores" then
 		self._commodores_toggle = "loc_VPCC_show_available_commodores"
 	elseif self._commodores_toggle == "loc_VPCC_show_available_commodores" then
+		self._commodores_toggle = "loc_VPCC_show_wishlisted_commodores"
+	elseif self._commodores_toggle == "loc_VPCC_show_wishlisted_commodores" then
 		self._commodores_toggle = "loc_VPCC_show_no_commodores"
 	elseif self._commodores_toggle == "loc_VPCC_show_no_commodores" then
 		self._commodores_toggle = "loc_VPCC_show_all_commodores"

@@ -1,7 +1,7 @@
 -- ===== File: Targeter/scripts/mods/Targeter/Targeter_localization.lua =====
 
 local InputUtils = require("scripts/managers/input/input_utils")
-local mod = get_mod("Targeter")
+local mod = get_mod("Targeter"); if not mod then return end
 
 mod:io_dofile("Targeter/scripts/mods/Targeter/Targeter_init")
 local Localize = Localize
@@ -62,21 +62,34 @@ local localizations = {
     shape_editor_weakspot_shape             = { en = Localize("loc_weapon_details_weakspot") },
     shape_editor_weakspot_shape_description = { en = "Template used when locked onto a weakspot." },
 
+    weapon_default                          = { en = Localize("loc_setting_mix_preset_flat") },
+
     none                                    = { en = Localize("loc_setting_com_wheel_tap_none") },
     assault                                 = { en = Localize("loc_setting_crosshair_type_override_assault") },
     bfg                                     = { en = Localize("loc_setting_crosshair_type_override_bfg") },
+    bfg_dot                                 = { en = Localize("loc_setting_crosshair_type_override_bfg") .. " + " .. Localize("loc_setting_crosshair_type_override_dot") },
     charge_up                               = { en = Localize("loc_ability_psyker_smite") },
     charge_up_ads                           = { en = Localize("loc_weapon_family_lasgun_p2_m1") },
+    charge_up_ads_dot                       = { en = Localize("loc_weapon_family_lasgun_p2_m1") .. " + " .. Localize("loc_setting_crosshair_type_override_dot") },
+    charge_up_ads_triangle_dot              = { en = Localize("loc_weapon_family_lasgun_p2_m1") .. " + Triangle" },
     cross                                   = { en = Localize("loc_setting_crosshair_type_override_killshot") },
     dot                                     = { en = Localize("loc_setting_crosshair_type_override_dot") },
     larger_dot                              = { en = Localize("loc_setting_crosshair_type_override_dot") .. " (Large)" },
     chevron                                 = { en = "Chevron" },
+    triangle_dot                            = { en = "Triangle" },
+    triangle_dot_rotating                   = { en = "Triangle (Rotating)", },
+    triangle_dot_inverted                   = { en = "Inverted Triangle" },
+    spiky                                   = { en = "Spiky" },
+    circle_dot                              = { en = "Circle" },
+    diamond                                 = { en = "Diamond" },
     flamer                                  = { en = Localize("loc_weapon_family_flamer_p1_m1") },
-    ironsight                               = { en = "Ironsight" },
-    projectile_drop                         = { en = Localize("loc_weapon_family_ogryn_thumper_p1_m1") },
+    ironsight                               = { en = "Ironsight (" .. Localize("loc_setting_hit_indicator_enabled") .. ")" },
+    projectile_drop                         = { en = Localize("loc_weapon_family_ogryn_thumper_p1_m2") },
     shotgun                                 = { en = Localize("loc_setting_crosshair_type_override_shotgun") },
     shotgun_wide                            = { en = Localize("loc_weapon_family_shotgun_p4_m1") },
     spray_n_pray                            = { en = Localize("loc_setting_crosshair_type_override_spray_n_pray") },
+    spray_n_pray_dot                        = { en = Localize("loc_setting_crosshair_type_override_spray_n_pray") .. " + " .. Localize("loc_setting_crosshair_type_override_dot") },
+    spray_n_pray_larger_dot                 = { en = Localize("loc_setting_crosshair_type_override_spray_n_pray") .. " + " .. Localize("loc_setting_crosshair_type_override_dot") .. " (Large)" },
 
     charge_up_peril                         = { en = Localize("loc_ability_psyker_smite") .. " (" .. Localize("loc_settings_menu_peril_effect") .. ")" },
     charge_up_ads_peril                     = { en = Localize("loc_weapon_family_lasgun_p2_m1") .. " (" .. Localize("loc_settings_menu_peril_effect") .. ")" },

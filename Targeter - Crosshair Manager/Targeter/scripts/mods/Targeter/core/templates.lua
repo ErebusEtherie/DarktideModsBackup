@@ -6,6 +6,15 @@ if not mod then return end
 
 mod._default_crosshair_settings = mod._default_crosshair_settings or {}
 
+local function _crosshair_name_from_path(path)
+    if type(path) ~= "string" then
+        return nil
+    end
+
+    return string.match(path, "crosshairs/([^/]+)$")
+        or string.match(path, "([^/]+)$")
+end
+
 local function _load_template(path)
     local tpl = mod:io_dofile(path)
 
@@ -41,9 +50,13 @@ local function _gather_template_sources()
         end
     end
 
-    if mod.template_paths then
-        for _, path in ipairs(mod.template_paths) do
-            sources[#sources + 1] = { name = nil, path = path }
+    local targeter_paths = mod.get_targeter_template_paths and mod.get_targeter_template_paths()
+    if targeter_paths then
+        for _, path in ipairs(targeter_paths) do
+            sources[#sources + 1] = {
+                name = _crosshair_name_from_path(path),
+                path = path,
+            }
         end
     end
 
@@ -59,18 +72,12 @@ mod:hook_safe(CLASS.HudElementCrosshair, "init", function(self, ...)
         return
     end
 
-    local added = 0
-
     for _, entry in ipairs(_gather_template_sources()) do
         local path = entry.path
         local tpl, factory = _load_template(path)
 
         if tpl and factory then
-            local name =
-                entry.name
-                or tpl.name
-                or string.match(path, "crosshairs/([^/]+)$")
-                or string.match(path, "([^/]+)$")
+            local name = entry.name or tpl.name or _crosshair_name_from_path(path)
 
             if name and not templates_tbl[name] then
                 local widget_def = factory(tpl, scenegraph_id)
@@ -78,7 +85,6 @@ mod:hook_safe(CLASS.HudElementCrosshair, "init", function(self, ...)
                 if widget_def then
                     templates_tbl[name]   = tpl
                     widget_defs_tbl[name] = widget_def
-                    added                 = added + 1
                 else
                     mod:error("Factory returned nil for template '%s' from %s", tostring(name), path)
                 end

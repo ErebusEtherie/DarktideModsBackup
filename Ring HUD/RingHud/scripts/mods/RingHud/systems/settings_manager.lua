@@ -14,6 +14,9 @@ mod._settings = {
     scanner_offset_bias_override   = mod:get("scanner_offset_bias_override"),
     player_hud_offset_x            = mod:get("player_hud_offset_x"),
     player_hud_offset_y            = mod:get("player_hud_offset_y"),
+    player_hud_font                = mod:get("player_hud_font"),
+    player_hud_text_size           = mod:get("player_hud_text_size"),
+    player_hud_text_offset         = mod:get("player_hud_text_offset"),
 
     -- ADS behaviour
     ads_visibility_dropdown        = mod:get("ads_visibility_dropdown"),
@@ -78,13 +81,14 @@ function mod.on_setting_changed(setting_id)
     -- Update our live cache straight from DMF:
     mod._settings[setting_id] = mod:get(setting_id)
 
-    -- If scale-driving or position settings change, request a HUD rebuild.
     if setting_id == "ring_scale" or setting_id == "ads_scale_override"
-        or setting_id == "player_hud_offset_x" or setting_id == "player_hud_offset_y" then
+        or setting_id == "player_hud_offset_x" or setting_id == "player_hud_offset_y"
+        or setting_id == "player_hud_font"
+        or setting_id == "player_hud_text_size"
+        or setting_id == "player_hud_text_offset" then
         mod._ringhud_needs_rebuild = true
     end
 
-    -- (Small, safe rebuild trigger) If a feature’s widget existence could depend on this toggle, rebuild.
     if setting_id == "timer_buff_dropdown" then
         mod._ringhud_needs_rebuild = true
     end
@@ -121,8 +125,8 @@ function mod.on_setting_changed(setting_id)
         nc.apply_settings(nc, setting_id)
     end
 
-    -- ► Notify the central ammo-visibility and pocketables-visibility policies
-    --    when relevant knobs change (policy only, not layout).
+    -- Notify the central ammo-visibility and pocketables-visibility policies
+    -- when relevant knobs change (policy only, not layout).
     if setting_id == "ammo_reserve_dropdown"
         or setting_id == "team_munitions"
         or setting_id == "ads_visibility_dropdown"
@@ -142,10 +146,20 @@ function mod.on_setting_changed(setting_id)
         end
     end
 
-    -- ► Refresh vanilla assistance markers (suppression logic depends on mode + icon setting)
+    -- Refresh vanilla assistance markers (suppression logic depends on mode + icon setting)
     if setting_id == "team_hud_mode" or setting_id == "team_name_icon" then
         if mod._refresh_assistance_markers_visibility then
             mod._refresh_assistance_markers_visibility()
         end
+    end
+end
+
+-- Uses a direct table lookup to ensure the saved font still exists in the game.
+local ok, FontDefinitions = pcall(require, "scripts/managers/ui/ui_fonts_definitions")
+if ok and FontDefinitions and type(FontDefinitions.fonts) == "table" then
+    local current_font = mod._settings.player_hud_font
+    if type(current_font) == "string" and current_font ~= "" and FontDefinitions.fonts[current_font] == nil then
+        -- Force it back to a known safe default. mod:set triggers on_setting_changed which updates the cache.
+        mod:set("player_hud_font", "proxima_nova_bold", true)
     end
 end

@@ -42,6 +42,13 @@ return {
 						title = "difficulty_therehold_title",
 						tooltip = "difficulty_therehold_tooltip"
 					},
+					{
+						setting_id = "mode_filter",
+						type = "checkbox",
+						default_value = false,
+						title = "mode_filter_title",
+						tooltip = "mode_filter_tooltip"
+					},
 				}
 			},
             {

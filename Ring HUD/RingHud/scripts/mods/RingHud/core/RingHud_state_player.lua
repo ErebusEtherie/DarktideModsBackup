@@ -477,15 +477,15 @@ function RingHudState.get_hud_data_state(ring_hud_instance)
                 else
                     -- We are empty (0 charges). Are we currently tracking a cooldown?
                     if _ogryn_maul_cache.cooldown_end == 0 then
-                        -- Start the timer now (12s hardcoded)
-                        _ogryn_maul_cache.cooldown_end = t + 12.0
+                        -- Start the timer now (10s hardcoded)
+                        _ogryn_maul_cache.cooldown_end = t + 10.0
                     end
 
                     local rem = _ogryn_maul_cache.cooldown_end - t
                     if rem <= 0 then
                         hud_state.charge_fraction = 1.0
                     else
-                        hud_state.charge_fraction = math_clamp(1.0 - (rem / 12.0), 0, 1)
+                        hud_state.charge_fraction = math_clamp(1.0 - (rem / 10.0), 0, 1)
                     end
                 end
 

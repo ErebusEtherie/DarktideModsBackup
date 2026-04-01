@@ -1,7 +1,9 @@
 -- File: scripts/mods/BetterLoadouts/hooks/profile_presets_setup_buttons.lua
 
 local mod = get_mod("BetterLoadouts")
-if not mod then return end
+if not mod then
+    return
+end
 
 local ProfileUtils = require("scripts/utilities/profile_utils")
 local ViewElementProfilePresetsSettings = require(
@@ -14,9 +16,11 @@ require("scripts/foundation/utilities/table")
 -- Apply the current limit locally (safe even if main file did it already)
 local function _apply_limit_to_settings_local()
     local cap = mod.preset_limit or 28
+
     if ViewElementProfilePresetsSettings then
         ViewElementProfilePresetsSettings.max_profile_presets = cap
     end
+
     local S = rawget(_G, "ViewElementProfilePresetsSettings")
     if S then
         S.max_profile_presets = cap
@@ -25,18 +29,115 @@ end
 
 local s_sub = string.sub
 local t_clear = table.clear
-local m_min, m_floor, m_ceil = math.min, math.floor, math.ceil
+local m_min, m_floor, m_ceil, m_max = math.min, math.floor, math.ceil, math.max
 
--- Layout constants per mode (28 vs 200)
+-- Layout constants per mode
 local function _layout()
     return mod.BL.layout_for_limit(mod.preset_limit or 28)
 end
 
+local function _is_wide_layout(num_cols, num_rows)
+    return (num_cols or 0) > (num_rows or 0)
+end
+
+local function _cache_loadoutnames_base_positions(sgN)
+    if not sgN then
+        return
+    end
+
+    local tbox = sgN.loadout_name_tbox_area
+    local tip = sgN.loadout_name_tooltip_area
+
+    if tbox and tbox.position then
+        mod._ln_base_x_tbox = mod._ln_base_x_tbox or tbox.position[1] or -75
+        mod._ln_base_y_tbox = mod._ln_base_y_tbox or tbox.position[2] or -360
+        mod._ln_base_z_tbox = mod._ln_base_z_tbox or tbox.position[3] or 0
+    end
+
+    if tip and tip.position then
+        mod._ln_base_x_tip = mod._ln_base_x_tip or tip.position[1] or -75
+        mod._ln_base_y_tip = mod._ln_base_y_tip or tip.position[2] or 50
+        mod._ln_base_z_tip = mod._ln_base_z_tip or tip.position[3] or 50
+    end
+end
+
+local function _position_loadoutnames(self, panel_width, panel_height, bar_top_y, is_wide_layout)
+    if not mod._has_loadoutnames then
+        return
+    end
+
+    local sgN = self._ui_scenegraph
+    if not sgN then
+        return
+    end
+
+    _cache_loadoutnames_base_positions(sgN)
+
+    local SAFE_GAP_X = 16
+    local SAFE_GAP_Y = 16
+
+    local shift_x = m_floor((panel_width + SAFE_GAP_X) * 0.5)
+
+    local tbox = sgN.loadout_name_tbox_area
+    local tip = sgN.loadout_name_tooltip_area
+
+    if is_wide_layout then
+        local tbox_height = (tbox and tbox.size and tbox.size[2]) or 40
+        local below_y = bar_top_y + panel_height + SAFE_GAP_Y
+        local tip_y = below_y + tbox_height + 8
+
+        if tbox and tbox.position then
+            self:_set_scenegraph_position(
+                "loadout_name_tbox_area",
+                (mod._ln_base_x_tbox or -75) - shift_x,
+                m_max(mod._ln_base_y_tbox or below_y, below_y),
+                mod._ln_base_z_tbox or 0
+            )
+        end
+
+        if tip and tip.position then
+            self:_set_scenegraph_position(
+                "loadout_name_tooltip_area",
+                (mod._ln_base_x_tip or -75) - shift_x,
+                m_max(mod._ln_base_y_tip or tip_y, tip_y),
+                mod._ln_base_z_tip or 50
+            )
+        end
+    else
+        if tbox and tbox.position then
+            self:_set_scenegraph_position(
+                "loadout_name_tbox_area",
+                (mod._ln_base_x_tbox or -75) - shift_x,
+                mod._ln_base_y_tbox or -360,
+                mod._ln_base_z_tbox or 0
+            )
+        end
+
+        if tip and tip.position then
+            self:_set_scenegraph_position(
+                "loadout_name_tooltip_area",
+                (mod._ln_base_x_tip or -75) - shift_x,
+                mod._ln_base_y_tip or 50,
+                mod._ln_base_z_tip or 50
+            )
+        end
+    end
+end
+
 -- UTF-8 encoder (drop-in from PrivateCharMap)
-local bytemarkers = { { 0x7FF, 192 }, { 0xFFFF, 224 }, { 0x1FFFFF, 240 } }
+local bytemarkers = {
+    { 0x7FF,    192 },
+    { 0xFFFF,   224 },
+    { 0x1FFFFF, 240 },
+}
+
 local function utf8(decimal)
-    if decimal < 128 then return string.char(decimal) end
+    if decimal < 128 then
+        return string.char(decimal)
+    end
+
     local charbytes = {}
+
     for bytes, vals in ipairs(bytemarkers) do
         if decimal <= vals[1] then
             for b = bytes + 1, 2, -1 do
@@ -44,10 +145,12 @@ local function utf8(decimal)
                 decimal = (decimal - rem) / 64
                 charbytes[b] = string.char(128 + rem)
             end
+
             charbytes[1] = string.char(vals[2] + decimal)
             break
         end
     end
+
     return table.concat(charbytes)
 end
 
@@ -65,13 +168,14 @@ local function _register_private(list)
 end
 
 local function _seed_private_from_vanilla_then_custom()
-    local S   = ViewElementProfilePresetsSettings
+    local S = ViewElementProfilePresetsSettings
     local ref = S and S.optional_preset_icon_reference_keys or {}
-    local lu  = S and S.optional_preset_icons_lookup or {}
+    local lu = S and S.optional_preset_icons_lookup or {}
 
     for i = 1, #ref do
-        local vk   = ref[i]
+        local vk = ref[i]
         local vmat = lu[vk]
+
         if vk and vmat and not PRIVATE_ICON_LOOKUP[vk] then
             PRIVATE_ICON_LOOKUP[vk] = vmat
             PRIVATE_ICON_KEYS[#PRIVATE_ICON_KEYS + 1] = vk
@@ -83,7 +187,7 @@ end
 
 _seed_private_from_vanilla_then_custom()
 
--- Hook: build the vertical preset buttons (layout + unicode/custom icon logic)
+-- Hook: build the preset buttons (layout + unicode/custom icon logic)
 mod:hook(CLASS.ViewElementProfilePresets, "_setup_preset_buttons", function(func, self)
     -- Enforce the current cap for this session
     _apply_limit_to_settings_local()
@@ -92,125 +196,140 @@ mod:hook(CLASS.ViewElementProfilePresets, "_setup_preset_buttons", function(func
     if existing then
         for i = 1, #existing do
             local w = existing[i]
-            if w and w.name then self:_unregister_widget_name(w.name) end
+            if w and w.name then
+                self:_unregister_widget_name(w.name)
+            end
         end
         t_clear(existing)
     else
         existing = {}
     end
 
-    local L             = _layout()
-    local BAR_TOP_X     = L.BAR_TOP_X
-    local BAR_TOP_Y     = L.BAR_TOP_Y
-    local BUTTON_WIDTH  = L.BUTTON_WIDTH
+    local L = _layout()
+    local BAR_TOP_X = L.BAR_TOP_X
+    local BAR_TOP_Y = L.BAR_TOP_Y
+    local BUTTON_WIDTH = L.BUTTON_WIDTH
     local BUTTON_HEIGHT = L.BUTTON_HEIGHT
-    local BUTTON_GAP    = L.BUTTON_GAP
-    local TOP_PAD       = L.TOP_PAD
-    local BOTTOM_PAD    = L.BOTTOM_PAD
-    local COLUMN_GAP    = L.COLUMN_GAP
-    local ROWS_PER_COL  = L.ROWS_PER_COL
-    local MAX_COLUMNS   = L.MAX_COLUMNS
+    local BUTTON_GAP = L.BUTTON_GAP
+    local TOP_PAD = L.TOP_PAD
+    local BOTTOM_PAD = L.BOTTOM_PAD
+    local COLUMN_GAP = L.COLUMN_GAP
+    local ROWS_PER_COL = L.ROWS_PER_COL
+    local MAX_COLUMNS = L.MAX_COLUMNS
 
-    local defs          = self._definitions
-    local blueprint     = defs and defs.profile_preset_button
-    local active_id     = ProfileUtils.get_active_profile_preset_id()
-    local presets       = ProfileUtils.get_profile_presets()
+    local defs = self._definitions
+    local blueprint = defs and defs.profile_preset_button
+    local active_id = ProfileUtils.get_active_profile_preset_id()
+    local presets = ProfileUtils.get_profile_presets()
 
-    local count_raw     = (presets and #presets) or 0
-    local capacity      = ROWS_PER_COL * MAX_COLUMNS
-    local count         = m_min(count_raw, capacity)
+    local count_raw = (presets and #presets) or 0
+    local capacity = ROWS_PER_COL * MAX_COLUMNS
+    local count = m_min(count_raw, capacity)
 
-    local ref_keys      = PRIVATE_ICON_KEYS
-    local icons_lu      = PRIVATE_ICON_LOOKUP
-    local ref_keys_len  = #ref_keys
+    local ref_keys = PRIVATE_ICON_KEYS
+    local icons_lu = PRIVATE_ICON_LOOKUP
+    local ref_keys_len = #ref_keys
 
-    local num_cols      = m_min(m_ceil(count / ROWS_PER_COL), MAX_COLUMNS)
-    if num_cols < 1 then num_cols = 1 end
-    local max_rows = math.min(count, ROWS_PER_COL)
+    local num_cols = m_min(m_ceil(count / ROWS_PER_COL), MAX_COLUMNS)
+    if num_cols < 1 then
+        num_cols = 1
+    end
+
+    local max_rows = m_min(count, ROWS_PER_COL)
+    local is_wide_layout = _is_wide_layout(num_cols, max_rows)
 
     for i = 1, count do
-        local p                   = presets[i]
-        local pid                 = p and p.id
-        local cky                 = p and p.custom_icon_key
+        local p = presets[i]
+        local pid = p and p.id
+        local cky = p and p.custom_icon_key
 
-        local w                   = self:_create_widget("profile_button_" .. i, blueprint)
-        existing[i]               = w
+        local w = self:_create_widget("profile_button_" .. i, blueprint)
+        existing[i] = w
 
-        local col                 = m_floor((i - 1) / ROWS_PER_COL) + 1
-        local row                 = ((i - 1) % ROWS_PER_COL) + 1
+        local col = m_floor((i - 1) / ROWS_PER_COL) + 1
+        local row = ((i - 1) % ROWS_PER_COL) + 1
 
-        local off                 = w.offset
-        off[1]                    = -(col - 1) * (BUTTON_WIDTH + COLUMN_GAP)
-        off[2]                    = (row - 1) * (BUTTON_HEIGHT + BUTTON_GAP)
+        local off = w.offset
+        off[1] = -(col - 1) * (BUTTON_WIDTH + COLUMN_GAP)
+        off[2] = (row - 1) * (BUTTON_HEIGHT + BUTTON_GAP)
 
-        local content             = w.content
-        local hs                  = content.hotspot
-        hs.pressed_callback       = callback(self, "on_profile_preset_index_change", i)
+        local content = w.content
+        local hs = content.hotspot
+        hs.pressed_callback = callback(self, "on_profile_preset_index_change", i)
         hs.right_pressed_callback = callback(self, "on_profile_preset_index_customize", i)
 
-        local selected            = (pid == active_id)
-        if selected then self._active_profile_preset_id = pid end
-        hs.is_selected   = selected
+        local selected = pid == active_id
+        if selected then
+            self._active_profile_preset_id = pid
+        end
+        hs.is_selected = selected
 
-        local def_idx    = math.index_wrapper(i, ref_keys_len)
-        local def_key    = ref_keys[def_idx]
+        local def_idx = math.index_wrapper(i, ref_keys_len)
+        local def_key = ref_keys[def_idx]
+        local is_text = type(cky) == "string" and s_sub(cky, 1, 5) == "text:"
         local is_unicode = type(cky) == "string" and s_sub(cky, 1, 8) == "unicode:"
-        if is_unicode then
-            local hex       = s_sub(cky, 9)
-            local cp        = tonumber(hex, 16)
+
+        if is_text then
+            content.custom_text = s_sub(cky, 6)
+            content.unicode = nil
+            content.icon = nil
+
+            if w.style and w.style.icon and w.style.icon.color then
+                w.style.icon.color[1] = 0
+            end
+        elseif is_unicode then
+            local hex = s_sub(cky, 9)
+            local cp = tonumber(hex, 16)
+
+            content.custom_text = nil
             content.unicode = cp and utf8(cp) or "?"
-            content.icon    = nil
+            content.icon = nil
+
             if w.style and w.style.icon and w.style.icon.color then
                 w.style.icon.color[1] = 0
             end
         else
-            local icon      = (cky and icons_lu[cky]) or icons_lu[def_key] or
+            local icon = (cky and icons_lu[cky]) or icons_lu[def_key] or
                 (type(cky) == "string" and cky or nil)
-            content.icon    = icon
+
+            content.custom_text = nil
+            content.icon = icon
             content.unicode = nil
+
             if w.style and w.style.icon and w.style.icon.color then
                 w.style.icon.color[1] = icon and 255 or 0
             end
         end
+
         content.profile_preset_id = pid
     end
 
     self._profile_buttons_widgets = existing
 
     local function col_height(n)
-        if n <= 0 then return 0 end
+        if n <= 0 then
+            return 0
+        end
+
         return n * BUTTON_HEIGHT + (n - 1) * BUTTON_GAP
     end
 
     local panel_height = TOP_PAD + col_height(max_rows) + BOTTOM_PAD
-    local panel_width  = BUTTON_WIDTH * num_cols + COLUMN_GAP * (num_cols - 1)
+    local panel_width = BUTTON_WIDTH * num_cols + COLUMN_GAP * (num_cols - 1)
 
     self:_set_scenegraph_size("profile_preset_button_panel", panel_width, panel_height)
     self:_set_scenegraph_position("profile_preset_button_panel", BAR_TOP_X, BAR_TOP_Y, 100)
 
-    -- LoadoutNames integration: shift LN widget left, out of the bars
-    local ln = get_mod and get_mod("LoadoutNames")
-    if ln then
-        local sgN = self._ui_scenegraph
-        if sgN then
-            local SAFE_GAP = 16
-            local shift    = math.floor((panel_width + SAFE_GAP) * 0.5)
+    mod._bl_is_wide_preset_layout = is_wide_layout
+    mod._bl_profile_preset_panel_width = panel_width
+    mod._bl_profile_preset_panel_height = panel_height
+    mod._bl_profile_preset_panel_top_x = BAR_TOP_X
+    mod._bl_profile_preset_panel_top_y = BAR_TOP_Y
+    mod._bl_profile_preset_panel_bottom_y = BAR_TOP_Y + panel_height
+    mod._bl_profile_preset_num_cols = num_cols
+    mod._bl_profile_preset_num_rows = max_rows
 
-            local tbox     = sgN.loadout_name_tbox_area
-            local tip      = sgN.loadout_name_tooltip_area
-
-            if tbox and tbox.position then
-                mod._ln_base_x_tbox = mod._ln_base_x_tbox or tbox.position[1] or -75
-                self:_set_scenegraph_position("loadout_name_tbox_area", mod._ln_base_x_tbox - shift,
-                    tbox.position[2] or -360, tbox.position[3] or 0)
-            end
-            if tip and tip.position then
-                mod._ln_base_x_tip = mod._ln_base_x_tip or tip.position[1] or -75
-                self:_set_scenegraph_position("loadout_name_tooltip_area", mod._ln_base_x_tip - shift,
-                    tip.position[2] or 50, tip.position[3] or 50)
-            end
-        end
-    end
+    _position_loadoutnames(self, panel_width, panel_height, BAR_TOP_Y, is_wide_layout)
 
     self:_force_update_scenegraph()
     self:_sync_profile_buttons_items_status()

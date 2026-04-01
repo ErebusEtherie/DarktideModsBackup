@@ -41,3 +41,5 @@ CHANGELOG:
 	‣Version 1.7.1
 		re-added the safeguard from version 1.5.1
 		made another micro-optimization
+	‣Version 1.7.2
+		fix for Beyond the Hive update

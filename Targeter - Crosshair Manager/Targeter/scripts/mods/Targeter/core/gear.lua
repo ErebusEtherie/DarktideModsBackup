@@ -1,6 +1,5 @@
 -- File: Targeter/scripts/mods/Targeter/core/gear.lua
 -- Keep Targeter aware of the carried ranged weapon via on_slot_wielded.
--- (Consolidated with wield.lua)
 
 local mod = get_mod("Targeter")
 if not mod then return end

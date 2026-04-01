@@ -1,7 +1,7 @@
 -- File: Targeter/scripts/mods/Targeter/Targeter.lua
 local mod = get_mod("Targeter")
 if not mod then return end
-mod.version = "Targeter 1.1.0"
+mod.version = "Targeter 1.6.0"
 
 mod:io_dofile("Targeter/scripts/mods/Targeter/Targeter_init")
 mod:io_dofile("Targeter/scripts/mods/Targeter/core/util")

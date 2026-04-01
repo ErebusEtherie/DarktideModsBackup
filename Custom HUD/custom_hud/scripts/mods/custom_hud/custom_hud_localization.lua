@@ -1,3 +1,10 @@
+local colours = {
+    title = "200,140,20",
+    subtitle = "226,199,126",
+    text = "169,191,153",
+    key = "140,180,220",
+}
+
 return {
     custom_hud = {
         en = "Custom HUD",
@@ -5,9 +12,17 @@ return {
         ru = "Настраиваемый интерфейс",
     },
     custom_hud_description = {
-        en = "Allows custom placement of HUD elements.",
-        ["zh-cn"] = "允许自定义排列 HUD 元素。",
-        ru = "Позволяет перемещать элементы интерфейса.",
+        en = "{#color(" .. colours.text .. ")}Allows custom placement and resizing of HUD elements. Press {#color(" .. colours.key .. ")}[F3]{#color(" .. colours.text .. ")} to enter edit mode.{#reset()}\n\n"
+            .. "{#color(" .. colours.key .. ")}Click{#color(" .. colours.text .. ")} select, {#color(" .. colours.key .. ")}Ctrl+Click{#color(" .. colours.text .. ")} multi-select, {#color(" .. colours.key .. ")}Shift+Drag{#color(" .. colours.text .. ")} move, {#color(" .. colours.key .. ")}Scroll{#color(" .. colours.text .. ")} scale, {#color(" .. colours.key .. ")}Alt+Drag{#color(" .. colours.text .. ")} resize\n"
+            .. "{#color(" .. colours.key .. ")}Arrows{#color(" .. colours.text .. ")} move ±1px, {#color(" .. colours.key .. ")}Alt+Arrows{#color(" .. colours.text .. ")} resize ±1px, {#color(" .. colours.key .. ")}Shift+Up/Down{#color(" .. colours.text .. ")} z-order\n"
+            .. "{#color(" .. colours.key .. ")}Right-click{#color(" .. colours.text .. ")} hide, {#color(" .. colours.key .. ")}Double-click{#color(" .. colours.text .. ")} reset, {#color(" .. colours.key .. ")}Tab{#color(" .. colours.text .. ")} reset selected{#reset()}",
+        ["zh-cn"] = "允许自定义排列和调整 HUD 元素大小。",
+        ru = "Позволяет перемещать и изменять размер элементов интерфейса.",
+    },
+    settings_header = {
+        en = "{#color(" .. colours.title .. ")}Settings{#reset()}",
+        ["zh-cn"] = "设置",
+        ru = "Настройки",
     },
     toggle_hud_customization_key = {
         en = "Toggle HUD Customization",
@@ -15,7 +30,19 @@ return {
         ru = "Переключение настройки интерфейса",
     },
     toggle_hud_customization_key_description = {
-        en = "Toggles HUD customization on/off.",
+        en = "{#color(" .. colours.text .. ")}Toggles HUD customization on/off.{#reset()}\n\n"
+            .. "{#color(" .. colours.title .. ")}Controls (in edit mode):{#reset()}\n"
+            .. "{#color(" .. colours.key .. ")}  Click{#color(" .. colours.text .. ")} = Select element\n"
+            .. "{#color(" .. colours.key .. ")}  Ctrl+Click{#color(" .. colours.text .. ")} = Multi-select\n"
+            .. "{#color(" .. colours.key .. ")}  Shift+Drag{#color(" .. colours.text .. ")} = Move element\n"
+            .. "{#color(" .. colours.key .. ")}  Scroll{#color(" .. colours.text .. ")} = Scale element\n"
+            .. "{#color(" .. colours.key .. ")}  Alt+Drag edge/corner{#color(" .. colours.text .. ")} = Resize\n"
+            .. "{#color(" .. colours.key .. ")}  Alt+Arrows{#color(" .. colours.text .. ")} = Resize ±1px\n"
+            .. "{#color(" .. colours.key .. ")}  Arrows{#color(" .. colours.text .. ")} = Move ±1px\n"
+            .. "{#color(" .. colours.key .. ")}  Shift+Up/Down{#color(" .. colours.text .. ")} = Z-order\n"
+            .. "{#color(" .. colours.key .. ")}  Right-click{#color(" .. colours.text .. ")} = Toggle hidden\n"
+            .. "{#color(" .. colours.key .. ")}  Double-click{#color(" .. colours.text .. ")} = Reset to default\n"
+            .. "{#color(" .. colours.key .. ")}  Tab{#color(" .. colours.text .. ")} = Reset selected{#reset()}",
         ["zh-cn"] = "切换 HUD 自定义功能的开关。",
         ru = "Включение/отключение оверлея настройки интерфейса.",
     },
@@ -28,6 +55,16 @@ return {
         en = "Toggles the HUD on/off.",
         ["zh-cn"] = "切换 HUD 的开关。",
         ru = "Включение/отключение игрового интерфейса.",
+    },
+    show_info_panel = {
+        en = "Show Info Panel",
+        ["zh-cn"] = "显示信息面板",
+        ru = "Показать информационную панель",
+    },
+    show_info_panel_description = {
+        en = "Show the floating info panel in edit mode. You can also toggle it with the /panel command.",
+        ["zh-cn"] = "在编辑模式下显示所有 HUD 元素的位置、大小和状态面板。",
+        ru = "Показывает панель со списком всех элементов интерфейса в режиме редактирования.",
     },
     reset_hud = {
         en = "Reset HUD",
@@ -45,7 +82,7 @@ return {
         ru = "Множитель прозрачности",
     },
     opacity_description = {
-        en = "Adjusts element opacity.",
+        en = "Adjust the overall HUD opacity multiplier.",
         ["zh-cn"] = "调整元素不透明度。",
         ru = "Настройте прозрачность элементов.",
     },

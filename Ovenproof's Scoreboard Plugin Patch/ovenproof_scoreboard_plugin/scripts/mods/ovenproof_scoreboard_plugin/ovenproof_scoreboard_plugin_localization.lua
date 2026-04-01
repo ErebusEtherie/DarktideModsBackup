@@ -1,9 +1,19 @@
 local mod = get_mod("ovenproof_scoreboard_plugin")
 
 -- ###############################################################################################################
+-- NOTES FOR TRANSLATIONS
+-- ----------------------
 -- IF ADDING A NEW LOCALIZATION LANGUAGE, CHECK HERE
 -- ###############################################################################################################
 local languages = {"en","ru","zh-cn","zh-tw","pt-br",}
+-- ###############################################################################################################
+-- If your language is already translated:
+--      If you have time, please search through this page for "google translate" to correct those
+--          I tried to label as many of those as I could, but I didn't pay attention until recently, so I'm sure I missed some
+--          If that's too tedious, do not feel obligated to do it. We appreciate the help regardless!
+--      For those with missing localizations that I noticed, I put a comment with a blank line for the languages
+--          ex: `ru = "",` and `["zh-cn"] = "",`
+-- Thanks for the help! - Backup158
 -- ###############################################################################################################
 
 -- ########################
@@ -100,13 +110,15 @@ local localization = {
     -- ----------------
     -- Settings
     -- ----------------
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     error_scoreboard_missing = {
         en = "Scoreboard required! This is an add-on plugin to it!",
 		ru = "Требуется табло! Это плагин для него!",
         ["zh-cn"] = "需要记分牌！这是一个附加插件！",
-		["zh-tw"] = "需要記分板！這是它的一個附加插件！",
+        ["zh-tw"] = "需要記分板！這是它的一個附加插件！",
 		["pt-br"] = "Scoreboard mod é necessário! Este é um plugin addon!",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn
     enable_debug_messages = {
         en = "Enable error messages",
 		ru = "Включить сообщения об ошибках",
@@ -114,6 +126,7 @@ local localization = {
         ["zh-tw"] = "啟用錯誤訊息",
         ["pt-br"] = "Ativar Mensagens de Erro",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn
     enable_debug_messages_description = {
         en = "Show messages in chat whenever an uncategorized damage type is used. Please report these!",
 		ru = "Показывать сообщения в чате при использовании некатегоризированного типа повреждения. Пожалуйста, сообщайте о таких случаях!",
@@ -121,6 +134,15 @@ local localization = {
         ["zh-tw"] = "每當使用未分類的傷害類型時，請在聊天中顯示消息。請報告這些！",
         ["pt-br"] = "Exibir mensagens no chat quando um tipo de dano não categorizado for usado. Por favor, reporte esses casos!",
     },
+    -- @backup158: human translators need to review: ru, zh-cn, zh-tw, pt-br
+    warning_chat_debug_messages = {
+        en = "To disable this message, go to Mod Options --> OvenProof Scoreboard Plugin --> Disable \"Enable error messages\"",
+        -- ru = "",
+		-- ["zh-cn"] = "",
+        -- ["zh-tw"] = "",
+        -- ["pt-br"] = "",
+    },
+    -- @backup158: sai google translated these languages: ru, zh-cn
     row_categories_group = {
         en = "Scoreboard Row Categories",
 		ru = "Категории строк табло",
@@ -128,13 +150,51 @@ local localization = {
         ["zh-tw"] = "記分板行分類",
         ["pt-br"] = "Categorias de Linhas do scoreboard",
     },
+    custom_row_categorization = {
+        en = "Select Row Categorization",
+		--ru = "",
+		--["zh-cn"] = "",
+        --["zh-tw"] = "",
+        --["pt-br"] = "",
+    },
+    -- @backup158: I copied some values from the row_total areas. I left them commented out since I don't know if that's appropriate for this context
+    categorize_total_melee = {
+        en = "Categorize Total Melee",
+		--ru = " Всего в Ближнем бою",
+		--["zh-cn"] = "总近战",
+        --["zh-tw"] = "總近戰",
+        --["pt-br"] = " Total Melee",
+    },
+    categorize_total_ranged = {
+        en = "Categorize Total Ranged",
+		--ru = " Всего в Дальнем бою",
+		--["zh-cn"] = "总远程",
+        --["zh-tw"] = "總遠程",
+        --["pt-br"] = " Total Distância",
+    },
+    categorize_total_companion = {
+        en = "Categorize Total Companion",
+		--ru = " Всего ",
+		--["zh-cn"] = "完全伴侣",
+        --["zh-tw"] = "完全伴侶",
+        --["pt-br"] = " Total ",
+    },
+    categorize_total_blitz = {
+        en = "Categorize Total Blitz",
+		--ru = " Всего ",
+		--["zh-cn"] = "总",
+        --["zh-tw"] = "總閃擊",
+        --["pt-br"] = " Total ",
+    },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     ammo_tracking_group = {
         en = "Ammo Tracking",
 		ru = "Отслеживание боеприпасов",
         ["zh-cn"] = "弹药追踪",
-		["zh-tw"] = "彈藥追蹤",
+        ["zh-tw"] = "彈藥追蹤",
 		["pt-br"] = "Rastreamento de munição",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     track_ammo_crate_waste = {
         en = "Track Ammo Crate waste",
 		ru = "Отходы ящиков с боеприпасами для треков",
@@ -142,20 +202,15 @@ local localization = {
         ["zh-tw"] = "追蹤彈藥箱浪費",
 		["pt-br"] = "Desperdício de caixa de munição",
     },
-    track_ammo_crate_waste = {
-        en = "Track Ammo Crate waste",
-		ru = "Отходы ящиков с боеприпасами для треков",
-        ["zh-cn"] = "弹药箱废弃物",
-        ["zh-tw"] = "追蹤彈藥箱浪費",
-		["pt-br"] = "Desperdício de caixa de munição",
-    },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     track_ammo_crate_in_percentage = {
         en = "Include Ammo Crates in total percentage of Ammo picked up",
 		ru = "Включить ящики с боеприпасами в общий процент подобранных боеприпасов",
         ["zh-cn"] = "将弹药箱计入拾取弹药的总百分比中",
-        ["zh-tw"] = "將彈藥箱納入撿取彈藥總百分比",
+        ["zh-tw"] = "將彈藥箱納入撿取彈藥總百分比", 
 		["pt-br"] = "Inclua as caixas de munição na porcentagem total de munição coletada",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     attack_tracking_group = {
         en = "Attack Report Tracking",
 		ru = "Отслеживание отчетов об атаках",
@@ -163,6 +218,7 @@ local localization = {
         ["zh-tw"] = "攻擊報告追蹤",
 		["pt-br"] = "Relatório de ataque",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     attack_tracking_separate_rows = {
         en = "Use Separate Rows",
 		ru = "Использовать отдельные строки",
@@ -170,6 +226,7 @@ local localization = {
         ["zh-tw"] = "使用獨立行",
 		["pt-br"] = "Use linhas separadas",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     attack_tracking_separate_rows_description = {
         en = "ROW VISIBILITY CHANGES WILL NOT TAKE EFFECT UNTIL THE MAP CHANGES (such as by going from Mourningstar to Psykhanium)\nCreates a separate row to track these values.",
 		ru = "ИЗМЕНЕНИЯ ВИДИМОСТИ СТРОК НЕ ВСТУПЯТ В СИЛУ, ПОКА КАРТА НЕ ИЗМЕНИТСЯ (например, при переходе от Mourningstar к Psykhanium)\nСоздает отдельную строку для отслеживания этих значений",
@@ -177,6 +234,7 @@ local localization = {
         ["zh-tw"] = "ROW VISIBILITY 的變更要在地圖更換後才會生效（例如，從Mourningstar到靈能室）\n此選項會建立一個獨立的列，用來追蹤相關的數值。",
 		["pt-br"] = "A alteração na visibilidade dos separadores só terá efeito quando o mapa for alterado (por exemplo, ao passar de Mourningstar para Psykhanium).\nCria uma linha separada para rastrear esses valores",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     separate_companion_damage = {
         en = "Companion Damage",
 		ru = "Использовать отдельные строки",
@@ -184,6 +242,7 @@ local localization = {
         ["zh-tw"] = "機械戰犬傷害",
 		["pt-br"] = "Dano do Companheiro",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     separate_companion_damage_description = {
         en = "Choose which row Companion Damage counts towards. \"Companion\" is its own row, which will be hidden if one of the other options is chosen.",
 		ru = "Выберите, в какой строке учитывается урон от компаньонов. «Компаньон» — это отдельная строка, которая будет скрыта, если выбран один из других вариантов.",
@@ -191,6 +250,7 @@ local localization = {
         ["zh-tw"] = "選擇「機械戰犬傷害」要計入哪一個列。「機械戰犬」本身是一個獨立的列；若選擇其他選項，該列將會被隱藏。",
 		["pt-br"] = "Escolha em qual linha o dano causado pelo companheiro será contabilizado. \"Companheiro\" é uma linha separada, que ficará oculta se uma das outras opções for selecionada.",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     warning_companion_blitz = {
         en = "You have set Companion Damage to be tracked under Blitz Damage, but you have not enabled the Blitz Damage row. This means Companion Damage will not be visible! It will still count towards total damage.\nIf that is intentional, you can disable this warning in the Mod Options.",
 		ru = "Вы включили отслеживание урона от напарников в разделе «Урон от напарников», но не включили строку «Урон от напарников». Это означает, что урон от напарников не будет отображаться! Он всё равно будет учитываться в общем уроне.\nЕсли это сделано намеренно, вы можете отключить это предупреждение в настройках мода.",
@@ -198,6 +258,7 @@ local localization = {
         ["zh-tw"] = "您已將機械戰犬傷害設定為統計在爆發傷害（Blitz Damage）中，但您尚未啟用爆發傷害列。這表示機械戰犬傷害將無法顯示！但仍會計入總傷害。\n如果這是您預期的行為，您可以在模組選項中停用此警告。",
 		["pt-br"] = "Você configurou o Dano de Companheiro para ser rastreado em Dano de Ataque Relâmpago, mas não habilitou a linha Dano de Ataque Relâmpago. Isso significa que o Dano de Companheiro não será visível! Ele ainda será contabilizado no dano total.\nSe isso for intencional, você pode desativar este aviso nas Opções do Mod.",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     enable_companion_blitz_warning = {
         en = "Enable warning for untracked Companion Damage",
 		ru = "Включить предупреждение о неотслеживаемом повреждении компаньона",
@@ -205,6 +266,7 @@ local localization = {
         ["zh-tw"] = "啟用未追蹤機械戰犬傷害的警告",
 		["pt-br"] = "Ativar aviso para danos não rastreados em companheiros.",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     enable_companion_blitz_warning_description = {
         en = "Shows warning when counting Companion Damage as Blitz Damage if there is no row displayed for Blitz Damage.",
 		ru = "Выводит предупреждение при подсчете урона от компаньонов как урона от блица, если для урона от блица не отображается строка.",
@@ -212,6 +274,7 @@ local localization = {
         ["zh-tw"] = "當機械戰犬傷害被計為爆發傷害、但未顯示爆發傷害列時，顯示警告。",
 		["pt-br"] = "Exibe um aviso ao contabilizar o dano de companheiro como dano de ataque relâmpago se não houver uma linha exibida para dano de Blitz.",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     separate_companion_damage_hide_regardless = {
         en = "Always Hide Companion Damage Row",
 		ru = "Всегда скрывать строку урона компаньона",
@@ -227,6 +290,7 @@ local localization = {
         ["zh-tw"] = "機械戰犬", 
         ["pt-br"] = "Companheiro", 
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     track_blitz_damage = {
         en = "Blitz Damage",
 		ru = "Урон от молниеносного удара", 
@@ -234,6 +298,7 @@ local localization = {
         ["zh-tw"] = "閃擊傷害",
 		["pt-br"] = "Dano Blitz",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     track_blitz_damage_description = {
         en = "If disabled, Blitz Damage counts as Ranged Damage.",
 		ru = "Если отключено, урон от молниеносной атаки считается уроном от дальнего боя.", 
@@ -241,6 +306,7 @@ local localization = {
         ["zh-tw"] = "若停用，閃擊傷害將被視為遠程傷害。",
 		["pt-br"] = "Se desativado, o dano do Blitz conta como dano à distância.",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     track_blitz_wr = {
         en = "Track Blitz Weakspot Rate",
 		ru = "Уровень уязвимости Blitz", 
@@ -248,6 +314,7 @@ local localization = {
         ["zh-tw"] = "追蹤閃擊弱點命中率",
 		["pt-br"] = "Taxa de pontos fracos do Blitz",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     track_blitz_cr = {
         en = "Track Blitz Critical Strike Rate",
 		ru = "Частота критических ударов Blitz", 
@@ -255,6 +322,7 @@ local localization = {
         ["zh-tw"] = "追蹤閃擊暴擊率",
 		["pt-br"] = "Taxa de acerto crítico do Blitz",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     attack_tracking_hitrate = {
         en = "Hitrate Calculations",
 		ru = "Расчеты хитрейта", 
@@ -262,6 +330,7 @@ local localization = {
         ["zh-tw"] = "命中率計算",
 		["pt-br"] = "Cálculos de taxa de acerto",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     explosions_affect_ranged_hitrate = {
         en = "Explosions affect Ranged Hitrate",
 		ru = "Взрывы влияют на эффективность дальнего боя", 
@@ -269,6 +338,7 @@ local localization = {
         ["zh-tw"] = "爆炸影響遠程命中率",
 		["pt-br"] = "Explosões afetam a taxa de acerto à distância",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     explosions_affect_melee_hitrate = {
         en = "Explosions affect Melee Hitrate",
 		ru = "Взрывы влияют на меткость в ближнем бою", 
@@ -276,6 +346,7 @@ local localization = {
         ["zh-tw"] = "爆炸影響近戰命中率",
 		["pt-br"] = "Explosões afetam a taxa de acerto em combate corpo a corpo",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     defense_tracking_group = {
         en = "Defense Report Tracking",
 		ru = "Отслеживание отчетов Министерства обороны", 
@@ -283,6 +354,7 @@ local localization = {
         ["zh-tw"] = "防禦報告追蹤",
 		["pt-br"] = "Acompanhamento de relatórios de defesa",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     disabled_tracking_group = {
         en = "Track Events as a Disabled State",
 		ru = "Отслеживать события в состоянии «отключено»", 
@@ -290,6 +362,7 @@ local localization = {
         ["zh-tw"] = "將事件視為癱瘓狀態",
 		["pt-br"] = "Acompanhe eventos como um estado com deficiência",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     disabled_tracking_group_description = {
         en = "When enabled, entering the described state will count as getting Disabled",
 		ru = "При включении переход в описанное состояние будет считаться отключением.", 
@@ -297,6 +370,7 @@ local localization = {
         ["zh-tw"] = "啟用後，進入描述的狀態將被視為遭受癱瘓。",
 		["pt-br"] = "Quando ativado, entrar no estado descrito será considerado como ficar desativado.",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     track_catapulted = {
         en = "Catapulted by Knockback",
 		ru = "Катапультировался отбрасыванием", 
@@ -304,6 +378,7 @@ local localization = {
         ["zh-tw"] = "被擊退彈飛",
 		["pt-br"] = "Catapultado por Repulsão",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     track_mutant_charged = {
         en = "Charged by a Mutant",
 		ru = "Нападение мутанта", 
@@ -311,6 +386,7 @@ local localization = {
         ["zh-tw"] = "被變種衝撞",
 		["pt-br"] = "Acusado por um mutante",
     },
+    -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     track_warp_grabbed = {
         --en = "Grabbed by a Daemonhost",
         en = "Warp Grabbed",
@@ -382,8 +458,9 @@ local localization = {
         ["zh-tw"] = "底部邊距",
         ["pt-br"] = "Margem Inferior",
     },
-    -- @backup158: I split these messages up, as well as the localizations
-    -- localizers please verify that I used the correct words
+    -- @backup158: I split these 2 messages up, as well as the localizations
+    --   localizers please verify that I used the correct words
+    -- @backup158: sai google translated these languages: ru
     ammo_messages = {
         en = "Messages - Ammo pickups",
 		ru = "Сообщения - Подбор боеприпасов",
@@ -402,6 +479,7 @@ local localization = {
     -- Reusable labels
     -- ----------------
     -- Settings
+    -- @backup158: sai google translated these languages: ru, zh-cn, zh-tw, pt-br
     setting_only_in_havoc = {
         en = "Only when playing Havoc",
 		ru = "Только при игре в Havoc",
@@ -427,18 +505,21 @@ local localization = {
     -- Ammo messages
     message_grenades = {
         en = "grenades",
+        -- ru = "",
         ["zh-cn"] = "手雷",
         ["zh-tw"] = "手雷",
         ["pt-br"] = "Granadas",
     },
     message_small_clip = {
         en = "ammo box",
+        -- ru = "",
         ["zh-cn"] = "小弹药罐",
         ["zh-tw"] = "小彈藥罐",
         ["pt-br"] = "Caixa de Munição",
     },
     message_large_clip = {
         en = "ammo bag",
+        -- ru = "",
         ["zh-cn"] = "大弹药包",
         ["zh-tw"] = "大彈藥包",
         ["pt-br"] = "Saco de Munição",
@@ -446,6 +527,7 @@ local localization = {
     message_ammo_no_waste = {
 		--en = " picked up %s ammo",
         en = " picked up an %s",
+        -- ru = "",
         ["zh-cn"] = "拾取了%s",
         ["zh-tw"] = "拾取了 %s",
         ["pt-br"] = " coletou %s",
@@ -453,33 +535,42 @@ local localization = {
     message_ammo_waste = {
 		--en = " picked up %s ammo, wasted %s",
         en = " picked up an %s, wasted %s ammo",
+        -- ru = "",
         ["zh-cn"] = "拾取了%s，浪费了%s弹药",
         ["zh-tw"] = "拾取了 %s，浪費了 %s 彈藥",
         ["pt-br"] = " coletou %s, desperdiçou %s munição",
     },
     message_ammo_crate = {
         en = " picked up %s ammo from an %s",
+        -- ru = "",
         ["zh-cn"] = "拾取了%s弹药，来自%s",
         ["zh-tw"] = "拾取了 %s 彈藥，來自 %s",
         ["pt-br"] = " coletou %s munição de %s",
     },
     message_ammo_crate_waste = {
         en = " picked up %s ammo from an %s, wasting %s",
+        -- ru = " ",
+        -- ["zh-cn"] = "",
+        -- ["zh-tw"] = "",
+        -- ["pt-br"] = " ",
     },
     message_ammo_crate_text = {
         en = "ammo crate",
+        -- ru = " ",
         ["zh-cn"] = "弹药箱",
         ["zh-tw"] = "彈藥箱",
         ["pt-br"] = "Caixa de Munição",
     },
     message_grenades_body = {
         en = " picked up %s",
+        -- ru = " ",
         ["zh-cn"] = "拾取了%s",
         ["zh-tw"] = "拾取了 %s",
         ["pt-br"] = " coletou %s",
     },
     message_grenades_text = {
         en = "grenades",
+        -- ru = " ",
         ["zh-cn"] = "手雷",
         ["zh-tw"] = "手雷",
         ["pt-br"] = "Granadas",
@@ -496,36 +587,42 @@ local localization = {
     },
     row_ammo_1 = {
         en = {left = "Total Ammo", right = "[ Taken | Wasted ]",},
+        -- ru = " ",
         ["zh-cn"] = {left = "总弹药", right = "[ 拾取 | 浪费 ]",},
         ["zh-tw"] = {left = "總彈藥", right = "[ 拾取 | 浪費 ]",},
         ["pt-br"] = {left = "Total Munição", right = "[Coletada | Desperdiçada]",},
     },
     row_ammo_percent = {
         en = "Taken",
+        -- ru = " ",
         ["zh-cn"] = "拾取",
         ["zh-tw"] = "拾取",
         ["pt-br"] = "Coletada",
     },
     row_ammo_wasted = {
         en = "Wasted",
+        -- ru = " ",
         ["zh-cn"] = "浪费",
         ["zh-tw"] = "浪費",
         ["pt-br"] = "Desperdiçada",
     },
     row_ammo_2 = {
         en = {left = "Total", right = "[ Grenades Taken | Crates Used ]",},
+        -- ru = " ",
         ["zh-cn"] = {left = "总", right = "[ 手雷拾取 | 弹药箱使用 ]",},
         ["zh-tw"] = {left = "總", right = "[ 手雷拾取 | 彈藥箱使用 ]",},
         ["pt-br"] = {left = "Total", right = "[Granadas Coletada | Caixas Usadas]",},
     },
     row_ammo_grenades = {
         en = "Grenades Taken",
+        -- ru = " ",
         ["zh-cn"] = "手雷拾取",
         ["zh-tw"] = "手雷拾取",
         ["pt-br"] = "Granadas Coletada",
     },
     row_ammo_crates = {
         en = "Crates Used",
+        -- ru = " ",
         ["zh-cn"] = "弹药箱使用",
         ["zh-tw"] = "彈藥箱使用",
         ["pt-br"] = "Caixas Usadas",

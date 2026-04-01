@@ -76,6 +76,14 @@ return {
 		en = "Only records missions with difficulty greater than or equal to this value.",
 		["zh-cn"] = "仅记录难度大于或等于该数值的对局。",
 	},
+	mode_filter_title = {
+		en = "Expedition Filter",
+		["zh-cn"] = "远征模式过滤",
+	},
+	mode_filter_tooltip = {
+		en = "When enabled, expedition mode records will be excluded from statistics. (Early withdrawal is counted as a loss)",
+		["zh-cn"] = "开启时，将排除远征模式的对局记录。（中途撤离会被视作失败）",
+	},	
 	
 	-- self
   	group_self_title = {

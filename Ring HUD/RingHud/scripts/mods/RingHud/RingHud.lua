@@ -3,10 +3,11 @@
 
 local mod = get_mod("RingHud")
 if not mod then return end
-mod.version                             = "RingHud version 1.13.01"
+mod.version                             = "RingHud version 1.14.1"
 
 local MISSION_BOARD_PACKAGE             = "packages/ui/views/mission_board_view/mission_board_view"
 
+mod._mission_board_package_load_id      = mod._mission_board_package_load_id or nil
 mod._ringhud_visibility_applied_to_hud  = setmetatable({}, { __mode = "k" })
 mod._ringhud_hooked_elements            = setmetatable({}, { __mode = "k" })
 
@@ -15,14 +16,12 @@ local PlayerUnitStatus                  = require("scripts/utilities/attack/play
 -------------------------------------------------------------------------------
 -- Global Mod State (non-settings) -- TODO Constants or not constants?
 -------------------------------------------------------------------------------
--- [Moved to top to ensure availability during io_dofile execution of features]
 mod.AMMO_CLIP_ARC_MIN                   = 0.51
 mod.AMMO_CLIP_ARC_MAX                   = 0.975
 mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY     = 30
 mod.MAX_DODGE_SEGMENTS                  = 8
 mod.MAX_GRENADE_SEGMENTS_DISPLAY        = 14
 
--- unified force-show flag (computed each frame from manual hotkey OR ADS rule)
 mod.show_all_hud_hotkey_active          = false
 mod._hotkey_manual_active               = false
 
@@ -39,13 +38,11 @@ local TEAM_STATS_POLL_INTERVAL          = 10
 
 mod._zealot_resist_death_cd_until_t     = 0
 
-mod._most_recent_shot_cost_this_mission = 0   -- [Perf: negligible] Stores the magnitude of the largest recent ammo_clip decrease for secondary weapon, resets per mission. 0 indicates no data.
-mod._prev_secondary_clip_ammo           = nil -- [Perf: negligible] Tracks previous clip ammo to detect negative changes.
+mod._most_recent_shot_cost_this_mission = 0
+mod._prev_secondary_clip_ammo           = nil
 
--- Local player archetype cache (optimization for hot-path checks)
 mod._cached_archetype                   = nil
 
--- Compatibility presence caches (refreshed ONLY on on_all_mods_loaded)
 mod._compat_profile_pictures            = false
 
 function mod.get_local_archetype()
@@ -56,7 +53,6 @@ function mod.get_local_archetype()
     local player = Managers.player and Managers.player.local_player_safe and Managers.player:local_player_safe(1)
     if player and player.archetype_name then
         local name = player:archetype_name()
-        -- Only cache if we got a valid string
         if name then
             mod._cached_archetype = name
             return name
@@ -67,7 +63,6 @@ end
 
 mod:io_dofile("RingHud/scripts/mods/RingHud/systems/settings_manager")
 
--- Ensure RingHud palettes/helpers are available early (some features read mod.PALETTE_* at load time)
 mod.colors              = mod.colors or mod:io_dofile("RingHud/scripts/mods/RingHud/systems/RingHud_colors")
 
 local ProximitySystem   = mod:io_dofile("RingHud/scripts/mods/RingHud/context/proximity_context")
@@ -96,7 +91,6 @@ mod:io_dofile("RingHud/scripts/mods/RingHud/systems/buff_handler")
 mod:io_dofile("RingHud/scripts/mods/RingHud/features/ability_sound_feature")
 mod:io_dofile("RingHud/scripts/mods/RingHud/features/talent_feature")
 
--- Ensure edge-packing constants are loaded and alias the recompute helper
 do
     local C = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/constants")
     if C and type(C) == "table" and type(C.recompute_edge_marker_size) == "function" then
@@ -136,12 +130,10 @@ local function _sum_if_table(v)
     return s
 end
 
--- Helper: current team HUD mode (from settings cache)
 local function _team_mode()
     return mod._settings.team_hud_mode
 end
 
--- Exported helper: is any floating team-tiles mode active?
 function mod.is_floating_team_tiles_enabled()
     local mode = _team_mode()
     return mode == "team_hud_floating"
@@ -158,8 +150,6 @@ local function _apply_team_mode_runtime()
     end
 end
 
--- Helper: does the current team_name_icon setting enable "status" icons?
--- These four values are the explicit "status1" variants and replace the old "contains 'special'" rule.
 local function _team_icon_has_status_enabled()
     local s    = mod._settings
     local icon = s and s.team_name_icon
@@ -175,14 +165,12 @@ local function _team_icon_has_status_enabled()
 end
 
 -- Nudge: when switching into floating, purge any already-spawned player_assistance markers
--- Updated: Now strictly checks both MODE and ICON setting to match player_assistance_suppress.lua logic.
 function mod._refresh_assistance_markers_visibility()
     local hewm = rawget(mod, "_hewm_world_markers")
     if not hewm or not hewm._markers_by_type then return end
     local list = hewm._markers_by_type.player_assistance
     if not list or #list == 0 then return end
 
-    -- New semantics: use explicit team_name_icon values instead of substring search.
     local is_status_enabled = _team_icon_has_status_enabled()
 
     if mod.is_floating_team_tiles_enabled() and is_status_enabled then
@@ -216,7 +204,6 @@ local custom_team_hud_element_data = {
 }
 mod:add_require_path(custom_team_hud_element_data.filename)
 
--- Shared helper to add or replace an element in a HUD element pool
 local function _insert_or_replace_element(element_pool, data)
     if not element_pool or not data then return end
     local found_index
@@ -234,33 +221,26 @@ local function _insert_or_replace_element(element_pool, data)
     end
 end
 
--- Registers both player and team HUD elements
 local function add_or_replace_ring_hud_elements(element_pool)
     _insert_or_replace_element(element_pool, custom_hud_element_data)
     _insert_or_replace_element(element_pool, custom_team_hud_element_data)
 end
 
--- Registers only the team HUD element (for spectator view)
 local function add_or_replace_team_only(element_pool)
     _insert_or_replace_element(element_pool, custom_team_hud_element_data)
 end
 
--- Standard player HUDs
 mod:hook_require("scripts/ui/hud/hud_elements_player_onboarding", add_or_replace_ring_hud_elements)
 mod:hook_require("scripts/ui/hud/hud_elements_player", add_or_replace_ring_hud_elements)
 
--- Training Grounds / Range / Tutorial
 mod:hook_require("scripts/ui/hud/hud_elements_training_grounds", add_or_replace_ring_hud_elements)
 mod:hook_require("scripts/ui/hud/hud_elements_shooting_range", add_or_replace_ring_hud_elements)
 mod:hook_require("scripts/ui/hud/hud_elements_tutorial", add_or_replace_ring_hud_elements)
 
--- Spectator HUD: register ONLY the team element so player widgets never show while dead
 mod:hook_require("scripts/ui/hud/hud_elements_spectator", add_or_replace_team_only)
 
--- Vanilla Team Player Panel visibility
 mod:hook(CLASS.HudElementTeamPlayerPanel, "draw", function(func, self, ...)
     local mode = _team_mode()
-    -- Show vanilla only in these modes; hide it everywhere else.
     if mode ~= "team_hud_disabled"
         and mode ~= "team_hud_floating_vanilla"
         and mode ~= "team_hud_floating_thin"
@@ -269,7 +249,6 @@ mod:hook(CLASS.HudElementTeamPlayerPanel, "draw", function(func, self, ...)
         return
     end
 
-    -- In the thin mode, strip specific panel visuals regardless of minimal_objective_feed_enabled
     if VanillaHudManager and VanillaHudManager.apply_team_panel_thin_styles then
         VanillaHudManager.apply_team_panel_thin_styles(self)
     end
@@ -308,7 +287,6 @@ mod:hook_safe(CLASS.HudElementWorldMarkers, "init", function(self_hewm, parent, 
         end
     end
 
-    -- Execute any stored callbacks
     for _, cb in ipairs(mod._world_markers_init_callbacks) do
         cb(self_hewm)
     end
@@ -328,17 +306,24 @@ local function _refresh_compat_caches()
     end
 end
 
--- Robust hotkey handler: works whether DMF calls with (self, pressed) or (pressed)
+local function _reset_player_hud_ammo_clip_latch()
+    local hud = mod.hud_instance
+    if not hud then
+        return
+    end
+
+    hud._ammo_clip_has_latched_data = false
+    hud._ammo_clip_latched_low      = false
+    hud._latched_current_clip_ammo  = 0
+    hud._latched_max_clip_ammo      = 0
+end
+
 function mod.handle_show_all_hud_hotkey_state(...)
     local a, b = ...
     local pressed = (type(b) == "boolean") and b or (type(a) == "boolean" and a or false)
     mod._hotkey_manual_active = (pressed == true)
 end
 
--- Backwards-compatible alias if your schema still references the old name
-mod.handle_show_all_hotkey_state = mod.handle_show_all_hud_hotkey_state
-
--- ADS detector (alternate fire active on the local player's unit)
 local function _is_ads_now()
     local player = Managers.player and Managers.player.local_player_safe and Managers.player:local_player_safe(1)
     local unit   = player and player.player_unit
@@ -426,22 +411,20 @@ mod.on_game_state_changed = function(status, state_name)
     if state_name == "StateGameplay" and status == "enter" then
         mod._grenade_max_override               = nil
 
-        -- Reset broker blitz mirror state
         mod._broker_blitz_tracked_kills         = 0
         mod._broker_blitz_prev_grenade_cur      = 0
 
-        -- Reset zealot resist-death state
         mod._zealot_resist_death_cd_until_t     = 0
 
-        -- Reset cached archetype
         mod._cached_archetype                   = nil
 
-        -- NEW: Reset ammo forecast tracking for new mission
         mod._most_recent_shot_cost_this_mission = 0
         mod._prev_secondary_clip_ammo           = nil
 
-        mod._latched_dual_shiv_max              = 0
-        mod._latched_dual_shiv_current          = 0
+        _reset_player_hud_ammo_clip_latch()
+
+        mod._latched_dual_shiv_max     = 0
+        mod._latched_dual_shiv_current = 0
 
         _refresh_compat_caches()
         _apply_team_mode_runtime()
@@ -453,14 +436,13 @@ mod.on_game_state_changed = function(status, state_name)
             mod.objective_feed_streamliner.on_game_state_changed(status, state_name)
         end
 
-        -- Keep ammo-visibility caches fresh on state entry
         if mod.ammo_vis_on_setting_changed then mod.ammo_vis_on_setting_changed() end
-        -- Keep pocketable-visibility caches fresh on state entry
         if mod.pockets_vis_on_setting_changed then mod.pockets_vis_on_setting_changed() end
     end
 
     if state_name == "StateLoading" and status == "enter" then
         if mod._ringhud_accumulated_time then mod._ringhud_accumulated_time = 0 end
+        _reset_player_hud_ammo_clip_latch()
         if ProximitySystem and ProximitySystem.on_game_state_changed then
             ProximitySystem.on_game_state_changed(status, state_name)
         end
@@ -489,7 +471,6 @@ mod.on_all_mods_loaded = function()
         mod.recompute_edge_marker_size()
     end
 
-    -- Ensure new modules have the latest settings cache
     if mod.ammo_vis_on_setting_changed then mod.ammo_vis_on_setting_changed() end
     if mod.pockets_vis_on_setting_changed then mod.pockets_vis_on_setting_changed() end
 
@@ -503,11 +484,9 @@ mod.on_disabled = function(initial_call)
     mod.reassure_health                 = false
     mod.reassure_ammo                   = false
 
-    -- Broker blitz mirror state
     mod._broker_blitz_tracked_kills     = 0
     mod._broker_blitz_prev_grenade_cur  = 0
 
-    -- Zealot resist-death state
     mod._zealot_resist_death_cd_until_t = 0
 
     if VanillaHudManager and VanillaHudManager.on_mod_disabled then
@@ -518,14 +497,15 @@ mod.on_disabled = function(initial_call)
         mod.floating_manager.uninstall()
     end
 
-    if Managers.package then
-        Managers.package:release(MISSION_BOARD_PACKAGE, "RingHud")
+    if Managers.package and mod._mission_board_package_load_id then
+        Managers.package:release(mod._mission_board_package_load_id)
+        mod._mission_board_package_load_id = nil
     end
 end
 
 mod.on_enabled = function(initial_call)
-    if Managers.package then
-        Managers.package:load(MISSION_BOARD_PACKAGE, "RingHud", nil, true)
+    if Managers.package and not mod._mission_board_package_load_id then
+        mod._mission_board_package_load_id = Managers.package:load(MISSION_BOARD_PACKAGE, "RingHud", nil, true)
     end
 
     mod._ringhud_visibility_applied_to_hud = setmetatable({}, { __mode = "k" })

@@ -1,6 +1,7 @@
 local mod = get_mod("vfx_swapper")
 mod:io_dofile("vfx_swapper/scripts/mods/vfx_swapper/additionalvfx")
-mod:io_dofile("vfx_swapper/scripts/mods/vfx_swapper/toxicgas")
+-- mod:io_dofile("vfx_swapper/scripts/mods/vfx_swapper/toxicgas")
+mod:io_dofile("vfx_swapper/scripts/mods/vfx_swapper/vfx_limiter")
 
 local DEBUG_LOGGING = false
 -- ============================================================================

@@ -10,13 +10,27 @@ return {
     },
 
     briefing_mute_mode_name = {
-        en = "Disable briefings for faster Valkyrie",
+        en = "Disable Briefings for Faster Valkyrie",
     },
     briefing_mute_mode_lobby_only = {
         en = "Disable Mission Start Briefings",
     },
     briefing_mute_mode_rejoin_only = {
-        en = "Disable Mid Mission Briefings",
+        en = "Disable Backfill Mission Briefings",
+    },
+
+    selected_wheel_option_hotkey_name = {
+        en = "Communication Wheel Hotkey",
+    },
+    selected_wheel_option_name = {
+        en = "Communication Wheel Option",
+    },
+
+    male = {
+        en = "male"
+    },
+    female = {
+        en = "female"
     },
 
     major_npc_briefings_name = {
@@ -24,5 +38,9 @@ return {
     },
     major_npc_chatter_name = {
         en = "Chatter",
+    },
+
+    label_unknown_voice = {
+        en = "Unknown Voice",
     },
 }

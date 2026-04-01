@@ -43,7 +43,6 @@ end
 local function _wastage_color_for_mode(mode)
     local palette = mod.PALETTE_ARGB255
     local c = palette.AMMO_TEXT_COLOR_CRITICAL or COLOR_DEFAULT_CRITICAL
-    -- Forecast mode without forecast data: de-emphasize (matches reserve-text behavior)
     if mode == "forecast" and mod.ammo_reserve_has_forecast_data == false then
         c = COLOR_FORECAST_DIM
     end
@@ -86,7 +85,6 @@ function AmmoReserveFeature.update_state(unit_data_comp_access_point, ammo_data)
     ammo_data.has_infinite_reserve = has_infinite_reserve
 end
 
--- Expose helper on the mod namespace for RingHud_state_player.lua to call
 mod.ammo_reserve_update_state = function(unit_data_comp_access_point, ammo_data)
     return AmmoReserveFeature.update_state(unit_data_comp_access_point, ammo_data)
 end

@@ -1,5 +1,5 @@
 local mod = get_mod("crusher_attack_indicator")
-local version = "1.0.0"
+local version = "1.0.1"
 
 local localizations = {
 	mod_name = {

@@ -139,10 +139,22 @@ end
 local function get_dog_unit()
     local player, unit = get_local_player_cached()
     if not player or not unit then return nil end
+
     local ok, spawner = pcall(ScriptUnit.extension, unit, "companion_spawner_system")
     if not ok or not spawner then return nil end
-    local ok2, dog_unit = pcall(spawner.companion_unit, spawner)
-    if not ok2 or not dog_unit or not ALIVE[dog_unit] then return nil end
+
+    local ok2, companion_units = pcall(spawner.companion_units, spawner)
+    
+    if not ok2 or not companion_units or #companion_units == 0 then 
+        return nil 
+    end
+
+    local dog_unit = companion_units[1]
+
+    if not dog_unit or not ALIVE[dog_unit] then 
+        return nil 
+    end
+
     return dog_unit
 end
 
@@ -233,7 +245,7 @@ mod.update = function(dt)
 	local gm = Managers.state.game_mode
 	if not gm then return end
 	local name = gm:game_mode_name()
-	if name ~= "coop_complete_objective" and name ~= "shooting_range" then
+	if name ~= "coop_complete_objective" and name ~= "shooting_range" and name ~= "expedition" and name ~= "survival" then
 		return
 	end
 

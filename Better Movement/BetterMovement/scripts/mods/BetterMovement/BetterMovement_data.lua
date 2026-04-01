@@ -62,7 +62,7 @@ return {
                     {
                         setting_id    = "sprint_dodge",
                         type          = "checkbox",
-                        default_value = true,
+                        default_value = false,
                     },
                     {
                         setting_id    = "easy_dodge_slide",
@@ -76,6 +76,17 @@ return {
                     },
                     {
                         setting_id    = "keep_dodging",
+                        type          = "checkbox",
+                        default_value = false,
+                    },
+                }
+            },
+            {
+                setting_id = "crouch_settings",
+                type = "group",
+                sub_widgets = {
+                    {
+                        setting_id    = "better_toggle_crouch",
                         type          = "checkbox",
                         default_value = false,
                     },

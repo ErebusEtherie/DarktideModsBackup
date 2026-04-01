@@ -8,5 +8,6 @@ return {
 			mod_localization = "Ration Pack/scripts/mods/Ration Pack/Ration Pack_localization",
 		})
 	end,
+	version = "7.1",
 	packages = {},
 }

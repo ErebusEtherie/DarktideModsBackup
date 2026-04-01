@@ -51,6 +51,11 @@ mod:hook_safe("HudElementInteraction", "update", function(self)
             return
         end
 
+        if mod:get("pickup_expedition_materials") and (hud_description:find("loc_expeditions_pickup_loot_quality_", 1, true) or hud_description:find("loc_expeditions_pickup_currency_quality_", 1, true) or hud_description == "loc_expeditions_pickup_loot_player_drop") then
+            pickup = true
+            return
+        end
+
         if mod:get("pickup_crates") and (hud_description == "loc_pickup_pocketable_medical_crate_01" and not pocketable_template) then
             pickup = true
             return

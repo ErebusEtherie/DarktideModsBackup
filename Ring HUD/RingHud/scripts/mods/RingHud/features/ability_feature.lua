@@ -103,6 +103,18 @@ local function _prefix_pips(pips)
     return string.rep(CHARGE_GLYPH, math.floor(pips))
 end
 
+local function _effective_text_size(default_size)
+    local user_size = tonumber(mod._settings and mod._settings.player_hud_text_size)
+    local forced = mod._runtime_overrides and mod._runtime_overrides.ring_scale
+    local s = (forced ~= nil) and tonumber(forced) or (tonumber(mod._settings and mod._settings.ring_scale) or 1)
+
+    if user_size then
+        return user_size * s
+    end
+
+    return default_size
+end
+
 ----------------------------------------------------------------
 -- Public helpers: font settings for buff / cooldown timers
 ----------------------------------------------------------------
@@ -113,9 +125,13 @@ function AbilityFeature.get_buff_font_settings()
     return "machine_medium", true
 end
 
--- Cooldown timers (ability CD + stimm CD) use hud_body font settings.
 function AbilityFeature.get_cd_font_settings()
-    local font_type   = UIFontSettings.hud_body and UIFontSettings.hud_body.font_type or nil
+    local font_type = mod._settings and mod._settings.player_hud_font
+
+    if not font_type or font_type == "" then
+        font_type = "proxima_nova_bold"
+    end
+
     local drop_shadow = UIFontSettings.hud_body and UIFontSettings.hud_body.drop_shadow or nil
     return font_type, drop_shadow
 end
@@ -167,10 +183,10 @@ function AbilityFeature.update(widget, hud_state, _hotkey_override)
     local content              = widget.content
     local changed              = false
 
-    local body_small_font_size = (UIFontSettings.body_small and UIFontSettings.body_small.font_size * mod.scalable_unit)
-        or (18 * mod.scalable_unit)
-    local buff_font_size       = 28 * mod.scalable_unit
-    local ability_cd_font_size = body_small_font_size
+    local base_font_size       = _effective_text_size(18 * (mod.scalable_unit or 1))
+
+    local buff_font_size       = base_font_size * 1.5
+    local ability_cd_font_size = base_font_size
 
     local t                    = hud_state.gameplay_t or 0
 

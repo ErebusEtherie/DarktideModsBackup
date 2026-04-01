@@ -123,15 +123,16 @@ mod.create_particles = function(fx_extension, particle_name, particle_source, li
     local spawner = fx_extension._vfx_spawners and fx_extension._vfx_spawners[particle_source]
     local particle_group = fx_extension._player_particle_group_id
     if world and spawner and particle_group then
-        spawner = spawner[VisualLoadoutCustomization.ROOT_ATTACH_NAME]
+        spawner_instance = spawner and spawner[VisualLoadoutCustomization.ROOT_ATTACH_NAME]
+        if not spawner_instance then return end -- failsafe
         local unit = fx_extension._unit
         local is_first_person = fx_extension._is_in_first_person_mode
         local node_unit, node
-        if is_first_person or not spawner.node_3p then
-            node_unit = spawner.unit
-            node = spawner.node
+        if is_first_person or not spawner_instance.node_3p then
+            node_unit = spawner_instance.unit
+            node = spawner_instance.node
         else
-            node = spawner.node_3p
+            node = spawner_instance.node_3p
             node_unit = unit
         end
         -- Create particles

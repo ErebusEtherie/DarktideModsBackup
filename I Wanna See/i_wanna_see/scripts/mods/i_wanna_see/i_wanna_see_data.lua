@@ -66,11 +66,6 @@ return {
 						range = {0, 255},
 						decimals_number = 0,  
 					},
-					{
-						setting_id = "display_shield_health",
-						type = "checkbox",
-						default_value = true,
-					},
 				}
 			},
 		}

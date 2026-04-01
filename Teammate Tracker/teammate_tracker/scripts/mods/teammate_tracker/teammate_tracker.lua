@@ -84,6 +84,8 @@ local function build_history_cache()
 	local self_day_therehold = mod:get("self_day_therehold") or 0
 	local others_day_therehold = mod:get("others_day_therehold") or 0
 	local time_now = os.time()
+	-- v2.1.0 add mode filter
+	local mode_filter = mod:get("mode_filter") or false
 
 	local file = _io.open(history_path, "r")
 	if not file then return end
@@ -92,10 +94,18 @@ local function build_history_cache()
 		local sb_checked = false
 		-- mod:echo("Reading line: " .. line)
 		local parts = string.split(line, ";")
-		
-		-- v2.0.6 code: add diff filter
 		local mission_part = parts[#parts]
+		-- v2.1.0 检查前置
 		if type(mission_part) ~= "string" or not mission_part:find("^mission_info:") then
+			goto continue_skip_line	end	
+		-- v2.1.0 add mode filter
+		local mode = mission_part:match("^mission_info:[^:]*:[^:]*:[^:]*:[^:]*:([^:]*)")
+		if mode == "expedition " and mode_filter then 
+			goto continue_skip_line end
+						
+		-- v2.0.6 code: add diff filter
+		-- local mission_part = parts[#parts]
+		--[[if type(mission_part) ~= "string" or not mission_part:find("^mission_info:") then
 			goto continue_skip_line
 		else
 			-- local diff_str = mission_part:match(":(difficulty_%d+)")
@@ -107,13 +117,12 @@ local function build_history_cache()
 			-- elseif havoc_str then
 				-- local havoc_rank = tonumber(havoc_str:match("(%d+)")) or 0
 				-- diff = havoc_rank_to_difficulty(havoc_rank)
-			-- end
-			local diff = tonumber(mission_part:match("difficulty_(%d+)"))
-				or havoc_rank_to_difficulty(tonumber(mission_part:match("havoc_rank_(%d+)")) or 0)
-				or 1
-		
-			if diff < difficulty_therehold then goto continue_skip_line end
-		end
+			-- end]]
+		local diff = tonumber(mission_part:match("difficulty_(%d+)"))
+			or havoc_rank_to_difficulty(tonumber(mission_part:match("havoc_rank_(%d+)")) or 0)
+			or 1
+		if diff < difficulty_therehold then goto continue_skip_line end
+		-- end
 
 		-- win/loss cached table
 		local outcome = parts[2]
@@ -219,10 +228,14 @@ local function get_difficulty_and_circ()
 	local havoc_circ = havoc_data and havoc_data.circumstances
 	local havoc_circ_str = havoc_circ and table.concat(havoc_circ, ",") or ""
 	
+	-- v2.1.0 add mode
+	local mission = Managers.state.mission and Managers.state.mission:mission()
+	local mode = mission and mission.game_mode_name or "unknown_mode"
+	-- export
     if is_havoc then
-        return true, havoc_data.havoc_rank, havoc_circ_str
+        return true, havoc_data.havoc_rank, havoc_circ_str, mode
     else
-        return false, level, circ
+        return false, level, circ, mode
     end
 end
 
@@ -271,6 +284,9 @@ local cached_mission_name = "unknown_map"
 local cached_difficulty_str = "unknown_difficulty"
 local cached_circumstance = "unknown_circumstance"
 local cached_session_id = "unknown_session_id"
+-- v2.1.0
+local _last_mode = nil
+local cached_mode = "unknown_mode"
 
 mod.history_cache = {
 	by_account = {},
@@ -302,7 +318,7 @@ mod.on_all_mods_loaded = function()
 			local mission_changed = false
 			
 			if Managers.state.difficulty and Managers.state.circumstance then
-				local is_havoc, current_difficulty, current_circumstance = get_difficulty_and_circ()
+				local is_havoc, current_difficulty, current_circumstance, current_mode = get_difficulty_and_circ()
 				-- mission changed
 				if current_name ~= _last_mission_name 
 					or current_difficulty ~= _last_difficulty 
@@ -320,6 +336,9 @@ mod.on_all_mods_loaded = function()
 					-- circumstance
 					_last_circumstance = current_circumstance
 					cached_circumstance = string.format("%s", tostring(current_circumstance))
+					-- game mode v2.1.0
+					_last_mode = current_mode
+					cached_mode = current_mode
 					-- mod:echo(string.format("检测到mission变更，已缓存: %s,%s,%s", cached_mission_name, cached_difficulty_str, cached_circumstance))
 					-- v2.0.4_2 code: 移到下面，不然session id必然导致双重缓存，tag_1
 					-- build_history_cache() 
@@ -350,7 +369,7 @@ mod.on_all_mods_loaded = function()
 			
 			-- v2.0.4 code: move to here, tag_1
 			local mode = mission and mission.game_mode_name
-			if mode ~= "coop_complete_objective" and mode ~= "survival" then
+			if mode ~= "coop_complete_objective" and mode ~= "survival" and mode ~= "expedition" then
 				return
 			end
 			
@@ -460,7 +479,7 @@ local function record_game(outcome)
 
         table.insert(entries, string.format("%s:%s:%s:%s:%s", acc_id, char_id, class, name, quit_flag))
     end
-	local mission_info_str = string.format("mission_info:%s:%s:%s:%s", cached_mission_name, cached_difficulty_str, cached_circumstance, cached_session_id)
+	local mission_info_str = string.format("mission_info:%s:%s:%s:%s:%s", cached_mission_name, cached_difficulty_str, cached_circumstance, cached_session_id, cached_mode)
 	
     if file_a then
         file_a:write(string.format(
@@ -505,6 +524,7 @@ if CLASS.EndView then
 		cached_mission_name = "unknown_map"
 		cached_difficulty_str = "unknown_difficulty"
 		cached_circumstance = "unknown_circumstance"
+		cached_mode = "unknown_mode"
 	end)
 else
 	mod:echo("CLASS.EndView is nil, hook skipped.")
@@ -766,6 +786,7 @@ local icon_to_archetype = {
 	[""] = "veteran",
 	[""] = "zealot",
 	[""] = "adamant", -- 共用
+	[""] = "broker",
 	-- [""] = "ogryn (simple)",
 	-- [""] = "psyker (simple)",
 	-- [""] = "veteran (simple)",
@@ -1210,4 +1231,10 @@ mod:command("tt_echo_map_winrate", "Echo win/loss/left for each map", function()
 				Localize(map), rate, stat.win, stat.loss, stat.left))
 		end
 	end
+end)
+
+mod:command("tt_mode", "game mode echo", function()
+    local mission = Managers.state.mission and Managers.state.mission:mission()
+    local mode = mission and mission.game_mode_name or "not_in_mission"
+    mod:echo("present mode: " .. mode)
 end)

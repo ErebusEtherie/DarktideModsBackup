@@ -1,9 +1,9 @@
 --[[
 	File: RitualZones_data.lua
 	Description: Settings and mod data file.
-	Overall Release Version: 1.2.0
-	File Version: 1.2.0
-	Last Updated: 2026-01-07
+	Overall Release Version: 1.3.0
+	File Version: 1.3.0
+	Last Updated: 2026-01-20
 	Author: LAUREHTE
 ]]
 local mod = get_mod("RitualZones")
@@ -353,33 +353,200 @@ return {
 						default_value = true,
 					},
 					{
-						setting_id = "hud_pos_x",
-						type = "numeric",
-						default_value = 20,
-						range = { -2000, 2000 },
+						setting_id = "hud_orientation",
+						type = "dropdown",
+						default_value = "horizontal",
+						options = {
+							{ text = "hud_orientation_horizontal", value = "horizontal" },
+							{ text = "hud_orientation_vertical", value = "vertical" },
+						},
 					},
 					{
-						setting_id = "hud_pos_y",
-						type = "numeric",
-						default_value = 240,
-						range = { -2000, 2000 },
+						setting_id = "hud_invert",
+						type = "checkbox",
+						default_value = false,
 					},
 					{
-						setting_id = "hud_width",
-						type = "numeric",
-						default_value = 420,
-						range = { 120, 1000 },
+						setting_id = "hud_center_on_player",
+						type = "checkbox",
+						default_value = true,
 					},
 					{
-						setting_id = "hud_height",
+						setting_id = "hud_relative_range",
+						type = "numeric",
+						default_value = 100,
+						range = { 5, 1000 },
+					},
+					{
+						setting_id = "hud_horizontal_group",
+						type = "group",
+						sub_widgets = {
+							{
+								setting_id = "hud_pos_x_horizontal",
+								type = "numeric",
+								default_value = 20,
+								range = { -2000, 2000 },
+							},
+							{
+								setting_id = "hud_pos_y_horizontal",
+								type = "numeric",
+								default_value = 240,
+								range = { -2000, 2000 },
+							},
+							{
+								setting_id = "hud_length_horizontal",
+								type = "numeric",
+								default_value = 260,
+								range = { 120, 1000 },
+							},
+							{
+								setting_id = "hud_thickness_horizontal",
+								type = "numeric",
+								default_value = 10,
+								range = { 4, 80 },
+							},
+							{
+								setting_id = "hud_marker_size_horizontal",
+								type = "numeric",
+								default_value = 8,
+								range = { 4, 24 },
+							},
+							{
+								setting_id = "hud_label_offset_x_horizontal",
+								type = "numeric",
+								default_value = 0,
+								range = { -200, 200 },
+							},
+							{
+								setting_id = "hud_label_offset_y_horizontal",
+								type = "numeric",
+								default_value = 8,
+								range = { -200, 200 },
+							},
+						},
+					},
+					{
+						setting_id = "hud_vertical_group",
+						type = "group",
+						sub_widgets = {
+							{
+								setting_id = "hud_pos_x_vertical",
+								type = "numeric",
+								default_value = 20,
+								range = { -2000, 2000 },
+							},
+							{
+								setting_id = "hud_pos_y_vertical",
+								type = "numeric",
+								default_value = 240,
+								range = { -2000, 2000 },
+							},
+							{
+								setting_id = "hud_length_vertical",
+								type = "numeric",
+								default_value = 260,
+								range = { 120, 1000 },
+							},
+							{
+								setting_id = "hud_thickness_vertical",
+								type = "numeric",
+								default_value = 10,
+								range = { 4, 80 },
+							},
+							{
+								setting_id = "hud_marker_size_vertical",
+								type = "numeric",
+								default_value = 8,
+								range = { 4, 24 },
+							},
+							{
+								setting_id = "hud_label_offset_x_vertical",
+								type = "numeric",
+								default_value = 0,
+								range = { -200, 200 },
+							},
+							{
+								setting_id = "hud_label_offset_y_vertical",
+								type = "numeric",
+								default_value = 0,
+								range = { -200, 200 },
+							},
+						},
+					},
+					{
+						setting_id = "hud_label_mode",
+						type = "dropdown",
+						default_value = "name_distance",
+						options = {
+							{ text = "hud_label_mode_off", value = "off" },
+							{ text = "hud_label_mode_name", value = "name" },
+							{ text = "hud_label_mode_distance", value = "distance" },
+							{ text = "hud_label_mode_name_distance", value = "name_distance" },
+						},
+					},
+					{
+						setting_id = "hud_distance_style",
+						type = "dropdown",
+						default_value = "meters",
+						options = {
+							{ text = "hud_distance_style_meters", value = "meters" },
+							{ text = "hud_distance_style_percent", value = "percent" },
+							{ text = "hud_distance_style_meters_percent", value = "meters_percent" },
+						},
+					},
+					{
+						setting_id = "hud_label_side",
+						type = "dropdown",
+						default_value = "auto",
+						options = {
+							{ text = "hud_label_side_auto", value = "auto" },
+							{ text = "hud_label_side_flip", value = "flip" },
+						},
+					},
+					{
+						setting_id = "hud_label_bg_enabled",
+						type = "checkbox",
+						default_value = true,
+					},
+					{
+						setting_id = "hud_label_bg_opacity",
+						type = "numeric",
+						default_value = 180,
+						range = { 0, 255 },
+					},
+					{
+						setting_id = "hud_label_bg_padding_x",
+						type = "numeric",
+						default_value = 6,
+						range = { 0, 30 },
+					},
+					{
+						setting_id = "hud_label_bg_padding_y",
+						type = "numeric",
+						default_value = 3,
+						range = { 0, 30 },
+					},
+					{
+						setting_id = "hud_label_stack_enabled",
+						type = "checkbox",
+						default_value = true,
+					},
+					{
+						setting_id = "hud_label_stack_spacing",
+						type = "numeric",
+						default_value = 14,
+						range = { 0, 60 },
+					},
+					{
+						setting_id = "hud_label_wrap_width",
 						type = "numeric",
 						default_value = 220,
-						range = { 60, 600 },
+						range = { 0, 800 },
 					},
 					{
 						setting_id = "hud_font_size",
 						type = "numeric",
-						default_value = 18,
+						default_value = 14,
 						range = { 10, 36 },
 					},
 					{
@@ -387,6 +554,30 @@ return {
 						type = "numeric",
 						default_value = 140,
 						range = { 0, 255 },
+					},
+					{
+						setting_id = "hud_show_triggers",
+						type = "checkbox",
+						default_value = true,
+					},
+					{
+						setting_id = "hud_show_trigger_labels",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "hud_update_interval",
+						type = "numeric",
+						default_value = 0.2,
+						range = { 0.05, 2 },
+						decimals_number = 2,
+					},
+					{
+						setting_id = "hud_trigger_refresh_interval",
+						type = "numeric",
+						default_value = 1.0,
+						range = { 0.2, 5 },
+						decimals_number = 2,
 					},
 					{
 						setting_id = "hud_show_self",
@@ -412,6 +603,41 @@ return {
 						setting_id = "hud_show_leader_name",
 						type = "checkbox",
 						default_value = true,
+					},
+				},
+			},
+			{
+				setting_id = "hud_stats_group",
+				type = "group",
+				sub_widgets = {
+					{
+						setting_id = "hud_show_stats",
+						type = "checkbox",
+						default_value = true,
+					},
+					{
+						setting_id = "hud_stats_pos_x",
+						type = "numeric",
+						default_value = 20,
+						range = { -2000, 2000 },
+					},
+					{
+						setting_id = "hud_stats_pos_y",
+						type = "numeric",
+						default_value = 360,
+						range = { -2000, 2000 },
+					},
+					{
+						setting_id = "hud_stats_width",
+						type = "numeric",
+						default_value = 240,
+						range = { 120, 800 },
+					},
+					{
+						setting_id = "hud_stats_font_size",
+						type = "numeric",
+						default_value = 12,
+						range = { 10, 36 },
 					},
 				},
 			},

@@ -20,4 +20,11 @@ return {
 		ru = "Автоматическое перепрыгивание только при движении вперёд.",
 		["zh-cn"] = "仅在按住前进键时自动翻越。",
 	},
+	autoJump = {
+		en = "Automatically re-jump while jump button is held.",
+		de = "Springt automatisch erneut, solange die Sprungtaste gehalten wird.",
+		fr = "Répète automatiquement les sauts tant que le bouton de saut est maintenu.",
+		ru = "Автоматически повторяет прыжок, пока удерживается кнопка прыжка.",
+		["zh-cn"] = "按住跳跃按钮时自动连续跳跃。",
+	}
 }

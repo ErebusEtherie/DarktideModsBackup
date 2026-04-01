@@ -1,9 +1,9 @@
 --[[
 	File: RitualZones.lua
 	Description: Draws ritual trigger zones and shows ritual timers for havoc daemonhosts.
-	Overall Release Version: 1.2.0
-	File Version: 1.2.0
-	Last Updated: 2026-01-07
+	Overall Release Version: 1.3.0
+	File Version: 1.3.0
+	Last Updated: 2026-01-20
 	Author: LAUREHTE
 ]]
 local mod = get_mod("RitualZones")
@@ -49,6 +49,9 @@ local CONST = {
 	TRIGGER_PAST_MARGIN = 1.0,
 	PATH_START_CLAMP_RADIUS = 12,
 	PATH_START_CLAMP_DISTANCE = 30,
+	PROGRESS_TRACE_JUMP_THRESHOLD = 35,
+	PROGRESS_TRACE_WORLD_MARGIN = 8,
+	PROGRESS_TRACE_SNAPSHOT_INTERVAL = 2.5,
 	MAX_PROGRESS_HEIGHT_OFFSET = 0.25,
 	PROGRESS_STACK_STEP = 0.5,
 	PROGRESS_STACK_HEIGHT = 0.35,
@@ -227,6 +230,21 @@ local pending_marker_cleanup = false
 local debug_lines = { world = nil, object = nil }
 local max_progress_distance = nil
 local player_progress = {}
+local progress_trace_state = {
+	enabled_last_frame = false,
+	last_t = nil,
+	last_snapshot_t = nil,
+	last_unresolved_t = nil,
+	last_position = nil,
+	last_distance = nil,
+	last_source = nil,
+	last_group_index = nil,
+	last_segment_index = nil,
+	last_side_ahead_distance = nil,
+	last_side_behind_distance = nil,
+	last_side_ahead_unit = nil,
+	last_side_behind_unit = nil,
+}
 local boss_triggered = {}
 local speedup_triggered = {}
 local ritual_start_triggered = {}
@@ -258,6 +276,23 @@ local respawn_state = {
 	safe_locked_active = false,
 	safe_locked_distance = nil,
 }
+local HUD = {
+	MAX_PLAYERS = 4,
+	MAX_TRIGGERS = 24,
+}
+local HUD_TEXT_COLOR = { 255, 255, 255 }
+
+local function clear_table_values(target)
+	for key in pairs(target) do
+		target[key] = nil
+	end
+end
+
+local function clear_array_values(target, from_index)
+	for i = #target, from_index or 1, -1 do
+		target[i] = nil
+	end
+end
 local last_active_respawn_beacon = nil
 local last_active_respawn_beacon_distance = nil
 local debug_label_scale_min = 0.75
@@ -715,6 +750,7 @@ local add_entry_to_cache = nil
 local add_beacon_to_cache = nil
 local normalize_label_map = nil
 local is_finite_number = nil
+local safe_total_path_distance = nil
 
 function sanitize_cache_content(content)
 	if not content then
@@ -1247,7 +1283,7 @@ function mod.cache_sweep_keybind_func()
 		mod:echo("[RitualZones Cache] Cache sweep skipped: not server/host")
 		return
 	end
-	local path_total = MainPathQueries.total_path_distance and MainPathQueries.total_path_distance()
+	local path_total = safe_total_path_distance()
 	if not path_total or not is_finite_number(path_total) or path_total <= 0 then
 		mod:echo("[RitualZones Cache] Cache sweep skipped: no valid main path")
 		return
@@ -1853,6 +1889,45 @@ is_finite_number = function(value)
 	return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
 end
 
+safe_total_path_distance = function()
+	local main_path = Managers.state and Managers.state.main_path
+	if not main_path then
+		return nil
+	end
+
+	local segments = main_path._main_path_segments
+	if type(segments) == "table" then
+		local total = 0
+		for i = 1, #segments do
+			local seg = segments[i]
+			if seg and is_finite_number(seg.path_length) then
+				total = total + seg.path_length
+			end
+		end
+		if total > 0 then
+			return total
+		end
+	end
+
+	local total_path_func = MainPathQueries and MainPathQueries.total_path_distance
+	local is_registered_func = MainPathQueries and MainPathQueries.is_main_path_registered
+	if type(total_path_func) == "function" then
+		if type(is_registered_func) == "function" then
+			local ok_registered, is_registered = pcall(is_registered_func)
+			if not ok_registered or not is_registered then
+				return nil
+			end
+		end
+
+		local ok, value = pcall(total_path_func)
+		if ok and is_finite_number(value) then
+			return value
+		end
+	end
+
+	return nil
+end
+
 local function localize_label(key, fallback)
 	if mod and mod.localize then
 		local ok, value = pcall(mod.localize, mod, key)
@@ -1979,6 +2054,180 @@ local function safe_distance(a, b)
 	return dist
 end
 
+local get_position_travel_distance = nil
+local get_unit_travel_distance = nil
+
+local function get_main_path_manager()
+	return Managers.state and Managers.state.main_path
+end
+
+local function is_linear_path_mode(main_path)
+	local path_manager = main_path or get_main_path_manager()
+	if not path_manager then
+		return false
+	end
+
+	if type(path_manager.path_type) == "function" then
+		local ok, path_type = pcall(path_manager.path_type, path_manager)
+		if ok and path_type == "open" then
+			return false
+		end
+		if ok and path_type == "linear" then
+			return true
+		end
+	end
+
+	return true
+end
+
+local function get_position_on_mesh(nav_world, traverse_logic, position)
+	if not nav_world or not position then
+		return nil
+	end
+
+	if NavQueries.position_on_mesh_with_outside_position then
+		local nav_position = NavQueries.position_on_mesh_with_outside_position(
+			nav_world,
+			traverse_logic,
+			position,
+			CONST.NAV_MESH_ABOVE,
+			CONST.NAV_MESH_BELOW,
+			1,
+			1
+		)
+		if nav_position then
+			return nav_position
+		end
+	end
+
+	if NavQueries.position_on_mesh then
+		return NavQueries.position_on_mesh(
+			nav_world,
+			position,
+			CONST.NAV_MESH_ABOVE,
+			CONST.NAV_MESH_BELOW,
+			traverse_logic
+		)
+	end
+
+	return nil
+end
+
+local function get_manager_nav_position(position)
+	local nav_mesh = Managers.state and Managers.state.nav_mesh
+	local nav_world = nav_mesh and nav_mesh:nav_world()
+	local traverse_logic = nav_mesh and nav_mesh.client_traverse_logic and nav_mesh:client_traverse_logic()
+
+	return get_position_on_mesh(nav_world, traverse_logic, position)
+end
+
+local function get_linear_travel_distance(main_path, position, require_group)
+	if not main_path
+		or not position
+		or type(main_path.travel_distance_from_position) ~= "function" then
+		return nil
+	end
+
+	local ok, distance = pcall(main_path.travel_distance_from_position, main_path, position, require_group)
+	if ok and is_finite_number(distance) then
+		return distance
+	end
+
+	return nil
+end
+
+local function get_strict_linear_travel_distance(position, unit, trace_info)
+	if trace_info then
+		trace_info.source = nil
+		trace_info.fail_reason = nil
+	end
+
+	local main_path = get_main_path_manager()
+	if not main_path then
+		if trace_info then
+			trace_info.fail_reason = "main_path_missing"
+		end
+		return nil
+	end
+	if not is_linear_path_mode(main_path) then
+		if trace_info then
+			trace_info.fail_reason = "path_not_linear"
+		end
+		return nil
+	end
+
+	if unit and ScriptUnit and ScriptUnit.has_extension then
+		local nav_ext = ScriptUnit.has_extension(unit, "navigation_system") and ScriptUnit.extension(unit, "navigation_system")
+		if nav_ext then
+			if nav_ext.latest_position_on_nav_mesh then
+				local ok, latest_nav_position = pcall(nav_ext.latest_position_on_nav_mesh, nav_ext)
+				if ok and latest_nav_position then
+					local latest_distance = get_linear_travel_distance(main_path, latest_nav_position, true)
+					if latest_distance then
+						if trace_info then
+							trace_info.source = "nav_ext_latest"
+						end
+						return latest_distance
+					end
+				end
+			end
+
+			local nav_world = nav_ext.nav_world and nav_ext:nav_world()
+			local traverse_logic = nav_ext.traverse_logic and nav_ext:traverse_logic()
+			local nav_position = get_position_on_mesh(nav_world, traverse_logic, position)
+			if nav_position then
+				local nav_distance = get_linear_travel_distance(main_path, nav_position, true)
+				if nav_distance then
+					if trace_info then
+						trace_info.source = "nav_ext_mesh"
+					end
+					return nav_distance
+				end
+			end
+		end
+	end
+
+	local nav_mesh = Managers.state and Managers.state.nav_mesh
+	local manager_nav_world = nav_mesh and nav_mesh:nav_world()
+	local manager_traverse_logic = nav_mesh and nav_mesh.client_traverse_logic and nav_mesh:client_traverse_logic()
+	local manager_nav_position = get_position_on_mesh(manager_nav_world, manager_traverse_logic, position)
+	if manager_nav_position then
+		local manager_distance = get_linear_travel_distance(main_path, manager_nav_position, true)
+		if manager_distance then
+			if trace_info then
+				trace_info.source = "manager_nav_mesh"
+			end
+			return manager_distance
+		end
+	end
+
+	local direct_distance = get_linear_travel_distance(main_path, position, true)
+	if direct_distance then
+		if trace_info then
+			trace_info.source = "direct_position"
+		end
+		return direct_distance
+	end
+
+	if trace_info then
+		trace_info.fail_reason = "no_linear_candidate"
+	end
+
+	return nil
+end
+
+local function sample_unit_progress_distance(unit, path_total)
+	local position = get_unit_position(unit)
+	local distance = position and (get_position_travel_distance(position) or get_unit_travel_distance(unit))
+	if not distance or not is_finite_number(distance) then
+		return nil
+	end
+	if path_total then
+		distance = math.max(0, math.min(distance, path_total))
+	end
+	return distance
+end
+
 local function within_draw_distance(position, settings, state)
 	local max_distance = settings and settings.debug_draw_distance or 0
 	if not max_distance or max_distance <= 0 then
@@ -1995,40 +2244,71 @@ local function within_draw_distance(position, settings, state)
 	return distance <= max_distance
 end
 
-local function get_position_travel_distance(position)
+get_position_travel_distance = function(position)
 	if not position then
 		return nil
 	end
 
-	local ok, _, travel_distance = pcall(MainPathQueries.closest_position, position)
-	if ok and travel_distance ~= nil then
-		local start_pos = MainPathQueries.position_from_distance(0)
-		if start_pos then
-			local ahead_pos = MainPathQueries.position_from_distance(1)
-			if ahead_pos then
-				local dir = ahead_pos - start_pos
-				if Vector3.length(dir) > 0.001 then
-					dir = Vector3.normalize(dir)
-					local start_dot = Vector3.dot(position - start_pos, dir)
-					if start_dot < 0 then
-						return 0
-					end
-				end
-			end
-			local start_distance = safe_distance(position, start_pos)
-			if start_distance
-				and start_distance <= CONST.PATH_START_CLAMP_RADIUS
-				and travel_distance > CONST.PATH_START_CLAMP_DISTANCE then
-				return 0
-			end
-		end
-		return travel_distance
+	local projected_position = get_manager_nav_position(position)
+	local linear_distance = get_strict_linear_travel_distance(position, nil)
+	if linear_distance then
+		return linear_distance
+	end
+	if is_linear_path_mode() then
+		return nil
 	end
 
 	local main_path = Managers.state.main_path
 	if main_path and main_path.travel_distance_from_position then
-		local ok_distance, distance = pcall(main_path.travel_distance_from_position, main_path, position)
-		if ok_distance then
+		if projected_position then
+			local projected_distance = get_linear_travel_distance(main_path, projected_position)
+			if projected_distance then
+				local start_pos = MainPathQueries.position_from_distance(0)
+				if start_pos then
+					local ahead_pos = MainPathQueries.position_from_distance(1)
+					if ahead_pos then
+						local dir = ahead_pos - start_pos
+						if Vector3.length(dir) > 0.001 then
+							dir = Vector3.normalize(dir)
+							local start_dot = Vector3.dot(position - start_pos, dir)
+							if start_dot < 0 then
+								return 0
+							end
+						end
+					end
+					local start_distance = safe_distance(position, start_pos)
+					if start_distance
+						and start_distance <= CONST.PATH_START_CLAMP_RADIUS
+						and projected_distance > CONST.PATH_START_CLAMP_DISTANCE then
+						return 0
+					end
+				end
+				return projected_distance
+			end
+		end
+
+		local distance = get_linear_travel_distance(main_path, position)
+		if distance then
+			local start_pos = MainPathQueries.position_from_distance(0)
+			if start_pos then
+				local ahead_pos = MainPathQueries.position_from_distance(1)
+				if ahead_pos then
+					local dir = ahead_pos - start_pos
+					if Vector3.length(dir) > 0.001 then
+						dir = Vector3.normalize(dir)
+						local start_dot = Vector3.dot(position - start_pos, dir)
+						if start_dot < 0 then
+							return 0
+						end
+					end
+				end
+				local start_distance = safe_distance(position, start_pos)
+				if start_distance
+					and start_distance <= CONST.PATH_START_CLAMP_RADIUS
+					and distance > CONST.PATH_START_CLAMP_DISTANCE then
+					return 0
+				end
+			end
 			return distance
 		end
 	end
@@ -2132,13 +2412,21 @@ local function main_path_direction(travel_distance)
 	return direction
 end
 
-local function get_unit_travel_distance(unit)
+get_unit_travel_distance = function(unit)
 	if not unit then
 		return nil
 	end
 
 	local position = POSITION_LOOKUP[unit] or Unit.world_position(unit, 1)
 	if not position then
+		return nil
+	end
+
+	local linear_distance = get_strict_linear_travel_distance(position, unit)
+	if linear_distance then
+		return linear_distance
+	end
+	if is_linear_path_mode() then
 		return nil
 	end
 
@@ -2170,62 +2458,25 @@ local function get_unit_travel_distance(unit)
 		end
 	end
 
+	local main_path = Managers.state.main_path
 	if nav_position then
-		local _, travel_distance = MainPathQueries.closest_position(nav_position)
+		local travel_distance = main_path and get_linear_travel_distance(main_path, nav_position)
 		if travel_distance ~= nil then
 			return travel_distance
 		end
-		local main_path = Managers.state.main_path
-		if main_path and main_path.travel_distance_from_position then
-			local ok, distance = pcall(main_path.travel_distance_from_position, main_path, nav_position)
-			if ok then
-				return distance
-			end
+	end
+
+	local manager_nav_position = get_manager_nav_position(position)
+	if manager_nav_position then
+		local manager_distance = main_path and get_linear_travel_distance(main_path, manager_nav_position)
+		if manager_distance ~= nil then
+			return manager_distance
 		end
 	end
 
-	local ok, _, travel_distance = pcall(MainPathQueries.closest_position, position)
-	if ok then
-		return travel_distance
-	end
-
-	local nav_mesh = Managers.state.nav_mesh
-	local manager_nav_world = nav_mesh and nav_mesh:nav_world()
-	local manager_traverse_logic = nav_mesh and nav_mesh.client_traverse_logic and nav_mesh:client_traverse_logic()
-	if manager_nav_world then
-		local manager_nav_position = nil
-		if NavQueries.position_on_mesh_with_outside_position then
-			manager_nav_position = NavQueries.position_on_mesh_with_outside_position(
-				manager_nav_world,
-				manager_traverse_logic,
-				position,
-				CONST.NAV_MESH_ABOVE,
-				CONST.NAV_MESH_BELOW,
-				1,
-				1
-			)
-		end
-		if not manager_nav_position then
-			manager_nav_position = NavQueries.position_on_mesh(
-				manager_nav_world,
-				position,
-				CONST.NAV_MESH_ABOVE,
-				CONST.NAV_MESH_BELOW,
-				manager_traverse_logic
-			)
-		end
-		if manager_nav_position then
-			local _, manager_distance = MainPathQueries.closest_position(manager_nav_position)
-			if manager_distance ~= nil then
-				return manager_distance
-			end
-		end
-	end
-
-	local main_path = Managers.state.main_path
 	if main_path and main_path.travel_distance_from_position then
-		local ok, travel_distance = pcall(main_path.travel_distance_from_position, main_path, position)
-		if ok then
+		local travel_distance = get_linear_travel_distance(main_path, position)
+		if travel_distance then
 			return travel_distance
 		end
 	end
@@ -2276,12 +2527,8 @@ local function collect_player_progress(path_total)
 		local unit = player.player_unit
 		local alive_for_progress = unit and player_can_progress(unit)
 		if alive_for_progress then
-			local position = get_unit_position(unit)
-			local distance = position and (get_position_travel_distance(position) or get_unit_travel_distance(unit))
+			local distance = sample_unit_progress_distance(unit, path_total)
 			if distance and is_finite_number(distance) then
-				if path_total then
-					distance = math.max(0, math.min(distance, path_total))
-				end
 				entry.distance = distance
 				entry.alive = true
 			end
@@ -2320,6 +2567,98 @@ local function collect_player_progress(path_total)
 	end
 
 	return entries, leader_distance, leader_player, local_distance
+end
+
+local function collect_player_progress_entries(path_total, out_entries, seen_players)
+	if not out_entries then
+		return 0, nil, nil, nil, nil
+	end
+
+	local players_manager = Managers.player
+	if not players_manager then
+		clear_array_values(out_entries)
+		if seen_players then
+			clear_table_values(seen_players)
+		end
+		return 0, nil, nil, nil, nil
+	end
+
+	local players = players_manager:players()
+	local local_player = players_manager:local_player(1)
+	local leader_player = nil
+	local leader_distance = nil
+	local leader_index = nil
+
+	if seen_players then
+		clear_table_values(seen_players)
+	end
+
+	local count = 0
+	for _, player in pairs(players) do
+		if seen_players then
+			seen_players[player] = true
+		end
+		local entry = player_progress[player]
+		if not entry then
+			entry = { distance = nil, alive = false }
+			player_progress[player] = entry
+		end
+
+		local unit = player.player_unit
+		local alive_for_progress = unit and player_can_progress(unit)
+		if alive_for_progress then
+			local distance = sample_unit_progress_distance(unit, path_total)
+			if distance and is_finite_number(distance) then
+				entry.distance = distance
+				entry.alive = true
+			end
+		end
+		entry.alive = alive_for_progress and entry.distance ~= nil
+
+		if entry.distance then
+			count = count + 1
+			local out_entry = out_entries[count]
+			if not out_entry then
+				out_entry = {}
+				out_entries[count] = out_entry
+			end
+			out_entry.name = get_player_name and get_player_name(player) or nil
+			out_entry.distance = entry.distance
+			out_entry.alive = entry.alive
+			out_entry.is_local = player == local_player
+			out_entry.is_leader = false
+			if entry.alive and (not leader_distance or entry.distance > leader_distance) then
+				leader_distance = entry.distance
+				leader_player = player
+				leader_index = count
+			end
+		end
+	end
+
+	if count < #out_entries then
+		clear_array_values(out_entries, count + 1)
+	end
+
+	for player in pairs(player_progress) do
+		if not seen_players or not seen_players[player] then
+			player_progress[player] = nil
+		end
+	end
+
+	local local_distance = nil
+	if local_player then
+		local entry = player_progress[local_player]
+		if entry and entry.distance then
+			local_distance = entry.distance
+		end
+	end
+
+	local leader_name = leader_player and get_player_name and get_player_name(leader_player) or nil
+	if leader_index and out_entries[leader_index] then
+		out_entries[leader_index].is_leader = true
+	end
+
+	return count, leader_distance, leader_player, leader_name, local_distance
 end
 
 local function add_spawn_trigger_distance(triggers, seen, distance)
@@ -2521,6 +2860,295 @@ local function get_default_side_id()
 	local default_side_name = side_system:get_default_player_side_name()
 	local player_side = side_system:get_side_from_name(default_side_name)
 	return player_side and player_side.side_id
+end
+
+local function progress_trace_enabled()
+	return mod:get("cache_debug_enabled") == true
+end
+
+local function progress_trace_log(message)
+	mod:echo("[RitualZones Trace] " .. tostring(message))
+end
+
+local function trace_number(value, decimals)
+	if is_finite_number(value) then
+		return string.format("%." .. tostring(decimals or 2) .. "f", value)
+	end
+	return "nil"
+end
+
+local function reset_progress_trace_state()
+	progress_trace_state.enabled_last_frame = false
+	progress_trace_state.last_t = nil
+	progress_trace_state.last_snapshot_t = nil
+	progress_trace_state.last_unresolved_t = nil
+	progress_trace_state.last_position = nil
+	progress_trace_state.last_distance = nil
+	progress_trace_state.last_source = nil
+	progress_trace_state.last_group_index = nil
+	progress_trace_state.last_segment_index = nil
+	progress_trace_state.last_side_ahead_distance = nil
+	progress_trace_state.last_side_behind_distance = nil
+	progress_trace_state.last_side_ahead_unit = nil
+	progress_trace_state.last_side_behind_unit = nil
+end
+
+local function progress_trace_player_name(unit)
+	if not unit then
+		return "nil"
+	end
+	local players_manager = Managers.player
+	local players = players_manager and players_manager.players and players_manager:players()
+	if players then
+		for _, player in pairs(players) do
+			if player and player.player_unit == unit then
+				local name = get_player_name and get_player_name(player)
+				if name and name ~= "" then
+					return name
+				end
+				if player.slot then
+					local ok, slot = pcall(player.slot, player)
+					if ok and slot ~= nil then
+						return "slot_" .. tostring(slot)
+					end
+				end
+				break
+			end
+		end
+	end
+	return tostring(unit)
+end
+
+local function get_progress_trace_indices(main_path, unit)
+	local segment_index = nil
+	if main_path and type(main_path.segment_index_by_unit) == "function" then
+		local ok, value = pcall(main_path.segment_index_by_unit, main_path, unit)
+		if ok then
+			segment_index = value
+		end
+	end
+	local group_index = nil
+	local path_impl = main_path and main_path._path
+	local group_index_by_unit = path_impl and path_impl._group_index_by_unit
+	if type(group_index_by_unit) == "table" then
+		group_index = group_index_by_unit[unit]
+	end
+	return segment_index, group_index
+end
+
+local function update_progress_trace(t)
+	local enabled = progress_trace_enabled()
+	if not enabled then
+		if progress_trace_state.enabled_last_frame then
+			progress_trace_log("disabled")
+			reset_progress_trace_state()
+		end
+		return
+	end
+
+	if not progress_trace_state.enabled_last_frame then
+		progress_trace_state.enabled_last_frame = true
+		progress_trace_log("enabled (watching local path traversal)")
+	end
+
+	local players_manager = Managers.player
+	local local_player = players_manager and players_manager.local_player and players_manager:local_player(1)
+	local player_unit = local_player and local_player.player_unit
+	if not player_unit or not unit_is_alive(player_unit) then
+		local now = t or 0
+		if not progress_trace_state.last_unresolved_t or (now - progress_trace_state.last_unresolved_t) >= 2 then
+			progress_trace_log("local player unavailable")
+			progress_trace_state.last_unresolved_t = now
+		end
+		progress_trace_state.last_t = now
+		progress_trace_state.last_distance = nil
+		progress_trace_state.last_position = nil
+		progress_trace_state.last_source = nil
+		progress_trace_state.last_group_index = nil
+		progress_trace_state.last_segment_index = nil
+		progress_trace_state.last_side_ahead_distance = nil
+		progress_trace_state.last_side_behind_distance = nil
+		progress_trace_state.last_side_ahead_unit = nil
+		progress_trace_state.last_side_behind_unit = nil
+		return
+	end
+
+	local position = get_unit_position(player_unit)
+	if not position then
+		return
+	end
+
+	local main_path = get_main_path_manager()
+	local linear_mode = is_linear_path_mode(main_path)
+	local trace_info = {}
+	local distance = nil
+	local source = "none"
+	if linear_mode then
+		distance = get_strict_linear_travel_distance(position, player_unit, trace_info)
+		source = trace_info.source or "none"
+	else
+		distance = get_position_travel_distance(position) or get_unit_travel_distance(player_unit)
+		if distance then
+			source = "open_path_fallback"
+		end
+	end
+
+	local segment_index, group_index = get_progress_trace_indices(main_path, player_unit)
+	local side_id = get_default_side_id()
+	local ahead_unit, ahead_distance = nil, nil
+	local behind_unit, behind_distance = nil, nil
+	if side_id and main_path then
+		if type(main_path.ahead_unit) == "function" then
+			local ok_ahead, value_unit, value_distance = pcall(main_path.ahead_unit, main_path, side_id)
+			if ok_ahead then
+				ahead_unit = value_unit
+				ahead_distance = value_distance
+			end
+		end
+		if type(main_path.behind_unit) == "function" then
+			local ok_behind, value_unit, value_distance = pcall(main_path.behind_unit, main_path, side_id)
+			if ok_behind then
+				behind_unit = value_unit
+				behind_distance = value_distance
+			end
+		end
+	end
+
+	local now = t or 0
+	local world_delta = nil
+	local last_position = progress_trace_state.last_position
+	if last_position and Vector3 and Vector3.x then
+		local px = Vector3.x(position)
+		local py = Vector3.y(position)
+		local pz = Vector3.z(position)
+		local dx = px - last_position.x
+		local dy = py - last_position.y
+		local dz = pz - last_position.z
+		world_delta = math.sqrt(dx * dx + dy * dy + dz * dz)
+	end
+
+	local travel_delta = nil
+	if is_finite_number(distance) and is_finite_number(progress_trace_state.last_distance) then
+		travel_delta = distance - progress_trace_state.last_distance
+	end
+	local dt = nil
+	if is_finite_number(progress_trace_state.last_t) then
+		dt = now - progress_trace_state.last_t
+	end
+
+	if progress_trace_state.last_source and source ~= progress_trace_state.last_source then
+		progress_trace_log(
+			string.format(
+				"source %s -> %s (dist=%s seg=%s grp=%s)",
+				tostring(progress_trace_state.last_source),
+				tostring(source),
+				trace_number(distance, 2),
+				tostring(segment_index),
+				tostring(group_index)
+			)
+		)
+	end
+
+	if linear_mode and progress_trace_state.last_group_index and group_index and group_index ~= progress_trace_state.last_group_index then
+		progress_trace_log(
+			string.format(
+				"group %s -> %s (seg %s -> %s, dist=%s)",
+				tostring(progress_trace_state.last_group_index),
+				tostring(group_index),
+				tostring(progress_trace_state.last_segment_index),
+				tostring(segment_index),
+				trace_number(distance, 2)
+			)
+		)
+	end
+
+	if is_finite_number(travel_delta) and math.abs(travel_delta) >= CONST.PROGRESS_TRACE_JUMP_THRESHOLD then
+		local suspicious_jump = (not is_finite_number(world_delta))
+			or ((math.abs(travel_delta) - world_delta) >= CONST.PROGRESS_TRACE_WORLD_MARGIN)
+		progress_trace_log(
+			string.format(
+				"%s jump d_travel=%+.2f d_world=%s dt=%s src=%s seg=%s->%s grp=%s->%s",
+				suspicious_jump and "suspicious" or "large",
+				travel_delta,
+				trace_number(world_delta, 2),
+				trace_number(dt, 2),
+				tostring(source),
+				tostring(progress_trace_state.last_segment_index),
+				tostring(segment_index),
+				tostring(progress_trace_state.last_group_index),
+				tostring(group_index)
+			)
+		)
+	end
+
+	if progress_trace_state.last_side_ahead_unit and ahead_unit and ahead_unit ~= progress_trace_state.last_side_ahead_unit then
+		progress_trace_log(
+			string.format(
+				"ahead unit %s -> %s (ahead=%s behind=%s)",
+				progress_trace_player_name(progress_trace_state.last_side_ahead_unit),
+				progress_trace_player_name(ahead_unit),
+				trace_number(ahead_distance, 2),
+				trace_number(behind_distance, 2)
+			)
+		)
+	end
+
+	if not distance then
+		if not progress_trace_state.last_unresolved_t or (now - progress_trace_state.last_unresolved_t) >= 2 then
+			progress_trace_log(
+				string.format(
+					"distance unresolved (mode=%s source=%s reason=%s seg=%s grp=%s)",
+					linear_mode and "linear" or "open",
+					tostring(source),
+					tostring(trace_info.fail_reason),
+					tostring(segment_index),
+					tostring(group_index)
+				)
+			)
+			progress_trace_state.last_unresolved_t = now
+		end
+	else
+		progress_trace_state.last_unresolved_t = nil
+	end
+
+	local snapshot_due = not progress_trace_state.last_snapshot_t
+		or (now - progress_trace_state.last_snapshot_t) >= CONST.PROGRESS_TRACE_SNAPSHOT_INTERVAL
+	if snapshot_due then
+		progress_trace_state.last_snapshot_t = now
+		progress_trace_log(
+			string.format(
+				"snapshot dist=%s ahead=%s behind=%s src=%s seg=%s grp=%s",
+				trace_number(distance, 2),
+				trace_number(ahead_distance, 2),
+				trace_number(behind_distance, 2),
+				tostring(source),
+				tostring(segment_index),
+				tostring(group_index)
+			)
+		)
+	end
+
+	progress_trace_state.last_t = now
+	progress_trace_state.last_distance = distance
+	progress_trace_state.last_source = source
+	progress_trace_state.last_group_index = group_index
+	progress_trace_state.last_segment_index = segment_index
+	progress_trace_state.last_side_ahead_distance = ahead_distance
+	progress_trace_state.last_side_behind_distance = behind_distance
+	progress_trace_state.last_side_ahead_unit = ahead_unit
+	progress_trace_state.last_side_behind_unit = behind_unit
+	if Vector3 and Vector3.x then
+		local last_position_store = progress_trace_state.last_position
+		if not last_position_store then
+			last_position_store = {}
+			progress_trace_state.last_position = last_position_store
+		end
+		last_position_store.x = Vector3.x(position)
+		last_position_store.y = Vector3.y(position)
+		last_position_store.z = Vector3.z(position)
+	else
+		progress_trace_state.last_position = nil
+	end
 end
 
 local function collect_ambush_triggers()
@@ -3305,7 +3933,7 @@ local function record_offline_cache(ritual_units, t)
 		updated = true
 	end
 	if main_path_ready then
-		local path_total = MainPathQueries.total_path_distance and MainPathQueries.total_path_distance()
+		local path_total = safe_total_path_distance()
 		if path_total then
 			updated = update_path_signature(entry, path_total) or updated
 		end
@@ -4039,6 +4667,19 @@ local function update_timer_state(unit, dt, t)
 
 	if not data.started and current_health_percent < 0.99 then
 		data.started = true
+		data.last_health_percent = current_health_percent
+		data.last_time_checked = now
+		data.rate = nil
+		data.time_left = nil
+		timer_state[unit] = data
+		return nil, data
+	end
+
+	if not data.started then
+		data.rate = nil
+		data.time_left = nil
+		timer_state[unit] = data
+		return nil, data
 	end
 
 	if data.started and current_health_percent >= 0.999 then
@@ -6813,6 +7454,166 @@ local function draw_cylinder(line_object, center, radius, height, step, segments
 	end
 end
 
+function mod:should_show_hud()
+	if not self:get("hud_enabled") then
+		return false
+	end
+	if not is_gameplay_state() then
+		return false
+	end
+	return true
+end
+
+local function update_hud_colors(state)
+	local colors = state.colors
+	if not colors then
+		colors = {}
+		state.colors = colors
+	end
+	colors.line = resolve_color_setting("color_path", CONST.PATH_COLOR)
+	colors.self = resolve_color_setting("color_sphere", CONST.PROGRESS_COLOR)
+	colors.leader = resolve_color_setting("color_line", CONST.PATH_COLOR)
+	colors.other = resolve_color_setting("color_passed", CONST.MARKER_COLOR)
+	colors.max = CONST.PROGRESS_MAX_COLOR
+	colors.text = HUD_TEXT_COLOR
+	colors.trigger_spawn = CONST.RING_COLORS.red
+	colors.trigger_start = CONST.RING_COLORS.orange
+	colors.trigger_speedup = CONST.RING_COLORS.yellow
+end
+
+local function update_hud_triggers(state, ritual_units, path_total)
+	if not mod:get("hud_show_triggers") then
+		state.trigger_count = 0
+		clear_array_values(state.triggers)
+		return
+	end
+
+	local triggers = {}
+	if ritual_units and #ritual_units > 0 then
+		triggers = collect_path_triggers(ritual_units)
+	end
+	if #triggers == 0 and (cache_use_enabled() or cache_use_offline_enabled()) then
+		local cache_entry = get_cache_entry(get_mission_name(), path_total)
+		if cache_entry then
+			triggers = cached_path_triggers(cache_entry)
+		end
+	end
+
+	local count = 0
+	local limit = HUD.MAX_TRIGGERS
+	for i = 1, #triggers do
+		local trigger = triggers[i]
+		if trigger and trigger.distance and is_finite_number(trigger.distance) then
+			count = count + 1
+			if count > limit then
+				break
+			end
+			local out_entry = state.triggers[count]
+			if not out_entry then
+				out_entry = {}
+				state.triggers[count] = out_entry
+			end
+			out_entry.distance = trigger.distance
+			out_entry.id = trigger.id
+			out_entry.color = trigger.color
+		end
+	end
+
+	state.trigger_count = count
+	if count < #state.triggers then
+		clear_array_values(state.triggers, count + 1)
+	end
+end
+
+local function safe_should_show_hud()
+	if not mod or type(mod) ~= "table" then
+		return false
+	end
+	if type(mod.should_show_hud) == "function" then
+		local ok, value = pcall(mod.should_show_hud, mod)
+		if ok then
+			return value and true or false
+		end
+	end
+	if type(mod.get) == "function" then
+		return mod:get("hud_enabled") and true or false
+	end
+	return false
+end
+
+local function update_hud_state(dt, t, ritual_units, ritual_enabled)
+	if not safe_should_show_hud() then
+		if mod and type(mod) == "table" then
+			mod._hud_state = nil
+		end
+		return
+	end
+
+	local state = mod._hud_state
+	if not state then
+		state = {
+			entries = {},
+			triggers = {},
+			seen_players = {},
+			colors = {},
+			update_timer = 0,
+			trigger_timer = 0,
+			trigger_count = 0,
+			entry_count = 0,
+		}
+		mod._hud_state = state
+	end
+
+	local update_interval = tonumber(mod:get("hud_update_interval")) or 0.2
+	if update_interval < 0.05 then
+		update_interval = 0.05
+	end
+	state.update_timer = (state.update_timer or 0) + (dt or 0)
+	if state.update_timer < update_interval then
+		return
+	end
+	state.update_timer = 0
+
+	local path_total = safe_total_path_distance()
+	if path_total and not is_finite_number(path_total) then
+		path_total = nil
+	end
+
+	local entry_count, leader_distance, _, leader_name, local_distance =
+		collect_player_progress_entries(path_total, state.entries, state.seen_players)
+	if entry_count > HUD.MAX_PLAYERS then
+		entry_count = HUD.MAX_PLAYERS
+		clear_array_values(state.entries, HUD.MAX_PLAYERS + 1)
+	end
+
+	state.entry_count = entry_count
+	state.leader_distance = leader_distance
+	state.leader_name = leader_name
+	state.player_distance = local_distance
+
+	local reference_distance = local_distance or leader_distance
+	if reference_distance and (not max_progress_distance or reference_distance > max_progress_distance) then
+		max_progress_distance = reference_distance
+	end
+
+	state.max_progress_distance = max_progress_distance
+	state.path_total = path_total
+	state.reference_distance = reference_distance
+	state.ritual_enabled = ritual_enabled
+
+	update_hud_colors(state)
+
+	local trigger_interval = tonumber(mod:get("hud_trigger_refresh_interval")) or 1.0
+	if trigger_interval < 0.1 then
+		trigger_interval = 0.1
+	end
+	state.trigger_timer = (state.trigger_timer or 0) + (dt or 0)
+	if state.trigger_count == 0 or state.trigger_timer >= trigger_interval then
+		state.trigger_timer = 0
+		update_hud_triggers(state, ritual_units, path_total)
+	end
+end
+
 draw_sphere = function(line_object, center, radius, segments, color)
 	if radius <= 0 then
 		draw_point(line_object, center, color)
@@ -7076,7 +7877,7 @@ function draw_debug_lines(world, ritual_units, t, ritual_enabled)
 		end
 	end
 
-	local path_total = MainPathQueries.total_path_distance and MainPathQueries.total_path_distance()
+	local path_total = safe_total_path_distance()
 	local cache_entry = nil
 	if settings.allow_live_data then
 		if settings.cache_use_offline_enabled then
@@ -7287,7 +8088,8 @@ local function reset_runtime_state(clear_text)
 	debug_state.last_label_refresh_t = nil
 	debug_state.last_label_refresh_position = nil
 	debug_state.force_label_refresh_frames = 0
-	mod._hud_data = nil
+	mod._hud_state = nil
+	reset_progress_trace_state()
 	if clear_text then
 		local debug_text = get_debug_text_manager(world)
 		clear_debug_text(debug_text)
@@ -7514,6 +8316,15 @@ end
 mod.on_enabled = function()
 	cleanup_done = false
 	mark_dirty()
+	clear_debug_label_markers()
+	destroy_debug_lines()
+	local world = Managers.world and Managers.world:world("level_world")
+	if world then
+		clear_line_object(world)
+		local debug_text = get_debug_text_manager(world)
+		clear_debug_text(debug_text)
+	end
+	destroy_debug_text_manager()
 end
 
 mod.on_game_state_changed = function(status, state_name)
@@ -7542,6 +8353,14 @@ mod.on_disabled = function()
 	end
 	reset_runtime_state(true)
 	cleanup_done = true
+end
+
+mod.on_unload = function()
+	mod.on_disabled()
+end
+
+mod.on_reload = function()
+	mod.on_disabled()
 end
 
 mod.update = function(dt, t)
@@ -7580,6 +8399,8 @@ mod.update = function(dt, t)
 		end
 	end
 
+	update_progress_trace(t or 0)
+
 	local ritual_features_enabled = mod:get("ritualzones_enabled") and true or false
 	local ritual_enabled = ritual_features_enabled and is_havoc_ritual_active()
 	local ritual_units = ritual_enabled and find_ritual_units() or {}
@@ -7614,44 +8435,8 @@ mod.update = function(dt, t)
 	update_cache_sweep(t or 0)
 	record_offline_cache(ritual_units, t or 0)
 	draw_debug_lines(world, ritual_units, t or 0, ritual_enabled)
-
-	local hud_enabled = mod:get("hud_enabled")
-	if hud_enabled then
-		local ok = pcall(function()
-			local hud_state = build_debug_state(nil)
-			local entries = {}
-			local self_entry = nil
-			local leader_player = hud_state.leader_player
-			local leader_name = leader_player and get_player_name and get_player_name(leader_player) or nil
-			local progress_entries = hud_state.progress_entries or {}
-			for i = 1, #progress_entries do
-				local entry = progress_entries[i]
-				local name = get_player_name and get_player_name(entry.player) or nil
-				local info = {
-					name = name,
-					distance = entry.distance,
-					is_local = entry.is_local,
-					is_leader = leader_player and entry.player == leader_player or false,
-					alive = entry.alive,
-				}
-				entries[#entries + 1] = info
-				if entry.is_local then
-					self_entry = info
-				end
-			end
-			mod._hud_data = {
-				player_distance = hud_state.player_distance,
-				leader_distance = hud_state.leader_distance,
-				leader_name = leader_name,
-				max_progress_distance = hud_state.max_progress_distance,
-				entries = entries,
-				self = self_entry,
-			}
-		end)
-		if not ok then
-			mod._hud_data = nil
-		end
-	else
-		mod._hud_data = nil
+	local ok = pcall(update_hud_state, dt or 0, t or 0, ritual_units, ritual_enabled)
+	if not ok then
+		mod._hud_state = nil
 	end
 end

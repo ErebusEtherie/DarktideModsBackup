@@ -23,6 +23,9 @@ return {
 	pickup_materials = {
 		en = "Automatically pick up crafting materials"
 	},
+	pickup_expedition_materials = {
+		en = "Automatically pick up expedition materials"
+	},
 	open_chests = {
 		en = "Automatically open chests"
 	},

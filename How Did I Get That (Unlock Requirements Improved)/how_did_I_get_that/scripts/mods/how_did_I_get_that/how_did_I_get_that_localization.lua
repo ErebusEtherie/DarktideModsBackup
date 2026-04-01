@@ -1,7 +1,19 @@
+local mod = get_mod("how_did_I_get_that")
+mod.version = "2.5.14"
+mod:info("How Did I Get That is installed, using version: " .. tostring(mod.version))
+
+local colours = {
+	title = "200,140,20",
+	subtitle = "226,199,126",
+	text = "169,191,153",
+}
+
 return {
 	mod_name = {
-		en = "How Did I Get That",
-		--de= "",
+		en = "{#color("
+			.. colours.title
+			.. ")} "
+			.. "{#color(0,255,0)}H{#color(0,255,13)}o{#color(0,255,27)}w {#color(0,255,40)}D{#color(0,255,54)}i{#color(0,255,67)}d {#color(0,255,81)}I {#color(0,255,95)}G{#color(0,255,108)}e{#color(0,255,122)}t {#color(0,255,135)}T{#color(0,255,149)}h{#color(0,255,162)}a{#color(0,255,176)}t{#color(0,255,190)}?{#reset()}",
 		--fr="",
 		--it="",
 		-- ko = "",
@@ -12,10 +24,26 @@ return {
 		--jp = "",
 		--pl = "",
 		--["pt-br"] = ""
-
 	},
 	mod_description = {
-		en = "Display unlock details for cosmetics",
+		en = "{#color("
+			.. colours.text
+			.. ")}"
+			.. "See details on how to obtain all cosmetics, including penance rewards, commissary items and Hestia's blessing rewards."
+			.. "{#reset()}\n\n"
+			.. "{#color("
+			.. colours.subtitle
+			.. ")}Author: "
+			.. "{#color("
+			.. colours.text
+			.. ")}Alfthebigheaded\n"
+			.. "{#color("
+			.. colours.subtitle
+			.. ")}Version: {#color("
+			.. colours.text
+			.. ")}"
+			.. mod.version
+			.. "{#reset()}",
 		--de= "",
 		--fr="",
 		--it="",
@@ -27,7 +55,6 @@ return {
 		--jp = "",
 		--pl = "",
 		--["pt-br"] = ""
-
 	},
 	ordo_docket_amount_text = {
 		en = " for " .. "!content" .. " Ordo Dockets",
@@ -69,7 +96,9 @@ return {
 		--es = "",
 		--["zh-cn"] = "",
 		--["zh-tw"] = "",
-		ru = "Для завершения требуется выполнить " .. "!content" .. " Искуплений",
+		ru = "Для завершения требуется выполнить "
+			.. "!content"
+			.. " Искуплений",
 		--jp = "",
 		--pl = "",
 		--["pt-br"] = ""
@@ -201,59 +230,79 @@ return {
 		--["pt-br"] = ""
 	},
 	rogue_trader_crossover = {
-		en = "Owlcat & Fatshark - Rogue Trader & Darktide Crossover, May 2025"
+		en = "Owlcat & Fatshark - Rogue Trader & Darktide Crossover, May 2025",
 	},
 	live_event_surveyor_of_the_storm = {
-		en = "Live Event: Surveyor of the Storm"
+		en = "Live Event: Surveyor of the Storm",
 	},
 	live_event_day_at_the_theatre = {
-		en = "Live Event: Day at the Theatre, Mar 2025"
+		en = "Live Event: Day at the Theatre, Mar 2025",
 	},
 	live_event_communication_breakdown = {
-		en = "Live Event: Communication Breakdown, Apr 2025"
+		en = "Live Event: Communication Breakdown, Apr 2025",
 	},
 	live_event_admonition_ascendant = {
-		en = "Live Event: Admonition Ascendant, May 2025"
+		en = "Live Event: Admonition Ascendant, May 2025",
 	},
 	live_event_warhammer_fest = {
-		en = "Live Event: Warhammer Fest"
+		en = "Live Event: Warhammer Fest",
 	},
 	live_event_waking_giants = {
-		en = "Live Event: Waking Giants, Jan 2025"
+		en = "Live Event: Waking Giants, Jan 2025",
 	},
 	live_event_grandfather_gifts = {
-		en = "Live Event: Grandfather Gifts, Nov 2024"
+		en = "Live Event: Grandfather Gifts, Nov 2024",
 	},
 	dev_exclusive = {
-		en = "Fatshark developer exclusive <3"
+		en = "Fatshark developer exclusive <3",
 	},
 	live_event_cry_havoc = {
-		en = "Live Event: Cry Havoc, Dec 2024"
+		en = "Live Event: Cry Havoc, Dec 2024",
 	},
 
 	arbites_deluxe = {
-		en = "Arbites Class: Deluxe Edition"
+		en = "Arbites Class: Deluxe Edition",
 	},
 	broker_deluxe = {
-		en = "Broker Class: Deluxe Edition"
+		en = "Broker Class: Deluxe Edition",
 	},
 
 	live_event_the_day_of_atonement = {
-		en = "Live Event: The Day of Atonement, Dec 2025"
+		en = "Live Event: The Day of Atonement, Dec 2025",
 	},
 	live_event_stolen_rations = {
-		en = "Live Event: Stolen Rations, Nov 2025"
+		en = "Live Event: Stolen Rations, Nov 2025",
 	},
 	live_event_smuggled_munitions = {
-		en = "Live Event: Smuggled Munitions, Oct 2025"
+		en = "Live Event: Smuggled Munitions, Oct 2025",
 	},
 	live_event_light_the_fuse = {
-		en = "Live Event: Light the Fuse, Aug 2025"
+		en = "Live Event: Light the Fuse, Aug 2025",
 	},
 	live_event_rotten_armour = {
-		en = "Live Event: Rotten Armour, Jul 2025"
+		en = "Live Event: Rotten Armour, Jul 2025",
 	},
 	live_event_inferno = {
-		en = "Live Event: Inferno, Jun 2025"
+		en = "Live Event: Inferno, Jun 2025",
+	},
+
+	live_event_cartels_favour = {
+		en = "Live Event: Cartel's Favour, Feb 2026",
+	},
+	live_event_rumbling_giants = {
+		en = "Live Event: Rumbling Giants, Mar 2026",
+	},
+	live_event_deadside_patrol = {
+		en = "Live Event: Deadside Patrol, Apr 2026",
+	},
+
+	general_settings = {
+		en = "{#color(" .. colours.title .. ")}General Settings{#reset()}",
+	},
+	placeholder = {
+		en = "",
+	},
+	placeholder_tooltip = {
+		en = "A placeholder entry to initialise the mod menu, does not do anything yet.\nMore features may be added at some point.",
 	},
 }

@@ -15,54 +15,84 @@ return {
 	allow_rehooking = true,
 	options = {
 		widgets = {
+			-- Global settings group
 			{
-				setting_id = "enable_debug",
-				type = "checkbox",
-				default_value = false,
-				title = "enable_debug",
-				tooltip = "enable_debug_tooltip",
-			},
-			{
-				setting_id = "throw_delay",
-				type = "numeric",
-				default_value = 0,
-				range = {0, 2},
-				step_size_value = 0.1,
-				decimals_number = 1,
-				title = "throw_delay_title",
-				tooltip = "throw_delay_tooltip",
+				setting_id = "global_settings",
+				type = "group",
+				sub_widgets = {
+					{
+						setting_id = "mod_enabled",
+						type = "checkbox",
+						default_value = true,
+						text = "mod_enabled",
+						tooltip = "mod_enabled_tooltip",
+					},
+					{
+						setting_id = "mod_enable_toggle",
+						type = "keybind",
+						default_value = {},
+						keybind_trigger = "pressed",
+						keybind_type = "function_call",
+						function_name = "toggle_mod",
+						text = "mod_enable_toggle",
+						tooltip = "mod_enable_toggle_tooltip",
+					},
+					{
+						setting_id = "switch_ranged_no_throw",
+						type = "keybind",
+						default_value = {},
+						keybind_trigger = "pressed",
+						keybind_type = "function_call",
+						function_name = "switch_to_ranged_no_throw",
+						text = "switch_ranged_no_throw",
+						tooltip = "switch_ranged_no_throw_tooltip",
+					},
+					{
+						setting_id = "mod_enable_verbose",
+						type = "checkbox",
+						default_value = false,
+						text = "mod_enable_verbose",
+						tooltip = "mod_enable_verbose_tooltip",
+					},
+					{
+						setting_id = "mod_enable_debug",
+						type = "checkbox",
+						default_value = false,
+						text = "mod_enable_debug",
+						tooltip = "mod_enable_debug_tooltip",
+					},
+				},
 			},
 			{
 				setting_id = "weapon_settings",
 				type = "group",
 				sub_widgets = {
-					-- Keybind for toggling mod
+					-- Flamer
 					{
-						setting_id = "mod_settings",
+						setting_id = "group_flamer",
 						type = "group",
 						sub_widgets = {
-							{
-								setting_id = "mod_enable_held",
-								type = "keybind",
-								default_value = {},
-								keybind_trigger = "held",
-								keybind_type = "function_call",
-								function_name = "mod_enable_toggle",
-								title = "mod_enable_held",
-							},
-							{
-								setting_id = "mod_enable_pressed",
-								type = "keybind",
-								default_value = {},
-								keybind_trigger = "pressed",
-								keybind_type = "function_call",
-								function_name = "mod_enable_toggle",
-								title = "mod_enable_pressed",
-							},
+							create_checkbox("enable_flamer_p1_m1", true, "flamer_p1_m1"),
 						},
 					},
-					-- Global Setting
-					create_checkbox("global_enabled", true, "global_enabled"),
+					-- Bolter
+					{
+						setting_id = "group_bolter",
+						type = "group",
+						sub_widgets = {
+							create_checkbox("enable_bolter_p1_m1", true, "bolter_p1_m1"),
+							create_checkbox("enable_bolter_p1_m2", true, "bolter_p1_m2"),
+						},
+					},
+					-- Boltpistol
+					{
+						setting_id = "group_boltpistol",
+						type = "group",
+						sub_widgets = {
+							create_checkbox("enable_boltpistol_p1_m1", true, "boltpistol_p1_m1"),
+							create_checkbox("enable_boltpistol_p1_m2", true, "boltpistol_p1_m2"),
+						},
+					},
 					-- Stub Revolver
 					{
 						setting_id = "group_stubrevolver",
@@ -81,6 +111,30 @@ return {
 							create_checkbox("enable_shotgun_p1_m2", true, "shotgun_p1_m2"),
 							create_checkbox("enable_shotgun_p1_m3", true, "shotgun_p1_m3"),
 							create_checkbox("enable_shotgun_p2_m1", true, "shotgun_p2_m1"),
+						},
+					},
+					-- Autogun
+					{
+						setting_id = "group_autogun",
+						type = "group",
+						sub_widgets = {
+							create_checkbox("enable_autogun_p1_m1", true, "autogun_p1_m1"),
+							create_checkbox("enable_autogun_p1_m2", true, "autogun_p1_m2"),
+							create_checkbox("enable_autogun_p1_m3", true, "autogun_p1_m3"),
+							create_checkbox("enable_autogun_p2_m1", true, "autogun_p2_m1"),
+							create_checkbox("enable_autogun_p2_m2", true, "autogun_p2_m2"),
+							create_checkbox("enable_autogun_p2_m3", true, "autogun_p2_m3"),
+							create_checkbox("enable_autogun_p3_m1", true, "autogun_p3_m1"),
+							create_checkbox("enable_autogun_p3_m2", true, "autogun_p3_m2"),
+							create_checkbox("enable_autogun_p3_m3", true, "autogun_p3_m3"),
+						},
+					},
+					-- Autopistol
+					{
+						setting_id = "group_autopistol",
+						type = "group",
+						sub_widgets = {
+							create_checkbox("enable_autopistol_p1_m1", true, "autopistol_p1_m1"),
 						},
 					},
 					-- Laspistol
@@ -105,58 +159,6 @@ return {
 							create_checkbox("enable_lasgun_p3_m3", true, "lasgun_p3_m3"),
 						},
 					},
-					-- Flamer
-					{
-						setting_id = "group_flamer",
-						type = "group",
-						sub_widgets = {
-							create_checkbox("enable_flamer_p1_m1", true, "flamer_p1_m1"),
-						},
-					},
-					-- Bolter
-					{
-						setting_id = "group_bolter",
-						type = "group",
-						sub_widgets = {
-							create_checkbox("enable_bolter_p1_m1", true, "bolter_p1_m1"),
-							create_checkbox("enable_bolter_p1_m2", true, "bolter_p1_m2"),
-						},
-					},
-					-- Boltpistol
-					{
-						setting_id = "group_boltpistol",
-						type = "group",
-						sub_widgets = {
-							create_checkbox("enable_boltpistol_p1_m1", true, "boltpistol_p1_m1"),
-						},
-					},
-					-- Autopistol
-					{
-						setting_id = "group_autopistol",
-						type = "group",
-						sub_widgets = {
-							create_checkbox("enable_autopistol_p1_m1", true, "autopistol_p1_m1"),
-						},
-					},
-					-- Autogun
-					{
-						setting_id = "group_autogun",
-						type = "group",
-						sub_widgets = {
-							create_checkbox("enable_autogun_p1_m1", true, "autogun_p1_m1"),
-							create_checkbox("enable_autogun_p1_m2", true, "autogun_p1_m2"),
-							create_checkbox("enable_autogun_p1_m3", true, "autogun_p1_m3"),
-							create_checkbox("enable_autogun_p2_m1", true, "autogun_p2_m1"),
-							create_checkbox("enable_autogun_p2_m2", true, "autogun_p2_m2"),
-							create_checkbox("enable_autogun_p2_m3", true, "autogun_p2_m3"),
-							create_checkbox("enable_autogun_p3_m1", true, "autogun_p3_m1"),
-							create_checkbox("enable_autogun_p3_m2", true, "autogun_p3_m2"),
-							create_checkbox("enable_autogun_p3_m3", true, "autogun_p3_m3"),
-						},
-					},
-					-- Reset Options
-					create_checkbox("reset_all_enabled", false, "reset_all_enabled"),
-					create_checkbox("disable_all_enabled", false, "disable_all_enabled"),
 				},
 			},
 		}

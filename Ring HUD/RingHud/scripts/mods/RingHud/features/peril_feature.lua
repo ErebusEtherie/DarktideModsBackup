@@ -47,14 +47,19 @@ local PERIL_ARC_TOP     = 0.50
 
 local peril_color_steps = { 0.2125, 0.425, 0.6375, 0.834, 0.984, 1.0 }
 
-function PerilFeature.update(hud_element, widget, hud_state, hotkey_override)
+function PerilFeature.update(hud_element, widgets, hud_state, hotkey_override)
+    if not widgets then return end
+
+    local widget      = widgets.peril_bar
+    local text_widget = widgets.peril_text_display_widget
+
     if not widget or not widget.style then return end
 
     local style            = widget.style
     local base_style       = style.peril_bar
     local edge_style       = style.peril_edge
     local other_edge_style = style.peril_other_edge
-    local label_style      = style.percent_text
+    local label_style      = text_widget and text_widget.style and text_widget.style.percent_text_style
 
     -- Only require the bar pieces; label is optional
     if not (base_style and base_style.material_values and edge_style and edge_style.material_values) then
@@ -207,23 +212,25 @@ function PerilFeature.update(hud_element, widget, hud_state, hotkey_override)
         changed = U.mv_set_outline(other_mv, mod.current_peril_color_rgba, changed)
     end
 
-    -- Label (optional; render only if style exists)
-    if label_style then
+    if text_widget and label_style then
         local want_label = label_visible
-        changed = U.set_style_visible(label_style, want_label == true, changed)
+        local text_changed = false
+        text_changed = U.set_style_visible(label_style, want_label == true, text_changed)
 
         if want_label then
             local text = string.format(U.percent_num_format, fraction * 100)
-            if widget.content.percent_text ~= text then
-                widget.content.percent_text = text; changed = true
+            if text_widget.content.percent_text ~= text then
+                text_widget.content.percent_text = text; text_changed = true
             end
             if U.set_style_text_color(label_style, current_peril_color_argb) then
-                changed = true
+                text_changed = true
             end
-        elseif widget.content.percent_text ~= "" then
-            widget.content.percent_text = ""
-            changed = true
+        elseif text_widget.content.percent_text ~= "" then
+            text_widget.content.percent_text = ""
+            text_changed = true
         end
+
+        if text_changed then text_widget.dirty = true end
     end
 
     if changed then widget.dirty = true end
@@ -239,15 +246,7 @@ function PerilFeature.add_widgets(dst, styles, metrics, colors)
     setmetatable(ARGB, { __index = function() return { 255, 255, 255, 255 } end })
     setmetatable(RGBA1, { __index = function() return { 1, 1, 1, 1 } end })
 
-    -- Local text style for the peril label
-    local percent_text_style                     = table.clone(UIFontSettings.body_small)
-    percent_text_style.drop_shadow               = true
-    percent_text_style.text_horizontal_alignment = "center"
-    percent_text_style.text_vertical_alignment   = "center"
-    percent_text_style.offset                    = { 0, 0, 2 }
-    percent_text_style.font_size                 = (percent_text_style.font_size or 18) * mod.scalable_unit
-
-    local passes                                 = {
+    local passes  = {
         -- Filled base slice
         {
             pass_type = "rotated_texture",
@@ -323,17 +322,9 @@ function PerilFeature.add_widgets(dst, styles, metrics, colors)
                 },
             },
         },
-        -- Percent label pass (value_id/style_id = "percent_text")
-        {
-            value_id = "percent_text",
-            style_id = "percent_text",
-            pass_type = "text",
-            value = "",
-            style = percent_text_style,
-        },
     }
 
-    dst.peril_bar                                = UIWidget.create_definition(passes, "peril_bar")
+    dst.peril_bar = UIWidget.create_definition(passes, "peril_bar")
 end
 
 return PerilFeature

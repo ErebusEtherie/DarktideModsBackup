@@ -1,8 +1,8 @@
 --[[
 Crusher Attack Indicator
 Author: Icetiger540
-Date: 11/19/2025
-Version: 1.0.0
+Date: 3/19/2026
+Version: 1.0.1
 --]]
 
 local mod = get_mod("crusher_attack_indicator")
@@ -279,12 +279,12 @@ function mod:on_crusher_sound(sound_name, unit_or_position)
     end
     
     local unit = nil
-    
-    if Unit.alive(unit_or_position) then
+
+    if type(unit_or_position) == "userdata" and Unit.alive(unit_or_position) then
         unit = unit_or_position
     else
         local flow_unit = Application.flow_callback_context_unit()
-        if Unit.alive(flow_unit) then
+        if flow_unit and type(flow_unit) == "userdata" and Unit.alive(flow_unit) then
             unit = flow_unit
         end
     end

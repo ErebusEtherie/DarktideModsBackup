@@ -217,7 +217,7 @@ local function _adopt_external_markers()
     if type(by_unit) ~= "table" then return end
 
     for unit, _ in pairs(by_unit) do
-        if unit and Unit.alive(unit) and not mod._tracked_item_units[unit] then
+        if type(unit) == "userdata" and Unit.alive(unit) and not mod._tracked_item_units[unit] then
             local m = _get_marker_for_unit(unit)
             local data = m and m.data
             if data then
@@ -239,7 +239,7 @@ local function _scan_existing_interaction_markers()
 
     if interaction_element and interaction_element._active_markers then
         for unit, _ in pairs(interaction_element._active_markers) do
-            if Unit.alive(unit) and not mod._tracked_item_units[unit] then
+            if type(unit) == "userdata" and Unit.alive(unit) and not mod._tracked_item_units[unit] then
                 -- Check for Health Station
                 local interactee_extension = ScriptUnit.has_extension(unit, "interactee_system") and
                     ScriptUnit.extension(unit, "interactee_system")
@@ -364,7 +364,7 @@ function ProximitySystem.update(dt)
     do
         local now = (Managers.time and Managers.time:time("main")) or 0
         for unit, info in pairs(mod._pending_medcrate_markers) do
-            if (not unit) or (not Unit.alive(unit)) then
+            if type(unit) ~= "userdata" or not Unit.alive(unit) then
                 mod._pending_medcrate_markers[unit] = nil
             elseif (now - (info.t_added or 0)) >= ADD_MARKER_GRACE_S then
                 -- Prefer markers_aio’s med marker if present; otherwise, add our invisible tracker.
@@ -390,7 +390,7 @@ function ProximitySystem.update(dt)
     if extension_system then
         local interactees = extension_system:get_entities("InteracteeExtension")
         for unit, ext in pairs(interactees) do
-            if not mod._tracked_item_units[unit] and ext:interaction_type() == "health_station" then
+            if type(unit) == "userdata" and not mod._tracked_item_units[unit] and ext:interaction_type() == "health_station" then
                 mod._tracked_item_units[unit] = unit
             end
         end
@@ -428,7 +428,7 @@ function ProximitySystem.update(dt)
 
     -- Walk tracked units and set new prox flags
     for unit in pairs(mod._tracked_item_units) do
-        if unit and Unit.alive(unit) then
+        if type(unit) == "userdata" and Unit.alive(unit) then
             local pickup_name = Unit.get_data(unit, "pickup_type") or Unit.get_data(unit, "rh_marker_type")
             if not pickup_name and ScriptUnit.has_extension(unit, "interactee_system") then
                 local iext = ScriptUnit.extension(unit, "interactee_system")

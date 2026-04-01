@@ -32,11 +32,8 @@ local function _read_overheat(unit_data, slot_name)
     local c = unit_data:read_component(slot_name)
     if not c then return 0 end
     local v = c.overheat_current_percentage or c.overheat_current_percent
-    if type(v) == "table" then
-        return v[1] or 0
-    elseif type(v) == "number" then
-        return v
-    end
+    if type(v) == "table" then v = v[1] end
+    if type(v) == "number" then return v end
     return 0
 end
 

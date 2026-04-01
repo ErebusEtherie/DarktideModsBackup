@@ -6,6 +6,9 @@ return {
 			mod_script       = "Targeter/scripts/mods/Targeter/Targeter",
 			mod_data         = "Targeter/scripts/mods/Targeter/Targeter_data",
 			mod_localization = "Targeter/scripts/mods/Targeter/Targeter_localization",
+            load_after       = {
+                "crosshairs_old_remap",
+            },
 		})
 	end,
 	packages = {},
