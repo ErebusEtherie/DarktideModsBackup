@@ -81,6 +81,8 @@ local ACTIVE_SPECIAL_RANGED = {
     ogryn_heavystubber_p2_m1 = true,
     ogryn_heavystubber_p2_m2 = true,
     ogryn_heavystubber_p2_m3 = true,
+    -- Dual Stub Pistols
+    dual_stubpistols_p1_m1 = true,
 }
 
 local COMBAT_SHOTGUN = {
@@ -260,10 +262,10 @@ SkitariusArmoury.validate_chain_time = function(self, chain_time, chain_action_n
     -- Weapons with one incorrect time: Tac Axe MkVII, Bully Club MkIIIb
     if chain_time == incorrect_time then
         chain_time = correct_time
-    -- Weapons with two incorrect times: Slab Shield
+        -- Weapons with two incorrect times: Slab Shield
     elseif chain_time == also_incorrect_time then
         chain_time = also_correct_time
-    -- Weapons with conditionally incorrect times: Crusher
+        -- Weapons with conditionally incorrect times: Crusher
     elseif previous == prev_action and chain_time == prev_incorrect_time then
         chain_time = prev_correct_time
     end
@@ -306,8 +308,10 @@ SkitariusArmoury.generates_peril = function(self, input, scriers)
             if keywords and keywords[2] and keywords[3] then
                 local family = keywords[2]
                 local mark = keywords[3]
-                local generates_peril = ASTRONOMICAN[family] and ASTRONOMICAN[family][mark] and ASTRONOMICAN[family][mark][input]
-                local unique_threshold = ASTRONOMICAN[family] and ASTRONOMICAN[family][mark] and ASTRONOMICAN[family][mark].UNIQUE_THRESHOLD
+                local generates_peril = ASTRONOMICAN[family] and ASTRONOMICAN[family][mark] and
+                    ASTRONOMICAN[family][mark][input]
+                local unique_threshold = ASTRONOMICAN[family] and ASTRONOMICAN[family][mark] and
+                    ASTRONOMICAN[family][mark].UNIQUE_THRESHOLD
                 return generates_peril, unique_threshold
             else
                 -- Non-family/mark weapons

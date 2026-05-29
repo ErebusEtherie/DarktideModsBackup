@@ -22,7 +22,8 @@ return {
 							{ text = "green_fire_short", value = "content/fx/particles/liquid_area/fire_lingering_cultist" },
 							{ text = "fire_short", value = "content/fx/particles/liquid_area/fire_lingering" },
 							{ text = "summoning_circle", value = "content/fx/particles/enemies/renegade_psyker/renegade_psyker_summoning_circle" },
-							{ text = "fire_vfx_beast_slime", value = "content/fx/particles/liquid_area/beast_of_nurgle_slime" }
+							{ text = "fire_vfx_beast_slime", value = "content/fx/particles/liquid_area/beast_of_nurgle_slime" },
+							{ text = "lightning_liquid_area", value = "content/fx/particles/liquid_area/lightning_liguid_area" },
 						},
 					},
 					{
@@ -35,7 +36,8 @@ return {
 							{ text = "summoning_circle", value = "content/fx/particles/enemies/renegade_psyker/renegade_psyker_summoning_circle" },
 							{ text = "green_fire_short", value = "content/fx/particles/liquid_area/fire_lingering_cultist" },
 							{ text = "fire_short", value = "content/fx/particles/liquid_area/fire_lingering" },
-							{ text = "curroptor_goo", value = "content/fx/particles/liquid_area/corruptor_nurgle_goo"}
+							{ text = "curroptor_goo", value = "content/fx/particles/liquid_area/corruptor_nurgle_goo"},
+							{ text = "lightning_liquid_area", value = "content/fx/particles/liquid_area/lightning_liguid_area" },
 						},
 					},
 					{
@@ -48,7 +50,8 @@ return {
 							{ text = "summoning_circle", value = "content/fx/particles/enemies/renegade_psyker/renegade_psyker_summoning_circle" },
 							{ text = "green_fire_short", value = "content/fx/particles/liquid_area/fire_lingering_cultist" },
 							{ text = "fire_short", value = "content/fx/particles/liquid_area/fire_lingering" },
-							{ text = "curroptor_goo", value = "content/fx/particles/liquid_area/corruptor_nurgle_goo"}
+							{ text = "curroptor_goo", value = "content/fx/particles/liquid_area/corruptor_nurgle_goo"},
+							{ text = "lightning_liquid_area", value = "content/fx/particles/liquid_area/lightning_liguid_area" }, 
 						},
 					},
 					{
@@ -61,19 +64,22 @@ return {
 							{ text = "summoning_circle", value = "content/fx/particles/enemies/renegade_psyker/renegade_psyker_summoning_circle" },
 							{ text = "green_fire_short", value = "content/fx/particles/liquid_area/fire_lingering_cultist" },
 							{ text = "fire_short", value = "content/fx/particles/liquid_area/fire_lingering" },
-							{ text = "curroptor_goo", value = "content/fx/particles/liquid_area/corruptor_nurgle_goo"}
+							{ text = "curroptor_goo", value = "content/fx/particles/liquid_area/corruptor_nurgle_goo"},
+							{ text = "lightning_liquid_area", value = "content/fx/particles/liquid_area/lightning_liguid_area" },
 						},
 					},
 					{
-						setting_id = "replace_immolation_vfx",
+						setting_id = "replace_fire_grenade",
 						type = "dropdown",
 						default_value = "content/fx/particles/liquid_area/beast_of_nurgle_slime",
 						options = {
 							{ text = "fire_vfx_default", value = "content/fx/particles/weapons/grenades/fire_grenade/fire_grenade_player_lingering_fire" },
+							{ text = "vfx_circle_only", value = "CIRCLE_ONLY" },
 							{ text = "fire_vfx_beast_slime", value = "content/fx/particles/liquid_area/beast_of_nurgle_slime" },
 							{ text = "fire_vfx_beast_goo", value = "content/fx/particles/liquid_area/nurgle_corruption_goo" },
 							{ text = "gas_vfx_ground_cloud", value = "content/fx/particles/weapons/grenades/gas_grenade_ground" },
-							{ text = "curroptor_goo", value = "content/fx/particles/liquid_area/corruptor_nurgle_goo"}
+							{ text = "curroptor_goo", value = "content/fx/particles/liquid_area/corruptor_nurgle_goo"},
+							{ text = "lightning_liquid_area", value = "content/fx/particles/liquid_area/lightning_liguid_area" },
 						},
 					},
 					{
@@ -87,6 +93,7 @@ return {
 							{ text = "fire_short", value = "content/fx/particles/liquid_area/fire_lingering" },
 							{ text = "summoning_circle", value = "content/fx/particles/enemies/renegade_psyker/renegade_psyker_summoning_circle" },
 							{ text = "vfx_circle_only", value = "CIRCLE_ONLY" },
+							{ text = "lightning_liquid_area", value = "content/fx/particles/liquid_area/lightning_liguid_area" },
 						},
 					},
 					{
@@ -100,6 +107,7 @@ return {
 							{ text = "fire_short", value = "content/fx/particles/liquid_area/fire_lingering" },
 							{ text = "summoning_circle", value = "content/fx/particles/enemies/renegade_psyker/renegade_psyker_summoning_circle" },
 							{ text = "vfx_circle_only", value = "CIRCLE_ONLY" },
+							{ text = "lightning_liquid_area", value = "content/fx/particles/liquid_area/lightning_liguid_area" },
 
 						},
 					},
@@ -113,6 +121,12 @@ return {
 							{ text = "gas_vfx_ground_cloud", value = "content/fx/particles/weapons/grenades/gas_grenade_ground" },							
 							{ text = "fire_vfx_beast_slime", value = "content/fx/particles/liquid_area/beast_of_nurgle_slime" },
 							{ text = "fire_vfx_beast_goo", value = "content/fx/particles/liquid_area/nurgle_corruption_goo" },
+							{ text = "lightning_liquid_area", value = "content/fx/particles/liquid_area/lightning_liguid_area" },
+							-- { text = "test_twin_nade_passive", value = "content/fx/particles/weapons/grenades/twin_grenade_passive"},
+							{ text = "curroptor_goo", value = "content/fx/particles/liquid_area/corruptor_nurgle_goo"},
+							-- { text = "lightning_strike_charge", value = "content/fx/units/environment/expeditions/wastes/decal_lightning_strike_charge" },
+							-- { text = "lightning_strike_ground_indicator_charge", value = "content/fx/particles/environment/expeditions/wastes/lightning_strike_ground_indicator_charge" },
+							-- { text = "lightning_strike_ground_large_01", value = "content/fx/units/environment/expeditions/wastes/vfx_lightning_strike_ground_large_01" },
 							
 						},
 					},
@@ -127,6 +141,7 @@ return {
 							-- { text = "fire_barrel_vfx_beast_goo", value = "content/fx/particles/liquid_area/nurgle_corruption_goo" },
 							-- { text = "gas_vfx_ground_cloud", value = "content/fx/particles/weapons/grenades/gas_grenade_ground" },
 							{ text = "curroptor_goo", value = "content/fx/particles/liquid_area/corruptor_nurgle_goo"},
+							{ text = "lightning_liquid_area", value = "content/fx/particles/liquid_area/lightning_liguid_area" },
 						},
 					},
 				},
@@ -209,12 +224,12 @@ return {
 					{
 						setting_id = "disable_rotten_armor_stages",
 						type = "checkbox",
-						default_value = false,
+						default_value = true,
 					},
 					{
 						setting_id = "disable_rotten_armor_impact",
 						type = "checkbox",
-						default_value = false,
+						default_value = true,
 					},
 					{
 						setting_id = "disable_corrupted_enemies_color",
@@ -226,25 +241,25 @@ return {
 						type = "checkbox",
 						tooltip =  "corrupted_vfx_tip",
 						require_restart = true,
-						default_value = false,
+						default_value = true,
 					},
 					{
 						setting_id = "disable_rampaging_vfx",
 						type = "checkbox",
 						tooltip =  "rampaging_tip",
 						require_restart = true,
-						default_value = false,
+						default_value = true,
 					},
 					{
 						setting_id = "disable_toxin_death_vfx",
 						type = "checkbox",
 						tooltip =  "toxin_death_tip",
-						default_value = false,
+						default_value = true,
 					},
 					{
 						setting_id = "disable_death_vfx",
 						type = "checkbox",
-						default_value = false,
+						default_value = true,
 					},
 				},
 			},
@@ -264,22 +279,36 @@ return {
 						tooltip = "disable_coral_vfx_tip",
 						default_value = false,
 					},
-					{
-						setting_id = "disable_toxic_fog",
-						type = "checkbox",
-						tooltip = "disable_toxic_fog_tip",
-						default_value = false,
-					},
+					-- {
+					-- 	setting_id = "disable_toxic_fog",
+					-- 	type = "checkbox",
+					-- 	tooltip = "disable_toxic_fog_tip",
+					-- 	default_value = false,
+					-- },
 				},
 			},
 			{
-				setting_id = "circle_indicators_group",
+				setting_id = "rotten_indicators_group",
 				type = "group",
 				sub_widgets = {
 					{
 						setting_id = "rotten_circle_enabled",
 						type = "checkbox",
 						default_value = true,
+					},
+					{
+						setting_id = "rotten_circle_charge_enabled",
+						title = "charge_enabled",
+						type = "checkbox",
+						default_value = false,
+						tooltip = "charge_tip"
+					},
+					{
+						setting_id = "rotten_circle_staff_circle_enabled",
+						title = "staff_circle_enabled",
+						type = "checkbox",
+						default_value = false,
+						tooltip = "staff_circle_tip"
 					},
 					{
 						setting_id = "rotten_circle_red",
@@ -305,10 +334,30 @@ return {
 						default_value = 60,
 						range = { 0, 100 },
 					},
+				},
+			},
+			{
+				setting_id = "blight_indicators_group",
+				type = "group",
+				sub_widgets = {
 					{
 						setting_id = "blight_circle_enabled",
 						type = "checkbox",
 						default_value = true,
+					},
+					{
+						setting_id = "blight_circle_charge_enabled",
+						title = "charge_enabled",
+						type = "checkbox",
+						default_value = false,
+						tooltip = "charge_tip"
+					},
+					{
+						setting_id = "blight_circle_staff_circle_enabled",
+						title = "staff_circle_enabled",
+						type = "checkbox",
+						default_value = false,
+						tooltip = "staff_circle_tip"
 					},
 					{
 						setting_id = "blight_circle_red",
@@ -334,10 +383,30 @@ return {
 						default_value = 60,
 						range = { 0, 100 },
 					},
+				},
+			},
+			{
+				setting_id = "chemnade_indicators_group",
+				type = "group",
+				sub_widgets = {
 					{
 						setting_id = "chemnade_circle_enabled",
 						type = "checkbox",
 						default_value = false,
+					},
+					{
+						setting_id = "chemnade_circle_charge_enabled",
+						title = "charge_enabled",
+						type = "checkbox",
+						default_value = false,
+						tooltip = "charge_tip"
+					},
+					{
+						setting_id = "chemnade_circle_staff_circle_enabled",
+						title = "staff_circle_enabled",
+						type = "checkbox",
+						default_value = false,
+						tooltip = "staff_circle_tip"
 					},
 					{
 						setting_id = "chemnade_circle_red",
@@ -363,11 +432,101 @@ return {
 						default_value = 40,
 						range = { 0, 100 },
 					},
+				},
+			},
+			{
+				setting_id = "fire_indicators_group",
+				type = "group",
+				sub_widgets = {
+					{
+						setting_id = "fire_circle_enabled",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "fire_circle_charge_enabled",
+						title = "charge_enabled",
+						type = "checkbox",
+						default_value = false,
+						tooltip = "charge_tip"
+					},
+					{
+						setting_id = "fire_circle_staff_circle_enabled",
+						title = "staff_circle_enabled",
+						type = "checkbox",
+						default_value = false,
+						tooltip = "staff_circle_tip"
+					},
+					{
+						setting_id = "fire_circle_red",
+						type = "numeric",
+						default_value = 35,
+						range = { 0, 100 },
+					},
+					{
+						setting_id = "fire_circle_green",
+						type = "numeric",
+						default_value = 26,
+						range = { 0, 100 },
+					},
+					{
+						setting_id = "fire_circle_blue",
+						type = "numeric",
+						default_value = 10,
+						range = { 0, 100 },
+					},
+					{
+						setting_id = "fire_circle_alpha",
+						type = "numeric",
+						default_value = 40,
+						range = { 0, 100 },
+					},
+				},
+			},
+			-- {
+			-- 	setting_id = "gasnade_indicators_group",
+			-- 	type = "group",
+			-- 	sub_widgets = {
+			-- 		{
+			-- 			setting_id = "gas_grenade_circle_enabled",
+			-- 			type = "checkbox",
+			-- 			default_value = false,
+			-- 		},
+			-- 		{
+			-- 			setting_id = "gas_grenade_circle_red",
+			-- 			type = "numeric",
+			-- 			default_value = 35,
+			-- 			range = { 0, 100 },
+			-- 		},
+			-- 		{
+			-- 			setting_id = "gas_grenade_circle_green",
+			-- 			type = "numeric",
+			-- 			default_value = 26,
+			-- 			range = { 0, 100 },
+			-- 		},
+			-- 		{
+			-- 			setting_id = "gas_grenade_circle_blue",
+			-- 			type = "numeric",
+			-- 			default_value = 10,
+			-- 			range = { 0, 100 },
+			-- 		},
+			-- 		{
+			-- 			setting_id = "gas_grenade_circle_alpha",
+			-- 			type = "numeric",
+			-- 			default_value = 40,
+			-- 			range = { 0, 100 },
+			-- 		},
+			-- 	},
+			-- },
+			{
+				setting_id = "circle_count_group",
+				type = "group",
+				sub_widgets = {
 					{
 						setting_id = "circle_count",
 						type = "numeric",
-						default_value = 1,
-						range = { 1, 30 },
+						default_value = 0,
+						range = { 0, 5 },
 					},
 				},
 			},

@@ -24,6 +24,8 @@ local WASTAGE_MODES          = {
     ammo_reserve_actual_always   = "actual",
     ammo_reserve_forecast_auto   = "forecast",
     ammo_reserve_forecast_always = "forecast",
+    ammo_total_percent_auto      = "percent",
+    ammo_total_percent_always    = "percent",
 }
 
 ----------------------------------------------------------------
@@ -54,9 +56,7 @@ local function _format_wastage_suffix(value_str, color_argb255)
         return nil
     end
 
-    local c = color_argb255 or COLOR_DEFAULT_CRITICAL
-    local r, g, b = c[2] or 255, c[3] or 255, c[4] or 255
-    return string.format(" {#color(%d,%d,%d)}(-%s){#reset()}", r, g, b, value_str)
+    return string.format(" (-%s)", value_str)
 end
 
 ----------------------------------------------------------------
@@ -119,22 +119,29 @@ end
 --     " {#color(r,g,b)}(-34){#reset()}"
 --   or nil if no wastage / disabled / infinite / invalid
 ----------------------------------------------------------------
-function AmmoReserveFeature.wastage_string_for_offer(cur_reserve, max_reserve, offer_bullets, dropdown, offer_fraction)
+function AmmoReserveFeature.wastage_string_for_offer(cur_reserve, max_reserve, offer_bullets, dropdown, offer_fraction,
+                                                     cur_clip, max_clip)
     local mode = _wastage_mode_from_dropdown(dropdown)
     if mode == "disabled" then
         return nil
     end
 
-    cur_reserve   = tonumber(cur_reserve) or 0
-    max_reserve   = tonumber(max_reserve) or 0
-    offer_bullets = tonumber(offer_bullets) or 0
-    -- infite ammo
-    if max_reserve <= 0 then
+    cur_reserve     = tonumber(cur_reserve) or 0
+    max_reserve     = tonumber(max_reserve) or 0
+    cur_clip        = tonumber(cur_clip) or 0
+    max_clip        = tonumber(max_clip) or 0
+    offer_bullets   = tonumber(offer_bullets) or 0
+
+    local cur_total = cur_reserve + cur_clip
+    local max_total = max_reserve + max_clip
+
+    -- infinite ammo
+    if max_total <= 0 then
         return nil
     end
 
     -- full ammo
-    if cur_reserve >= max_reserve then
+    if cur_total >= max_total then
         return nil
     end
 
@@ -144,22 +151,13 @@ function AmmoReserveFeature.wastage_string_for_offer(cur_reserve, max_reserve, o
     end
 
     local color = _wastage_color_for_mode(mode)
+    local waste_bullets = (cur_total + offer_bullets) - max_total
+    if waste_bullets <= 0 then
+        return nil
+    end
 
     if mode == "percent" then
-        local reserve_frac = math.clamp(cur_reserve / max_reserve, 0, 1)
-
-        local offer_frac = tonumber(offer_fraction)
-        if not offer_frac then
-            offer_frac = offer_bullets / max_reserve
-        end
-        offer_frac = math.max(0, offer_frac)
-
-        local waste_frac = (reserve_frac + offer_frac) - 1
-        if waste_frac <= 0 then
-            return nil
-        end
-
-        local waste_pct = U.round_int(waste_frac * 100)
+        local waste_pct = U.round_int((waste_bullets / max_total) * 100)
         if waste_pct <= 0 then
             return nil
         end
@@ -167,12 +165,6 @@ function AmmoReserveFeature.wastage_string_for_offer(cur_reserve, max_reserve, o
         if waste_pct > 999 then waste_pct = 999 end
 
         return _format_wastage_suffix(string.format("%d%%", waste_pct), color)
-    end
-
-    -- For actual/forecast, compute wasted reserve bullets if taking the pickup now
-    local waste_bullets = (cur_reserve + offer_bullets) - max_reserve
-    if waste_bullets <= 0 then
-        return nil
     end
 
     waste_bullets = math.floor(waste_bullets)
@@ -194,8 +186,10 @@ function AmmoReserveFeature.wastage_string_for_offer(cur_reserve, max_reserve, o
     return nil
 end
 
-mod.ammo_reserve_wastage_string_for_offer = function(cur_reserve, max_reserve, offer_bullets, dropdown, offer_fraction)
-    return AmmoReserveFeature.wastage_string_for_offer(cur_reserve, max_reserve, offer_bullets, dropdown, offer_fraction)
+mod.ammo_reserve_wastage_string_for_offer = function(cur_reserve, max_reserve, offer_bullets, dropdown, offer_fraction,
+                                                     cur_clip, max_clip)
+    return AmmoReserveFeature.wastage_string_for_offer(cur_reserve, max_reserve, offer_bullets, dropdown, offer_fraction,
+        cur_clip, max_clip)
 end
 
 ----------------------------------------------------------------
@@ -217,6 +211,7 @@ function AmmoReserveFeature.update_text(hud_element, widget, hud_state, _hotkey_
 
     local mode_type             = WASTAGE_MODES[ammo_reserve_dropdown]
     local is_forecast_mode      = (mode_type == "forecast")
+    local is_total_percent_mode = (ammo_reserve_dropdown == "ammo_total_percent_auto" or ammo_reserve_dropdown == "ammo_total_percent_always")
 
     local shot_cost             = hud_state.most_recent_shot_cost_this_mission or 0
     local has_forecast_data     = (shot_cost > 0)
@@ -236,8 +231,19 @@ function AmmoReserveFeature.update_text(hud_element, widget, hud_state, _hotkey_
         hud_element._ammo_prev_reserve = cur_reserve
     end
 
-    local reserve_frac    = has_finite and math.clamp(cur_reserve / max_reserve, 0, 1) or nil
-    local reserve_actual  = cur_reserve
+    local reserve_frac   = has_finite and math.clamp(cur_reserve / max_reserve, 0, 1) or nil
+    local reserve_actual = cur_reserve
+
+    -- If Total Percent mode is active, override reserve_frac using combined clip+reserve.
+    -- Performance: Basic arithmetic utilizing already-fetched values from the state pipeline.
+    if is_total_percent_mode and has_finite then
+        local cur_total = cur_reserve + (data.current_clip or 0)
+        local max_total = max_reserve + (data.max_clip or 0)
+
+        if max_total > 0 then
+            reserve_frac = math.clamp(cur_total / max_total, 0, 1)
+        end
+    end
 
     local show_text_final = false
     if mod.ammo_vis_player then

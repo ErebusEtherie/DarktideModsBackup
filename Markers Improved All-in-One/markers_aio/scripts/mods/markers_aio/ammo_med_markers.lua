@@ -9,6 +9,22 @@ local WorldMarkerTemplateInteraction =
 local UIWidget = require("scripts/managers/ui/ui_widget")
 local UIFontSettings = require("scripts/managers/ui/ui_font_settings")
 
+local check_recolorstimms = function()
+	if mod:get("recolor_stimm_compat_enable") then
+		local dmf = get_mod("DMF")
+		local _disabled_mods = dmf:get("disabled_mods_list") or {}
+
+		if _disabled_mods["RecolorStimms"] then
+			mod.RecolorStimms = nil
+			return
+		end
+
+		mod.RecolorStimms = get_mod("RecolorStimms") or nil
+	else
+		mod.RecolorStimms = nil
+	end
+end
+
 mod.on_all_mods_loaded = function()
 	local is_mod_loading = true
 	mod:hook_require("scripts/extension_systems/unit_templates", function(instance)
@@ -53,7 +69,15 @@ mod.on_all_mods_loaded = function()
 	load_package("content/levels/training_grounds/missions/mission_tg_basic_combat_01", "medkit_radius")
 	load_package("packages/ui/views/options_view/options_view", "large_ammo1")
 	load_package("packages/ui/views/inventory_background_view/inventory_background_view", "large_ammo2")
+
+	check_recolorstimms()
 end
+
+mod:hook_safe(CLASS.UIViewHandler, "close_view", function(self, view_name, ...)
+	if view_name == "dmf_options_view" or view_name == "options_view" then
+		check_recolorstimms()
+	end
+end)
 
 local get_max_distance = function()
 	local max_distance = mod:get("ammo_med_max_distance")
@@ -244,14 +268,9 @@ mod.update_ammo_med_markers = function(self, marker)
 			marker.widget.alpha_multiplier = 0
 			marker.draw = false
 
-			marker.widget.style.icon.color = {
-				255,
-				255,
-				255,
-				242,
-				0,
-			}
-			marker.widget.style.background.color = mod.lookup_colour(mod:get("marker_background_colour"))
+			mod.set_colour_argb(marker.widget.style.icon.color, 255, 255, 255, 255)
+
+			mod.set_colour(marker.widget.style.background.color, mod.lookup_colour(mod:get("marker_background_colour")))
 
 			marker.template.screen_clamp = mod:get("ammo_med_keep_on_screen")
 			marker.block_screen_clamp = false
@@ -273,6 +292,8 @@ mod.update_ammo_med_markers = function(self, marker)
 			local med_crate_pos = POSITION_LOOKUP[marker.unit]
 
 			if marker.data and marker.data._active_interaction_type == "health_station" then
+				marker.aio_check_line_of_sight = mod:get("med_station_require_line_of_sight")
+
 				local health_station_extension = ScriptUnit.fetch_component_extension(unit, "health_station_system")
 
 				local remaining_charges = health_station_extension._charge_amount
@@ -298,42 +319,23 @@ mod.update_ammo_med_markers = function(self, marker)
 
 				if mod:get("change_colour_for_ammo_charges") == true then
 					if remaining_charges == 4 then
-						marker.widget.style.background.color = {
-							255,
-							0,
-							150,
-							0,
-						}
+						mod.set_colour_argb(marker.widget.style.background.color, 255, 0, 150, 0)
 					elseif remaining_charges == 3 then
-						marker.widget.style.background.color = {
-							255,
-							150,
-							150,
-							0,
-						}
+						mod.set_colour_argb(marker.widget.style.background.color, 255, 150, 150, 0)
 					elseif remaining_charges == 2 then
-						marker.widget.style.background.color = {
-							255,
-							150,
-							100,
-							0,
-						}
+						mod.set_colour_argb(marker.widget.style.background.color, 255, 150, 100, 0)
 					elseif remaining_charges == 1 then
-						marker.widget.style.background.color = {
-							255,
-							150,
-							0,
-							0,
-						}
+						mod.set_colour_argb(marker.widget.style.background.color, 255, 150, 0, 0)
 					end
 				end
 
-				marker.widget.style.icon.color = {
+				mod.set_colour_argb(
+					marker.widget.style.icon.color,
 					100,
 					mod:get("med_crate_colour_R"),
 					mod:get("med_crate_colour_G"),
-					mod:get("med_crate_colour_B"),
-				}
+					mod:get("med_crate_colour_B")
+				)
 
 				if marker.position then
 					local current_position = marker.position:unbox()
@@ -371,42 +373,23 @@ mod.update_ammo_med_markers = function(self, marker)
 
 				if mod:get("change_colour_for_ammo_charges") == true then
 					if remaining_charges == 4 then
-						marker.widget.style.background.color = {
-							255,
-							0,
-							150,
-							0,
-						}
+						mod.set_colour_argb(marker.widget.style.background.color, 255, 0, 150, 0)
 					elseif remaining_charges == 3 then
-						marker.widget.style.background.color = {
-							255,
-							150,
-							150,
-							0,
-						}
+						mod.set_colour_argb(marker.widget.style.background.color, 255, 150, 150, 0)
 					elseif remaining_charges == 2 then
-						marker.widget.style.background.color = {
-							255,
-							150,
-							100,
-							0,
-						}
+						mod.set_colour_argb(marker.widget.style.background.color, 255, 150, 100, 0)
 					elseif remaining_charges == 1 then
-						marker.widget.style.background.color = {
-							255,
-							150,
-							0,
-							0,
-						}
+						mod.set_colour_argb(marker.widget.style.background.color, 255, 150, 0, 0)
 					end
 				end
 
-				marker.widget.style.icon.color = {
+				mod.set_colour_argb(
+					marker.widget.style.icon.color,
 					100,
 					mod:get("ammo_crate_colour_R"),
 					mod:get("ammo_crate_colour_G"),
-					mod:get("ammo_crate_colour_B"),
-				}
+					mod:get("ammo_crate_colour_B")
+				)
 			end
 
 			local max_distance = get_max_distance()
@@ -420,52 +403,59 @@ mod.update_ammo_med_markers = function(self, marker)
 			end
 
 			if pickup_type == "small_clip" or marker.data and marker.data.type == "small_clip" then
-				marker.widget.style.ring.color = mod.lookup_colour(mod:get("ammo_small_border_colour"))
+				mod.set_colour(marker.widget.style.ring.color, mod.lookup_colour(mod:get("ammo_small_border_colour")))
 				marker.widget.content.icon = "content/ui/materials/hud/interactions/icons/ammunition"
-				marker.widget.style.icon.color = {
+
+				mod.set_colour_argb(
+					marker.widget.style.icon.color,
 					255,
 					mod:get("ammo_small_colour_R"),
 					mod:get("ammo_small_colour_G"),
-					mod:get("ammo_small_colour_B"),
-				}
+					mod:get("ammo_small_colour_B")
+				)
 			elseif pickup_type == "large_clip" or marker.data and marker.data.type == "large_clip" then
-				marker.widget.style.ring.color = mod.lookup_colour(mod:get("ammo_large_border_colour"))
+				mod.set_colour(marker.widget.style.ring.color, mod.lookup_colour(mod:get("ammo_large_border_colour")))
 				if mod:get("ammo_med_markers_alternate_large_ammo_icon") == true then
 					marker.widget.content.icon = "content/ui/materials/icons/presets/preset_16"
 				else
 					marker.widget.content.icon = "content/ui/materials/hud/interactions/icons/ammunition"
 				end
-				marker.widget.style.icon.color = {
+
+				mod.set_colour_argb(
+					marker.widget.style.icon.color,
 					255,
 					mod:get("ammo_large_colour_R"),
 					mod:get("ammo_large_colour_G"),
-					mod:get("ammo_large_colour_B"),
-				}
+					mod:get("ammo_large_colour_B")
+				)
 			elseif pickup_type == "small_grenade" or marker.data and marker.data.type == "small_grenade" then
-				marker.widget.style.ring.color = mod.lookup_colour(mod:get("grenade_border_colour"))
+				mod.set_colour(marker.widget.style.ring.color, mod.lookup_colour(mod:get("grenade_border_colour")))
 				marker.widget.content.icon = "content/ui/materials/hud/interactions/icons/grenade"
-				marker.widget.style.icon.color = {
+
+				mod.set_colour_argb(
+					marker.widget.style.icon.color,
 					255,
 					mod:get("grenade_colour_R"),
 					mod:get("grenade_colour_G"),
-					mod:get("grenade_colour_B"),
-				}
+					mod:get("grenade_colour_B")
+				)
 			elseif
 				pickup_type == "ammo_cache_pocketable"
 				or marker.data and marker.data.type == "ammo_cache_pocketable"
 			then
-				marker.widget.style.ring.color = mod.lookup_colour(mod:get("ammo_crate_border_colour"))
+				mod.set_colour(marker.widget.style.ring.color, mod.lookup_colour(mod:get("ammo_crate_border_colour")))
 				marker.widget.content.icon = "content/ui/materials/hud/interactions/icons/pocketable_ammo"
-				marker.widget.style.icon.color = {
+
+				mod.set_colour_argb(
+					marker.widget.style.icon.color,
 					255,
 					mod:get("ammo_crate_colour_R"),
 					mod:get("ammo_crate_colour_G"),
-					mod:get("ammo_crate_colour_B"),
-				}
-
+					mod:get("ammo_crate_colour_B")
+				)
 				if field_improv_active then
 					if mod:get("display_field_improv_colour") == true then
-						marker.widget.style.ring.color = Color.citadel_wild_rider_red(nil, true)
+						mod.set_colour(marker.widget.style.ring.color, Color.citadel_wild_rider_red(nil, true))
 					end
 					if mod:get("display_field_improv_icon") == true then
 						marker.widget.content.field_improv_ammo_med =
@@ -488,13 +478,16 @@ mod.update_ammo_med_markers = function(self, marker)
 				or marker.data and marker.data.type == "ammo_cache_deployable"
 			then
 				if marker.widget.style.ring then
-					marker.widget.style.ring.color = mod.lookup_colour(mod:get("ammo_crate_border_colour"))
+					mod.set_colour(
+						marker.widget.style.ring.color,
+						mod.lookup_colour(mod:get("ammo_crate_border_colour"))
+					)
 				end
 				marker.widget.content.icon = "content/ui/materials/hud/interactions/icons/pocketable_ammo"
 
 				if field_improv_active then
 					if mod:get("display_field_improv_colour") == true and marker.widget.style.ring then
-						marker.widget.style.ring.color = Color.citadel_wild_rider_red(nil, true)
+						mod.set_colour(marker.widget.style.ring.color, Color.citadel_wild_rider_red(nil, true))
 					end
 					if mod:get("display_field_improv_icon") == true then
 						marker.widget.content.field_improv_ammo_med =
@@ -522,19 +515,23 @@ mod.update_ammo_med_markers = function(self, marker)
 				or marker.data and marker.data.type == "medical_crate_pocketable"
 			then
 				if marker.widget.style.ring then
-					marker.widget.style.ring.color = mod.lookup_colour(mod:get("med_crate_border_colour"))
+					mod.set_colour(
+						marker.widget.style.ring.color,
+						mod.lookup_colour(mod:get("med_crate_border_colour"))
+					)
 				end
 				marker.widget.content.icon = "content/ui/materials/hud/interactions/icons/pocketable_medkit"
-				marker.widget.style.icon.color = {
+
+				mod.set_colour_argb(
+					marker.widget.style.icon.color,
 					255,
 					mod:get("med_crate_colour_R"),
 					mod:get("med_crate_colour_G"),
-					mod:get("med_crate_colour_B"),
-				}
-
+					mod:get("med_crate_colour_B")
+				)
 				if field_improv_active then
 					if mod:get("display_field_improv_colour") == true and marker.widget.style.ring then
-						marker.widget.style.ring.color = Color.citadel_wild_rider_red(nil, true)
+						mod.set_colour(marker.widget.style.ring.color, Color.citadel_wild_rider_red(nil, true))
 					end
 					if mod:get("display_field_improv_icon") == true then
 						marker.widget.content.field_improv_ammo_med =
@@ -558,13 +555,16 @@ mod.update_ammo_med_markers = function(self, marker)
 				or marker.data and marker.data.type == "medical_crate_deployable"
 			then
 				if marker.widget.style.ring then
-					marker.widget.style.ring.color = mod.lookup_colour(mod:get("med_crate_border_colour"))
+					mod.set_colour(
+						marker.widget.style.ring.color,
+						mod.lookup_colour(mod:get("med_crate_border_colour"))
+					)
 				end
 				marker.widget.content.icon = "content/ui/materials/hud/interactions/icons/pocketable_medkit"
 
 				if field_improv_active then
 					if mod:get("display_field_improv_colour") == true and marker.widget.style.ring then
-						marker.widget.style.ring.color = Color.citadel_wild_rider_red(nil, true)
+						mod.set_colour(marker.widget.style.ring.color, Color.citadel_wild_rider_red(nil, true))
 					end
 					if mod:get("display_field_improv_icon") == true then
 						marker.widget.content.field_improv =
@@ -592,12 +592,14 @@ mod.update_ammo_med_markers = function(self, marker)
 								marker.data = {}
 							end
 							marker.data.type = "medical_crate_deployable"
-							marker.widget.style.icon.color = {
+
+							mod.set_colour_argb(
+								marker.widget.style.icon.color,
 								100,
 								mod:get("med_crate_colour_R"),
 								mod:get("med_crate_colour_G"),
-								mod:get("med_crate_colour_B"),
-							}
+								mod:get("med_crate_colour_B")
+							)
 						end
 					end
 				end

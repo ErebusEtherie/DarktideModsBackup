@@ -26,7 +26,7 @@ return {
   cultist_mutant_grab = {
     en = "Mutant Grab",
   },
-
+  
   chaos_hound_settings = {
     en = "Pox Hound Settings",
   },
@@ -53,7 +53,7 @@ return {
   },
 
   renegade_netgunner_settings = {
-    en = "Netgunner Settings (Placeholder - Not Recommended)",
+    en = "Netgunner Settings",
   },
   renegade_netgunner_enabled = {
     en = "Netgunner Enabled",
@@ -338,5 +338,11 @@ return {
   },
   toughness_break = {
 	en = "Toughness Break"
+  },
+  ganger_rage_onhit = {
+	en = "Hive Scum Rampage! Ability On-hit Sfx"
+  },
+  paul_recharge = {
+	en = "Ogryn Power Maul Recharged Sfx"
   },
 }

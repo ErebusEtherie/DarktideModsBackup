@@ -88,6 +88,7 @@ local is_loading_profile = false
 local function _get_default_profile_data()
     return {
         only_with_chemical_dependency = false,
+        not_with_stimm_supply = false,
         stim_trigger_mode = "combat_only",
         combat_duration = 5.0,
         out_of_combat_timeout = 5.0
@@ -122,6 +123,7 @@ local function _save_current_settings_to_profile()
     end
     
     profiles[active_profile].only_with_chemical_dependency = mod:get("only_with_chemical_dependency")
+    profiles[active_profile].not_with_stimm_supply = mod:get("not_with_stimm_supply")
     profiles[active_profile].stim_trigger_mode = mod:get("stim_trigger_mode")
     profiles[active_profile].combat_duration = mod:get("combat_duration")
     profiles[active_profile].out_of_combat_timeout = mod:get("out_of_combat_timeout")
@@ -134,6 +136,7 @@ local function _load_profile_settings(profile_num)
     
     local profile_has_data = profiles[profile_num] and 
         (profiles[profile_num].only_with_chemical_dependency ~= nil or
+         profiles[profile_num].not_with_stimm_supply ~= nil or
          profiles[profile_num].stim_trigger_mode ~= nil or
          profiles[profile_num].combat_duration ~= nil or
          profiles[profile_num].out_of_combat_timeout ~= nil)
@@ -144,6 +147,7 @@ local function _load_profile_settings(profile_num)
         local profile_data = profiles[profile_num]
         
         mod:set("only_with_chemical_dependency", profile_data.only_with_chemical_dependency or false, false)
+        mod:set("not_with_stimm_supply", profile_data.not_with_stimm_supply or false, false)
         
         local trigger_mode = profile_data.stim_trigger_mode or "combat_only"
         mod:set("stim_trigger_mode", trigger_mode, false)
@@ -153,6 +157,7 @@ local function _load_profile_settings(profile_num)
     else
         local default_data = _get_default_profile_data()
         mod:set("only_with_chemical_dependency", default_data.only_with_chemical_dependency, false)
+        mod:set("not_with_stimm_supply", default_data.not_with_stimm_supply, false)
         mod:set("stim_trigger_mode", default_data.stim_trigger_mode, false)
         mod:set("combat_duration", default_data.combat_duration, false)
         mod:set("out_of_combat_timeout", default_data.out_of_combat_timeout, false)
@@ -168,6 +173,7 @@ local function _save_to_profile(profile_num)
     end
     
     profiles[profile_num].only_with_chemical_dependency = mod:get("only_with_chemical_dependency")
+    profiles[profile_num].not_with_stimm_supply = mod:get("not_with_stimm_supply")
     profiles[profile_num].stim_trigger_mode = mod:get("stim_trigger_mode")
     profiles[profile_num].combat_duration = mod:get("combat_duration")
     profiles[profile_num].out_of_combat_timeout = mod:get("out_of_combat_timeout")
@@ -196,6 +202,7 @@ local function _show_profile_settings(profile_num)
     
     mod:echo("=== Profile " .. profile_num .. " Settings ===")
     mod:echo("Chemical Dependency Only: " .. (profile_data.only_with_chemical_dependency and "Yes" or "No"))
+    mod:echo("Not with Stimm Supply: " .. (profile_data.not_with_stimm_supply and "Yes" or "No"))
     mod:echo("Trigger Mode: " .. _get_trigger_mode_display_name(profile_data.stim_trigger_mode or "combat_only"))
     
     local trigger_mode = profile_data.stim_trigger_mode or "combat_only"
@@ -269,6 +276,7 @@ mod.on_setting_changed = function(setting_id)
         
         _on_profile_changed(old_profile, new_profile, show_notification)
     elseif setting_id == "only_with_chemical_dependency" or
+           setting_id == "not_with_stimm_supply" or
            setting_id == "stim_trigger_mode" or
            setting_id == "combat_duration" or
            setting_id == "out_of_combat_timeout" then
@@ -358,6 +366,30 @@ local function _has_chemical_dependency()
     
     return buff_extension:has_buff_using_buff_template("broker_keystone_chemical_dependency") or 
            (buff_extension._stacking_buffs and buff_extension._stacking_buffs["broker_keystone_chemical_dependency_stack"] ~= nil)
+end
+
+local function _has_stimm_supply()
+    local player_unit = _get_player_unit()
+    if not player_unit then
+        return false
+    end
+    
+    local ability_extension = ScriptUnit.has_extension(player_unit, "ability_system")
+    if not ability_extension then
+        return false
+    end
+    
+    if not ability_extension:ability_is_equipped("combat_ability") then
+        return false
+    end
+    
+    local equipped_abilities = ability_extension:equipped_abilities()
+    local combat_ability = equipped_abilities and equipped_abilities.combat_ability
+    if not combat_ability then
+        return false
+    end
+    
+    return combat_ability.name == "broker_ability_stimm_field"
 end
 
 local function _get_chemical_dependency_info()
@@ -1196,6 +1228,10 @@ mod.update = function(dt)
     local has_chemical_dependency = chem_info and chem_info.has_keystone
     
     if mod:get("only_with_chemical_dependency") and not has_chemical_dependency then
+        return
+    end
+    
+    if mod:get("not_with_stimm_supply") and _has_stimm_supply() then
         return
     end
     

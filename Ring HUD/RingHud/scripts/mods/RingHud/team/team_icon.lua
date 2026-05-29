@@ -154,6 +154,8 @@ function Status.is_human_player_unit(unit)
     local p  = pm and pm.player_by_unit and pm:player_by_unit(unit)
     if not p then return false end
 
+    if p.__deleted then return false end
+
     if type(p.is_human_controlled) == "function" then
         return p:is_human_controlled()
     end

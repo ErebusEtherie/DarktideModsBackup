@@ -227,6 +227,106 @@ local function _local_player_voice_profile()
     return nil
 end
 
+local function _build_enemy_voice_profile_to_breed_lookup()
+    local lookup = {}
+    local DialogueBreedSettings = mod.try_require("scripts/settings/dialogue/dialogue_breed_settings") or {}
+
+    for breed_name, entry in pairs(DialogueBreedSettings) do
+        if type(breed_name) == "string" and type(entry) == "table" and entry.dialogue_memory_faction_name == "enemy" then
+            local voices = entry.wwise_voices
+
+            if type(voices) == "table" then
+                local count = #voices
+
+                for i = 1, count do
+                    local voice = voices[i]
+
+                    if type(voice) == "string" and voice ~= "" and voice ~= "voice_preview" then
+                        lookup[voice] = breed_name
+                    end
+                end
+            end
+        end
+    end
+
+    return lookup
+end
+
+local function _breed_group_key_for_name(breed_name)
+    if type(breed_name) ~= "string" or breed_name == "" then
+        return nil
+    end
+
+    local d = mod._zipit2_discovery
+
+    if type(d) ~= "table" then
+        return nil
+    end
+
+    local enemy_tag_lookup = d.breed_enemy_tag_to_group
+    if type(enemy_tag_lookup) == "table" then
+        local enemy_tag_group_key = enemy_tag_lookup[breed_name]
+
+        if type(enemy_tag_group_key) == "string" and enemy_tag_group_key ~= "" then
+            return enemy_tag_group_key
+        end
+    end
+
+    local member_lookup = d.breed_member_to_group
+    if type(member_lookup) == "table" then
+        local member_group_key = member_lookup[breed_name]
+
+        if type(member_group_key) == "string" and member_group_key ~= "" then
+            return member_group_key
+        end
+    end
+
+    local groups = d.breed_groups
+    if type(groups) == "table" and groups[breed_name] then
+        return breed_name
+    end
+
+    return nil
+end
+
+local function _enemy_breed_name_from_sources(voice_profile, event, optional_query, dialogue)
+    local enemy_tag = nil
+
+    if type(event) == "table" then
+        enemy_tag = event.enemy_tag or event.breed_name
+    end
+
+    if not enemy_tag and type(optional_query) == "table" then
+        enemy_tag = optional_query.enemy_tag or optional_query.breed_name
+    end
+
+    if not enemy_tag and type(dialogue) == "table" then
+        enemy_tag = dialogue.enemy_tag or dialogue.breed_name
+
+        local used_query = dialogue.used_query
+        if not enemy_tag and type(used_query) == "table" then
+            enemy_tag = used_query.enemy_tag or used_query.breed_name
+        end
+    end
+
+    if type(enemy_tag) == "string" and enemy_tag ~= "" then
+        return enemy_tag
+    end
+
+    if type(voice_profile) == "string" and voice_profile ~= "" then
+        local lookup = mod._zipit2_enemy_voice_profile_to_breed
+
+        if type(lookup) ~= "table" then
+            lookup = _build_enemy_voice_profile_to_breed_lookup()
+            mod._zipit2_enemy_voice_profile_to_breed = lookup
+        end
+
+        return lookup[voice_profile]
+    end
+
+    return nil
+end
+
 mod.zipit2_classify_player_voice_identifier = mod.zipit2_classify_player_voice_identifier or function(identifier)
     local explicit_category = _classify_explicit_player_concept(identifier)
 
@@ -392,6 +492,20 @@ function mod.zipit2_should_mute_breed_sound_event(event_name)
     return have_any_group
 end
 
+function mod.zipit2_should_mute_enemy_dialogue_breed(voice_profile, event, optional_query, dialogue)
+    local breed_name = _enemy_breed_name_from_sources(voice_profile, event, optional_query, dialogue)
+    local group_key = _breed_group_key_for_name(breed_name)
+
+    if not group_key then
+        return false
+    end
+
+    local s = mod._zipit2_settings
+    local breed_enabled = s and s.breed_enabled or {}
+
+    return breed_enabled[group_key] == false
+end
+
 function mod.zipit2_should_mute_ping_tag_sounds()
     local s = mod._zipit2_settings
     return s.ping_sound_mode == "muted"
@@ -406,6 +520,26 @@ function mod.zipit2_should_mute_on_demand_sound_event(concept)
 
     if voice_profile then
         return mod.zipit2_should_mute_voice_profile(voice_profile, concept)
+    end
+
+    return false
+end
+
+function mod.zipit2_should_mute_bot(unit)
+    if not unit then return false end
+
+    local s = mod._zipit2_settings
+    if not s or not s.mute_bots then return false end
+
+    local _Managers = rawget(_G, "Managers")
+    local player_manager = _Managers and _Managers.player
+
+    if player_manager and type(player_manager.player_by_unit) == "function" then
+        local player = player_manager:player_by_unit(unit)
+
+        if player and type(player.is_human_controlled) == "function" and not player:is_human_controlled() then
+            return true
+        end
     end
 
     return false

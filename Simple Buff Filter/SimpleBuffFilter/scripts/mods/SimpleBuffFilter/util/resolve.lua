@@ -15,6 +15,16 @@ local function _starts_with(s, p)
     return type(s) == "string" and type(p) == "string" and s:sub(1, #p) == p
 end
 
+local function _can_get_resource_lua(path)
+    if type(path) ~= "string" or path == "" then
+        return false
+    end
+    if Application and Application.can_get_resource then
+        return Application.can_get_resource("lua", path)
+    end
+    return true
+end
+
 -- Returns true if `s` has `prefix` at position `pos` (default 1) and
 -- the next character is a "boundary" (EOS, "_" or non-alphanumeric).
 local function _starts_with_prefix_and_boundary_at(s, prefix, pos)
@@ -72,13 +82,17 @@ local function _to_skeleton(str)
 end
 
 -- Lightweight caches to avoid repeated pcall(require, ...) + table lookups
-mod._arch_data_cache          = mod._arch_data_cache or {}     -- [arch] -> archetype data table
-mod._talents_table_cache      = mod._talents_table_cache or {} -- [arch] -> talents file table (any supported shape)
-mod._breed_prefix_to_display  = mod._breed_prefix_to_display or
-    nil                                                        -- { ["renegade_flamer"] = "loc_breed_display_name_renegade_flamer", ... }
+mod._arch_data_cache                      = mod._arch_data_cache or
+    {}                                                                                       -- [arch] -> archetype data table
+mod._talents_table_cache                  = mod._talents_table_cache or
+    {}                                                                                       -- [arch] -> talents file table (any supported shape)
+mod._breed_prefix_to_display              = mod._breed_prefix_to_display or
+    nil                                                                                      -- { ["renegade_flamer"] = "loc_breed_display_name_renegade_flamer", ... }
+mod._live_event_display_title_by_template = mod._live_event_display_title_by_template or nil -- [template_name] = "loc_*"
 
 -- NEW: in-session memo for template→talent fallback
-mod._template_to_talent_cache = mod._template_to_talent_cache or {} -- [template_id] = {arch, tid, disp|false} | false
+mod._template_to_talent_cache             = mod._template_to_talent_cache or
+    {} -- [template_id] = {arch, tid, disp|false} | false
 
 -- =========================================
 --  ARCHETYPE DISCOVERY + TALENT LOOKUPS
@@ -318,6 +332,17 @@ function M.talent_from_template_key(t, key)
         return memo[1], memo[2], (memo[3] ~= false and memo[3] or nil)
     end
 
+    local rel = t.related_talents or t.realted_talents or t.related_talent
+    local explicit_tid = (type(rel) == "table" and rel[1]) or (type(rel) == "string" and rel) or nil
+    if explicit_tid then
+        local arch = M.archetype_from_talent_id(explicit_tid)
+        local disp = arch and M.talent_display_name_loc(arch, explicit_tid)
+        if arch and disp then
+            mod._template_to_talent_cache[raw] = { arch, explicit_tid, disp }
+            return arch, explicit_tid, disp
+        end
+    end
+
     local norm = M.normalize_buff_id_for_talent_lookup(raw)
 
     -- Determine archetypes to check
@@ -486,8 +511,15 @@ local function _normalize_breed_key(k)
     return k
 end
 
--- NEW: allow aliasing hazards that drop the faction prefix (e.g., beast_of_nurgle_* instead of chaos_beast_of_nurgle_*)
+-- Allow aliasing hazards that drop the faction prefix (e.g., beast_of_nurgle_* instead of chaos_beast_of_nurgle_*),
+-- plus a very small set of explicit safe aliases where the game buff name is shorter than the breed name.
 local FACTION_PREFIXES = { "chaos_", "renegade_", "cultist_" }
+
+local EXTRA_BREED_PREFIX_ALIASES = {
+    chaos_ogryn_houndmaster = {
+        "houndmaster",
+    },
+}
 
 local function _strip_faction_prefix(s)
     if type(s) ~= "string" then return s end
@@ -498,6 +530,20 @@ local function _strip_faction_prefix(s)
         end
     end
     return s
+end
+
+local function _add_explicit_breed_prefix_aliases(map, short, loc)
+    local aliases = EXTRA_BREED_PREFIX_ALIASES[short]
+    if type(aliases) ~= "table" then
+        return
+    end
+
+    for i = 1, #aliases do
+        local alias = aliases[i]
+        if type(alias) == "string" and alias ~= "" and map[alias] == nil then
+            map[alias] = loc
+        end
+    end
 end
 
 local function _ensure_breed_prefix_map()
@@ -519,37 +565,44 @@ local function _ensure_breed_prefix_map()
                 if alias ~= short and map[alias] == nil then
                     map[alias] = loc
                 end
+
+                -- 3) Explicit safe aliases for known shortened buff prefixes
+                _add_explicit_breed_prefix_aliases(map, short, loc)
             end
         end
     end
     mod._breed_prefix_to_display = map
 end
 
--- Public: return loc_breed_display_name_* if this buff template is a negative HUD hazard
--- whose template name starts with a known breed prefix (with "_" boundary).
--- Handles plain prefix (e.g., "cultist_grenadier_*") and "in_" lead-in (e.g., "in_cultist_grenadier_*").
--- Expects a buff template table `t` that includes fields: t.name, t.hud_icon, t.is_negative.
--- (This grouping logic still uses t.name by design; it is unrelated to talent mapping.)
-function M.breed_loc_key_from_buff_template(t)
-    if not (t and t.name and t.hud_icon and t.is_negative) then return nil end
-    local name = t.name
-    if type(name) ~= "string" or name == "" then return nil end
+-- Public: return loc_breed_display_name_* if this string ID starts with a known breed prefix.
+-- Performance impact: Minimal. O(N) string prefix checks over a cached table of ~50 entries, only executed during discovery phase.
+function M.breed_loc_key_from_id(id)
+    if type(id) ~= "string" or id == "" then return nil end
     _ensure_breed_prefix_map()
 
     -- Check both the start of the string and (if present) after an "in_" lead-in.
-    local has_in_prefix = name:sub(1, 3) == "in_"
+    local has_in_prefix = id:sub(1, 3) == "in_"
 
     for prefix, loc in pairs(mod._breed_prefix_to_display or {}) do
         -- Direct match at start
-        if _starts_with_prefix_and_boundary_at(name, prefix, 1) then
+        if _starts_with_prefix_and_boundary_at(id, prefix, 1) then
             return loc
         end
         -- "in_" + breed prefix + "_" (offset = 4 because "in_" is 3 chars)
-        if has_in_prefix and _starts_with_prefix_and_boundary_at(name, prefix, 4) then
+        if has_in_prefix and _starts_with_prefix_and_boundary_at(id, prefix, 4) then
             return loc
         end
     end
     return nil
+end
+
+-- Public: return loc_breed_display_name_* if this buff template is a negative HUD hazard
+-- whose template name starts with a known breed prefix (with "_" boundary).
+-- Expects a buff template table `t` that includes fields: t.name, t.hud_icon, t.is_negative.
+-- Performance impact: Negligible. Validates table fields then defers to breed_loc_key_from_id.
+function M.breed_loc_key_from_buff_template(t)
+    if not (t and t.name and t.hud_icon and t.is_negative) then return nil end
+    return M.breed_loc_key_from_id(t.name)
 end
 
 -- NEW: prop_* negative HUD hazards → fixed loc key group
@@ -619,6 +672,129 @@ function M.hazard_group_loc_key_from_buff_template(t, tname)
 end
 
 -- =========================================
+--  LIVE EVENT BUFFS → display_title (loc_*)
+-- =========================================
+
+local function _add_live_event_entries_from_templates_table(tbl, map)
+    if type(tbl) ~= "table" then
+        return
+    end
+
+    local candidate_tables = { tbl, tbl.templates, tbl.buff_templates }
+
+    for i = 1, #candidate_tables do
+        local candidate = candidate_tables[i]
+        if type(candidate) == "table" then
+            for key, data in pairs(candidate) do
+                if type(data) == "table" then
+                    local template_name = (type(key) == "string" and key ~= "" and key) or data.name
+                    local display_title = data.display_title
+                    local hud_icon = data.hud_icon
+
+                    if type(template_name) == "string" and template_name:find("^live_event_") == 1 and
+                        type(hud_icon) == "string" and hud_icon ~= "" and
+                        type(display_title) == "string" and display_title:find("^loc_") == 1 then
+                        map[template_name] = display_title
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function _looks_like_live_event_template_path(v)
+    return type(v) == "string" and v:find("live_event_buff_templates/", 1, true) and
+        v:find("_buff_templates", 1, true)
+end
+
+local function _normalize_require_path(path)
+    if type(path) ~= "string" then
+        return nil
+    end
+    return path:gsub("%.lua$", "")
+end
+
+local function _collect_live_event_template_paths(node, out, seen_paths, seen_tables, depth)
+    if depth <= 0 then
+        return
+    end
+
+    local node_type = type(node)
+
+    if node_type == "string" then
+        local path = _normalize_require_path(node)
+        if _looks_like_live_event_template_path(path) and not seen_paths[path] then
+            seen_paths[path] = true
+            out[#out + 1] = path
+        end
+        return
+    end
+
+    if node_type ~= "table" then
+        return
+    end
+
+    if seen_tables[node] then
+        return
+    end
+    seen_tables[node] = true
+
+    for _, v in pairs(node) do
+        _collect_live_event_template_paths(v, out, seen_paths, seen_tables, depth - 1)
+    end
+end
+
+function mod._build_live_event_display_title_index()
+    if type(mod._live_event_display_title_by_template) == "table" then
+        return mod._live_event_display_title_by_template
+    end
+
+    local map = {}
+    local registry = _try_require("scripts/settings/buff/buff_templates")
+
+    -- First try the common case: buff_templates.lua already exposes the merged buff-template tables.
+    _add_live_event_entries_from_templates_table(registry, map)
+
+    -- Fallback: if the registry is instead exposing file paths, scan it for live-event template modules.
+    if next(map) == nil and type(registry) == "table" then
+        local paths = {}
+        local seen_paths = {}
+        local seen_tables = {}
+
+        _collect_live_event_template_paths(registry, paths, seen_paths, seen_tables, 4)
+
+        for i = 1, #paths do
+            local path = paths[i]
+            if _can_get_resource_lua(path) then
+                local templates = require(path)
+                _add_live_event_entries_from_templates_table(templates, map)
+            end
+        end
+    end
+
+    mod._live_event_display_title_by_template = map
+    return map
+end
+
+function M.live_event_display_title_loc(template_name)
+    if type(template_name) ~= "string" or template_name == "" then
+        return nil
+    end
+    if template_name:find("^live_event_") ~= 1 then
+        return nil
+    end
+
+    local map = mod._build_live_event_display_title_index and mod._build_live_event_display_title_index() or nil
+    local key = map and map[template_name]
+
+    if type(key) == "string" and key:find("^loc_") == 1 then
+        return key
+    end
+
+    return nil
+end
+
+-- =========================================
 --  HARDCODED LOC OVERRIDES (General Purpose)
 -- =========================================
 -- General table of hardcoded mappings used for scenarios where standard resolution
@@ -628,9 +804,21 @@ local HARDCODED_BUFF_LOCS = {
     ["player_spawn_grace"] = "loc_interrogator_a__mission_core_objective_02_a_01",
     ["syringe_broker_buff"] = "loc_broker_stimm_builder_view_display_name",
     ["windup_increases_power_default_parent"] = "loc_weapon_family_crowbar_p1_m1",
+    ["expedition_sand_vortex_move_speed"] = "loc_expeditions_modifier_environment_sand_vortex",
 
-    -- Veteran (Fix for incorrect related_talents in source)
+    -- Fixes for incorrect related_talents in source
     ["veteran_melee_crits_increase_damage"] = "loc_talent_veteran_crits_rend",
+    ["zealot_stamina_cost_multiplier_aura"] = "loc_talent_zealot_stamina_cost_multiplier_aura",
+    ["ogryn_ranged_stance"] = "loc_talent_ogryn_combat_ability_special_ammo", -- PBB
+
+    -- Screen effect resolution hardcoded fallbacks
+    ["psyker_overcharge_stance"] = "loc_talent_psyker_combat_ability_overcharge_stance",
+    ["psyker_overcharge_stance_damage"] = "loc_talent_psyker_combat_ability_overcharge_stance",
+    ["psyker_overcharge_stance_finesse_damage"] = "loc_talent_psyker_combat_ability_overcharge_stance",
+    ["psyker_empowered_grenades_passive_visual_buff_increased"] = "loc_talent_psyker_empowered_ability",
+    ["zealot_fanatic_rage_shared"] = "loc_talent_zealot_fanatic_rage",
+    ["zealot_fanatic_rage_minor"] = "loc_talent_zealot_fanatic_rage",
+    ["zealot_fanatic_rage_major"] = "loc_talent_zealot_fanatic_rage_improved",
 }
 
 function M.static_misc_loc_key_for_template(id_or_key)
@@ -640,6 +828,12 @@ function M.static_misc_loc_key_for_template(id_or_key)
         --   -> "loc_hordes_buff_stacking_crit_damage_on_critical_hit_title"
         if id_or_key:sub(1, 12) == "hordes_buff_" then
             return "loc_" .. id_or_key .. "_title"
+        end
+
+        -- Live event buffs: use their authoritative display_title from live_event buff template data.
+        local live_event_loc = M.live_event_display_title_loc and M.live_event_display_title_loc(id_or_key)
+        if live_event_loc then
+            return live_event_loc
         end
 
         -- Group any *_toxic_gas or *_smoke_fog id under unified labels

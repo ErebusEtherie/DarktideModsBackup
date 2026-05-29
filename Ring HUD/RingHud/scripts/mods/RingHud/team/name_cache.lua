@@ -20,7 +20,7 @@ end
 -- Small utilities (no pcalls; guard by type checks)
 ----------------------------------------------------------------
 local function _safe_profile(player)
-    if not player then return nil end
+    if not player or player.__deleted then return nil end
     if type(player.profile) == "function" then
         return player:profile()
     end
@@ -28,7 +28,7 @@ local function _safe_profile(player)
 end
 
 local function _safe_peer_id(player)
-    if not player then return "?" end
+    if not player or player.__deleted then return "?" end
     if type(player.peer_id) == "function" then
         local v = player:peer_id()
         if v ~= nil then return tostring(v) end
@@ -39,7 +39,7 @@ local function _safe_peer_id(player)
 end
 
 local function _safe_slot(player)
-    if not player then return "?" end
+    if not player or player.__deleted then return "?" end
     if type(player.slot) == "function" then
         local v = player:slot()
         if v ~= nil then return v end

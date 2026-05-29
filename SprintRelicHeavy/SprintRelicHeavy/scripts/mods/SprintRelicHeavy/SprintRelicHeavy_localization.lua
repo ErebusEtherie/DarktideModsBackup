@@ -5,37 +5,22 @@ return {
 	mod_description = {
 		en = "Performs a Relic Blade heavy windup while sprinting.",
 	},
-	general_settings = {
-		en = "General",
+	override_sprint = {
+		en = "Override Sprint",
 	},
-	enable_mod = {
-		en = "Enable Mod",
+	override_sprint_description = {
+		en = "When on, holding sprint also drives the helper. When off, the mod stays idle unless you hold Helper Hotkey.",
 	},
-	enable_mod_description = {
-		en = "Master switch for SprintRelicHeavy.",
+	helper_hotkey = {
+		en = "Helper Hotkey",
 	},
-	toggle_mod_keybind = {
-		en = "Toggle Mod Keybind",
-	},
-	toggle_mod_keybind_description = {
-		en = "Turns Enable Mod on or off while in mission.",
+	helper_hotkey_description = {
+		en = "Hold to trigger the sprint-heavy helper. This is the only trigger when Override Sprint is off.",
 	},
 	use_block_cancel = {
 		en = "Use Block-Cancel Fallback",
 	},
 	use_block_cancel_description = {
 		en = "Optional hit-confirm reset. When on, the helper only tries to block-cancel after the sprint stab actually lands a hit.",
-	},
-	debug_mode = {
-		en = "Debug Notifications",
-	},
-	debug_mode_description = {
-		en = "Shows live action, sweep, sprint, and heavy-chain threshold notifications while using the Relic Blade helper.",
-	},
-	trace_mode = {
-		en = "Trace Timing To Log",
-	},
-	trace_mode_description = {
-		en = "Writes per-attempt sprint stab timing summaries to the Darktide console log so you can measure your fastest runs.",
 	},
 }

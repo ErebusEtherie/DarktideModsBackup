@@ -15,9 +15,6 @@ local TextUtilities = mod:original_require("scripts/utilities/ui/text")
 local Circumstance = mod:original_require("scripts/settings/circumstance/circumstance_templates")
 local Danger = mod:original_require("scripts/settings/difficulty/danger_settings")
 local ScoreboardHistoryView = class("ScoreboardHistoryView", "BaseView")
-local in_match
-local is_playing_havoc
-local havoc_manager
 
 -- ##### ██╗███╗   ██╗██╗████████╗ ####################################################################################
 -- ##### ██║████╗  ██║██║╚══██╔══╝ ####################################################################################
@@ -162,17 +159,6 @@ end
 --         end
 --     end
 -- end
-local danger_from_challenge = function (challenge, resistance)
-    local challenge_number = tonumber(challenge)
-
-    for _, c in ipairs(Danger) do
-        if c.challenge == challenge_number and (resistance == nil or c.resistance == tonumber(resistance)) then
-            return c
-        end
-    end
-
-    return nil
-end
 
 ScoreboardHistoryView._setup_category_config = function(self, scan_dir)
     if self._category_content_widgets then
@@ -209,17 +195,16 @@ ScoreboardHistoryView._setup_category_config = function(self, scan_dir)
             if category_config.timer ~= "" then
                 mission_subname = "\n"..category_config.timer
             end
-            if category_config.mission_challenge ~= "" then
-                local mission_challenge = danger_from_challenge(category_config.mission_challenge, category_config.mission_resistance)
-                 if mission_challenge then
+            if category_config.mission_resistance ~= "" then
+                local mission_resistance = Danger[tonumber(category_config.mission_resistance)]
+                if mission_resistance then
                     if mission_subname == "" then
-                        mission_subname = "\n"..Localize(mission_challenge.display_name)
+                        mission_subname = "\n"..Localize(mission_resistance.display_name)
                     else
-                        mission_subname = mission_subname.." | "..Localize(mission_challenge.display_name)
+                        mission_subname = mission_subname.." | "..Localize(mission_resistance.display_name)
                     end
                 end
             end
-
             if category_config.mission_circumstance ~= "" then
                 local mission_circumstance = Circumstance[category_config.mission_circumstance]
                 if ( mission_circumstance and mission_circumstance.ui ) then

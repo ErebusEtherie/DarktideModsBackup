@@ -251,3 +251,24 @@ Toughness Break
 Changed the following default sounds:
 
 Hive Scum Rampage! Ability (Old sfx were placed in the ALTERNATES folder, similar to last set)
+
+
+1.22
+
+Added the following hooks:
+
+Hive Scum Rampage! Ability On-hit SFX
+
+
+1.23
+
+Changed the following default sounds:
+
+Zealot Shroudfield Ability (Old sfx were placed in the ALTERNATES folder, sound list structure changed - personal custom audio will be affected)
+Netgunner Attack
+
+
+Added the following hooks:
+
+Ogryn Power Maul Recharge Sfx
+

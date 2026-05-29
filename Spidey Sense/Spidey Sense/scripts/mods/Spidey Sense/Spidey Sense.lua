@@ -3,12 +3,12 @@ Title: Spidey Sense
 Author: Wobin
 Date: 23/03/2026
 Repository: https://github.com/Wobin/SpideySense
-Version: 6.2
+Version: 7.0
 --]]
 
 local mod = get_mod("Spidey Sense")
 
-mod.version = "6.2"
+mod.version = "7.0"
 
 mod.showCleave = false
 mod.showNet = false
@@ -20,16 +20,31 @@ mod._indicators = {}
 
 mod:io_dofile("Spidey Sense/scripts/mods/Spidey Sense/Helper")
 mod:io_dofile("Spidey Sense/scripts/mods/Spidey Sense/Debug")
+mod:io_dofile("Spidey Sense/scripts/mods/Spidey Sense/MultiEnemyTracker")
 mod:io_dofile("Spidey Sense/scripts/mods/Spidey Sense/UI/UI")
 mod:io_dofile("Spidey Sense/scripts/mods/Spidey Sense/Sound")
 
-local SpideySenseImgui = mod:io_dofile("Spidey Sense/scripts/mods/Spidey Sense/UI/Setup")
-mod.imgui_window = SpideySenseImgui:new()
-
-local create_indicator = mod.ui.create_indicator 
 local findlocalvalue = mod.helper.findlocalvalue
 local get_userdata_type = mod.helper.get_userdata_type
-local indicate_warning = mod.ui.indicate_warning 
+
+
+local original_create_indicator = mod.ui.create_indicator
+mod.ui.create_indicator = function(unit_or_position, target_type, extra_duration)
+	if type(unit_or_position) == "userdata" then
+		mod.multi_enemy_tracker:register_unit(unit_or_position, target_type)
+		if mod:get(target_type .. "_multi_enemy_show_numbers") then
+			local breed_count = mod.multi_enemy_tracker:get_count(target_type)
+			if breed_count >= 2 then
+				local instance_number = mod.multi_enemy_tracker:get_instance_number(unit_or_position, target_type)
+				return original_create_indicator(unit_or_position, target_type, extra_duration, instance_number)
+			end
+		end
+	end
+	return original_create_indicator(unit_or_position, target_type, extra_duration)
+end
+
+local create_indicator = mod.ui.create_indicator
+local indicate_warning = mod.ui.indicate_warning
 
 local active_enemies = {}
 local function update_active_enemies()
@@ -59,14 +74,29 @@ mod.on_setting_changed = function(setting_id)
   if mod.ui and mod.ui.invalidate_setting_caches then
     mod.ui.invalidate_setting_caches(setting_id)
   end
+  if setting_id:match("_copy_from") then
+    local typeName = string.sub(setting_id, 1, string.find(setting_id, "_copy_from") - 1)
+    local new_value = mod:get(setting_id)
+    if new_value and new_value ~= "none" then
+      mod:set(typeName .. "_active",         mod:get(new_value .. "_active"),         false)
+      mod:set(typeName .. "_radius",         mod:get(new_value .. "_radius"),         false)
+      mod:set(typeName .. "_active_range",   mod:get(new_value .. "_active_range"),   false)
+      mod:set(typeName .. "_nurgle_blessed", mod:get(new_value .. "_nurgle_blessed"), false)
+      mod:set(typeName .. "_distance",       mod:get(new_value .. "_distance"),       false)
+      mod:set(typeName .. "_arrow_distance", mod:get(new_value .. "_arrow_distance"), false)
+      mod:set(typeName .. "_arrow_colour",   mod:get(new_value .. "_arrow_colour"),   false)
+      mod:set(typeName .. "_only_behind",    mod:get(new_value .. "_only_behind"),    false)
+      mod:set(typeName .. "_front_opacity",  mod:get(new_value .. "_front_opacity"),  false)
+      mod:set(typeName .. "_front_colour",   mod:get(new_value .. "_front_colour"),   false)
+      mod:set(typeName .. "_back_opacity",   mod:get(new_value .. "_back_opacity"),   false)
+      mod:set(typeName .. "_back_colour",    mod:get(new_value .. "_back_colour"),    false)
+      mod:set(typeName .. "_multi_enemy_show_numbers", mod:get(new_value .. "_multi_enemy_show_numbers"), false)
+    end
+    mod:set(setting_id, "none", false)
+    return
+  end
   if setting_id:match("_active") then
     update_active_enemies()
-  end
-  if setting_id == "open_imgui_settings" then
-    mod:set(setting_id, false, false)
-    if mod.toggle_imgui_settings then
-      mod.toggle_imgui_settings()
-    end
   end
 end
 
@@ -80,10 +110,9 @@ function mod:getTrapper()
 end
 
 local throttle = {}
-local tc = Managers.time
 
 mod.hook_monster = function(sound_name, unit_or_position, check_unit)
-  
+
 	--ignore monster spawn
 	if sound_name:match("_spawn") and not sound_name:match("chaos_spawn") then
     --mod:echo(sound_name)
@@ -91,12 +120,12 @@ mod.hook_monster = function(sound_name, unit_or_position, check_unit)
 	end
 
 	-- throttle half a second on each type
+	local now = Managers.time:time("main")
 	local lastCall = throttle[sound_name] or 0
-	local delta = tc:time("main") - lastCall
-	if delta < 0.5 then
+	if now - lastCall < 0.5 then
 		return
 	end
-	throttle[sound_name] = tc:time("main")
+	throttle[sound_name] = now
   if check_unit == nil then
     local userDataType = get_userdata_type(unit_or_position)
     -- if the unit_or_position is nil or a number,
@@ -225,9 +254,9 @@ mod.hook_monster = function(sound_name, unit_or_position, check_unit)
     or sound_name:match("plasmapistol"))
     then create_indicator(unit_or_position, "plasma_gunner") end
   
+  -- `play_backstab_indicator_melee` is a prefix of `..._melee_elite`, so one match catches both.
   if active_enemies.melee_backstab
 		and sound_name:match("wwise/events/player/play_backstab_indicator_melee")
-			or sound_name:match("wwise/events/player/play_backstab_indicator_melee_elite")
 	then create_indicator(unit_or_position, "melee_backstab") end
 
 	if active_enemies.ranged_backstab
@@ -235,7 +264,7 @@ mod.hook_monster = function(sound_name, unit_or_position, check_unit)
     then create_indicator(unit_or_position, "ranged_backstab") end
   
 
-  if mod:get("render_crusher_warning") and sound_name:match("cleave") then       
+  if mod:get("render_crusher_warning") and sound_name:match("cleave_warning") then
     indicate_warning(unit_or_position, "cleave")
   end
   
@@ -267,16 +296,8 @@ mod.hook_monster = function(sound_name, unit_or_position, check_unit)
 end  
 
 
-mod.toggle_imgui_settings = function()  
-  if mod.imgui_window then
-    mod.imgui_window:toggle()
-  end
-end
-
 mod.update = function(dt)
-  if mod.imgui_window then
-    mod.imgui_window:update()
-  end
+  mod.multi_enemy_tracker:update()
 end
 
 mod.on_all_mods_loaded = function()
@@ -285,6 +306,15 @@ mod.on_all_mods_loaded = function()
    Promise.delay(5):next(mod.on_all_mods_loaded)
    return
   end
+
+  -- Preload inventory background package for roman numeral textures
+  local function load_package(package_name)
+    if not Managers.package:has_loaded(package_name) then
+      Managers.package:load(package_name, "Spidey Sense")
+    end
+  end
+
+  load_package("packages/ui/views/inventory_background_view/inventory_background_view")
 
   mod:info(mod.version)
   mod.ui.loadWarnings()

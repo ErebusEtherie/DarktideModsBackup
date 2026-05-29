@@ -357,7 +357,7 @@ function ChargeFeature.update(widget, hud_state, hotkey_override)
 
     -- Max Stacks Sound Logic
     local hud                = mod.hud_instance
-    if hud and SETTINGS.charge_other_enabled then
+    if hud and SETTINGS.charge_other_enabled and SETTINGS.timer_sound_enabled ~= "default" then
         local current_stacks = hud_state.charge_thrust_stacks or 0
         local last = hud._last_charge_thrust_stacks or 0
         if current_stacks >= 5 and last < 5 then

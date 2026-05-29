@@ -67,7 +67,7 @@ local function session_stats(session)
 end
 
 local function session_to_entry(session)
-    local map   = session.map or "Unknown Map"
+    local map   = mod.lib_missions.localize_name(session.map) or session.map or "Unknown Map"
     local date  = format_timestamp(session.timestamp)
     local plr   = session.player or ""
     local arch  = session.archetype or "unknown"

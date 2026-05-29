@@ -530,18 +530,30 @@ local zealot_stealth_audio = {
 	"player/zealot_stealth_1.opus",
 	"player/zealot_stealth_2.opus",
 	"player/zealot_stealth_3.opus",
-	"player/zealot_stealth_4.opus",
-	"player/zealot_stealth_5.opus",
 }
 
 local zealot_stealth_end = {
-	"player/zealot_stealth_end.opus",
+	"player/zealot_stealth_end_1.opus",
+	"player/zealot_stealth_end_2.opus",
 }
 
 local toughness_break_audio = {
 	"player/toughness_break_1.opus",
 	"player/toughness_break_2.opus",
 	"player/toughness_break_3.opus",
+}
+
+local rampage_onhit_audio = {
+	"player/rampage_onhit_1.opus",
+	"player/rampage_onhit_2.opus",
+	"player/rampage_onhit_3.opus",
+	"player/rampage_onhit_4.opus",
+	"player/rampage_onhit_5.opus",
+	"player/rampage_onhit_6.opus",
+}
+
+local paul_recharge_audio = {
+	"weapons/paul_recharge_1.opus",
 }
 
 local enemies = {
@@ -555,7 +567,6 @@ local enemies = {
 	"chaos_ogryn_gunner",
 	"renegade_plasma_gunner",
 	"renegade_grenadier",
-	
 	--"cultist_flamer"
 }
 
@@ -683,6 +694,8 @@ local enemy_sound_replacements = {
 		play_zealot_ability_invisible_on = zealot_stealth_audio,
 		play_zealot_ability_invisible_off = zealot_stealth_end,
 		play_toughness_break = toughness_break_audio,
+		play_player_ability_broker_rage_hit = rampage_onhit_audio,
+		play_ogryn_powermaul_1h_spark = paul_recharge_audio,
 	},
 	cultist_flamer = {
 		play_minion_flamethrower_green_start = flamer_flame_audio
@@ -824,6 +837,8 @@ local options_categories = {
 	play_zealot_ability_invisible_on = "zealot_stealth",
 	play_zealot_ability_invisible_off = "zealot_stealth",
 	play_toughness_break = "toughness_break",
+	play_player_ability_broker_rage_hit = "ganger_rage_onhit",
+	play_ogryn_powermaul_1h_spark = "paul_recharge",
 
 	-- DOG
 	play_enemy_chaos_hound_vce_leap = "chaos_hound_jump",
@@ -893,7 +908,7 @@ local VOLUME_OVERRIDE = {
 	play_chaos_ogryn_heavy_gunner_into_aim = 30,
 	play_enemy_chaos_ogryn_heavy_gunner__death_vce = 80,
 	play_enemy_chaos_ogryn_heavy_gunner__hurt_vce = 75,
-	play_weapon_netgunner_wind_up = 25,
+	play_weapon_netgunner_wind_up = 100,
 	play_2h_forcesword_ability_charge_2 = 0,
 	play_2h_forcesword_ability_charge_3 = 0,
 	play_minion_plasmapistol_charge = 25,
@@ -908,6 +923,8 @@ local VOLUME_OVERRIDE = {
 	play_syringe_broker_start = 40,
 	play_syringe_broker_stop = 70,
 	play_toughness_break = 200,
+	play_player_ability_broker_rage_hit = 100,
+	play_ogryn_powermaul_1h_spark = 80
 }
 
 local ongoing_sounds = {}
@@ -1037,6 +1054,8 @@ local override_paths = {
 	play_zealot_ability_invisible_on = "wwise/events/player/",
 	play_zealot_ability_invisible_off = "wwise/events/player/",
 	play_toughness_break = "wwise/events/player/",
+	play_player_ability_broker_rage_hit = "wwise/events/player/",
+	play_ogryn_powermaul_1h_spark = "wwise/events/weapon/"
 	--play_minion_flamethrower_green_start = "wwise/events/weapon/"
 }
 

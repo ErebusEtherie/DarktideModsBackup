@@ -4,6 +4,7 @@ local mod = get_mod("ZipIt2"); if not mod then return end
 local UiSettings = require("scripts/settings/ui/ui_settings")
 
 local type, string, table, pairs = type, string, table, pairs
+local Localize = Localize
 
 local function _briefing_mode_options()
     return {
@@ -11,6 +12,13 @@ local function _briefing_mode_options()
         { text = mod:localize("briefing_mute_mode_lobby_only"),           value = "lobby_only",  localize = false },
         { text = mod:localize("briefing_mute_mode_rejoin_only"),          value = "rejoin_only", localize = false },
         { text = Localize("loc_setting_dodge_stamina_hud_disabled_both"), value = "both",        localize = false },
+    }
+end
+
+local function _hub_radio_mode_options()
+    return {
+        { text = Localize("loc_setting_aim_assist_new_full"), value = "full",    localize = false },
+        { text = Localize("loc_setting_mix_preset_flat"),     value = "default", localize = false },
     }
 end
 
@@ -162,6 +170,21 @@ local function _add_dropdown(dst, dst_len, setting_id, title, default_value, opt
     return dst_len + 1
 end
 
+local function _add_numeric(dst, dst_len, setting_id, title, default_value, min_value, max_value, decimals_number)
+    dst[dst_len + 1] = {
+        setting_id = setting_id,
+        type = "numeric",
+        default_value = default_value,
+        range = { min_value, max_value },
+        decimals_number = decimals_number,
+        title = title,
+        text = title,
+        localize = false,
+    }
+
+    return dst_len + 1
+end
+
 local function _add_keybind(dst, dst_len, setting_id, title, function_name)
     dst[dst_len + 1] = {
         setting_id = setting_id,
@@ -229,38 +252,26 @@ mod.zipit2_build_widgets = function()
     }
 
     do
-        widgets_len = _add_dropdown(
-            widgets,
-            widgets_len,
+        local sub_gameplay, sub_gameplay_len = {}, 0
+
+        -- ==========================================================
+        -- 1. General (Interface)
+        -- ==========================================================
+        local sub_interface, sub_interface_len = {}, 0
+
+        sub_interface_len = _add_dropdown(
+            sub_interface,
+            sub_interface_len,
             "global_voice_preset",
-            Localize("loc_setting_mix_presets"),
+            " " .. Localize("loc_setting_mix_presets"),
             "custom",
             _global_voice_preset_options()
         )
         _push_setting_id("top_level", "global_voice_preset")
 
-        widgets_len = _add_checkbox(
-            widgets,
-            widgets_len,
-            "subtitles_enabled",
-            Localize("loc_interface_setting_subtitle_enabled"),
-            false
-        )
-        _push_setting_id("top_level", "subtitles_enabled")
-
-        widgets_len = _add_dropdown(
-            widgets,
-            widgets_len,
-            "ping_sound_mode",
-            Localize("loc_settings_menu_group_com_wheel_settings"),
-            "all",
-            _ping_sound_mode_options()
-        )
-        _push_setting_id("top_level", "ping_sound_mode")
-
-        widgets_len = _add_dropdown(
-            widgets,
-            widgets_len,
+        sub_interface_len = _add_dropdown(
+            sub_interface,
+            sub_interface_len,
             "briefing_mute_mode",
             mod:localize("briefing_mute_mode_name"),
             "rejoin_only",
@@ -268,24 +279,144 @@ mod.zipit2_build_widgets = function()
         )
         _push_setting_id("top_level", "briefing_mute_mode")
 
-        widgets_len = _add_keybind(
-            widgets,
-            widgets_len,
+        sub_interface_len = _add_checkbox(
+            sub_interface,
+            sub_interface_len,
+            "subtitles_enabled",
+            " " .. Localize("loc_interface_setting_subtitle_enabled"),
+            false
+        )
+        _push_setting_id("top_level", "subtitles_enabled")
+
+        sub_interface_len = _add_dropdown(
+            sub_interface,
+            sub_interface_len,
+            "hub_radio_mode",
+            " " .. Localize("loc_credits_view_vocators_title") .. " (" .. Localize("loc_mission_name_hub_ship") .. ")",
+            "default",
+            _hub_radio_mode_options()
+        )
+        _push_setting_id("top_level", "hub_radio_mode")
+
+        sub_gameplay_len = sub_gameplay_len + 1
+        sub_gameplay[sub_gameplay_len] = {
+            setting_id = "group_interface",
+            type = "group",
+            title = Localize("loc_settings_menu_category_interface"),
+            localize = false,
+            sub_widgets = sub_interface,
+        }
+
+        -- ==========================================================
+        -- 2. Combat
+        -- ==========================================================
+        local sub_combat, sub_combat_len = {}, 0
+
+        sub_combat_len = _add_checkbox(
+            sub_combat,
+            sub_combat_len,
+            "player_nonverbal_sounds_enabled",
+            " " ..
+            Localize("loc_heavy_attack") ..
+            "/" ..
+            Localize("loc_horde_tactical_overlay_category_misc") ..
+            " (" .. Localize("loc_settings_menu_category_sound") .. ")",
+            true
+        )
+        _push_setting_id("top_level", "player_nonverbal_sounds_enabled")
+
+        sub_combat_len = _add_keybind(
+            sub_combat,
+            sub_combat_len,
             "keybind_selected_wheel_option",
             mod:localize("selected_wheel_option_hotkey_name"),
             "zipit2_trigger_selected_wheel_option"
         )
         _push_setting_id("top_level", "keybind_selected_wheel_option")
 
-        widgets_len = _add_dropdown(
-            widgets,
-            widgets_len,
+        sub_combat_len = _add_dropdown(
+            sub_combat,
+            sub_combat_len,
             "selected_wheel_option",
             mod:localize("selected_wheel_option_name"),
             _default_com_wheel_option_value(D),
             _com_wheel_options(D)
         )
         _push_setting_id("top_level", "selected_wheel_option")
+
+        sub_gameplay_len = sub_gameplay_len + 1
+        sub_gameplay[sub_gameplay_len] = {
+            setting_id = "group_combat",
+            type = "group",
+            title = Localize("loc_keybind_category_combat"),
+            localize = false,
+            sub_widgets = sub_combat,
+        }
+
+        widgets_len = widgets_len + 1
+        widgets[widgets_len] = {
+            setting_id = "group_gameplay",
+            type = "group",
+            title = Localize("loc_settings_menu_group_gameplay_settings"),
+            localize = false,
+            sub_widgets = sub_gameplay,
+        }
+
+        -- ==========================================================
+        -- 3. Striketeam
+        -- ==========================================================
+        local sub_striketeam, sub_striketeam_len = {}, 0
+
+        sub_striketeam_len = _add_keybind(
+            sub_striketeam,
+            sub_striketeam_len,
+            "keybind_toggle_voice_chat",
+            " " ..
+            Localize("loc_settings_menu_group_voice_chat_settings") ..
+            " - " .. Localize("loc_setting_voice_chat_presets_mic_muted"),
+            "zipit2_toggle_voice_chat"
+        )
+        _push_setting_id("top_level", "keybind_toggle_voice_chat")
+
+        sub_striketeam_len = _add_checkbox(
+            sub_striketeam,
+            sub_striketeam_len,
+            "mute_bots",
+            " " .. mod:localize("mute_bots_name"),
+            false
+        )
+        _push_setting_id("top_level", "mute_bots")
+
+        sub_striketeam_len = _add_dropdown(
+            sub_striketeam,
+            sub_striketeam_len,
+            "ping_sound_mode",
+            " " .. Localize("loc_ingame_smart_tag") .. " (" .. Localize("loc_settings_menu_category_sound") .. ")",
+            "all",
+            _ping_sound_mode_options()
+        )
+        _push_setting_id("top_level", "ping_sound_mode")
+
+        sub_striketeam_len = _add_numeric(
+            sub_striketeam,
+            sub_striketeam_len,
+            "other_players_com_wheel_throttle_seconds",
+            mod:localize("other_players_com_wheel_throttle_seconds"),
+            0,
+            0,
+            30,
+            0
+        )
+        _push_setting_id("top_level", "other_players_com_wheel_throttle_seconds")
+
+        widgets_len = widgets_len + 1
+        widgets[widgets_len] = {
+            setting_id = "group_striketeam",
+            type = "group",
+            title = Localize("loc_achievement_category_teamplay_label"),
+            localize = false,
+            sub_widgets = sub_striketeam,
+        }
     end
 
     do
@@ -374,7 +505,7 @@ mod.zipit2_build_widgets = function()
         for i = 1, classes_count do
             local key = classes[i]
             local g = groups[key]
-            local title = (g and g.label) or key
+            local title = " " .. ((g and g.label) or key)
             local voices = (g and g.voices) or nil
             local voice_count = (type(voices) == "table" and #voices) or 0
             local sub, sub_len = {}, 0
@@ -440,7 +571,7 @@ mod.zipit2_build_widgets = function()
         widgets[widgets_len] = {
             setting_id = "group_minor_npcs",
             type = "group",
-            title = Localize("loc_tactical_overlay_build_other"),
+            title = " " .. Localize("loc_tactical_overlay_build_other"),
             subtitle = "",
             localize = false,
             sub_widgets = sub,
@@ -467,7 +598,7 @@ mod.zipit2_build_widgets = function()
         widgets[widgets_len] = {
             setting_id = "group_breed_voices",
             type = "group",
-            title = Localize("loc_achievement_category_heretics_label"),
+            title = " " .. Localize("loc_achievement_category_heretics_label"),
             subtitle = "",
             localize = false,
             sub_widgets = sub,

@@ -4,6 +4,14 @@ local mod = get_mod("ZipIt2"); if not mod then return end
 local Breeds = require("scripts/settings/breed/breeds")
 local type, pairs, table = type, pairs, table
 
+local ENEMY_TAG_ALIASES = {
+    cultist_holy_stubber_gunner = "cultist_gunner",
+    chaos_mutant_charger = "cultist_mutant",
+    monster = false,
+    aggroed = false,
+    seen_netgunner_flee = "renegade_netgunner",
+}
+
 local function _breed_root_path(breed_name)
     return ("scripts/settings/breed/breeds/%s_breed"):format(breed_name)
 end
@@ -104,6 +112,55 @@ local function _breed_label(breed_data)
     return mod.try_localize_loc_key(breed_data.display_name)
 end
 
+local function _enemy_tag_aliases_for_breed_name(breed_name)
+    if type(breed_name) ~= "string" or breed_name == "" then
+        return nil
+    end
+
+    local aliases = {
+        breed_name,
+    }
+    local alias_len = 1
+    local alias_seen = {
+        [breed_name] = true,
+    }
+
+    if breed_name == "chaos_ogryn_executor" then
+        alias_len = _push_unique_string(aliases, alias_len, alias_seen, "renegade_executor")
+    elseif breed_name == "chaos_ogryn_houndmaster" then
+        alias_len = _push_unique_string(aliases, alias_len, alias_seen, "enemy_hound_master")
+    end
+
+    for enemy_tag, mapped_breed_name in pairs(ENEMY_TAG_ALIASES) do
+        if mapped_breed_name == breed_name then
+            alias_len = _push_unique_string(aliases, alias_len, alias_seen, enemy_tag)
+        end
+    end
+
+    if alias_len <= 0 then
+        return nil
+    end
+
+    table.sort(aliases)
+
+    return aliases
+end
+
+local function _push_group_lookup_aliases(group_lookup, group_key, aliases)
+    if type(group_lookup) ~= "table" or type(group_key) ~= "string" or group_key == "" or type(aliases) ~= "table" then
+        return
+    end
+
+    local count = #aliases
+
+    for i = 1, count do
+        local alias = aliases[i]
+        if type(alias) == "string" and alias ~= "" then
+            group_lookup[alias] = group_key
+        end
+    end
+end
+
 -- Performance Impact: Moderate (runs only once during initial mod setup).
 mod.zipit2_build_breeds = function(D)
     do
@@ -111,6 +168,8 @@ mod.zipit2_build_breeds = function(D)
         local breed_classes_set = {}
         local breed_sound_event_to_groups = {}
         local breed_label_groups = {}
+        local breed_member_to_group = {}
+        local breed_enemy_tag_to_group = {}
 
         for breed_name, breed_data in pairs(Breeds or {}) do
             if type(breed_name) == "string" and type(breed_data) == "table" then
@@ -169,15 +228,46 @@ mod.zipit2_build_breeds = function(D)
             local group_key = breed_names[1]
 
             if group_key then
+                local enemy_tag_aliases = {}
+                local enemy_tag_aliases_len = 0
+                local enemy_tag_alias_seen = {}
+
+                local breed_name_count = #breed_names
+                for i = 1, breed_name_count do
+                    local breed_name = breed_names[i]
+                    local aliases = _enemy_tag_aliases_for_breed_name(breed_name)
+
+                    if type(aliases) == "table" then
+                        local alias_count = #aliases
+
+                        for j = 1, alias_count do
+                            enemy_tag_aliases_len = _push_unique_string(
+                                enemy_tag_aliases,
+                                enemy_tag_aliases_len,
+                                enemy_tag_alias_seen,
+                                aliases[j]
+                            )
+                        end
+                    end
+                end
+
+                table.sort(enemy_tag_aliases)
+
                 local group = {
                     label = bucket.label,
                     breed_name = group_key,
                     breed_names = breed_names,
                     sound_events = sound_events,
+                    enemy_tag_aliases = enemy_tag_aliases,
                 }
 
                 breed_groups[group_key] = group
                 breed_classes_set[group_key] = true
+
+                _push_group_lookup_aliases(breed_member_to_group, group_key, breed_names)
+                _push_group_lookup_aliases(breed_enemy_tag_to_group, group_key, enemy_tag_aliases)
+                breed_member_to_group[group_key] = group_key
+                breed_enemy_tag_to_group[group_key] = group_key
 
                 local event_count = #sound_events
                 for i = 1, event_count do
@@ -194,6 +284,18 @@ mod.zipit2_build_breeds = function(D)
             end
         end
 
+        -- Ensure the hardcoded daemonhost ambience event is mapped, as it may not exist in the breed's _sounds.lua resource.
+        local dh_group_key = breed_member_to_group["chaos_daemonhost"]
+        if dh_group_key then
+            local dh_ambience_event = "wwise/events/minions/play_enemy_daemonhost_ambience_idle"
+            local dh_event_groups = breed_sound_event_to_groups[dh_ambience_event]
+            if not dh_event_groups then
+                dh_event_groups = {}
+                breed_sound_event_to_groups[dh_ambience_event] = dh_event_groups
+            end
+            dh_event_groups[dh_group_key] = true
+        end
+
         local breed_keys = mod.sorted_list_from_set(breed_classes_set)
         table.sort(breed_keys, function(a, b)
             local la = (breed_groups[a] and breed_groups[a].label) or a
@@ -207,5 +309,7 @@ mod.zipit2_build_breeds = function(D)
         D.breed_classes = breed_keys
         D.breed_group_keys = breed_keys
         D.breed_sound_event_to_groups = breed_sound_event_to_groups
+        D.breed_member_to_group = breed_member_to_group
+        D.breed_enemy_tag_to_group = breed_enemy_tag_to_group
     end
 end

@@ -38,7 +38,7 @@ local ZEALOT_RESIST_DEATH_CD_S = 125.0 -- 5s invulnerability + 120s cd
 local BROKER_TOUGHNESS_BROKEN_WINDOW_S = 16.0 -- 6s buff + 10s cd
 
 -- Adamant: Terminus Warrant melee + ranged stack tracking
-local ADAMANT_TERMINUS_WARRANT_MAX_STACKS = 30
+local ADAMANT_TERMINUS_WARRANT_MAX_STACKS = 20
 
 -- These are the stack-carrying buffs
 local ADAMANT_TERMINUS_WARRANT_MELEE_STACK_BUFFS = {
@@ -390,7 +390,7 @@ function mod.talent_update_state(player, player_unit, hud_state)
         end
 
         td.mode         = "adamant_terminus_warrant"
-        td.segment_max  = 4
+        td.segment_max  = 2
         td.is_available = true
         td.is_active    = (melee_stacks > 0) or (ranged_stacks > 0)
 

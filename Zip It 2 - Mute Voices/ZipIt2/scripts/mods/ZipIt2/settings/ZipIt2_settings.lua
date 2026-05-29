@@ -1,7 +1,7 @@
 -- File: ZipIt2/scripts/mods/ZipIt2/settings/ZipIt2_settings.lua
 local mod = get_mod("ZipIt2"); if not mod then return end
 
-local type, string = type, string
+local type, string, tonumber, math = type, string, tonumber, math
 
 -- ---------------------------------------------------------------------------
 -- Settings cache (single read on init; only updated via mod.on_setting_changed)
@@ -9,9 +9,13 @@ local type, string = type, string
 mod._zipit2_settings = mod._zipit2_settings or {
     global_voice_preset = "custom",
     subtitles_enabled = false,
+    hub_radio_mode = "default",
+    player_nonverbal_sounds_enabled = true,
     ping_sound_mode = "all",
     briefing_mute_mode = "rejoin_only",
+    other_players_com_wheel_throttle_seconds = 0,
     selected_wheel_option = "thanks",
+    mute_bots = false,
     player_mode = {},
     minor_enabled = {},
     breed_enabled = {},
@@ -24,6 +28,40 @@ S.player_mode = S.player_mode or {}
 S.minor_enabled = S.minor_enabled or {}
 S.breed_enabled = S.breed_enabled or {}
 S.major = S.major or {}
+
+-- ---------------------------------------------------------------------------
+-- Voice chat runtime state (not a user setting)
+-- ---------------------------------------------------------------------------
+mod._zipit2_voice_chat_state = mod._zipit2_voice_chat_state or {
+    output_muted = false,
+}
+
+local VC = mod._zipit2_voice_chat_state
+VC.output_muted = VC.output_muted == true
+
+mod.zipit2_toggle_voice_chat = mod.zipit2_toggle_voice_chat or function()
+    if not mod:is_enabled() then
+        return
+    end
+
+    local executor = mod.zipit2_execute_voice_chat_toggle
+
+    if type(executor) == "function" then
+        executor()
+    end
+end
+
+mod.zipit2_is_voice_chat_output_muted = mod.zipit2_is_voice_chat_output_muted or function()
+    return VC.output_muted == true
+end
+
+mod.zipit2_set_voice_chat_output_muted = mod.zipit2_set_voice_chat_output_muted or function(muted)
+    VC.output_muted = muted == true
+end
+
+mod.zipit2_reset_voice_chat_output_mute = mod.zipit2_reset_voice_chat_output_mute or function()
+    VC.output_muted = false
+end
 
 local function _ensure_major_state(class_key)
     local state = S.major[class_key]
@@ -44,6 +82,14 @@ local function _sanitize_global_voice_preset(value)
     return "custom"
 end
 
+local function _sanitize_hub_radio_mode(value)
+    if value == "full" or value == "default" then
+        return value
+    end
+
+    return "default"
+end
+
 local function _sanitize_ping_sound_mode(value)
     if value == "all" or value == "muted" then
         return value
@@ -55,6 +101,21 @@ local function _sanitize_ping_sound_mode(value)
     end
 
     return "all"
+end
+
+local function _sanitize_other_players_com_wheel_throttle_seconds(value)
+    value = tonumber(value) or 0
+    value = math.floor(value)
+
+    if value < 0 then
+        return 0
+    end
+
+    if value > 10 then
+        return 10
+    end
+
+    return value
 end
 
 local function _sanitize_player_mode(value)
@@ -135,12 +196,14 @@ local function _apply_global_voice_preset(value)
     mod._zipit2_applying_global_voice_preset = true
 
     local player_value = enable_all and "all" or "muted"
+    local player_nonverbal_sounds_value = enable_all
     local ping_sound_value = enable_all and "all" or "muted"
     local briefing_value = enable_all and "off" or "both"
     local major_briefing_value = enable_all
     local major_chatter_value = enable_all and "none" or "both"
     local minor_value = enable_all
     local breed_value = enable_all
+    local mute_bots_value = disable_all
 
     if type(ids.player) == "table" then
         local count = #ids.player
@@ -150,8 +213,10 @@ local function _apply_global_voice_preset(value)
         end
     end
 
+    mod:set("player_nonverbal_sounds_enabled", player_nonverbal_sounds_value, true)
     mod:set("ping_sound_mode", ping_sound_value, true)
     mod:set("briefing_mute_mode", briefing_value, true)
+    mod:set("mute_bots", mute_bots_value, true)
 
     if type(ids.major_briefing) == "table" then
         local count = #ids.major_briefing
@@ -196,8 +261,14 @@ local function _cache_all_settings_once()
 
     S.global_voice_preset = _sanitize_global_voice_preset(mod:get("global_voice_preset"))
     S.subtitles_enabled = mod:get("subtitles_enabled")
+    S.hub_radio_mode = _sanitize_hub_radio_mode(mod:get("hub_radio_mode"))
+    S.player_nonverbal_sounds_enabled = mod:get("player_nonverbal_sounds_enabled") ~= false
     S.ping_sound_mode = _sanitize_ping_sound_mode(mod:get("ping_sound_mode"))
+    S.other_players_com_wheel_throttle_seconds = _sanitize_other_players_com_wheel_throttle_seconds(
+        mod:get("other_players_com_wheel_throttle_seconds")
+    )
     S.selected_wheel_option = _sanitize_selected_wheel_option(mod:get("selected_wheel_option"))
+    S.mute_bots = mod:get("mute_bots") == true
 
     local mode = mod:get("briefing_mute_mode")
     S.briefing_mute_mode = (type(mode) == "string" and mode ~= "") and mode or "rejoin_only"
@@ -298,6 +369,21 @@ function mod.on_setting_changed(setting_id)
         return
     end
 
+    if setting_id == "hub_radio_mode" then
+        S.hub_radio_mode = _sanitize_hub_radio_mode(mod:get(setting_id))
+        return
+    end
+
+    if setting_id == "player_nonverbal_sounds_enabled" then
+        S.player_nonverbal_sounds_enabled = mod:get(setting_id) ~= false
+
+        if not mod._zipit2_applying_global_voice_preset then
+            _set_global_voice_preset("custom")
+        end
+
+        return
+    end
+
     if setting_id == "ping_sound_mode" then
         S.ping_sound_mode = _sanitize_ping_sound_mode(mod:get(setting_id))
 
@@ -321,8 +407,24 @@ function mod.on_setting_changed(setting_id)
         return
     end
 
+    if setting_id == "other_players_com_wheel_throttle_seconds" then
+        S.other_players_com_wheel_throttle_seconds = _sanitize_other_players_com_wheel_throttle_seconds(mod:get(
+            setting_id))
+        return
+    end
+
     if setting_id == "selected_wheel_option" then
         S.selected_wheel_option = _sanitize_selected_wheel_option(mod:get(setting_id))
+        return
+    end
+
+    if setting_id == "mute_bots" then
+        S.mute_bots = mod:get(setting_id) == true
+
+        if not mod._zipit2_applying_global_voice_preset then
+            _set_global_voice_preset("custom")
+        end
+
         return
     end
 

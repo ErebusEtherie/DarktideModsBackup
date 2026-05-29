@@ -464,7 +464,7 @@ function RingHudState.get_hud_data_state(ring_hud_instance)
         if not is_missile_launcher then
             if archetype_name == "ogryn"
                 and hud_state.charge_weapon_template_name
-                and string.find(hud_state.charge_weapon_template_name, "powermaul")
+                and string.find(hud_state.charge_weapon_template_name, "ogryn_powermaul_p1")
             then
                 local inv_comp_slot = unit_data_comp_access_point:read_component(wielded_slot_charge)
                 local charges = inv_comp_slot and inv_comp_slot.num_special_charges or 0

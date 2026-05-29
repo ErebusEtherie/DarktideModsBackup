@@ -1,10 +1,25 @@
 CHANGELOG
-1.15.00 Text options
+1.17.0 Expedition mission feed fix
+-- [New] New ammo reserve option for total ammo percentage
+-- [Better] Team ammo percentage now calculated using total ammo not just reserve
+-- [Better] Ammo wastage now calculated based on total carrying capacity
 
-1.15.00 Planned changes
--- [ ] Terminus Warrant changes
--- [ ] Performance pass
--- [ ] Text alignment tweaks
+1.16.1 Expedition mission feed fix
+-- [Fixed] Expedition timer not showing in some situations (assisted by Algramic)
+
+1.16.00 Fixes and polish
+-- [New] Magazine Size options to only show loaded ammo during ADS (suggested by AbbieDoobie)
+
+1.15.00 Fixes and polish
+-- [Better] Updated Terminus Warrant for Beyond the Hive
+-- [Better] Player pocketable alignment tweaks
+-- [Better] Improved visibility of ammo wastage warning (if not using Numeric UI)
+-- [Better] Streamlined popups will no longer hide expeditions zone number
+-- [Better] Redesign of localisation file
+-- [Better] Pinpointing Target max stack sound will not play if ability audio alert is Default (suggested by HappyEstus)
+-- [Fixed] Who Are You colour bug if using only account name
+-- [Fixed] Treating ALL power mauls (eg slab shield and power maul) as having a 10s chargeup
+-- [Fixed] Rare crash when trying to place nameplate HUDs on team-mates who have been deleted (reported by POLIVOX)
 
 1.14.2 Beyond the Hive first update
 -- [Fixed] Fixed ALIVE check error from Fatshark hotfix (with help from POLIVOX)

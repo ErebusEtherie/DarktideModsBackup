@@ -178,7 +178,7 @@ mod.set_mission_challenge = function(self, mission_challenge)
 	self.mission_challenge = mission_challenge
 end
 mod.set_mission_resistance = function(self, mission_resistance)
-       self.mission_resistance = mission_resistance
+	self.mission_resistance = mission_resistance
 end
 mod.set_victory_defeat = function(self, victory_defeat)
 	self.victory_defeat = victory_defeat

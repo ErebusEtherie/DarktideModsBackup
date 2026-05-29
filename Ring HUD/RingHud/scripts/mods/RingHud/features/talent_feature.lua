@@ -17,10 +17,10 @@ local TALENT_ARC_MAX          = 0.98
 -- Psyker segmented talent (Empowered Grenades)
 local PSYKER_TALENT_SEGMENTS  = 3
 
--- Adamant segmented talent (Terminus Warrant: 2 ranged + 2 melee)
-local ADAMANT_TALENT_SEGMENTS = 4
-local ADAMANT_SEGMENT_STACKS  = 15
-local ADAMANT_MAX_STACKS      = 30
+-- Adamant segmented talent (Terminus Warrant: 1 ranged + 1 melee)
+local ADAMANT_TALENT_SEGMENTS = 2
+local ADAMANT_SEGMENT_STACKS  = 20
+local ADAMANT_MAX_STACKS      = 20
 
 -- Match the dual-shivs segment gap (ChargeFeature uses SEG2_BOTTOM - SEG1_TOP).
 local SEGMENT_GAP             = 0.03
@@ -60,6 +60,10 @@ end
 
 local PSYKER_ARCS  = _compute_segment_arcs(PSYKER_TALENT_SEGMENTS)
 local ADAMANT_ARCS = _compute_segment_arcs(ADAMANT_TALENT_SEGMENTS)
+
+-- Pre-calculate Opacity Tables
+local OPACITY_DIM  = { 0.7, 0.5 }
+local OPACITY_FULL = { 1.3, 1.3 }
 
 local function _fast_hide_all(widget, style)
     local changed = false
@@ -181,7 +185,6 @@ local function _write_notched_segment(base_style, edge_style, seg_top, seg_botto
 
     fraction = math.clamp(tonumber(fraction) or 0, 0, 1)
 
-    -- Empty segments hidden
     if fraction <= EPS then
         changed = U.set_style_visible(base_style, false, changed)
         changed = U.set_style_visible(edge_style, false, changed)
@@ -237,39 +240,71 @@ end
 -- Adamant Update Logic
 -- ============================================================
 local function _update_adamant(widget, style, data, force_show, partial_outline_rgba)
-    local changed          = _hide_standard_passes(style)
-    changed                = _hide_psyker_segments(style) or changed
+    local changed        = _hide_standard_passes(style)
+    changed              = _hide_psyker_segments(style) or changed
 
-    local melee_stacks     = math.clamp(tonumber(data and data.adamant_tw_melee_stacks) or 0, 0, ADAMANT_MAX_STACKS)
-    local ranged_stacks    = math.clamp(tonumber(data and data.adamant_tw_ranged_stacks) or 0, 0, ADAMANT_MAX_STACKS)
+    local melee_stacks   = math.clamp(tonumber(data and data.adamant_tw_melee_stacks) or 0, 0, ADAMANT_MAX_STACKS)
+    local ranged_stacks  = math.clamp(tonumber(data and data.adamant_tw_ranged_stacks) or 0, 0, ADAMANT_MAX_STACKS)
 
-    -- Show gating (empty hidden)
-    local ranged_seg1_show = ranged_stacks > 0
-    local ranged_seg2_show = ranged_stacks > ADAMANT_SEGMENT_STACKS
-    local melee_seg3_show  = melee_stacks > 0
-    local melee_seg4_show  = melee_stacks > ADAMANT_SEGMENT_STACKS
+    local ranged_frac    = math.clamp(ranged_stacks / ADAMANT_MAX_STACKS, 0, 1)
+    local melee_frac     = math.clamp(melee_stacks / ADAMANT_MAX_STACKS, 0, 1)
 
-    -- Fractions per segment (0..15, 16..30)
-    local ranged_seg1_frac = math.clamp(ranged_stacks / ADAMANT_SEGMENT_STACKS, 0, 1)
-    local ranged_seg2_frac = math.clamp((ranged_stacks - ADAMANT_SEGMENT_STACKS) / ADAMANT_SEGMENT_STACKS, 0, 1)
-    local melee_seg3_frac  = math.clamp(melee_stacks / ADAMANT_SEGMENT_STACKS, 0, 1)
-    local melee_seg4_frac  = math.clamp((melee_stacks - ADAMANT_SEGMENT_STACKS) / ADAMANT_SEGMENT_STACKS, 0, 1)
+    -- Dynamic Opacity
+    local ranged_opacity = (ranged_stacks >= 20) and OPACITY_FULL or OPACITY_DIM
+    local melee_opacity  = (melee_stacks >= 20) and OPACITY_FULL or OPACITY_DIM
 
-    -- Segment 1 (ranged 0..15)
-    changed                = _write_notched_segment(style.talent_adamant_seg_1, style.talent_adamant_seg_1_edge,
-        ADAMANT_ARCS[1][1], ADAMANT_ARCS[1][2], ranged_seg1_frac, ranged_seg1_show, partial_outline_rgba, changed)
+    local function set_opacity(pass_base, pass_edge, opacity)
+        local c = false
+        if pass_base and pass_base.material_values then
+            local mv = pass_base.material_values
+            if not mv.fill_outline_opacity or mv.fill_outline_opacity[1] ~= opacity[1] or mv.fill_outline_opacity[2] ~= opacity[2] then
+                mv.fill_outline_opacity = opacity
+                c = true
+            end
+        end
+        if pass_edge and pass_edge.material_values then
+            local mv = pass_edge.material_values
+            if not mv.fill_outline_opacity or mv.fill_outline_opacity[1] ~= opacity[1] or mv.fill_outline_opacity[2] ~= opacity[2] then
+                mv.fill_outline_opacity = opacity
+                c = true
+            end
+        end
+        return c
+    end
 
-    -- Segment 2 (ranged 16..30)
-    changed                = _write_notched_segment(style.talent_adamant_seg_2, style.talent_adamant_seg_2_edge,
-        ADAMANT_ARCS[2][1], ADAMANT_ARCS[2][2], ranged_seg2_frac, ranged_seg2_show, partial_outline_rgba, changed)
+    changed = set_opacity(style.talent_adamant_seg_1, style.talent_adamant_seg_1_edge, ranged_opacity) or changed
+    changed = set_opacity(style.talent_adamant_seg_2, style.talent_adamant_seg_2_edge, melee_opacity) or changed
 
-    -- Segment 3 (melee 0..15)
-    changed                = _write_notched_segment(style.talent_adamant_seg_3, style.talent_adamant_seg_3_edge,
-        ADAMANT_ARCS[3][1], ADAMANT_ARCS[3][2], melee_seg3_frac, melee_seg3_show, partial_outline_rgba, changed)
+    -- Rendering logic wrapper to handle "force_show" preview state (empty outlines)
+    local function render_segment(base, edge, top, bottom, frac, outline_rgba)
+        if frac <= EPS then
+            if force_show then
+                local c = _restore_outline_default(base, false)
+                local mv_base = base.material_values
+                if mv_base.amount ~= 0 then
+                    mv_base.amount = 0; c = true
+                end
+                c = U.mv_set_arc(mv_base, top, bottom, c)
+                c = U.set_style_visible(base, true, c)
+                c = U.set_style_visible(edge, false, c)
+                return c
+            else
+                local c = U.set_style_visible(base, false, false)
+                c = U.set_style_visible(edge, false, c)
+                return c
+            end
+        else
+            return _write_notched_segment(base, edge, top, bottom, frac, true, outline_rgba, false)
+        end
+    end
 
-    -- Segment 4 (melee 16..30)
-    changed                = _write_notched_segment(style.talent_adamant_seg_4, style.talent_adamant_seg_4_edge,
-        ADAMANT_ARCS[4][1], ADAMANT_ARCS[4][2], melee_seg4_frac, melee_seg4_show, partial_outline_rgba, changed)
+    -- Segment 1 (ranged)
+    changed = render_segment(style.talent_adamant_seg_1, style.talent_adamant_seg_1_edge,
+        ADAMANT_ARCS[1][1], ADAMANT_ARCS[1][2], ranged_frac, partial_outline_rgba) or changed
+
+    -- Segment 2 (melee)
+    changed = render_segment(style.talent_adamant_seg_2, style.talent_adamant_seg_2_edge,
+        ADAMANT_ARCS[2][1], ADAMANT_ARCS[2][2], melee_frac, partial_outline_rgba) or changed
 
     if changed then widget.dirty = true end
 end
@@ -430,7 +465,7 @@ function TalentFeature.update(widget, hud_state, hotkey_override)
     local visible              = false
 
     if mode == "adamant_terminus_warrant" then
-        visible = (melee_stacks > 0) or (ranged_stacks > 0)
+        visible = (melee_stacks > 0) or (ranged_stacks > 0) or force_show
     elseif mode == "psyker_empowered_grenades" then
         visible = (stacks > 0) or (force_show and available)
     else
@@ -553,10 +588,10 @@ function TalentFeature.add_widgets(widget_defs, _, layout, palettes)
         }
     end
 
-    -- Adamant segmented passes (4 segments, each with a notch/edge split)
-    -- NOTE: Seg 1-2 are RANGED (active), Seg 3-4 are MELEE (inactive)
+    -- Adamant segmented passes (2 segments, each with a notch/edge split)
+    -- NOTE: Seg 1 is RANGED (active), Seg 2 is MELEE (inactive)
     for i = 1, ADAMANT_TALENT_SEGMENTS do
-        local outline = (i <= 2) and adamant_active or adamant_inactive
+        local outline = (i == 1) and adamant_active or adamant_inactive
 
         -- Base (filled)
         passes[#passes + 1] = {
@@ -579,7 +614,7 @@ function TalentFeature.add_widgets(widget_defs, _, layout, palettes)
                     glow_on_off          = 0,
                     lightning_opacity    = 0,
                     arc_top_bottom       = { TALENT_ARC_MIN, TALENT_ARC_MIN },
-                    fill_outline_opacity = { 1.3, 1.3 },
+                    fill_outline_opacity = { 0.7, 0.5 },
                     outline_color        = table.clone(outline),
                 },
             },
@@ -606,7 +641,7 @@ function TalentFeature.add_widgets(widget_defs, _, layout, palettes)
                     glow_on_off          = 0,
                     lightning_opacity    = 0,
                     arc_top_bottom       = { TALENT_ARC_MIN, TALENT_ARC_MIN },
-                    fill_outline_opacity = { 1.3, 1.3 },
+                    fill_outline_opacity = { 0.7, 0.5 },
                     outline_color        = table.clone(outline),
                 },
             },

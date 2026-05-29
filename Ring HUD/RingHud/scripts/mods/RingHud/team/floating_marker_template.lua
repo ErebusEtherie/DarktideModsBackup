@@ -142,7 +142,7 @@ end
 
 -- Robust peer id extraction for this template (no pcalls)
 local function _peer_id_for_player(player)
-    if not player then return nil end
+    if not player or player.__deleted then return nil end
 
     if type(player.peer_id) == "function" then
         local val = player:peer_id()

@@ -28,6 +28,8 @@ local BAR_MODES    = {
     ammo_clip_bar_always          = "always",
     ammo_clip_bar_text_always     = "always",
     ammo_clip_bar_forecast_always = "always",
+    ammo_clip_bar_ads             = "ads",
+    ammo_clip_bar_forecast_ads    = "ads",
     -- All others default to nil (disabled)
 }
 
@@ -40,6 +42,7 @@ local TEXT_MODES   = {
     ammo_clip_bar_text_always     = "always",
     ammo_clip_forecast_always     = "forecast_always",
     ammo_clip_bar_forecast_always = "forecast_always",
+    ammo_clip_bar_forecast_ads    = "forecast_ads",
 }
 
 local COL_HIGH     = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_HIGH
@@ -189,6 +192,7 @@ function AmmoClipFeature.update_bar(hud_element, widget, hud_state, hotkey_overr
     local changed                                            = false
     local has_latched_data                                   = _has_any_latched_clip_data(hud_element)
     local is_always_mode                                     = (mode == "always")
+    local is_ads_mode                                        = (mode == "ads")
 
     local overall_visible_normally, clip_frac_normally       = false, 0
     local current_ammo_disp_normally, max_ammo_disp_normally = 0, 0
@@ -200,12 +204,23 @@ function AmmoClipFeature.update_bar(hud_element, widget, hud_state, hotkey_overr
 
         if is_always_mode then
             overall_visible_normally = true
+        elseif is_ads_mode then
+            overall_visible_normally = hud_element._ads_active
         else
             local is_wielded = (data.wielded_slot_name == "slot_secondary")
             overall_visible_normally = is_wielded and (data.current_clip < data.max_clip)
         end
     elseif is_always_mode and has_latched_data then
         overall_visible_normally   = true
+        current_ammo_disp_normally = hud_element._latched_current_clip_ammo
+        max_ammo_disp_normally     = hud_element._latched_max_clip_ammo
+        if max_ammo_disp_normally > 0 then
+            clip_frac_normally = current_ammo_disp_normally / max_ammo_disp_normally
+        else
+            clip_frac_normally = 0
+        end
+    elseif is_ads_mode and has_latched_data then
+        overall_visible_normally   = hud_element._ads_active
         current_ammo_disp_normally = hud_element._latched_current_clip_ammo
         max_ammo_disp_normally     = hud_element._latched_max_clip_ammo
         if max_ammo_disp_normally > 0 then
@@ -340,8 +355,9 @@ function AmmoClipFeature.update_text(hud_element, widget, hud_state, hotkey_over
         return
     end
 
-    local is_forecast_mode         = (mode == "forecast" or mode == "forecast_always")
+    local is_forecast_mode         = (mode == "forecast" or mode == "forecast_always" or mode == "forecast_ads")
     local text_always              = (mode == "always" or mode == "forecast_always")
+    local text_ads                 = (mode == "forecast_ads")
     local has_latched_data         = _has_any_latched_clip_data(hud_element)
 
     local content                  = widget.content
@@ -366,6 +382,8 @@ function AmmoClipFeature.update_text(hud_element, widget, hud_state, hotkey_over
 
         if text_always then
             show_text_normally = true
+        elseif text_ads then
+            show_text_normally = hud_element._ads_active
         else
             local is_wielded = (data.wielded_slot_name == "slot_secondary")
             show_text_normally = is_wielded and (data.current_clip < data.max_clip)
@@ -375,6 +393,11 @@ function AmmoClipFeature.update_text(hud_element, widget, hud_state, hotkey_over
         max_clip_for_color_calc = hud_element._latched_max_clip_ammo
         has_valid_clip_for_text = true
         show_text_normally      = true
+    elseif text_ads and has_latched_data then
+        current_clip_for_text   = hud_element._latched_current_clip_ammo
+        max_clip_for_color_calc = hud_element._latched_max_clip_ammo
+        has_valid_clip_for_text = true
+        show_text_normally      = hud_element._ads_active
     elseif hud_element._ammo_clip_latched_low and has_latched_data then
         current_clip_for_text   = hud_element._latched_current_clip_ammo
         max_clip_for_color_calc = hud_element._latched_max_clip_ammo

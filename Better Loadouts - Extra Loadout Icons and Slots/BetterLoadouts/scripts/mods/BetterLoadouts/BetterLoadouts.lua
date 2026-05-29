@@ -80,3 +80,74 @@ function mod.on_all_mods_loaded()
         end
     end
 end
+
+-- ---------------------------------------------------------------------------
+-- Preset Reordering Logic
+-- ---------------------------------------------------------------------------
+
+mod.active_preset_element = nil
+
+-- Safely track the active UI element so we can command it to rebuild
+mod:hook_safe(CLASS.ViewElementProfilePresets, "init", function(self)
+    mod.active_preset_element = self
+end)
+
+mod:hook_safe(CLASS.ViewElementProfilePresets, "destroy", function(self)
+    if mod.active_preset_element == self then
+        mod.active_preset_element = nil
+    end
+end)
+
+local function _move_active_preset(forward)
+    -- Nil protection: Do nothing if the UI is missing, destroyed, or if they are customizing a preset
+    if not mod.active_preset_element or mod.active_preset_element:is_costumization_open() then
+        return
+    end
+
+    local ProfileUtils = require("scripts/utilities/profile_utils")
+    local presets = ProfileUtils.get_profile_presets()
+    local active_id = ProfileUtils.get_active_profile_preset_id()
+
+    -- Nil protection: Do nothing if we can't find valid data or have less than 2 presets
+    if not presets or #presets < 2 or not active_id then
+        return
+    end
+
+    -- Find the index of the currently active preset
+    local active_idx = nil
+    for i = 1, #presets do
+        if presets[i].id == active_id then
+            active_idx = i
+            break
+        end
+    end
+
+    if not active_idx then
+        return
+    end
+
+    -- Determine target index to swap with
+    local target_idx = active_idx + (forward and 1 or -1)
+
+    if target_idx >= 1 and target_idx <= #presets then
+        -- Swap the items directly in the native profile_presets table
+        local temp = presets[active_idx]
+        presets[active_idx] = presets[target_idx]
+        presets[target_idx] = temp
+
+        -- Queue a native save so the order persists across game sessions
+        Managers.save:queue_save()
+
+        -- Force the UI to destroy and recreate the buttons in the new order
+        mod.active_preset_element:_setup_preset_buttons()
+    end
+end
+
+-- Keybind target functions
+function mod.move_preset_backward()
+    _move_active_preset(false)
+end
+
+function mod.move_preset_forward()
+    _move_active_preset(true)
+end

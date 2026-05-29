@@ -36,7 +36,7 @@ local table_array_contains = table.array_contains
 -- #######
 -- Mod Locals
 -- #######
-mod.version = "1.10.2"
+mod.version = "1.11.1"
 local debug_messages_enabled
 local separate_companion_damage = {}
 local track_blitz_damage
@@ -46,6 +46,8 @@ local explosions_affect_ranged_hitrate
 local explosions_affect_melee_hitrate
 local grenade_messages
 local ammo_messages
+local expeditions_currency_pickups
+local expeditions_loot_pickups
 --[[
 local categorizable_damage_types = { 
 	--melee = mod:get("categorize_total_melee"), 
@@ -59,8 +61,9 @@ local categorizable_damage_types = {
 }
 ]]
 
-local in_match
-local is_playing_havoc
+local in_match = false
+local is_playing_havoc = false
+local is_playing_expeditions = false
 local scoreboard
 -- ammo pickup given as a percentage, such as 0.85
 -- @backup158: when not global, it had issues being the correct values when changed by havoc
@@ -98,9 +101,11 @@ local mod_environmental_damage_profiles = mod.environmental_damage_profiles
 
 local mod_states_disabled = mod.states_disabled
 local mod_optional_states_disabled = mod.optional_states_disabled
-local mod_forge_material = mod.forge_material
+-- local mod_forge_material = mod.forge_material
 local mod_ammunition = mod.ammunition
 local mod_ammunition_percentage = mod.ammunition_percentage
+local mod_expeditions_currency = mod.expeditions_currency
+local mod_expeditions_loot = mod.expeditions_loot
 
 -- Setup tables for tracking later
 -- 		to count ammo wasted
@@ -394,6 +399,27 @@ local function update_all_scoreboard_row_visibilities()
 	--replace_registered_scoreboard_value("total_melee", "setting", replace_row_with_value, "offense_tier_3")
 	--replace_registered_scoreboard_value("total_melee_damage", "setting", replace_row_with_value, "offense_tier_3")
 	--replace_registered_scoreboard_value("total_melee_kills", "setting", replace_row_with_value, "offense_tier_3")
+
+	-- ------------
+	-- Expeditions Pickup Classification
+	-- ------------
+	local currency_only_in_expeditions = mod:get("exploration_show_currency_only_in_expeditions")
+	-- @Backup158: Technically this misses the case where you track as materials, and someone picks up Salvage while not in Expeditions. Since that's impossible AFAIK, this will be good enough.
+	if (not (expeditions_currency_pickups == 1)) or 
+		(currency_only_in_expeditions and (not is_playing_expeditions))
+	then
+		change_scoreboard_row_visibility("total_expeditions_currency_pickups", false)
+	else
+		change_scoreboard_row_visibility("total_expeditions_currency_pickups", true)
+	end
+	local loot_only_in_expeditions = mod:get("exploration_show_loot_only_in_expeditions")
+	if (not (expeditions_loot_pickups == 1)) or
+		(loot_only_in_expeditions and (not is_playing_expeditions))
+	then
+		change_scoreboard_row_visibility("total_expeditions_loot_pickups", false)
+	else
+		change_scoreboard_row_visibility("total_expeditions_loot_pickups", true)
+	end
 end
 
 local function set_locals_for_settings()
@@ -408,6 +434,8 @@ local function set_locals_for_settings()
 	separate_companion_damage.damage = "total_"..separate_companion_damage.base.."_damage"
 	grenade_messages = mod:get("grenade_messages")
 	ammo_messages = mod:get("ammo_messages")
+	expeditions_currency_pickups = mod:get("exploration_track_currency")
+	expeditions_loot_pickups = mod:get("exploration_track_loot")
 
 	-- Error check for companion damage row
 	if mod:get("enable_companion_blitz_warning")
@@ -431,6 +459,12 @@ function mod.on_setting_changed(setting_id)
 		return
 	end
 	]]
+	-- @Backup158: Ugly manual check for data tables.
+	if setting_id == "exploration_player_loot_value" then
+		mod.expeditions_loot["loc_expeditions_pickup_loot_player_drop"]["amount"] = mod:get(setting_id)
+		-- Refresh cache
+		mod_expeditions_loot = mod.expeditions_loot
+	end
 end
 
 -- ############
@@ -615,6 +649,44 @@ function mod.on_all_mods_loaded()
 								echo_or_info_message_based_on_debug(uncategorized_ammo_pickup_message)
 							end -- Close If chain: ammo identification
 						end -- Close If: ammo is expedition pocketable
+					-- Expeditions Salvage
+					elseif interaction_type == "expeditions_currency" then
+						-- @Backup158: Hey, it's the magic numbers I've been taught to not use!
+						-- This was a lazy way to allow a dropdown without checking string values, or creating tables all willy nilly
+						if mod:get("exploration_track_currency") > 0 then
+							local currency_description = self._override_contexts.expeditions_currency.description
+							local currency_table = mod_expeditions_currency[currency_description]
+							local currency_amount = 0
+							if currency_table then 
+								currency_amount = currency_table.amount or 0
+							end
+
+							scoreboard:update_stat("total_expeditions_currency_pickups", account_id, currency_amount)
+							if mod:get("exploration_track_currency") == 2 then
+								-- This will be inaccurate if you toggle it midgame, but if you do that then uh... go fuck yourself
+								scoreboard:update_stat("total_material_pickups", account_id, 1)
+							end
+						end
+					-- Expeditions Tech-Remnants
+					elseif interaction_type == "expeditions_loot" then
+						if mod:get("exploration_track_loot") > 0 then
+							local loot_description = self._override_contexts.expeditions_loot.description
+							-- if loot_description == "loc_expeditions_pickup_loot_player_drop" then mod:echo("meow. player drop pickup! :3c") end
+							local loot_table = mod_expeditions_loot[loot_description]
+							local loot_amount = 0
+							if loot_table then
+								loot_amount = loot_table.amount or 0
+							else
+								echo_or_info_message_based_on_debug("Picked up: "..loot_description)
+							end
+
+							scoreboard:update_stat("total_expeditions_loot_pickups", account_id, loot_amount)
+							if mod:get("exploration_track_loot") == 2 then
+								scoreboard:update_stat("total_material_pickups", account_id, 1)
+							end
+						end
+					else
+						-- mod:echo("InteracteeExtension stopped: "..interaction_type)
 					end
 				end
 			end
@@ -1012,6 +1084,7 @@ function mod.on_all_mods_loaded()
 					-- Categorizing which enemy was damaged
 					-- ------------------------
 					--[[
+					-- @Backup158
 					-- TODO maybe this could be a switch
 					-- 	eh that doesn't really work since you can't match the case exactly
 					-- 	and looping would require string operations, which is worse for performance for no real gain
@@ -1124,6 +1197,17 @@ function mod.on_game_state_changed(status, state_name)
 			mod:info("Havoc ammo modifier: "..tostring(mod.ammunition_pickup_modifier))
 		else
 			mod.ammunition_pickup_modifier = 1 
+		end
+		
+		-- local expeditions_extension = Managers.state.game_mode:game_mode():extension("expedition") -- does not work
+		-- local Expedition = class("Expedition") -- happens every time
+		-- @Backup158: It seems this game mode check doesn't work for Havoc, since the game code still uses the old way (shown above)
+		local game_mode_name = Managers.state.game_mode:game_mode_name()
+		if game_mode_name == "expedition" then
+			-- mod:echo("playing EXPEDITIONS!")
+			is_playing_expeditions = true
+		else
+			is_playing_expeditions = false
 		end
 	else
 		in_match = false

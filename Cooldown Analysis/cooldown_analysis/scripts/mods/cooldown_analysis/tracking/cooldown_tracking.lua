@@ -132,15 +132,42 @@ function mod.bar_color(entry, is_psyker)
 end
 
 -- ===== Death detection =====
--- When the local player is knocked down or dies, any pending cooldown
--- is orphaned (silently dropped). Without this, the cooldown resumes
--- ticking after respawn and completes at a wildly inflated duration.
+-- When the local player dies, any pending cooldown is orphaned (silently dropped).
+-- Knockdown is NOT orphaned because cooldowns tick normally during knockdown.
+-- Death while knocked down sends a separate "died" event which is caught here.
+--
+-- Two layers of protection:
+--   1. PlayerCharacterStateDead.on_enter — fires for ALL death causes including
+--      environmental (falling, drowning, etc.) that bypass the attack result system.
+--   2. AttackReportManager._process_attack_result "died" — backup for cases where
+--      the state hook fires late or out of order.
+--   3. Duration cap in the completion check — final safety net.
+
+local MAX_VALID_DURATION = 120.0  -- seconds; the longest base combat ability cooldown is ~80s,
+                                  -- so anything over 120s is certainly a death artifact.
 
 local function is_local_player(unit)
     local player = Managers.player:local_player(1)
     return player and unit == player.player_unit
 end
 
+local function orphan_on_death(reason)
+    if not state.active then return end
+    if not state.pending_use then return end
+    debug(string.format("Use #%d orphaned: %s.", state.pending_use.use_number, reason))
+    state.pending_use   = nil
+    state.last_cooldown = nil
+end
+
+-- Layer 1: direct state hook — catches all death types
+mod:hook_safe(CLASS.PlayerCharacterStateDead, "on_enter", function(self, ...)
+    local ok, unit = pcall(function() return self._unit end)
+    if ok and is_local_player(unit) then
+        orphan_on_death("player entered dead state")
+    end
+end)
+
+-- Layer 2: attack result hook — backup
 local AttackSettings = mod:original_require("scripts/settings/damage/attack_settings")
 local attack_results = AttackSettings.attack_results
 
@@ -151,14 +178,11 @@ mod:hook_safe(CLASS.AttackReportManager, "_process_attack_result", function(self
     local ok, relevant = pcall(function()
         local attacked_unit = buffer_data.attacked_unit
         if not is_local_player(attacked_unit) then return false end
-        local attack_result = buffer_data.attack_result
-        return attack_result == attack_results.died
+        return buffer_data.attack_result == attack_results.died
     end)
 
     if ok and relevant then
-        debug(string.format("Use #%d orphaned: player died.", state.pending_use.use_number))
-        state.pending_use   = nil
-        state.last_cooldown = nil   -- reset so post-respawn cooldown isn't misread
+        orphan_on_death("died result in attack report")
     end
 end)
 
@@ -209,21 +233,31 @@ mod:hook_safe(CLASS.HudElementPlayerBuffs, "_update_buffs", function(self)
     if last ~= nil and last > 0 and cooldown == 0 then
         if state.pending_use then
             local duration = now - state.pending_use.use_time
-            local flagged  = duration < FLAG_THRESHOLD
 
-            local entry = {
-                use_number   = state.pending_use.use_number,
-                souls_stacks = state.pending_use.souls_stacks,
-                duration     = duration,
-                flagged      = flagged,
-            }
-            state.uses[#state.uses + 1] = entry
-            state.pending_use = nil
+            -- Layer 3 safety net: anything over MAX_VALID_DURATION is a death
+            -- artifact that slipped past the death hooks (e.g. environmental kill).
+            if duration > MAX_VALID_DURATION then
+                debug(string.format(
+                    "Use #%d orphaned: duration %.1fs exceeds cap of %.0fs (death artifact).",
+                    state.pending_use.use_number, duration, MAX_VALID_DURATION
+                ))
+                state.pending_use = nil
+            else
+                local flagged = duration < FLAG_THRESHOLD
+                local entry = {
+                    use_number   = state.pending_use.use_number,
+                    souls_stacks = state.pending_use.souls_stacks,
+                    duration     = duration,
+                    flagged      = flagged,
+                }
+                state.uses[#state.uses + 1] = entry
+                state.pending_use = nil
 
-            debug(string.format(
-                "Use #%d complete: %.2fs%s",
-                entry.use_number, duration, flagged and " [FLAGGED]" or ""
-            ))
+                debug(string.format(
+                    "Use #%d complete: %.2fs%s",
+                    entry.use_number, duration, flagged and " [FLAGGED]" or ""
+                ))
+            end
         end
     end
 

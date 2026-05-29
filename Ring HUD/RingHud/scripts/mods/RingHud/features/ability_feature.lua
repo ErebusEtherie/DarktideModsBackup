@@ -30,6 +30,31 @@ local function has_no_ability_charges_for_timer_fallback()
     return remaining_charges == nil or remaining_charges == 0
 end
 
+local function _timer_buff_dropdown()
+    return mod._settings and mod._settings.timer_buff_dropdown or "disabled"
+end
+
+local function _timer_cd_dropdown()
+    return mod._settings and mod._settings.timer_cd_dropdown or "single"
+end
+
+mod.ringhud_timer_buff_enabled_for_ability = function()
+    local setting = _timer_buff_dropdown()
+    return setting == "ability" or setting == "all"
+end
+
+mod.ringhud_timer_buff_enabled_for_broker_decay_alert = function()
+    return _timer_buff_dropdown() == "all"
+end
+
+mod.ringhud_timer_cd_enabled = function()
+    return _timer_cd_dropdown() ~= "disabled"
+end
+
+mod.ringhud_timer_cd_mode = function()
+    return _timer_cd_dropdown()
+end
+
 -- Subsecond throttling: only allow updates every 0.1s
 local function _allow_subsecond_update(widget, t)
     local last = widget._ringhud_last_subsec_update_t or 0
@@ -202,13 +227,12 @@ function AbilityFeature.update(widget, hud_state, _hotkey_override)
     end
 
     local data = hud_state.timer_data or {}
-    local mode = mod._settings.timer_cd_dropdown or "single"
+    local mode = mod.ringhud_timer_cd_mode()
 
     ----------------------------------------------------------------
     -- 1) Buff timer always has priority (when enabled)
     ----------------------------------------------------------------
-    local setting = mod._settings and mod._settings.timer_buff_dropdown
-    local buff_enabled = (setting == "ability" or setting == "all")
+    local buff_enabled = mod.ringhud_timer_buff_enabled_for_ability()
 
     if buff_enabled == true
         and (data.buff_timer_value or 0) > 0

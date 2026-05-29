@@ -4,10 +4,6 @@ if not mod then return end
 
 --[[
 options_builders.lua – helper builders for DMF dropdowns: pre-tints rule labels and supplies rule lists.
-
-Updated:
-• Removed stack widgets and sound options.
-• Updated builders to aggregate from the flat prefs structure.
 ]]
 
 -- Ensure prefs helpers are available even when DMF loads the data file first
@@ -121,4 +117,8 @@ end
 
 function mod.get_misc_buff_options()
     return _get_options_for_group("misc")
+end
+
+function mod.get_mood_options()
+    return _get_options_for_group("moods")
 end

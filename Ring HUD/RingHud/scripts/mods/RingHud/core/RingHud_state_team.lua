@@ -23,6 +23,7 @@ local PV            = mod:io_dofile("RingHud/scripts/mods/RingHud/context/pocket
 
 local UIHudSettings = require("scripts/settings/ui/ui_hud_settings")
 local UISettings    = require("scripts/settings/ui/ui_settings")
+local Ammo          = require("scripts/utilities/ammo")
 
 local Assist        = rawget(mod, "_assist_module")
 if Assist == nil then
@@ -93,7 +94,7 @@ local function _player_for_unit(unit)
 end
 
 local function _safe_profile(player)
-    if not player then return nil end
+    if not player or player.__deleted then return nil end
     if type(player.profile) == "function" then
         return player:profile()
     end
@@ -109,7 +110,7 @@ local function _uds(unit)
 end
 
 local function _is_human_from_player(player)
-    if not player then return false end
+    if not player or player.__deleted then return false end
     if player.is_human_controlled then
         return player:is_human_controlled()
     end
@@ -149,18 +150,28 @@ end
 -- Ammo helpers (handle scalar or array-style reserves safely)
 -------------------------------------------------------------------------------
 
-local function _secondary_reserve_frac_for_unit(unit)
+local function _secondary_total_ammo_frac_for_unit(unit)
     local uds = _uds(unit)
     if not uds then return nil end
 
     local comp = uds:read_component("slot_secondary")
     if not comp then return nil end
 
-    local cur = U.sum_ammo_field(comp.current_ammunition_reserve)
-    local max = U.sum_ammo_field(comp.max_ammunition_reserve)
+    local cur_res = U.sum_ammo_field(comp.current_ammunition_reserve)
+    local max_res = U.sum_ammo_field(comp.max_ammunition_reserve)
 
-    if max and max > 0 then
-        return math_clamp(cur / max, 0, 1)
+    local cur_clip = 0
+    local max_clip = 0
+    if comp.current_ammunition_clip and comp.max_ammunition_clip then
+        cur_clip = Ammo.current_ammo_in_clips(comp) or 0
+        max_clip = Ammo.max_ammo_in_clips(comp) or 0
+    end
+
+    local total_cur = cur_res + cur_clip
+    local total_max = max_res + max_clip
+
+    if total_max and total_max > 0 then
+        return math_clamp(total_cur / total_max, 0, 1)
     end
 
     return nil
@@ -212,9 +223,9 @@ local function _team_ammo_need()
         local players = pm:players()
         if players then
             for _, p in pairs(players) do
-                local u = p and p.player_unit
+                local u = p and not p.__deleted and p.player_unit
                 if u and Unit.alive(u) then
-                    local frac = _secondary_reserve_frac_for_unit(u)
+                    local frac = _secondary_total_ammo_frac_for_unit(u)
                     if frac ~= nil then
                         sum = sum + frac
                         n   = n + 1
@@ -329,7 +340,7 @@ function RingHud_state_team.build(unit, marker, opts)
     ----------------------------------------------------------------
     -- Counters (ammo reserve %, ability cooldown seconds).
     ----------------------------------------------------------------
-    local reserve_frac = _secondary_reserve_frac_for_unit(unit)
+    local reserve_frac = _secondary_total_ammo_frac_for_unit(unit)
 
     if pid then
         local prev = _prev_reserve_frac_by_pid[pid]

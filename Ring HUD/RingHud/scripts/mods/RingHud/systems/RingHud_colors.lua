@@ -122,6 +122,7 @@ mod.PALETTE_RGBA1    = {
 --      marker.data:slot() (preferred) or player:slot() if marker missing.
 --   3) Fallback to GENERIC_WHITE.
 function mod.team_slot_tint_argb(player, marker)
+    if player and player.__deleted then return mod.PALETTE_ARGB255.GENERIC_WHITE end
     -- (1) explicit color attached to player
     if type(player) == "table" then
         local c = rawget(player, "color")

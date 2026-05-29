@@ -1,10 +1,7 @@
 local mod            = get_mod("AutoMark")
 local Breed          = require("scripts/utilities/breed")
-local breeds         = require("scripts/settings/breed/breeds")
-local archetypes     = require("scripts/settings/archetype/archetypes")
-
-local Localize       = Localize
-local string         = string
+local Breeds         = require("scripts/settings/breed/breeds")
+local Archetypes     = require("scripts/settings/archetype/archetypes")
 
 local elite_widget   = {
     setting_id    = "toggle_elite",
@@ -40,10 +37,13 @@ local function create_breed_priority_dropdown(breed_name, default_value)
         type = "dropdown",
         default_value = default_value,
         options = {
-            { text = "priority_off",    value = 0 },
-            { text = "priority_low",    value = 1 },
-            { text = "priority_medium", value = 2 },
-            { text = "priority_high",   value = 3 },
+            { text = "priority_off",     value = 0 },
+            { text = "priority_lowest",  value = 1 },
+            { text = "priority_low",     value = 2 },
+            { text = "priority_medium",  value = 3 },
+            { text = "priority_high",    value = 4 },
+            { text = "priority_highest", value = 5 },
+
         }
     }
     return breed_priority_setting
@@ -54,29 +54,28 @@ local special_priorities = {}
 local boss_priorities    = {}
 local other_priorities   = {}
 
-for breed_name, breed_data in pairs(breeds) do
+for breed_name, breed_data in pairs(Breeds) do
     if Breed.is_minion(breed_data) then
         if breed_data.tags.elite then
-            elite_priorities[#elite_priorities + 1] = create_breed_priority_dropdown(breed_name, 1)
+            elite_priorities[#elite_priorities + 1] = create_breed_priority_dropdown(breed_name, 3)
         elseif breed_data.tags.special then
-            special_priorities[#special_priorities + 1] = create_breed_priority_dropdown(breed_name, 2)
+            special_priorities[#special_priorities + 1] = create_breed_priority_dropdown(breed_name, 3)
         elseif breed_data.is_boss then
             boss_priorities[#boss_priorities + 1] = create_breed_priority_dropdown(breed_name, 3)
-        elseif breed_data.smart_tag_target_type == "breed" then
-            other_priorities[#other_priorities + 1] = create_breed_priority_dropdown(breed_name, 1)
+        elseif breed_data.smart_tag_target_type == "breed" and breed_data.faction_name ~= "imperium" then
+            other_priorities[#other_priorities + 1] = create_breed_priority_dropdown(breed_name, 3)
         end
     end
 end
 
 local get_breed_localization = function(breed_name)
-    local breed_data = breeds[breed_name]
+    local breed_data = Breeds[breed_name]
     if breed_data.is_boss then
-        return
-            Localize(
-                type(breed_data.boss_display_name) == "string"
-                and breed_data.boss_display_name
-                or breed_data.display_name
-            )
+        return Localize(
+            type(breed_data.boss_display_name) == "string"
+            and breed_data.boss_display_name
+            or breed_data.display_name
+        )
     else
         local text = Localize(breed_data.display_name)
         if string.find(breed_name, "mutator") then
@@ -106,7 +105,7 @@ local class_options = {
     { text = "veteran_focus_target", value = "veteran_focus_target" },
 }
 
-for class_name, _ in pairs(archetypes) do
+for class_name, _ in pairs(Archetypes) do
     class_options[#class_options + 1] = { text = class_name, value = class_name }
 end
 
@@ -172,6 +171,16 @@ local widgets = {
                 default_value = false,
                 sub_widgets   = {
                     {
+                        setting_id    = "companion_cancel_mark_human",
+                        type          = "checkbox",
+                        default_value = false,
+                    },
+                    {
+                        setting_id    = "companion_cancel_mark_non_human",
+                        type          = "checkbox",
+                        default_value = false,
+                    },
+                    {
                         setting_id      = "companion_health_threshold",
                         type            = "numeric",
                         default_value   = 0,
@@ -179,10 +188,11 @@ local widgets = {
                         decimals_number = 2
                     },
                     {
-                        setting_id    = "companion_time_threshold",
-                        type          = "numeric",
-                        default_value = 0,
-                        range         = { 0, 25 },
+                        setting_id      = "companion_time_threshold",
+                        type            = "numeric",
+                        default_value   = 0,
+                        range           = { 0, 25 },
+                        decimals_number = 1
                     },
                 }
             },
@@ -207,6 +217,18 @@ local widgets = {
                 setting_id    = "focus_target_switch",
                 type          = "checkbox",
                 default_value = false,
+                sub_widgets   = {
+                    {
+                        setting_id    = "focus_target_switch_melee",
+                        type          = "checkbox",
+                        default_value = false,
+                    },
+                    {
+                        setting_id    = "focus_target_switch_range",
+                        type          = "checkbox",
+                        default_value = false,
+                    },
+                }
             }
         }
     },
@@ -242,6 +264,12 @@ local widgets = {
                 default_value = true
             },
             {
+                setting_id    = "min_range",
+                type          = "numeric",
+                default_value = 0,
+                range         = { 0, 100 },
+            },
+            {
                 setting_id    = "max_range",
                 type          = "numeric",
                 default_value = 100,
@@ -272,8 +300,9 @@ local widgets = {
                 type          = "dropdown",
                 default_value = "blank",
                 options       = {
-                    { text = "apply", value = "apply" },
-                    { text = "blank", value = "blank" },
+                    { text = "blank",           value = "blank" },
+                    { text = "apply_to_all",    value = "apply_to_all" },
+                    { text = "apply_to_normal", value = "apply_to_normal" },
                 }
             },
         }
@@ -287,8 +316,9 @@ local widgets = {
                 type          = "dropdown",
                 default_value = "blank",
                 options       = {
-                    { text = "blank", value = "blank" },
-                    { text = "reset", value = "reset" },
+                    { text = "blank",         value = "blank" },
+                    { text = "reset_all",     value = "reset_all" },
+                    { text = "reset_current", value = "reset_current" },
                 }
             },
         }

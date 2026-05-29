@@ -7,6 +7,7 @@ local ReassuranceSystem     = {}
 local Pickups               = require("scripts/settings/pickup/pickups")
 local UISettings            = require("scripts/settings/ui/ui_settings")
 local Color                 = require("scripts/utilities/ui/colors")
+local Ammo                  = require("scripts/utilities/ammo")
 local U                     = mod.utils or mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
 
 -- Localization keys for interactions that should trigger HUD "nudges".
@@ -31,106 +32,6 @@ local WASTAGE_PICKUP_BY_LOC = {
     loc_pickup_consumable_large_clip_01 = "large_clip",
     loc_pickup_deployable_ammo_crate_01 = "ammo_cache_deployable",
 }
-
-----------------------------------------------------------------
--- Font handling:
--- We cannot apply different font_type per substring via markup (only color/size/reset),
--- so we apply machine_medium to the whole widget ONLY while our wastage suffix is shown,
--- and restore the original font when not shown. We also bump font_size slightly.
-----------------------------------------------------------------
-local function _update_base_font_if_inactive(widget)
-    if not (widget and widget.style and widget.content) then return end
-    if widget.content._ringhud_machine_medium_active then
-        return
-    end
-
-    widget.content._ringhud_base_fonts = widget.content._ringhud_base_fonts or {}
-    local base = widget.content._ringhud_base_fonts
-
-    local function capture(key)
-        local s = widget.style[key]
-        if s then
-            base[key] = base[key] or {}
-            base[key].font_type = s.font_type
-            base[key].font_size = s.font_size
-        end
-    end
-
-    capture("text")
-    capture("text_style")
-end
-
-local function _apply_machine_medium_with_bump(widget)
-    if not (widget and widget.style and widget.content) then return false end
-
-    _update_base_font_if_inactive(widget)
-
-    local base = widget.content._ringhud_base_fonts
-    if not base then return false end
-
-    local did  = false
-    local bump = 2
-
-    local function apply(key)
-        local s = widget.style[key]
-        local b = base[key]
-        if not (s and b) then return end
-
-        if s.font_type ~= "machine_medium" then
-            s.font_type = "machine_medium"
-            did = true
-        end
-
-        local base_size = tonumber(b.font_size) or tonumber(s.font_size) or 20
-        local want_size = base_size + bump
-
-        if type(s.font_size) ~= "number" or s.font_size ~= want_size then
-            s.font_size = want_size
-            did = true
-        end
-    end
-
-    apply("text")
-    apply("text_style")
-
-    widget.content._ringhud_machine_medium_active = true
-    return did
-end
-
-local function _restore_base_font(widget)
-    if not (widget and widget.style and widget.content) then return false end
-    if not widget.content._ringhud_machine_medium_active then return false end
-
-    local base = widget.content._ringhud_base_fonts
-    if not base then
-        widget.content._ringhud_machine_medium_active = nil
-        return false
-    end
-
-    local did = false
-
-    local function restore(key)
-        local s = widget.style[key]
-        local b = base[key]
-        if not (s and b) then return end
-
-        if b.font_type and s.font_type ~= b.font_type then
-            s.font_type = b.font_type
-            did = true
-        end
-
-        if b.font_size and s.font_size ~= b.font_size then
-            s.font_size = b.font_size
-            did = true
-        end
-    end
-
-    restore("text")
-    restore("text_style")
-
-    widget.content._ringhud_machine_medium_active = nil
-    return did
-end
 
 ----------------------------------------------------------------
 -- Suffix helpers
@@ -168,6 +69,58 @@ local function _apply_suffix(widget, base_text, suffix)
 end
 
 ----------------------------------------------------------------
+-- Background Color override:
+-- Changes the interaction prompt background to red when ammo will be wasted.
+----------------------------------------------------------------
+local function _set_input_background_color(background_widget, to_red)
+    if not background_widget then return false end
+    local content = background_widget.content
+    if not content then return false end
+
+    local changed = false
+
+    local function _apply_to_style(style_id)
+        local style = background_widget.style and background_widget.style[style_id]
+        if not style or not style.color then return end
+
+        content._ringhud_base_bg_colors = content._ringhud_base_bg_colors or {}
+        if not content._ringhud_base_bg_colors[style_id] then
+            local c = style.color
+            content._ringhud_base_bg_colors[style_id] = { c[1], c[2], c[3], c[4] }
+        end
+
+        local current_c = style.color
+        local base_c = content._ringhud_base_bg_colors[style_id]
+
+        -- Switch to a distinct red, maintaining original alpha
+        local target_c = to_red and { base_c[1], 200, 0, 0 } or base_c
+
+        if current_c[1] ~= target_c[1] or current_c[2] ~= target_c[2] or current_c[3] ~= target_c[3] or current_c[4] ~= target_c[4] then
+            current_c[1] = target_c[1]
+            current_c[2] = target_c[2]
+            current_c[3] = target_c[3]
+            current_c[4] = target_c[4]
+            changed = true
+        end
+    end
+
+    _apply_to_style("input_background")
+    _apply_to_style("input_background_slim")
+
+    return changed
+end
+
+local function _clear_wastage_visuals(widget, bg_widget)
+    if widget then
+        local base = _strip_previous_suffix(widget)
+        _apply_suffix(widget, base, "")
+    end
+    if bg_widget and _set_input_background_color(bg_widget, false) then
+        bg_widget.dirty = true
+    end
+end
+
+----------------------------------------------------------------
 -- Interaction description icon override:
 -- When minimal objective feed is enabled and the interactee is a player unit,
 -- replace the vanilla hardcoded glyph "" with the player's archetype glyph.
@@ -188,7 +141,7 @@ local function _apply_player_archetype_glyph_to_description(self, interactee_uni
     end
 
     local interactee_player = pm:player_by_unit(interactee_unit)
-    if not interactee_player then
+    if not interactee_player or interactee_player.__deleted then
         return
     end
 
@@ -263,47 +216,27 @@ function ReassuranceSystem.init()
         end
 
         local widget = self._widgets_by_name and self._widgets_by_name.interact_text
-        if widget then
-            _update_base_font_if_inactive(widget)
-        end
+        local bg_widget = self._widgets_by_name and self._widgets_by_name.background
 
         -- Ammo wastage text: only when NumericUI is NOT installed and minimal objective feed is enabled
         if local_mod._numeric_ui_installed
             or not (local_mod._settings and local_mod._settings.minimal_objective_feed_enabled)
         then
-            if widget then
-                local base = _strip_previous_suffix(widget)
-                _apply_suffix(widget, base, "")
-                if _restore_base_font(widget) then
-                    widget.dirty = true
-                end
-            end
+            _clear_wastage_visuals(widget, bg_widget)
             return
         end
 
         -- Respect: ammo_reserve_disabled => no wastage text at all
         local ammo_reserve_dropdown = local_mod._settings and local_mod._settings.ammo_reserve_dropdown
         if ammo_reserve_dropdown == "ammo_reserve_disabled" then
-            if widget then
-                local base = _strip_previous_suffix(widget)
-                _apply_suffix(widget, base, "")
-                if _restore_base_font(widget) then
-                    widget.dirty = true
-                end
-            end
+            _clear_wastage_visuals(widget, bg_widget)
             return
         end
 
         -- Only compute wastage for: small clip, large clip, deployable ammo crate
         local pickup_name = WASTAGE_PICKUP_BY_LOC[hud_description]
         if not pickup_name or not widget then
-            if widget then
-                local base = _strip_previous_suffix(widget)
-                _apply_suffix(widget, base, "")
-                if _restore_base_font(widget) then
-                    widget.dirty = true
-                end
-            end
+            _clear_wastage_visuals(widget, bg_widget)
             return
         end
 
@@ -311,35 +244,38 @@ function ReassuranceSystem.init()
         local base_text = _strip_previous_suffix(widget)
 
         local player = Managers.player:local_player_safe(1)
-        local unit = player and player.player_unit
+        local unit = player and not player.__deleted and player.player_unit
         if not (unit and Unit.alive(unit)) then
-            _apply_suffix(widget, base_text, "")
-            if _restore_base_font(widget) then widget.dirty = true end
+            _clear_wastage_visuals(widget, bg_widget)
             return
         end
 
         local unit_data_ext = ScriptUnit.has_extension(unit, "unit_data_system")
             and ScriptUnit.extension(unit, "unit_data_system")
         if not unit_data_ext then
-            _apply_suffix(widget, base_text, "")
-            if _restore_base_font(widget) then widget.dirty = true end
+            _clear_wastage_visuals(widget, bg_widget)
             return
         end
 
         -- Secondary slot only (RingHud's ammo reserve feature is secondary slot-based)
         local component = unit_data_ext:read_component("slot_secondary")
         if not component then
-            _apply_suffix(widget, base_text, "")
-            if _restore_base_font(widget) then widget.dirty = true end
+            _clear_wastage_visuals(widget, bg_widget)
             return
         end
 
         local cur_res = U.sum_ammo_field(component.current_ammunition_reserve)
         local max_res = U.sum_ammo_field(component.max_ammunition_reserve)
 
+        local cur_clip = 0
+        local max_clip = 0
+        if component.current_ammunition_clip and component.max_ammunition_clip then
+            cur_clip = Ammo.current_ammo_in_clips(component) or 0
+            max_clip = Ammo.max_ammo_in_clips(component) or 0
+        end
+
         if not (max_res and max_res > 0) then
-            _apply_suffix(widget, base_text, "")
-            if _restore_base_font(widget) then widget.dirty = true end
+            _clear_wastage_visuals(widget, bg_widget)
             return
         end
 
@@ -353,8 +289,7 @@ function ReassuranceSystem.init()
         local ammo_amount_func = pickup_src and pickup_src.ammo_amount_func
 
         if type(ammo_amount_func) ~= "function" then
-            _apply_suffix(widget, base_text, "")
-            if _restore_base_font(widget) then widget.dirty = true end
+            _clear_wastage_visuals(widget, bg_widget)
             return
         end
 
@@ -372,20 +307,16 @@ function ReassuranceSystem.init()
             offer_fraction = 1 * diff_ammo_mod
         end
 
-        -- Offer bullets in terms of RESERVE for wastage calculations.
-        -- For deployable ammo crate, pass max_ammo_clip=0 so the “100%” concept is reserve-only.
-        local offer_bullets = ammo_amount_func(max_res, 0, pickup_data) or 0
+        local offer_bullets = ammo_amount_func(max_res, max_clip, pickup_data) or 0
         offer_bullets = math.floor(offer_bullets + 0.5)
 
         if offer_bullets <= 0 then
-            _apply_suffix(widget, base_text, "")
-            if _restore_base_font(widget) then widget.dirty = true end
+            _clear_wastage_visuals(widget, bg_widget)
             return
         end
 
         if type(local_mod.ammo_reserve_wastage_string_for_offer) ~= "function" then
-            _apply_suffix(widget, base_text, "")
-            if _restore_base_font(widget) then widget.dirty = true end
+            _clear_wastage_visuals(widget, bg_widget)
             return
         end
 
@@ -394,23 +325,17 @@ function ReassuranceSystem.init()
             max_res,
             offer_bullets,
             ammo_reserve_dropdown,
-            offer_fraction
+            offer_fraction,
+            cur_clip,
+            max_clip
         )
         if suffix == nil then suffix = "" end
 
-        -- If we are showing our suffix, apply machine_medium (cannot apply per-substring);
-        -- otherwise restore base font.
-        if suffix ~= "" then
-            if _apply_machine_medium_with_bump(widget) then
-                widget.dirty = true
-            end
-        else
-            if _restore_base_font(widget) then
-                widget.dirty = true
-            end
-        end
-
         _apply_suffix(widget, base_text, suffix)
+
+        if bg_widget and _set_input_background_color(bg_widget, suffix ~= "") then
+            bg_widget.dirty = true
+        end
     end)
 end
 

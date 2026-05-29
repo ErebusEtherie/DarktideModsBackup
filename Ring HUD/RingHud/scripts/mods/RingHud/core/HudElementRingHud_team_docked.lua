@@ -17,7 +17,7 @@ local Definitions                   = W.build_definitions()
 local HudElementRingHud_team_docked = class("HudElementRingHud_team_docked", "HudElementBase")
 
 local function _peer_id(player)
-    if not player then return nil end
+    if not player or player.__deleted then return nil end
     if type(player.peer_id) == "function" then
         return player:peer_id()
     end
@@ -65,7 +65,7 @@ local function _update_loadout_monitor_widget(self, lm_mod, loadout_w, dt, t, pl
     end
 
     -- LoadoutMonitor intentionally ignores bots; we should force-hide in that case
-    if type(player.is_human_controlled) == "function" and not player:is_human_controlled() then
+    if player.__deleted or (type(player.is_human_controlled) == "function" and not player:is_human_controlled()) then
         self:_set_widget_visible(loadout_w, false, ui_renderer)
         loadout_w.visible = false
         return
@@ -170,7 +170,7 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
         local any_respawns = false
         for i = 1, #players do
             local p        = players[i]
-            local ally_tbl = RingHud_state_team.build(p and p.player_unit, nil, {
+            local ally_tbl = RingHud_state_team.build(p and not p.__deleted and p.player_unit, nil, {
                 player     = p,
                 t          = t,
                 force_show = force_show_team,
@@ -210,7 +210,7 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
             name_w._ringhud_is_team_tile = true
 
             local player = players[i]
-            if not player then
+            if not player or player.__deleted then
                 tile_w.visible = false
                 name_w.visible = false
                 goto continue
@@ -267,7 +267,7 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
         if loadout_w then loadout_w._ringhud_is_team_tile = true end
 
         local player = players[i]
-        if not player then
+        if not player or player.__deleted then
             tile_w.visible = false
             name_w.visible = false
             if loadout_w then

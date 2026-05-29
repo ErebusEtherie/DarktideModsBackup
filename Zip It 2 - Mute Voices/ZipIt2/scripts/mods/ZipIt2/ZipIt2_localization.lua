@@ -10,7 +10,7 @@ return {
     },
 
     briefing_mute_mode_name = {
-        en = "Disable Briefings for Faster Valkyrie",
+        en = " Disable Briefings for Faster Valkyrie",
     },
     briefing_mute_mode_lobby_only = {
         en = "Disable Mission Start Briefings",
@@ -19,11 +19,18 @@ return {
         en = "Disable Backfill Mission Briefings",
     },
 
+    mute_bots_name = {
+        en = "Mute Bots",
+    },
+
+    other_players_com_wheel_throttle_seconds = {
+        en = " Com Wheel Cooldown",
+    },
     selected_wheel_option_hotkey_name = {
-        en = "Communication Wheel Hotkey",
+        en = " Com Wheel Hotkey",
     },
     selected_wheel_option_name = {
-        en = "Communication Wheel Option",
+        en = "     Com Wheel Option",
     },
 
     male = {

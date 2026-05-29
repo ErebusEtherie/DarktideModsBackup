@@ -158,10 +158,6 @@ return {
         en = highlight("Hold dodge key") .. " to perform " .. highlight("continuous dodge") .. ".",
         ["zh-cn"] = highlight("按住闪避键") .. "以进行" .. highlight("连续闪避") .. "。",
     },
-    movement_settings = {
-        en = "Movement Settings",
-        ["zh-cn"] = "移动设置",
-    },
     crouch_settings = {
         en = "Crouch Settings",
         ["zh-cn"] = "蹲伏设置",
@@ -195,6 +191,10 @@ return {
         ["zh-cn"] = highlight("疾跑过程中按下闪避键") .. "可触发" .. highlight("滑铲") .. "。\n"
             .. "推荐" .. highlight("跳跃和闪避使用不同按键") .. "的玩家开启。",
     },
+    misc_settings = {
+        en = "Misc Settings",
+        ["zh-cn"] = "其他设置",
+    },
     auto_vault = {
         en = "Auto Vault",
         ["zh-cn"] = "自动翻越",
@@ -204,5 +204,28 @@ return {
             .. highlight("hold the jump key") .. ".",
         ["zh-cn"] = "在空中时" .. highlight("自动触发翻越") .. "，无需"
             .. highlight("按住跳跃键") .. "。",
+    },
+    no_sprinting_stamina = {
+        en = "Conserve Stamina",
+        ["zh-cn"] = "保存体力",
+    },
+    no_sprinting_stamina_description = {
+        en = "Pause sprinting during consecutive melee attacks to regenerate stamina. This does not apply to "
+            .. highlight("Hold to Sprint") .. " or " .. highlight("Hold to Walk") .. ".",
+        ["zh-cn"] = "在连续近战攻击过程中暂停疾跑，以恢复体力。对" .. highlight("按住疾跑") .. "与" .. highlight("按住慢走") .. "无效。",
+    },
+    luggable_keep_push = {
+        en = "Luggable Hold to Push",
+        ["zh-cn"] = "按住推击",
+    },
+    luggable_keep_push_description = {
+        en = "When carrying any "
+            .. highlight("luggable") .. " item, "
+            .. highlight("holding")
+            .. " the secondary action key will queue repeated push commands. This guarantees that the player will reliably "
+            .. highlight("exit") .. " the sprint state and successfully perform a " .. highlight("push action."),
+        ["zh-cn"] = "当" .. highlight("搬运任务物品") .. "时，"
+            .. highlight("按住") .. "次要按键将可以连续使用推击，以保证玩家可以稳定"
+            .. highlight("退出") .. "疾跑状态并使出" .. highlight("推击动作。"),
     },
 }

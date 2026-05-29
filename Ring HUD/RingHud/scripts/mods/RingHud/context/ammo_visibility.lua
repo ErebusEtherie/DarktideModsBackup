@@ -207,7 +207,8 @@ function mod.ammo_vis_player(hud_state)
     -- Always-on modes
     if _S.ammo_reserve_dropdown == "ammo_reserve_percent_always"
         or _S.ammo_reserve_dropdown == "ammo_reserve_actual_always"
-        or _S.ammo_reserve_dropdown == "ammo_reserve_forecast_always" then
+        or _S.ammo_reserve_dropdown == "ammo_reserve_forecast_always"
+        or _S.ammo_reserve_dropdown == "ammo_total_percent_always" then
         return true
     end
 

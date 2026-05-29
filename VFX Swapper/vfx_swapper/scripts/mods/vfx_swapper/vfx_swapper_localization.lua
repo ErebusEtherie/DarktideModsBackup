@@ -31,7 +31,7 @@ return {
 		en = "Replace Havoc's Blight Spreads (ground effect)",
 		["zh-cn"] = "替换浩劫腐化扩散（地面效果）特效",
 	},
-	replace_immolation_vfx = {
+	replace_fire_grenade = {
 		en = "Replace Zealot's Immolation Grenade",
 		["zh-cn"] = "替换狂信火雷特效（火焰）",
 	},
@@ -107,6 +107,10 @@ return {
 		en = "Flat Black Cicles",
 		["zh-cn"] = "黑色圆盘",
 	},
+	lightning_liquid_area = {
+		en = "Voltaic Mine",
+		["zh-cn"] = "电磁雷"
+	},
 	rotten_vfx_default = {
 		en = "Default",
 		["zh-cn"] = "默认",
@@ -127,65 +131,113 @@ return {
 		en = "Circle Indicators",
 		["zh-cn"] = "圆形范围指示器",
 	},
+	rotten_indicators_group = {
+		en = "Rotten Armor Indicators",
+		["zh-cn"] = "腐化装甲指示器",
+	},
 	rotten_circle_enabled = {
 		en = "Rotten Armor Circle",
 		["zh-cn"] = "腐化装甲圆形范围指示器",
 	},
+	charge_enabled = {
+		en = "Lightning Charge Effect?",
+		["zh-cn"] = "闪电充能特效？",
+	},
+	staff_circle_enabled = {
+		en = "Trauma Staff Effect?",
+		["zh-cn"] = "震荡杖特效？",
+	},
 	rotten_circle_red = {
-		en = "Rotten - Red",
-		["zh-cn"] = "腐化 - 红",
+		en = "Red",
+		["zh-cn"] = "红",
 	},
 	rotten_circle_green = {
-		en = "Rotten - Green",
-		["zh-cn"] = "腐化 - 绿",
+		en = "Green",
+		["zh-cn"] = "绿",
 	},
 	rotten_circle_blue = {
-		en = "Rotten - Blue",
-		["zh-cn"] = "腐化 - 蓝",
+		en = "Blue",
+		["zh-cn"] = "蓝",
 	},
 	rotten_circle_alpha = {
-		en = "Rotten - Opacity",
-		["zh-cn"] = "腐化 - 透明度",
+		en = "Opacity",
+		["zh-cn"] = "透明度",
+	},
+	blight_indicators_group = {
+		en = "Blight Spreads Indicators",
+		["zh-cn"] = "瘟疫扩散指示器",
 	},
 	blight_circle_enabled = {
 		en = "Blight Spreads Circle",
 		["zh-cn"] = "瘟疫扩散圆形范围指示器",
 	},
 	blight_circle_red = {
-		en = "Blight - Red",
-		["zh-cn"] = "瘟疫 - 红",
+		en = "Red",
+		["zh-cn"] = "红",
 	},
 	blight_circle_green = {
-		en = "Blight - Green",
-		["zh-cn"] = "瘟疫 - 绿",
+		en = "Green",
+		["zh-cn"] = "绿",
 	},
 	blight_circle_blue = {
-		en = "Blight - Blue",
-		["zh-cn"] = "瘟疫 - 蓝",
+		en = "Blue",
+		["zh-cn"] = "蓝",
 	},
 	blight_circle_alpha = {
-		en = "Blight - Opacity",
-		["zh-cn"] = "瘟疫 - 透明度",
+		en = "Opacity",
+		["zh-cn"] = "透明度",
+	},	
+	chemnade_indicators_group = {
+		en = "Chem Grenade Indicators",
+		["zh-cn"] = "兴奋剂炸弹指示器",
 	},
 	chemnade_circle_enabled = {
 		en = "Chem Grenade Circle",
 		["zh-cn"] = "兴奋剂炸弹圆形范围指示器",
 	},
 	chemnade_circle_red = {
-		en = "Chem - Red",
-		["zh-cn"] = "兴奋剂 - 红",
+		en = "Red",
+		["zh-cn"] = "红",
 	},
 	chemnade_circle_green = {
-		en = "Chem - Green",
-		["zh-cn"] = "兴奋剂 - 绿",
+		en = "Green",
+		["zh-cn"] = "绿",
 	},
 	chemnade_circle_blue = {
-		en = "Chem - Blue",
-		["zh-cn"] = "兴奋剂 - 蓝",
+		en = "Blue",
+		["zh-cn"] = "蓝",
 	},
 	chemnade_circle_alpha = {
-		en = "Chem - Opacity",
-		["zh-cn"] = "兴奋剂 - 透明度",
+		en = "Opacity",
+		["zh-cn"] = "透明度",
+	},
+	fire_indicators_group = {
+		en = "Zealot Immolation Grenade Indicators",
+		["zh-cn"] = "狂信火雷指示器",
+	},
+	fire_circle_enabled = {
+		en = "Zealot Immolation Grenade Circle",
+		["zh-cn"] = "狂信火雷圆形范围指示器",
+	},
+	fire_circle_red = {
+		en = "Red",
+		["zh-cn"] = "红",
+	},
+	fire_circle_green = {
+		en = "Green",
+		["zh-cn"] = "绿",
+	},
+	fire_circle_blue = {
+		en = "Blue",
+		["zh-cn"] = "蓝",
+	},
+	fire_circle_alpha = {
+		en = "Opacity",
+		["zh-cn"] = "透明度",
+	},
+	circle_count_group = {
+		en = "'Circle Only' Count",
+		["zh-cn"] = "'仅圆形' 数量",
 	},
 	havoc_toggle_group = {
 		en = "Havoc Specific Toggles",
@@ -219,6 +271,14 @@ return {
 		en = "Curroptor Goo",
 		["zh-cn"] = "腐化者粘液",
 	},	
+	charge_tip = {
+		en = "{#color(255, 35, 5)}EXPERIMENTAL!{#color(208, 208, 208)}\nAdds the 'lightning charge' ground effect (from Expeditions) as an additional indicator to show remaining duration of the effect.",
+		["zh-cn"] = "{#color(255, 35, 5)}*实验性质！{#color(208, 208, 208)}\n添加了“闪电充能”地面特效（来自远征任务），作为显示效果剩余持续时间的附加指示器。",
+	},
+	staff_circle_tip = {
+		en = "{#color(255, 35, 5)}EXPERIMENTAL!{#color(208, 208, 208)}\nAdds the ground targeting indicator from Trauma Staff to show remaining duration of the effect.",
+		["zh-cn"] = "{#color(255, 35, 5)}*实验性质！{#color(208, 208, 208)}\n添加了“震荡杖目标指示器”，作为显示效果剩余持续时间的附加指示器。",
+	},
 	toxin_death_tip = {
 		en = "Includes explosions from grenades, and certain needler alt fire modes.",
 		["zh-cn"] = "包括来自手榴弹和某些针刺器替代射击模式的爆炸。",
@@ -232,7 +292,7 @@ return {
 		["zh-cn"] = "禁用瘟疫扩散敌人的绿色苍蝇特效。关闭此选项需要重启。",
 	},
 	disable_death_vfx = {
-		en = "Disable Haovc Death-splosions",
+		en = "Disable Havoc Death-splosions",
 		["zh-cn"] = "禁用某些浩劫死亡特效（暴走冲击波，瘟疫扩散/腐化装甲死亡爆炸）",
 	},
 	circle_count = {

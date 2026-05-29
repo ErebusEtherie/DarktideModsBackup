@@ -629,7 +629,7 @@ mod.create_row_widget = function(self, index, current_offset, visible_rows, this
                 local score = row_data and row_data.score or 0
                 local mytext = row_data and row_data.text_data or nil
                 if this_row.is_text then
-                    score = (row_data and row_data.text) or "lol"
+                    score = (row_data and row_data.text) or " "
                     -- mod:echo("text = '"..tostring(row_data.text).."'")
                 elseif mytext then
                     score = mytext
@@ -778,7 +778,7 @@ mod.create_row_widget = function(self, index, current_offset, visible_rows, this
                 if num_players <= 4 and ui_renderer then
                     local account_id = player:account_id() or player:name()
                     local score = this_row.data[account_id].text
-                    if score == nil then score = "lol" end
+                    if score == nil then score = " " end
                     if score then
                         mod:shrink_text(score, widget.style["style_id_"..player_pass_map[num_players]], _settings.scoreboard_column_width, ui_renderer)
                     end
@@ -791,7 +791,7 @@ mod.create_row_widget = function(self, index, current_offset, visible_rows, this
                 if num_players <= 4 and ui_renderer then
                     local account_id = player:account_id() or player:name()
                     local score = this_row.data[account_id].text_data
-                    if score == nil then score = "lol" end
+                    if score == nil then score = " " end
                     if score then
                         mod:shrink_text(score, widget.style["style_id_"..player_pass_map[num_players]], _settings.scoreboard_column_width, ui_renderer)
                     end

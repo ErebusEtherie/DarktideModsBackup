@@ -4,17 +4,21 @@ local mod = get_mod("SimpleBuffFilter"); if not mod then return end
 hud_buffs.lua – the HUD integration. Hooks the stock buffs HUD class to apply visibility rules, handle discovery, and apply transforms.
 
 Updated:
+• Added multi-bar targeting support using element._context.bar_index.
 • Resolution: always use RAW template id for prefs/rules (never talent-alias),
   while talent resolution can apply Option-B normalization internally.
 • Robustness: avoid nil HudElementPlayerBuffsSettings access; avoid double-hooking on reload.
 • Safety: only set retry flags on table buffs.
+• HUD init safety: avoid global HUD lookup during UIHud:init; use the HUD instance being initialized.
 ]]
 
 local BuffSettings = require("scripts/settings/buff/buff_settings")
 local Text = require("scripts/utilities/ui/text")
 
+local HUD_ELEMENT_CLASS_NAME = "HudElementPlayerBuffs"
+
 -- Ensure HUD elements are present and capture the class
-local HudElementPlayerBuffs = rawget(_G, "HudElementPlayerBuffs")
+local HudElementPlayerBuffs = rawget(_G, HUD_ELEMENT_CLASS_NAME)
 local HudElementPlayerBuffsSettings = nil
 
 local function _can_get(path)
@@ -84,8 +88,8 @@ local function _buff_id(buff)
     return nil
 end
 
--- Core Logic: Resolve buff identity -> Record -> Check Rule
-local function _resolve_and_check(buff)
+-- Core Logic: Resolve buff identity -> Record -> Check Rule & Bar
+local function _resolve_and_check(buff, bar_index)
     local id = _buff_id(buff)
     if not id then
         return true
@@ -97,11 +101,15 @@ local function _resolve_and_check(buff)
         local rule = entry.rule
         if rule == "hide" then return false end
         if rule == "only_in_psykhanium" and not mod.tbf_ctx.is_psykhanium() then return false end
+
+        local assigned_bar = entry.bar or 1
+        if assigned_bar ~= bar_index then return false end
+
         return true
     end
 
     -- 1.5 Check if we already tried and failed to resolve this ID this session
-    if mod.tbf_session_ignore[id] then return true end
+    if mod.tbf_session_ignore[id] then return bar_index == 1 end
 
     -- 2. Resolve (Slow Path / Discovery)
     local group, loc = nil, nil
@@ -111,12 +119,15 @@ local function _resolve_and_check(buff)
 
     -- 3. Record
     if group and loc then
-        mod.prefs_record_buff(id, group, loc, "allow")
+        mod.prefs_record_buff(id, group, loc, "allow", 1)
         local new_entry = mod.prefs.buffs[id]
         if new_entry then
             local rule = new_entry.rule
             if rule == "hide" then return false end
             if rule == "only_in_psykhanium" and not mod.tbf_ctx.is_psykhanium() then return false end
+
+            local assigned_bar = new_entry.bar or 1
+            if assigned_bar ~= bar_index then return false end
         end
         return true
     else
@@ -127,18 +138,75 @@ local function _resolve_and_check(buff)
             -- If we can't tag it, avoid wasting time re-trying constantly.
             mod.tbf_session_ignore[id] = true
         end
-        return true
+
+        -- Unknown buffs go to Bar 1 by default
+        return bar_index == 1
     end
 end
 
 -- Hook Add (Discovery + Initial Filter)
 if not mod._tbf_hud_add_buff_hooked then
     mod:hook(HudElementPlayerBuffs, "_add_buff", function(func, self, buff, ...)
-        if _resolve_and_check(buff) then
+        local bar_index = (self._context and self._context.bar_index) or 1
+        if _resolve_and_check(buff, bar_index) then
             return func(self, buff, ...)
         end
     end)
     mod._tbf_hud_add_buff_hooked = true
+end
+
+-- Active pruning for mid-game setting changes
+if not mod._tbf_hud_update_buffs_hooked then
+    mod:hook(HudElementPlayerBuffs, "_update_buffs", function(func, self, t, ui_renderer, ...)
+        local active_buffs_data = self._active_buffs_data
+        if active_buffs_data then
+            local bar_index = (self._context and self._context.bar_index) or 1
+            for i = 1, #active_buffs_data do
+                local buff_data = active_buffs_data[i]
+                local buff = buff_data.buff_instance
+                if buff and not buff_data.remove then
+                    local id = _buff_id(buff)
+                    if id then
+                        local entry = mod.prefs.buffs[id]
+                        local assigned_bar = entry and entry.bar or 1
+                        if assigned_bar ~= bar_index then
+                            buff_data.remove = true
+                        end
+                    end
+                end
+            end
+        end
+        return func(self, t, ui_renderer, ...)
+    end)
+    mod._tbf_hud_update_buffs_hooked = true
+end
+
+-- Expose utility to manually sync available buffs across all bars mid-game
+function mod.resync_hud_buffs()
+    local hud = Managers.ui and Managers.ui:get_hud()
+    if not hud then return end
+
+    local extensions = hud:player_extensions()
+    local buff_extension = extensions and extensions.buff
+    if not buff_extension then return end
+    local buffs = buff_extension:buffs()
+
+    for _, class_name in ipairs({ HUD_ELEMENT_CLASS_NAME, "HudElementSbfBuffBar2", "HudElementSbfBuffBar3" }) do
+        local element = hud:element(class_name)
+        if element and element._sync_current_active_buffs then
+            element:_sync_current_active_buffs(buffs)
+        end
+    end
+end
+
+-- Hook our own settings handler to automatically resync bars on targeted shifts
+if not mod._tbf_resync_hooked then
+    mod:hook_safe(mod, "prefs_set_bar_by_loc", function()
+        if mod.resync_hud_buffs then
+            mod.resync_hud_buffs()
+        end
+    end)
+    mod._tbf_resync_hooked = true
 end
 
 -- Hook Data (Frame Update)
@@ -157,7 +225,7 @@ if not mod._tbf_hud_rules_hooked then
 
                 local id = _buff_id(buff)
                 if group and loc and id then
-                    mod.prefs_record_buff(id, group, loc, "allow")
+                    mod.prefs_record_buff(id, group, loc, "allow", 1)
                 elseif id then
                     -- Failed twice -> Ignore for session
                     mod.tbf_session_ignore[id] = true
@@ -205,13 +273,14 @@ if not mod._tbf_update_buff_alignments_hooked then
         local active_buffs_data = self._active_buffs_data
         local num_active_buffs = #active_buffs_data
 
-        -- Current Scaled Spacing (robust if settings file not present)
-        local horizontal_spacing = (HudElementPlayerBuffsSettings and HudElementPlayerBuffsSettings.horizontal_spacing) or
-            (mod._tbf_base_spacing or 42)
-        local base_spacing = mod._tbf_base_spacing or 42
-        local gap_width = 0.5 * base_spacing
+        local bar_index = (self._context and self._context.bar_index) or 1
+        local p = mod.prefs_get_hud and mod.prefs_get_hud(bar_index)
+        local current_scale = p and p.scale or 1.0
 
-        local current_scale = horizontal_spacing / base_spacing
+        -- Enforce bar-specific horizontal scaling isolated from the global class setting
+        local base_spacing = mod._tbf_base_spacing or 42
+        local horizontal_spacing = base_spacing * current_scale
+        local gap_width = 0.5 * base_spacing
 
         -- Growth Compensation Constants (Pins Bottom-Center)
         local comp_y = 59 * (current_scale - 1)
@@ -326,7 +395,7 @@ if not mod._tbf_text_size_hooked then
 end
 
 -- ============================================================================
--- HUD Transforms (Vanilla Bar)
+-- HUD Transforms (Vanilla & Cloned Bars)
 -- ============================================================================
 
 local function _apply_widget_transforms(widget, scale, opacity)
@@ -423,7 +492,6 @@ local function _apply_widget_transforms(widget, scale, opacity)
     end
 end
 
--- Tighten background + ensure text box never wraps (decouple after vanilla sizing)
 local function _apply_stack_label_sizing(element, ui_renderer, scale)
     if not ui_renderer or not element or not element._widgets then
         return
@@ -482,19 +550,9 @@ local function _apply_stack_label_sizing(element, ui_renderer, scale)
     end
 end
 
--- Apply transforms to the vanilla HUD element
-function mod.apply_hud_transforms(optional_element)
-    local element = optional_element
-
-    if not element then
-        local hud = Managers.ui and Managers.ui:get_hud()
-        if not hud then return end
-        element = hud:element("HudElementPlayerBuffs")
-    end
-
-    if not element then return end
-
-    local p = mod.prefs_get_hud()
+local function _do_apply_hud_transforms(element)
+    local bar_index = (element._context and element._context.bar_index) or 1
+    local p = mod.prefs_get_hud(bar_index)
     local scale = p.scale
     local opacity = p.opacity
 
@@ -506,11 +564,28 @@ function mod.apply_hud_transforms(optional_element)
             if not element._tbf_orig_pos then
                 element._tbf_orig_pos = { x = def.position[1], y = def.position[2] }
             end
+            if not element._tbf_last_p then
+                element._tbf_last_p = { x = 0, y = 0 }
+            end
+
+            if element._tbf_last_p.x ~= p.x or element._tbf_last_p.y ~= p.y then
+                -- SBF offset changed; update tracked offsets without overriding external changes
+                element._tbf_last_p.x = p.x
+                element._tbf_last_p.y = p.y
+            else
+                -- No SBF offset change; check for external changes (like custom_hud) and sync base position
+                local expected_x = element._tbf_orig_pos.x + p.x
+                local expected_y = element._tbf_orig_pos.y + p.y
+                if math.abs(def.position[1] - expected_x) > 0.001 or math.abs(def.position[2] - expected_y) > 0.001 then
+                    element._tbf_orig_pos.x = def.position[1] - p.x
+                    element._tbf_orig_pos.y = def.position[2] - p.y
+                end
+            end
 
             local target_x = element._tbf_orig_pos.x + p.x
             local target_y = element._tbf_orig_pos.y + p.y
 
-            if def.position[1] ~= target_x or def.position[2] ~= target_y then
+            if math.abs(def.position[1] - target_x) > 0.001 or math.abs(def.position[2] - target_y) > 0.001 then
                 def.position[1] = target_x
                 def.position[2] = target_y
                 element._update_scenegraph = true
@@ -518,15 +593,27 @@ function mod.apply_hud_transforms(optional_element)
         end
     end
 
-    -- 2. Spacing (Horizontal)
-    if HudElementPlayerBuffsSettings and mod._tbf_base_spacing then
-        HudElementPlayerBuffsSettings.horizontal_spacing = mod._tbf_base_spacing * scale
-    end
-
-    -- 3. Widget Styles (Size, Font, Opacity)
+    -- 2. Widget Styles
     if element._widgets then
         for _, widget in ipairs(element._widgets) do
             _apply_widget_transforms(widget, scale, opacity)
+        end
+    end
+end
+
+-- Apply transforms to the vanilla and custom HUD elements
+function mod.apply_hud_transforms(optional_element)
+    if optional_element then
+        _do_apply_hud_transforms(optional_element)
+    else
+        local hud = Managers.ui and Managers.ui:get_hud()
+        if not hud then return end
+
+        for _, class_name in ipairs({ HUD_ELEMENT_CLASS_NAME, "HudElementSbfBuffBar2", "HudElementSbfBuffBar3" }) do
+            local element = hud:element(class_name)
+            if element then
+                _do_apply_hud_transforms(element)
+            end
         end
     end
 end
@@ -536,18 +623,27 @@ if not mod._tbf_hud_update_hooked then
     mod:hook_safe(HudElementPlayerBuffs, "update", function(self, dt, t, ui_renderer, ...)
         mod.apply_hud_transforms(self)
 
-        local p = mod.prefs_get_hud and mod.prefs_get_hud()
+        local bar_index = (self._context and self._context.bar_index) or 1
+        local p = mod.prefs_get_hud and mod.prefs_get_hud(bar_index)
         local scale = p and p.scale or 1.0
+
         _apply_stack_label_sizing(self, ui_renderer, scale)
     end)
     mod._tbf_hud_update_hooked = true
 end
 
--- Hook HUD Init to apply transforms early
+-- Hook HUD Init to apply transforms early, without querying the global live HUD
 if not mod._tbf_hud_init_hooked then
     mod:hook("UIHud", "init", function(func, self, ...)
         local ret = func(self, ...)
-        mod.apply_hud_transforms()
+
+        for _, class_name in ipairs({ HUD_ELEMENT_CLASS_NAME, "HudElementSbfBuffBar2", "HudElementSbfBuffBar3" }) do
+            local element = self and self.element and self:element(class_name)
+            if element then
+                mod.apply_hud_transforms(element)
+            end
+        end
+
         return ret
     end)
     mod._tbf_hud_init_hooked = true
@@ -571,5 +667,25 @@ if not mod._tbf_stimm_field_crash_fix_hooked and _can_get(StimmFieldPath) then
             return func(self, unit, t, linger_time)
         end)
         mod._tbf_stimm_field_crash_fix_hooked = true
+    end
+end
+
+-- ============================================================================
+-- GLOBAL BUFF STACK COUNT OPTIMIZATION
+-- Fixes a major vanilla performance leak and stops tracking mods (like Uptime)
+-- from crashing due to 100,000+ events per mission.
+-- ============================================================================
+local BuffPath = "scripts/extension_systems/buff/buffs/buff"
+if not mod._tbf_visual_stack_count_hooked and _can_get(BuffPath) then
+    local Buff = require(BuffPath)
+    if Buff then
+        mod:hook(Buff, "visual_stack_count", function(func, self, ...)
+            local count = func(self, ...)
+            if type(count) == "number" then
+                return math.floor(count)
+            end
+            return count
+        end)
+        mod._tbf_visual_stack_count_hooked = true
     end
 end

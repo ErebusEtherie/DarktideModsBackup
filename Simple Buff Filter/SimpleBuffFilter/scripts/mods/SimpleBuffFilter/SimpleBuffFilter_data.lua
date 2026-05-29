@@ -20,6 +20,8 @@ Resolve.init_archetypes()
 local UiSettings = require("scripts/settings/ui/ui_settings")
 local Colors     = mod:io_dofile("SimpleBuffFilter/scripts/mods/SimpleBuffFilter/util/colors")
 
+local Localize   = Localize
+
 -- ---- Rule option lists (pre-tinted) ---------------------------------------
 -- Simplified set: Allow, Hide, Only in Psykhanium
 local function _rule_options()
@@ -127,6 +129,13 @@ local function _wipe_target_options()
         localize = false
     }
 
+    -- Moods
+    opts[#opts + 1] = {
+        text = Localize("loc_setting_screen_mode"),
+        value = "__moods__",
+        localize = false
+    }
+
     return opts
 end
 
@@ -168,6 +177,16 @@ for _, archetype in ipairs(Resolve.sorted_archetypes()) do
                 options       = _rule_options(),
                 text          = Localize("loc_settings_menu_group_gameplay_settings"),
                 localize      = false,
+            },
+            {
+                setting_id      = ("arch_%s_bar"):format(archetype),
+                type            = "numeric",
+                default_value   = 1,
+                range           = { 1, 3 },
+                decimals_number = 0,
+                title           = mod:localize("buff_bar"),
+                text            = mod:localize("buff_bar"),
+                localize        = false,
             },
         },
     }
@@ -212,6 +231,16 @@ do
                 description   = "tbuff_traits_rule_tt",
                 localize      = false,
             },
+            {
+                setting_id      = "traits_melee_bar",
+                type            = "numeric",
+                default_value   = 1,
+                range           = { 1, 3 },
+                decimals_number = 0,
+                title           = mod:localize("buff_bar"),
+                text            = mod:localize("buff_bar"),
+                localize        = false,
+            },
         },
     }
 end
@@ -243,6 +272,16 @@ do
                 text          = Localize("loc_settings_menu_group_gameplay_settings"),
                 description   = "tbuff_traits_rule_tt",
                 localize      = false,
+            },
+            {
+                setting_id      = "traits_ranged_bar",
+                type            = "numeric",
+                default_value   = 1,
+                range           = { 1, 3 },
+                decimals_number = 0,
+                title           = mod:localize("buff_bar"),
+                text            = mod:localize("buff_bar"),
+                localize        = false,
             },
         },
     }
@@ -282,11 +321,58 @@ do
                 description   = "tbuff_misc_rule_tt",
                 localize      = false,
             },
+            {
+                setting_id      = "misc_bar",
+                type            = "numeric",
+                default_value   = 1,
+                range           = { 1, 3 },
+                decimals_number = 0,
+                title           = mod:localize("buff_bar"),
+                text            = mod:localize("buff_bar"),
+                localize        = false,
+            },
         },
     }
 end
 
--- ==== Buff Bars (Reduced to simple transform settings for vanilla HUD) ========
+-- ==== Moods ================================================
+do
+    local moods_icon      = ""
+    local moods_color     = Colors.color_arr("item_rarity_4")
+    local moods_title     = Colors.tint_text(moods_icon .. " " .. Localize("loc_setting_screen_mode"), moods_color)
+
+    widgets[#widgets + 1] = {
+        setting_id  = "group_moods",
+        type        = "group",
+        title       = moods_title,
+        subtitle    = mod:localize("tbuff_group_moods_desc"),
+        localize    = false,
+        sub_widgets = {
+            {
+                setting_id    = "moods_choice",
+                title         = Localize("loc_settings_menu_group_buff_interface_settings"),
+                type          = "dropdown",
+                default_value = "__collect__",
+                options       = mod.get_mood_options and mod.get_mood_options() or {},
+                text          = Localize("loc_settings_menu_group_buff_interface_settings"),
+                description   = "tbuff_moods_choice_tt",
+                localize      = false,
+            },
+            {
+                setting_id    = "moods_rule",
+                title         = Localize("loc_settings_menu_group_gameplay_settings"),
+                type          = "dropdown",
+                default_value = "allow",
+                options       = _weapon_rule_options(),
+                text          = Localize("loc_settings_menu_group_gameplay_settings"),
+                description   = "tbuff_moods_rule_tt",
+                localize      = false,
+            },
+        },
+    }
+end
+
+-- ==== Buff Bars =============================================================
 do
     local bars_icon       = ""
     local bars_color      = Colors.color_arr("ui_blue_light")
@@ -300,6 +386,16 @@ do
         subtitle    = mod:localize("tbuff_group_bars_desc"),
         localize    = false,
         sub_widgets = {
+            {
+                setting_id      = "bars_target_bar",
+                type            = "numeric",
+                default_value   = 1,
+                range           = { 1, 3 },
+                decimals_number = 0,
+                title           = mod:localize("buff_bar"),
+                text            = mod:localize("buff_bar"),
+                localize        = false,
+            },
             {
                 setting_id      = "bars_x_offset",
                 type            = "numeric",
@@ -337,9 +433,9 @@ do
                 default_value   = 255,
                 range           = { 0, 255 },
                 decimals_number = 0,
-                text            = "tbuff_bar_opacity",
-                description     = "tbuff_bar_opacity",
-                localize        = true,
+                title           = Localize("loc_setting_brightness"),
+                text            = Localize("loc_setting_brightness"),
+                localize        = false,
             },
         },
     }

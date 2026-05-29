@@ -1,10 +1,35 @@
 -- File: scripts/mods/SimpleBuffFilter/SimpleBuffFilter.lua
 local mod = get_mod("SimpleBuffFilter")
 if not mod then return end
-mod.version = "Simple Buff Filter version 1.1.2"
+mod.version = "Simple Buff Filter version 1.4.2"
 
 --[[
 CHANGELOG
+1.4.2
+-- [Better] Improved mapping of screen effects to talent names
+-- [Fixed] Kinetic Flayer screen effect mapping (not retroactive)
+
+1.4.1
+-- [Fixed] Compatibility issue with the Uptime mod (reported by Mitradraug)
+
+1.4.0
+-- [New] Assign buffs to separate buff bars (suggested by tdopz)
+
+1.3.0
+-- [New] Screen Modes: learns and filters moods/screen effects
+-- [Fixed] Override for Fatshark linking Zealous aura to wrong talent (not retroactive)
+-- [Fixed] Override for Fatshark using old name for Point Blank Barrage buffs/screen effects (not retroactive)
+
+1.2.1
+-- [Fixed] Odd position behaviour when moved with mods like Custom HUD
+
+1.2.0
+-- [Better] Added handling for live event buff localisation (not retroactive)
+-- [Better] Added handling for expedition debuff localisation (not retroactive)
+-- [Fixed] Added handling for ogryn houndmaster debuffs (not retroactive)
+-- [Fixed] Crash when used with the Volley Fire Timer mod
+-- [Fixed] Crash when refreshing with the Show Crit Chance mod
+
 1.1.2
 -- [Fixed] Fixed issue with Zealot perfect block talent and minor talent match improvements
 
@@ -50,8 +75,14 @@ mod:io_dofile("SimpleBuffFilter/scripts/mods/SimpleBuffFilter/runtime/debug")
 -- Runtime buff helpers (template_from/template_name)
 mod:io_dofile("SimpleBuffFilter/scripts/mods/SimpleBuffFilter/runtime/buff_introspect")
 
+-- Runtime mood mapping logic
+mod:io_dofile("SimpleBuffFilter/scripts/mods/SimpleBuffFilter/runtime/moods")
+
 -- Hooks (HUD)
 mod:io_dofile("SimpleBuffFilter/scripts/mods/SimpleBuffFilter/hooks/hud_buffs")
+
+-- Hooks (Moods)
+mod:io_dofile("SimpleBuffFilter/scripts/mods/SimpleBuffFilter/hooks/mood_hooks")
 
 -- ===== Shared, cross-file state (always use mod.*) ==========================
 mod.NAME = "SimpleBuffFilter"
@@ -69,3 +100,34 @@ function mod.get_trait_loc_key(trait_id)
     if not item then return nil end
     return item.display_name -- raw loc_* key
 end
+
+-- ============================================================================
+-- Custom HUD Element Registration
+-- ============================================================================
+
+local custom_bar_visibility = {
+    "dead",
+    "alive",
+    "communication_wheel",
+    "player_in_danger_zone",
+}
+
+-- Register Bar 2
+mod:register_hud_element({
+    class_name = "HudElementSbfBuffBar2",
+    filename = "SimpleBuffFilter/scripts/mods/SimpleBuffFilter/hud/hud_element_sbf_buff_bar",
+    use_hud_scale = true,
+    use_retained_mode = true,
+    visibility_groups = custom_bar_visibility,
+    context = { bar_index = 2 }
+})
+
+-- Register Bar 3
+mod:register_hud_element({
+    class_name = "HudElementSbfBuffBar3",
+    filename = "SimpleBuffFilter/scripts/mods/SimpleBuffFilter/hud/hud_element_sbf_buff_bar",
+    use_hud_scale = true,
+    use_retained_mode = true,
+    visibility_groups = custom_bar_visibility,
+    context = { bar_index = 3 }
+})

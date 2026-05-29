@@ -12,15 +12,10 @@ local loc = {
         ru = "Simple Buff Filter - Изучает баффы по мере игры. Затем фильтрует их в миссиях или Псайканиуме.",
         ["zh-cn"] = "增益图标显示过滤显示，支持多配置，分组游戏内重复增益，直接显示增益名称，而不是函数名，并自动适应学习",
     },
-    bars_opacity = {
-        en = "Opacity", --alpha
-        ru = "Прозрачность",
-        de = "Opazität",
-        fr = "Opacité",
-        it = "Opacità",
-        es = "Opacidad",
-        pl = "Nieprzezroczystość",
-        ["zh-cn"] = "不透明度",
+    buff_bar = {
+        en = "Bar",
+        ru = "Панель Баффов",
+        ["zh-cn"] = "Buff栏",
     },
 }
 

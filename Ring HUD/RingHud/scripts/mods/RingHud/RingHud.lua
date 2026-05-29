@@ -3,7 +3,7 @@
 
 local mod = get_mod("RingHud")
 if not mod then return end
-mod.version                             = "RingHud version 1.14.1"
+mod.version                             = "RingHud version 1.17.0"
 
 local MISSION_BOARD_PACKAGE             = "packages/ui/views/mission_board_view/mission_board_view"
 
@@ -12,6 +12,7 @@ mod._ringhud_visibility_applied_to_hud  = setmetatable({}, { __mode = "k" })
 mod._ringhud_hooked_elements            = setmetatable({}, { __mode = "k" })
 
 local PlayerUnitStatus                  = require("scripts/utilities/attack/player_unit_status")
+local Ammo                              = require("scripts/utilities/ammo")
 
 -------------------------------------------------------------------------------
 -- Global Mod State (non-settings) -- TODO Constants or not constants?
@@ -51,7 +52,7 @@ function mod.get_local_archetype()
     end
 
     local player = Managers.player and Managers.player.local_player_safe and Managers.player:local_player_safe(1)
-    if player and player.archetype_name then
+    if player and not player.__deleted and player.archetype_name then
         local name = player:archetype_name()
         if name then
             mod._cached_archetype = name
@@ -358,40 +359,51 @@ mod.update = function(dt)
         local pm = Managers.player
         if pm and pm.players then
             for _, player in pairs(pm:players()) do
-                local unit = player.player_unit
-                if unit and Unit.alive(unit) then
-                    local unit_data  = ScriptUnit.has_extension(unit, "unit_data_system")
-                    local health_sys = ScriptUnit.has_extension(unit, "health_system")
-                    local is_dead    = false
+                if not player.__deleted then
+                    local unit = player.player_unit
+                    if unit and Unit.alive(unit) then
+                        local unit_data  = ScriptUnit.has_extension(unit, "unit_data_system")
+                        local health_sys = ScriptUnit.has_extension(unit, "health_system")
+                        local is_dead    = false
 
-                    if unit_data and health_sys then
-                        local character_state_comp = unit_data:read_component("character_state")
-                        is_dead = PlayerUnitStatus.is_dead(character_state_comp, health_sys)
-                        if is_dead then
-                            health_count = health_count + 1
-                        else
-                            total_health = total_health + health_sys:current_health_percent() +
-                                health_sys:permanent_damage_taken_percent()
-                            health_count = health_count + 1
-                        end
-                    end
-
-                    if unit_data and not is_dead then
-                        local has_ammo = false
-                        for _, slot_name in pairs({ "slot_primary", "slot_secondary" }) do
-                            local slot_comp = unit_data:read_component(slot_name)
-                            if slot_comp then
-                                local max_res = _sum_if_table(slot_comp.max_ammunition_reserve) or 0
-                                local cur_res = _sum_if_table(slot_comp.current_ammunition_reserve) or 0
-
-                                if max_res > 0 then
-                                    total_ammo = total_ammo + (cur_res / max_res)
-                                    has_ammo = true
-                                    break
-                                end
+                        if unit_data and health_sys then
+                            local character_state_comp = unit_data:read_component("character_state")
+                            is_dead = PlayerUnitStatus.is_dead(character_state_comp, health_sys)
+                            if is_dead then
+                                health_count = health_count + 1
+                            else
+                                total_health = total_health + health_sys:current_health_percent() +
+                                    health_sys:permanent_damage_taken_percent()
+                                health_count = health_count + 1
                             end
                         end
-                        if has_ammo then ammo_count = ammo_count + 1 end
+
+                        if unit_data and not is_dead then
+                            local has_ammo = false
+                            for _, slot_name in pairs({ "slot_primary", "slot_secondary" }) do
+                                local slot_comp = unit_data:read_component(slot_name)
+                                if slot_comp then
+                                    local max_res = _sum_if_table(slot_comp.max_ammunition_reserve) or 0
+                                    local cur_res = _sum_if_table(slot_comp.current_ammunition_reserve) or 0
+
+                                    local cur_clip, max_clip = 0, 0
+                                    if slot_comp.current_ammunition_clip and slot_comp.max_ammunition_clip then
+                                        cur_clip = Ammo.current_ammo_in_clips(slot_comp) or 0
+                                        max_clip = Ammo.max_ammo_in_clips(slot_comp) or 0
+                                    end
+
+                                    local total_cur = cur_res + cur_clip
+                                    local total_max = max_res + max_clip
+
+                                    if total_max > 0 then
+                                        total_ammo = total_ammo + (total_cur / total_max)
+                                        has_ammo = true
+                                        break
+                                    end
+                                end
+                            end
+                            if has_ammo then ammo_count = ammo_count + 1 end
+                        end
                     end
                 end
             end

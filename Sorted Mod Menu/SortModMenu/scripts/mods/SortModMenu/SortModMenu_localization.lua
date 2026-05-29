@@ -24,7 +24,7 @@ local localizations = {
 		ko = "정렬된 모드 메뉴",
 	},
 	mod_description = {
-		en = "Sort the Mod Options menu in your preferred order. Close and open the menu to see changes",
+		en = "Sort the Mod Options menu. Pin mods to the top of the list, or hide them. Close and open the menu to see changes",
 		es = "Ordena el menú de opciones de mods en el orden que prefieras. Cierra y abre el menú para ver los cambios",
 		ru = "Сортируйте меню настроек модов в удобном для вас порядке. Закройте и откройте меню, чтобы увидеть изменения",
 		["zh-cn"] = "按您喜欢的顺序对模组选项菜单进行排序。关闭并重新打开菜单以查看更改",
@@ -38,6 +38,15 @@ local localizations = {
 		ru = "Включить строку поиска",
 		["zh-cn"] = "启用搜索栏",
 		ja = "検索バーを有効にする",
+		ko = "검색창 활성화",
+	},
+	modname_cleaned = {
+		en = "Remove Colors & Glyphs from Mod Names",
+		es = "Eliminar colores y glifos de los nombres de los mods",
+		ru = "Удалить цвета и символы из названий модов",
+		["zh-cn"] = "移除模组名称中的颜色代码和图标",
+		ja = "MOD名から色コードとアイコンを削除する",
+		ko = "모드 이름에서 색상 코드 및 아이콘 제거",
 	},
 	sort_order = {
 		en = "Sort Order",
@@ -70,6 +79,14 @@ local localizations = {
 		["zh-cn"] = "无",
 		ja = "なし",
 		ko = "없음",
+	},
+	hidden_mods_group = {
+		en = "Hidden Mods",
+		es = "Mods Ocultos",
+		ru = "Скрытые моды",
+		["zh-cn"] = "隐藏模组",
+		ja = "非表示Mod",
+		ko = "숨긴 모드",
 	},
 	pinned_mods_group = {
 		en = "Pinned Mods",

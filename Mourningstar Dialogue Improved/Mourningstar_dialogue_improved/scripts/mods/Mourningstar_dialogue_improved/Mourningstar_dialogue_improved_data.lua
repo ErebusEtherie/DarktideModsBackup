@@ -13,6 +13,12 @@ return {
 
 				sub_widgets = {
 					{
+						setting_id = "mod_name_pizazz_toggle",
+						type = "checkbox",
+						default_value = true,
+						tooltip = "mod_name_pizazz_tooltip",
+					},
+					{
 
 						setting_id = "disable_mourningstar_chatter",
 						type = "checkbox",

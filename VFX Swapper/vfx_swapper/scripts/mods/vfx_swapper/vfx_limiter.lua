@@ -42,13 +42,26 @@ local blocked_vfx = {
 	["content/fx/particles/screenspace/screen_broker_punk_rage"] = "scum_rampage_screen",
 }
 
+-- Pre-cached active states to avoid per-particle mod:get() calls
+local blocked_vfx_active = {}
+
+local function refresh_blocked_vfx_cache()
+	for particle_name, setting_id in pairs(blocked_vfx) do
+		blocked_vfx_active[particle_name] = mod:get(setting_id) or false
+	end
+end
+
+-- Expose refresh function so on_setting_changed can call it
+mod._refresh_vfx_limiter_cache = refresh_blocked_vfx_cache
+
+-- Initialize cache
+refresh_blocked_vfx_cache()
+
 mod:hook("World", "create_particles", function(func, world, particle_name, position, rotation, scale, group)
 	-- if particle_name then
 	-- 	mod:echo(particle_name)
 	-- end
-	local setting_id = blocked_vfx[particle_name]
-
-	if setting_id and mod:get(setting_id) then
+	if blocked_vfx_active[particle_name] then
 		return 
 	end
 

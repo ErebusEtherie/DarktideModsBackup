@@ -466,7 +466,7 @@ function RingHudUtils.sorted_teammates()
     local out = {}
 
     for _, p in pairs(humans) do
-        if p ~= local_player then
+        if p ~= local_player and not p.__deleted then
             out[#out + 1] = p
         end
     end
@@ -573,7 +573,7 @@ end
 function RingHudUtils.is_ads_now()
     local pm = Managers.player
     local player = pm and pm.local_player_safe and pm:local_player_safe(1) or nil
-    local unit = player and player.player_unit or nil
+    local unit = player and not player.__deleted and player.player_unit or nil
     if not unit then return false end
 
     local ud_ext = ScriptUnit.has_extension(unit, "unit_data_system")

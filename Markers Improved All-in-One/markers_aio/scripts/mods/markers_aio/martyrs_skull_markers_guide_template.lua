@@ -45,11 +45,15 @@ template.unit_node = "ui_interaction_marker"
 template.icon_size = icon_size
 template.ping_size = ping_size
 
+template.using_smart_tag_system = true
+template.get_smart_tag_id = function()
+	return nil
+end
 template.check_line_of_sight = mod:get("martyrs_skull_require_line_of_sight")
 template.screen_clamp = mod:get("martyrs_skull_keep_on_screen")
 
 template.evolve_distance = 1
-template.max_distance = 20
+template.max_distance = mod:get("martyrs_skull_max_distance") or 50
 template.data = {}
 
 template.scale = 1
@@ -239,6 +243,28 @@ template.create_widget_defintion = function(template, scenegraph_id)
 				style.angle = content.angle
 			end,
 		},
+		{
+			pass_type = "text",
+			style_id = "marker_distance_text",
+			value_id = "marker_distance_text",
+			value = "",
+			style = {
+				horizontal_alignment = "center",
+				vertical_alignment = "center",
+				font_size = 16,
+				font_type = "text/fonts/default/system_default_header",
+				offset = { 0, 70, 6 },
+				text_horizontal_alignment = "center",
+				text_vertical_alignment = "center",
+				text_color = Color.ui_hud_green_super_light(255, true),
+				color = Color.ui_hud_green_super_light(255, true),
+				drop_shadow = true,
+				default_size = { 100, 20 },
+			},
+			visibility_function = function(content, style)
+				return content.marker_distance_text ~= nil and content.marker_distance_text ~= ""
+			end,
+		},
 	}, scenegraph_id)
 end
 
@@ -296,7 +322,7 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 	ring_size[2] = (default_size[2] + (max_size[2] - default_size[2]) * scale_progress) * global_scale
 
 	if style.ring then
-		style.ring.color = mod.lookup_colour(mod:get("martyrs_skull_border_colour"))
+		mod.set_colour(marker.widget.style.ring.color, mod.lookup_colour(mod:get("martyrs_skull_border_colour")))
 	end
 
 	local ping_min_size = template.ping_min_size
@@ -345,6 +371,23 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 	content.scale_progress = scale_progress
 	widget.alpha_multiplier = line_of_sight_progress or 1
 	widget.visible = true
+	marker.markers_aio_type = "martyrs_skull"
+
+	if marker.guide_step_text then
+		local loc = Managers and Managers.localization
+		if loc and loc._string_cache and not loc._string_cache[marker.guide_step_text] then
+			loc._string_cache[marker.guide_step_text] = marker.guide_step_text
+		end
+	end
+
+	local smart_tag_system = Managers.state.extension:system("smart_tag_system")
+	local marker_unit = marker.unit
+	local is_tagged = marker_unit and smart_tag_system:unit_tag_id(marker_unit) ~= nil
+
+	content.tagged = is_tagged
+	marker.block_fade_settings = is_tagged
+	marker.block_max_distance = is_tagged
+	marker.block_screen_clamp = not is_tagged
 
 	if data then
 		data.distance = distance

@@ -66,6 +66,7 @@ local MELEE_TEMPLATE = {
     special_buff_stacks = 0,
     always_special = false,
     force_heavy_when_special = false,
+    hold_heavy_when_sprinting = false,
     sequence_cycle_point = "sequence_step_one",
     sequence_step_one = "none",
     sequence_step_two = "none",

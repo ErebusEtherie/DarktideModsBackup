@@ -54,6 +54,24 @@ end
 -- Helpers
 ----------------------------------------------------------------
 
+local function _broker_buff_timers_enabled()
+    return mod.ringhud_timer_buff_enabled_for_ability
+        and mod.ringhud_timer_buff_enabled_for_ability()
+        or false
+end
+
+local function _broker_cooldown_timers_enabled()
+    return mod.ringhud_timer_cd_enabled
+        and mod.ringhud_timer_cd_enabled()
+        or false
+end
+
+local function _broker_decay_alert_enabled()
+    return mod.ringhud_timer_buff_enabled_for_broker_decay_alert
+        and mod.ringhud_timer_buff_enabled_for_broker_decay_alert()
+        or false
+end
+
 -- Resolve the *actual* local player's stimm id (matches RS ids) from visual loadout.
 local function _current_local_stimm_rs_id()
     local player = Managers.player and Managers.player:local_player_safe(1)
@@ -237,8 +255,8 @@ function PocketableFeature.update(widgets, hud_state, hotkey_override)
     -- Broker Stimm Timer Logic
     local broker_data      = hud_state.broker_stimm_data
     if broker_data and broker_data.is_broker then
-        local buff_enabled     = mod._settings.timer_buff_dropdown
-        local cooldown_enabled = mod._settings.timer_cd_dropdown ~= "disabled"
+        local buff_enabled     = _broker_buff_timers_enabled()
+        local cooldown_enabled = _broker_cooldown_timers_enabled()
 
         if buff_enabled and broker_data.buff_remaining > 0 then
             timer_mode  = "buff"
@@ -329,7 +347,7 @@ function PocketableFeature.update(widgets, hud_state, hotkey_override)
             local bd           = hud_state.broker_stimm_data
 
             -- Conditions: Broker, Enabled Settings, Stacks > 0, Decay <= 10s
-            if bd and bd.is_broker and settings.pocketable_visibility_dropdown ~= "pocketable_disabled" and settings.timer_buff_dropdown == "all" then
+            if bd and bd.is_broker and settings.pocketable_visibility_dropdown ~= "pocketable_disabled" and _broker_decay_alert_enabled() then
                 if (bd.chem_stacks or 0) > 0 then
                     local decay = bd.chem_decay_remaining or 0
                     if decay > 0 and decay <= 10 then

@@ -110,6 +110,9 @@ local localization = {
     -- ----------------
     -- Settings
     -- ----------------
+    -- --------
+    -- Error Messages
+    -- --------
     -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     error_scoreboard_missing = {
         en = "Scoreboard required! This is an add-on plugin to it!",
@@ -142,6 +145,9 @@ local localization = {
         -- ["zh-tw"] = "",
         -- ["pt-br"] = "",
     },
+    -- --------
+    -- Categorizing Rows
+    -- --------
     -- @backup158: sai google translated these languages: ru, zh-cn
     row_categories_group = {
         en = "Scoreboard Row Categories",
@@ -186,6 +192,110 @@ local localization = {
         --["zh-tw"] = "總閃擊",
         --["pt-br"] = " Total ",
     },
+    -- --------
+    -- Expeditions Salvage/Tech-Remnants
+    -- --------
+    exploration_tracking_group = {
+        en = "Tracking for the Expeditions Game Mode",
+		--ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+		--["pt-br"] = "",
+    },
+    exploration_tracking_expeditions_pickups = {
+        en = "Track Expeditions Pickups",
+		--ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+		--["pt-br"] = "",
+    },
+    exploration_track_currency = {
+        en = "Track Salvage",
+		--ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+		--["pt-br"] = "",
+    },
+    exploration_show_currency_only_in_expeditions = {
+        en = "Only show Salvage row when playing Expeditions",
+		--ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+		--["pt-br"] = "",
+    },
+    exploration_track_loot = {
+        en = "Track Tech-Remnants",
+		--ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+		--["pt-br"] = "",
+    },
+    exploration_show_loot_only_in_expeditions = {
+        en = "Only show Tech-Remnants row when playing Expeditions",
+		--ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+		--["pt-br"] = "",
+    },
+    options_exploration_track_option_false = {
+        en = "False",
+		--ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+		--["pt-br"] = "",
+    },
+    options_exploration_track_option_alone = {
+        en = "True",
+		--ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+		--["pt-br"] = "",
+    },
+    options_exploration_track_option_materials = {
+        en = "True (count as materials pickup)",
+		--ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+		--["pt-br"] = "",
+    },
+    exploration_player_loot_value = {
+        en = "Tech-Remnants for player drop pickups",
+        --ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+        --["pt-br"] = "",
+    },
+    exploration_player_loot_value_description = {
+        en = "These are the the little box drops, which are used for player death, disabler theft, and boss kill rewards. Each of these situations have different values, but they use the same name without a way to distinguish them.",
+        --ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+        --["pt-br"] = "",
+    },
+    exploration_player_loot_value_none = {
+        en = "Ignore it (0)",
+        --ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+        --["pt-br"] = "",
+    },
+    exploration_player_loot_value_disabler = {
+        en = "Use disabler theft value (25)",
+        --ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+        --["pt-br"] = "",
+    },
+    exploration_player_loot_value_boss = {
+        en = "Use boss kill value (100)",
+        --ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+        --["pt-br"] = "",
+    },
+    -- --------
+    -- Ammo Tracking messages
+    -- --------
     -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     ammo_tracking_group = {
         en = "Ammo Tracking",
@@ -210,6 +320,10 @@ local localization = {
         ["zh-tw"] = "將彈藥箱納入撿取彈藥總百分比", 
 		["pt-br"] = "Inclua as caixas de munição na porcentagem total de munição coletada",
     },
+    -- --------
+    -- Attack Categorization
+    -- Mainly for Blitz
+    -- --------
     -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     attack_tracking_group = {
         en = "Attack Report Tracking",
@@ -346,6 +460,9 @@ local localization = {
         ["zh-tw"] = "爆炸影響近戰命中率",
 		["pt-br"] = "Explosões afetam a taxa de acerto em combate corpo a corpo",
     },
+    -- --------
+    -- Defense Tracking
+    -- --------
     -- @backup158: sai google translated these languages: ru, zh-cn, pt-br
     defense_tracking_group = {
         en = "Defense Report Tracking",
@@ -584,6 +701,20 @@ local localization = {
         ["zh-cn"] = "总材料拾取",
         ["zh-tw"] = "總材料拾取",
         ["pt-br"] = "Total de Materiais Coletados",
+    },
+    row_total_expeditions_currency_pickups = {
+        en = "Total Salvage",
+        --ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+        --["pt-br"] = "",
+    },
+    row_total_expeditions_loot_pickups = {
+        en = "Total Tech-Remnants",
+        --ru = "",
+        --["zh-cn"] = "",
+        --["zh-tw"] = "",
+        --["pt-br"] = "",
     },
     row_ammo_1 = {
         en = {left = "Total Ammo", right = "[ Taken | Wasted ]",},

@@ -3,7 +3,6 @@
 local mod = get_mod("RingHud")
 if not mod then return end
 
--- Use Ring HUD's own palette (not the game's global color list)
 mod:io_dofile("RingHud/scripts/mods/RingHud/systems/RingHud_colors")
 
 -- Helper: only include flat ARGB255 tuples (four numbers), skip compound tables like color spectrums.
@@ -87,7 +86,6 @@ local DATA = {
                 setting_id    = "minimal_objective_feed_enabled",
                 type          = "checkbox",
                 default_value = true,
-                tooltip       = "minimal_objective_feed_enabled_tooltip",
             },
             ------------------------------------------------------------------
             -- Layout
@@ -117,7 +115,6 @@ local DATA = {
                                 default_value   = 0,
                                 range           = { -1400, 1400 },
                                 decimals_number = 0,
-                                tooltip         = "player_hud_offset_x_tooltip",
                             },
                             {
                                 setting_id      = "player_hud_offset_y",
@@ -125,7 +122,6 @@ local DATA = {
                                 default_value   = 0,
                                 range           = { -1000, 1000 },
                                 decimals_number = 0,
-                                tooltip         = "player_hud_offset_y_tooltip",
                             },
                         }
                     },
@@ -139,7 +135,6 @@ local DATA = {
                                 default_value   = 1.0,
                                 range           = { 0.5, 2.0 },
                                 decimals_number = 1,
-                                tooltip         = "ring_scale_tooltip",
                             },
                             {
                                 setting_id    = "ring_offset_bias",
@@ -153,7 +148,6 @@ local DATA = {
                                 type          = "numeric",
                                 default_value = 0,
                                 range         = { 0, 200 },
-                                tooltip       = "scanner_offset_bias_override_tooltip",
                             },
                         },
                     },
@@ -176,7 +170,6 @@ local DATA = {
                                 default_value   = 18,
                                 range           = { 10, 40 },
                                 decimals_number = 0,
-                                tooltip         = "player_hud_text_size_tooltip",
                             },
                             {
                                 setting_id      = "player_hud_text_offset",
@@ -200,7 +193,6 @@ local DATA = {
                                 setting_id    = "ads_visibility_dropdown",
                                 type          = "dropdown",
                                 default_value = "ads_vis_normal",
-                                tooltip       = "ads_visibility_dropdown_tooltip",
                                 options       = {
                                     { text = "ads_vis_normal",           value = "ads_vis_normal" },
                                     { text = "ads_vis_hide_in_ads",      value = "ads_vis_hide_in_ads" },
@@ -214,14 +206,12 @@ local DATA = {
                                 default_value   = 1.0,
                                 range           = { 0.5, 2.0 },
                                 decimals_number = 1,
-                                tooltip         = "ads_scale_override_tooltip",
                             },
                             {
                                 setting_id    = "ads_offset_bias_override",
                                 type          = "numeric",
                                 default_value = 0,
                                 range         = { 0, 200 },
-                                tooltip       = "ads_offset_bias_override_tooltip",
                             },
                         }
                     },
@@ -408,21 +398,25 @@ local DATA = {
                                     { text = "ammo_clip_bar_always",          value = "ammo_clip_bar_always" },
                                     { text = "ammo_clip_text_always",         value = "ammo_clip_text_always" },
                                     { text = "ammo_clip_forecast_always",     value = "ammo_clip_forecast_always" },
+                                    { text = "ammo_clip_bar_forecast_ads",    value = "ammo_clip_bar_forecast_ads" },
+                                    { text = "ammo_clip_bar_ads",             value = "ammo_clip_bar_ads" },
                                     { text = "ammo_clip_disabled",            value = "ammo_clip_disabled" },
                                 },
                             },
                             {
                                 setting_id    = "ammo_reserve_dropdown",
                                 type          = "dropdown",
-                                default_value = "ammo_reserve_percent_auto",
+                                default_value = "ammo_total_percent_auto",
                                 tooltip       = "ammo_reserve_dropdown_tooltip",
                                 options       = {
                                     { text = "ammo_reserve_percent_auto",    value = "ammo_reserve_percent_auto" },
                                     { text = "ammo_reserve_actual_auto",     value = "ammo_reserve_actual_auto" },
                                     { text = "ammo_reserve_forecast_auto",   value = "ammo_reserve_forecast_auto" },
+                                    { text = "ammo_total_percent_auto",      value = "ammo_total_percent_auto" },
                                     { text = "ammo_reserve_percent_always",  value = "ammo_reserve_percent_always" },
                                     { text = "ammo_reserve_actual_always",   value = "ammo_reserve_actual_always" },
                                     { text = "ammo_reserve_forecast_always", value = "ammo_reserve_forecast_always" },
+                                    { text = "ammo_total_percent_always",    value = "ammo_total_percent_always" },
                                     { text = "ammo_reserve_disabled",        value = "ammo_reserve_disabled" },
                                 },
                             },
@@ -448,13 +442,11 @@ local DATA = {
                     {
                         setting_id  = "pocketable_settings",
                         type        = "group",
-                        tooltip     = "pocketable_settings_tooltip",
                         sub_widgets = {
                             {
                                 setting_id    = "pocketable_visibility_dropdown",
                                 type          = "dropdown",
                                 default_value = "pocketable_contextual",
-                                tooltip       = "pocketable_visibility_dropdown_tooltip",
                                 options       = {
                                     { text = "pocketable_contextual", value = "pocketable_contextual" },
                                     { text = "pocketable_always",     value = "pocketable_always" },
@@ -465,14 +457,12 @@ local DATA = {
                                 setting_id    = "medical_crate_color",
                                 type          = "dropdown",
                                 default_value = "HEALTH_GREEN",
-                                tooltip       = "medical_crate_color_tooltip",
                                 options       = _palette_options(),
                             },
                             {
                                 setting_id    = "ammo_cache_color",
                                 type          = "dropdown",
                                 default_value = "SPEED_BLUE",
-                                tooltip       = "ammo_cache_color_tooltip",
                                 options       = _palette_options(),
                             },
                         }
@@ -489,7 +479,6 @@ local DATA = {
                     {
                         setting_id  = "team_hud_settings",
                         type        = "group",
-                        tooltip     = "team_hud_settings_tooltip",
                         sub_widgets = {
                             {
                                 setting_id    = "team_hud_mode",
@@ -511,13 +500,11 @@ local DATA = {
                                 default_value   = 0.8,
                                 range           = { 0.5, 2.0 },
                                 decimals_number = 1,
-                                tooltip         = "team_tiles_scale_tooltip",
                             },
                             {
                                 setting_id    = "team_hp_bar",
                                 type          = "dropdown",
                                 default_value = "team_hp_bar_context_text_off",
-                                tooltip       = "team_hp_bar_tooltip",
                                 options       = {
                                     { text = "team_hp_disabled",                 value = "team_hp_disabled" },
                                     { text = "team_hp_bar_always_text_off",      value = "team_hp_bar_always_text_off" },
@@ -538,7 +525,6 @@ local DATA = {
                                 setting_id    = "team_docked_axis",
                                 type          = "dropdown",
                                 default_value = "vertical",
-                                tooltip       = "team_docked_axis_tooltip",
                                 options       = {
                                     { text = "team_docked_axis_vertical",   value = "vertical" },
                                     { text = "team_docked_axis_horizontal", value = "horizontal" },
@@ -550,7 +536,6 @@ local DATA = {
                                 default_value   = 0,
                                 range           = { -800, 800 },
                                 decimals_number = 0,
-                                tooltip         = "team_hud_offset_x_tooltip",
                             },
                             {
                                 setting_id      = "team_hud_offset_y",
@@ -558,7 +543,6 @@ local DATA = {
                                 default_value   = 0,
                                 range           = { -800, 800 },
                                 decimals_number = 0,
-                                tooltip         = "team_hud_offset_y_tooltip",
                             },
                         },
                     },
@@ -568,13 +552,11 @@ local DATA = {
                     {
                         setting_id  = "team_hud_detail",
                         type        = "group",
-                        tooltip     = "team_hud_detail_tooltip",
                         sub_widgets = {
                             {
                                 setting_id    = "team_name_icon",
                                 type          = "dropdown",
                                 default_value = "name0_icon1_status1",
-                                tooltip       = "team_name_icon_tooltip",
                                 options       = {
                                     { text = "name0_icon1_status1", value = "name0_icon1_status1" }, -- nameplate no name, archetype icon big, status icons special
                                     { text = "name0_icon1_status0", value = "name0_icon1_status0" }, -- nameplate no name, archetype icon big, status icons DT default
@@ -590,7 +572,6 @@ local DATA = {
                                 setting_id    = "team_munitions",
                                 type          = "dropdown",
                                 default_value = "team_munitions_ammo_context_cd_enabled",
-                                tooltip       = "team_munitions_tooltip",
                                 options       = {
                                     { text = "team_munitions_disabled",                 value = "team_munitions_disabled" },
                                     { text = "team_munitions_ammo_context_cd_disabled", value = "team_munitions_ammo_context_cd_disabled" },
@@ -603,7 +584,6 @@ local DATA = {
                                 setting_id    = "team_pockets",
                                 type          = "dropdown",
                                 default_value = "team_pockets_context",
-                                tooltip       = "team_pockets_tooltip",
                                 options       = {
                                     { text = "team_pockets_disabled", value = "team_pockets_disabled" },
                                     { text = "team_pockets_always",   value = "team_pockets_always" },
@@ -624,30 +604,12 @@ local DATA = {
                     {
                         setting_id  = "default_hud_visibility_settings",
                         type        = "group",
-                        tooltip     = "default_hud_visibility_settings_tooltip",
                         sub_widgets = {
-                            { setting_id = "hide_default_ability", type = "checkbox", default_value = false, tooltip = "hide_default_ability_tooltip" },
-                            { setting_id = "hide_default_weapons", type = "checkbox", default_value = false, tooltip = "hide_default_weapons_tooltip" },
-                            { setting_id = "hide_default_player",  type = "checkbox", default_value = false, tooltip = "hide_default_player_tooltip" },
+                            { setting_id = "hide_default_ability", type = "checkbox", default_value = false },
+                            { setting_id = "hide_default_weapons", type = "checkbox", default_value = false },
+                            { setting_id = "hide_default_player",  type = "checkbox", default_value = false },
                         }
                     },
-
-                    -- ─────────────────────────────────────────────────────────────────
-                    -- UI Integration (bottom-most)
-                    -- ─────────────────────────────────────────────────────────────────
-                    -- {
-                    --     setting_id  = "ui_integration_settings",
-                    --     type        = "group",
-                    --     tooltip     = "ui_integration_settings_tooltip",
-                    --     sub_widgets = {
-                    --         {
-                    --             setting_id    = "minimal_objective_feed_enabled",
-                    --             type          = "checkbox",
-                    --             default_value = true,
-                    --             tooltip       = "minimal_objective_feed_enabled_tooltip",
-                    --         },
-                    --     },
-                    -- },
                 },
             },
         },

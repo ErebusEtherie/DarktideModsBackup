@@ -119,6 +119,14 @@
 			en = "Only auto-stim if you have the Chemical Dependency keystone.",
 			["zh-cn"] = "只有当你拥有化学依赖关键技能时才自动注射兴奋剂。",
 		},
+		not_with_stimm_supply = {
+            en = "Not with Stimm Supply",
+            ["zh-cn"] = "选择兴奋剂补给时禁用自动化",
+        },
+        not_with_stimm_supply_description = {
+            en = "Disable auto-stim if you have the Stimm Field combat ability.",
+            ["zh-cn"] = "若玩家选择了右线兴奋剂补给大招，则禁用自动注射兴奋剂的功能。",
+        },
 		auto_inject_prevention = {
 			en = "Auto Inject Prevention",
 			["zh-cn"] = "自动注射保护",

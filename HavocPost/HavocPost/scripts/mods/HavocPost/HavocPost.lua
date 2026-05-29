@@ -1,9 +1,13 @@
--- HavocPost v1.0.0
--- Posts your current Havoc assignment info to the Strike Team chat using /havoc
--- Hooks HavocPlayView to cache the terminal order and read the rendered map name.
+-- HavocPost v1.1.0
 -- Author: TIIGRR
 
 local mod = get_mod("HavocPost")
+
+local UIWidget            = require("scripts/managers/ui/ui_widget")
+local UISoundEvents       = require("scripts/settings/ui/ui_sound_events")
+local ButtonPassTemplates = require("scripts/ui/pass_templates/button_pass_templates")
+
+local BUTTON_PACKAGE = "packages/ui/views/options_view/options_view"
 
 local STR = {
     no_chat      = "[HavocPost] Error: Chat manager unavailable.",
@@ -18,20 +22,15 @@ local STR = {
     loaded_hint  = "[HavocPost] Loaded — type /havoc to post your Havoc assignment.",
 }
 
--- ─── Cache ───────────────────────────────────────────────────────────────────
-local _cached_order = nil   -- havoc_order table from the terminal
-local _cached_view  = nil   -- HavocPlayView instance (to read map name)
-local _cached_circs = nil   -- circ names read from grid while terminal is open
+local _cached_order = nil
+local _cached_view  = nil
+local _cached_circs = nil
 
--- Fires every frame while the terminal is open.
--- Reads circ names from the grid widgets immediately (they clear on close).
 mod:hook_safe(CLASS.HavocPlayView, "_update_can_play", function(self)
     local order = self._parent and self._parent.havoc_order
     if type(order) == "table" and order.id then
         _cached_order = order
         _cached_view  = self
-        -- Read circ names and icon slugs now while grid is populated.
-        -- Icon slug is used to identify and optionally filter specific circs.
         local grid = self._mission_detail_grid
         if type(grid) == "table" then
             local gw = grid._grid_widgets
@@ -57,7 +56,6 @@ mod:hook_safe(CLASS.HavocPlayView, "_update_can_play", function(self)
     end
 end)
 
--- ─── Map name ────────────────────────────────────────────────────────────────
 local function get_map_from_view(view)
     if type(view) ~= "table" then return nil end
     local ok, name = pcall(function()
@@ -70,9 +68,7 @@ local function get_map_from_view(view)
     return nil
 end
 
--- Circ names are cached in the hook while the terminal grid is populated.
 
--- ─── Chat send ───────────────────────────────────────────────────────────────
 local function try_send(chat_mgr, handle, message)
     if type(chat_mgr.send_channel_message) == "function" then
         if pcall(chat_mgr.send_channel_message, chat_mgr, handle, message) then return true end
@@ -95,7 +91,6 @@ local function send_team_chat(message)
 
     local sessions = rawget(chat_mgr, "_sessions") or rawget(chat_mgr, "sessions")
     if type(sessions) == "table" then
-        -- First pass: prefer party/strike_team tagged channel
         for handle, session in pairs(sessions) do
             if type(session) == "table" then
                 local tag = session.tag or session.channel_tag
@@ -105,13 +100,11 @@ local function send_team_chat(message)
                 end
             end
         end
-        -- Second pass: try every session
         for handle in pairs(sessions) do
             if try_send(chat_mgr, handle, message) then return true end
         end
     end
 
-    -- Last resort: numeric handles 1–4
     for h = 1, 4 do
         if try_send(chat_mgr, h, message) then return true end
     end
@@ -120,14 +113,12 @@ local function send_team_chat(message)
     return false
 end
 
--- ─── Localize helper ─────────────────────────────────────────────────────────
 local function try_localize(key)
     local ok, s = pcall(function() return Managers.localization:localize(key) end)
     if ok and s and s ~= key and not s:match("^<") then return s end
     return nil
 end
 
--- ─── Named circumstances (havoc-circ-*) ──────────────────────────────────────
 local function localize_circ_name(raw_id)
     local base = raw_id:gsub("^mutator_", "")
     for _, key in ipairs({
@@ -143,7 +134,6 @@ local function localize_circ_name(raw_id)
         :gsub("(%a)([%w_]*)", function(a, b) return a:upper() .. b end)
 end
 
--- ─── Stat modifiers (havoc-mods-*) ───────────────────────────────────────────
 local MOD_NAMES = {
     buff_elites                           = "Elite Health",
     buff_specials                         = "Specialist Health",
@@ -196,7 +186,6 @@ local function get_mod_display(mod_name, tier)
     return base_name
 end
 
--- ─── Flag parser ─────────────────────────────────────────────────────────────
 local function parse_flags(flags)
     local circs, mods, faction = {}, {}, nil
     if type(flags) ~= "table" then return circs, mods, faction end
@@ -238,7 +227,6 @@ local function parse_flags(flags)
     return circs, mods, faction
 end
 
--- ─── Format and post ─────────────────────────────────────────────────────────
 local function post_order(order)
     if type(order) ~= "table" then return false end
 
@@ -258,8 +246,6 @@ local function post_order(order)
 
     local map_name = get_map_from_view(_cached_view) or "Unknown"
 
-    -- Use circ entries cached from the grid while the terminal was open.
-    -- Fall back to flag parsing if cache isn't populated yet.
     local circ_entries = _cached_circs
     local circ_names
     if circ_entries then
@@ -286,15 +272,18 @@ local function post_order(order)
     end
     parts[#parts + 1] = #circ_names > 0 and table.concat(circ_names, ", ") or "None"
 
-    local prefix = mod:get("show_havoc_tag") and "[HAVOC] " or ""
-    send_team_chat(prefix .. table.concat(parts, " | "))
+    local message = (mod:get("show_havoc_tag") and "[HAVOC] " or "") .. table.concat(parts, " | ")
+    if mod:get("debug_mode") then
+        mod:echo("[HavocPost] Preview: " .. message)
+    else
+        send_team_chat(message)
+    end
     if mod:get("show_status_messages") then
         mod:echo(STR.posted_ok)
     end
     return true
 end
 
--- ─── Core ────────────────────────────────────────────────────────────────────
 local function build_and_post_havoc_info()
     if _cached_order then
         local ok, err = pcall(post_order, _cached_order)
@@ -302,7 +291,6 @@ local function build_and_post_havoc_info()
         return
     end
 
-    -- Fallback: fetch from service (map name will show as Unknown)
     local lp = Managers.player and Managers.player:local_player(1)
     if not lp then mod:echo(STR.no_player) return end
     local char_id = lp:character_id()
@@ -336,7 +324,6 @@ local function build_and_post_havoc_info()
     end)
 end
 
--- ─── Commands ────────────────────────────────────────────────────────────────
 mod:command("havoc", "Post your Havoc assignment to Strike Team chat.", function()
     if _cached_order then
         if mod:get("show_status_messages") then
@@ -348,35 +335,88 @@ mod:command("havoc", "Post your Havoc assignment to Strike Team chat.", function
     build_and_post_havoc_info()
 end)
 
-mod:command("havocinfo", "Debug: show what circ names and map the mod currently sees.", function()
-    mod:echo("[HavocPost] _cached_view = " .. tostring(_cached_view ~= nil))
-    mod:echo("[HavocPost] _cached_order = " .. tostring(_cached_order ~= nil))
-    if not _cached_view then mod:echo("[HavocPost] No view cached.") return end
-    local map = get_map_from_view(_cached_view)
-    mod:echo("[HavocPost] map = " .. tostring(map))
-    local grid = _cached_view._mission_detail_grid
-    mod:echo("[HavocPost] _mission_detail_grid = " .. tostring(type(grid)))
-    if type(grid) == "table" then
-        local gw = grid._grid_widgets
-        mod:echo("[HavocPost] _grid_widgets type=" .. type(gw) .. " count=" .. (type(gw)=="table" and tostring(#gw) or "?"))
-        if type(gw) == "table" then
-            for i = 1, #gw do
-                local w = gw[i]
-                if type(w) == "table" then
-                    local header = type(w.content)=="table" and tostring(w.content.header) or "nil"
-                    mod:echo("[HavocPost] widget["..i.."] type="..tostring(w.type).." header="..header)
-                end
-            end
-        end
+local function _ensure_button_package()
+    local pm = Managers.package
+    if not pm then return false end
+    if pm:has_loaded(BUTTON_PACKAGE) then return true end
+    if not mod._hp_pkg_id and not pm:is_loading(BUTTON_PACKAGE) then
+        mod._hp_pkg_id = pm:load(BUTTON_PACKAGE, "HavocPost")
     end
-    if _cached_circs then
-        mod:echo("[HavocPost] circs: " .. table.concat(_cached_circs, ", "))
-    else
-        mod:echo("[HavocPost] _cached_circs = nil (fallback to flags)")
+    return false
+end
+
+local function _apply_button_definition(defs)
+    if not defs.scenegraph_definition or not defs.widget_definitions then return end
+    defs.scenegraph_definition.hp_post_button = {
+        horizontal_alignment = "right",
+        vertical_alignment   = "center",
+        parent               = "screen",
+        size                 = { 380, 80 },
+        position             = { -155, 20, 1 },
+    }
+    defs.widget_definitions.hp_post_button = UIWidget.create_definition(
+        ButtonPassTemplates.default_button, "hp_post_button", {
+            original_text = "POST",
+            hotspot       = { on_pressed_sound = UISoundEvents.weapons_skin_confirm },
+        }
+    )
+end
+
+mod:hook_require("scripts/ui/views/havoc_play_view/havoc_play_view_definitions", function(defs)
+    _apply_button_definition(defs)
+end)
+
+mod:hook_require("scripts/ui/views/havoc_play_view/havoc_play_view", function(instance)
+
+    instance._hp_try_create_button = function(self)
+        if self._widgets_by_name.hp_post_button then return true end
+        if not _ensure_button_package() then return false end
+        local Definitions = require("scripts/ui/views/havoc_play_view/havoc_play_view_definitions")
+        _apply_button_definition(Definitions)
+        local w = self:_create_widget("hp_post_button", Definitions.widget_definitions.hp_post_button)
+        self._widgets_by_name.hp_post_button = w
+        self._widgets[#self._widgets + 1] = w
+        w.visible = true
+        mod._hp_waiting = false
+        return true
+    end
+
+    instance.cb_hp_post_pressed = function(self)
+        build_and_post_havoc_info()
+    end
+
+end)
+
+mod:hook_safe(CLASS.HavocPlayView, "on_enter", function(self)
+    _ensure_button_package()
+    if not self:_hp_try_create_button() then
+        mod._hp_waiting = true
     end
 end)
 
--- ─── Startup hint ────────────────────────────────────────────────────────────
+mod:hook_safe(CLASS.HavocPlayView, "update", function(self, dt, t)
+    if mod._hp_waiting then
+        self:_hp_try_create_button()
+    end
+    local w = self._widgets_by_name and self._widgets_by_name.hp_post_button
+    if w then
+        local should_show = mod:get("show_post_button")
+        w.visible = should_show
+        if should_show then
+            local hotspot = w.content and w.content.hotspot
+            if hotspot and hotspot.on_pressed then
+                build_and_post_havoc_info()
+            end
+        end
+    end
+end)
+
+mod:hook_safe(CLASS.HavocPlayView, "on_exit", function(self)
+    mod._hp_waiting = false
+    local w = self._widgets_by_name and self._widgets_by_name.hp_post_button
+    if w then w.visible = false end
+end)
+
 mod:hook_safe(CLASS.StateMainMenu, "on_enter", function()
     if mod:get("show_startup_message") then
         mod:echo(STR.loaded_hint)

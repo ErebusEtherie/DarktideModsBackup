@@ -8,28 +8,22 @@ return {
 	options = {
 		widgets = {
 			{
-				setting_id = "general_settings",
-				type = "group",
-				sub_widgets = {
-					{
-						setting_id = "enable_mod",
-						type = "checkbox",
-						default_value = true,
-					},
-					{
-						setting_id = "toggle_mod_keybind",
-						type = "keybind",
-						default_value = {},
-						keybind_trigger = "pressed",
-						keybind_type = "function_call",
-						function_name = "toggle_mod_enabled",
-					},
-					{
-						setting_id = "use_block_cancel",
-						type = "checkbox",
-						default_value = true,
-					},
-				},
+				setting_id = "override_sprint",
+				type = "checkbox",
+				default_value = true,
+			},
+			{
+				setting_id = "helper_hotkey",
+				type = "keybind",
+				default_value = {},
+				keybind_trigger = "held",
+				keybind_type = "function_call",
+				function_name = "helper_hotkey",
+			},
+			{
+				setting_id = "use_block_cancel",
+				type = "checkbox",
+				default_value = true,
 			},
 		},
 	},

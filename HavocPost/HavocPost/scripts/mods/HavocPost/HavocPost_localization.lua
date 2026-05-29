@@ -8,6 +8,12 @@ return {
     },
 
     -- Settings
+    show_post_button = {
+        en = "Show Post Button",
+    },
+    show_post_button_tooltip = {
+        en = "Show the POST button in the Havoc terminal.",
+    },
     show_startup_message = {
         en = "Show Startup Message",
     },
@@ -43,6 +49,12 @@ return {
     },
     show_status_messages_tooltip = {
         en = "Show confirmation and cache status messages after posting with /havoc.",
+    },
+    debug_mode = {
+        en = "Debug Mode",
+    },
+    debug_mode_tooltip = {
+        en = "Instead of posting to Strike Team chat, echoes the exact message that would be sent.",
     },
 
     -- Status / hints

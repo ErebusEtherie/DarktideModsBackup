@@ -38,7 +38,7 @@ local valid_weapons = {
     
     -- Power Mauls (Explode on Impact)
     ["content/items/weapons/player/melee/powermaul_2h_p1_m1"] =     {"loc_weapon_family_powermaul_2h_p1_m1", "terminal_text_body", "cyan"},
-    ["content/items/weapons/player/melee/ogryn_powermaul_p1_m1"] =  {"loc_weapon_family_ogryn_powermaul_p1_m1", "terminal_text_body", "cyan"},
+    ["content/items/weapons/player/melee/ogryn_powermaul_p1_m1"] =  {"loc_weapon_family_ogryn_powermaul_p1_m1", "terminal_text_body", "cyan", "red"},
         
     -- Needle Pistols (Toggle Mode)
     ["content/items/weapons/player/ranged/needlepistol_p1_m1"] =    {"loc_weapon_family_needlepistol_p1_m1", "yellow", "cyan"},

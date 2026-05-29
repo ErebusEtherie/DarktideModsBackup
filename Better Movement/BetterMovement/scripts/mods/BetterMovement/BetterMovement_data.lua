@@ -48,6 +48,11 @@ return {
                             },
                         }
                     },
+                    {
+                        setting_id    = "easy_sprint_slide",
+                        type          = "checkbox",
+                        default_value = false,
+                    },
                 },
             },
             {
@@ -93,20 +98,24 @@ return {
                 }
             },
             {
-                setting_id = "movement_settings",
+                setting_id = "misc_settings",
                 type = "group",
                 sub_widgets = {
-                    {
-                        setting_id    = "easy_sprint_slide",
-                        type          = "checkbox",
-                        default_value = false,
-                    },
                     {
                         setting_id    = "auto_vault",
                         type          = "checkbox",
                         default_value = false,
                     },
-
+                    {
+                        setting_id    = "no_sprinting_stamina",
+                        type          = "checkbox",
+                        default_value = true,
+                    },
+                    {
+                        setting_id    = "luggable_keep_push",
+                        type          = "checkbox",
+                        default_value = true,
+                    },
                 }
             }
         }

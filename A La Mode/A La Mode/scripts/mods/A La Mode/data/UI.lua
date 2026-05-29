@@ -119,7 +119,6 @@ function ALaModeConfig:update()
     local color1_argb = mod:get(self.selected_weapon_key .. "-color_1") or Color[weapon_data[2]](255, true)
     local color2_argb = mod:get(self.selected_weapon_key .. "-color_2") or Color[weapon_data[3]](255, true)
     
-    
     Imgui_text("Mode A/Normal:")
     local r1, g1, b1 = Imgui_color_edit_3("##color1", color1_argb[2] / 255, color1_argb[3] / 255, color1_argb[4] / 255)
     if r1 ~= color1_argb[2] / 255 or g1 ~= color1_argb[3] / 255 or b1 ~= color1_argb[4] / 255 then
@@ -130,6 +129,14 @@ function ALaModeConfig:update()
     local r2, g2, b2 = Imgui_color_edit_3("##color2", color2_argb[2] / 255, color2_argb[3] / 255, color2_argb[4] / 255)
     if r2 ~= color2_argb[2] / 255 or g2 ~= color2_argb[3] / 255 or b2 ~= color2_argb[4] / 255 then
       mod:set(self.selected_weapon_key .. "-color_2", {255, math.floor(r2 * 255), math.floor(g2 * 255), math.floor(b2 * 255)}, true)
+    end
+    if weapon_data[4] then
+      local color3_argb = mod:get(self.selected_weapon_key .. "-color_3") or Color[weapon_data[4]](255, true)
+      Imgui_text("Mode C/Cooldown:")
+      local r, g, b = Imgui_color_edit_3("##color3", color3_argb[2] / 255, color3_argb[3] / 255, color3_argb[4] / 255)
+      if r ~= color3_argb[2] / 255 or g ~= color3_argb[3] / 255 or b ~= color3_argb[4] / 255 then
+        mod:set(self.selected_weapon_key .. "-color_3", {255, math.floor(r * 255), math.floor(g * 255), math.floor(b * 255)}, true)
+      end
     end
   end
   

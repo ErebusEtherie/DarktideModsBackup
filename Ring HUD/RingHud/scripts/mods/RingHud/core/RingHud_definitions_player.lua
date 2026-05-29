@@ -4,12 +4,16 @@ if not mod then return {} end
 
 mod:io_dofile("RingHud/scripts/mods/RingHud/systems/RingHud_colors")
 
-local UIWorkspaceSettings = require("scripts/settings/ui/ui_workspace_settings")
-local UIWidget            = require("scripts/managers/ui/ui_widget")
-local UIFontSettings      = require("scripts/managers/ui/ui_font_settings")
+local UIWorkspaceSettings      = require("scripts/settings/ui/ui_workspace_settings")
+local UIWidget                 = require("scripts/managers/ui/ui_widget")
+local UIFontSettings           = require("scripts/managers/ui/ui_font_settings")
 
-local ARGB                = mod.PALETTE_ARGB255 or {}
-local RGBA1               = mod.PALETTE_RGBA1 or {}
+local tonumber                 = tonumber
+local table_clone              = table.clone
+local create_widget_definition = UIWidget.create_definition
+
+local ARGB                     = mod.PALETTE_ARGB255 or {}
+local RGBA1                    = mod.PALETTE_RGBA1 or {}
 setmetatable(ARGB, { __index = function() return { 255, 255, 255, 255 } end })
 setmetatable(RGBA1, { __index = function() return { 1, 1, 1, 1 } end })
 
@@ -56,7 +60,7 @@ local settings_y = (mod._settings and mod._settings.player_hud_offset_y) or 0
 local base_font_size = _effective_text_size(18 * u)
 
 local function create_text_style(offset, align, color, font, font_size, custom_size)
-    local style                     = table.clone(UIFontSettings.body_small)
+    local style                     = table_clone(UIFontSettings.body_small)
     style.font_type                 = font or custom_font
     style.font_size                 = font_size or base_font_size
     style.drop_shadow               = true
@@ -72,7 +76,8 @@ local percent_text_style      = create_text_style({ -(u * 55.8 + user_text_offse
 local ability_cd_text_style   = create_text_style({ u * 55.8 + user_text_offset_bias, offset_correction, 2 }, "left")
 local ability_buff_text_style = create_text_style({ u * 52.8 + user_text_offset_bias, u * 13.2, 2 }, "left",
     { 255, 0, 255, 0 }, "machine_medium", base_font_size * 1.5)
-local stimm_timer_text_style  = create_text_style({ 0, 0, 1 }, "left", { 255, 0, 255, 0 }, nil, nil, { 200 * u, 30 * u })
+local stimm_timer_text_style  = create_text_style({ 2 * u, -(6 * u), 1 }, "left", { 255, 0, 255, 0 }, nil, nil,
+    { 200 * u, 30 * u })
 local ammo_reserve_text_style = create_text_style({ 0, 0, 2 })
 local peril_text_style        = create_text_style({ 0, 0, 2 })
 local ammo_clip_text_style    = create_text_style({ 0, 0, 1 }, "right", ARGB.GENERIC_WHITE)
@@ -138,41 +143,41 @@ local Definitions = {
             "right"),
 
         stimm_indicator                = create_node(
-            { offset_correction + text_offset + (u * 22), u * 21.2, 11 }, { u * 40, u * 15 }, "center",
+            { offset_correction + text_offset + (u * 19), u * 22.2, 11 }, { u * 40, u * 15 }, "center",
             "top"),
         crate_indicator                = create_node(
-            { offset_correction + text_offset - (u * 4), offset_correction + (u * 8), 12 }, { u * 15, u * 15 }, "center",
+            { offset_correction + text_offset - (u * 7), offset_correction + (u * 9), 12 }, { u * 15, u * 15 }, "center",
             "top"),
         health_text_display_node       = create_node({ 0, u * 55, 13 }, { u * 250, u * 30 }, "center"),
     },
 
     widget_definitions    = {
-        ability_timer = UIWidget.create_definition({
+        ability_timer = create_widget_definition({
             { value_id = "ability_text", style_id = "ability_text", pass_type = "text", value = "", style = ability_buff_text_style },
         }, "ability_timer"),
 
-        peril_text_display_widget = UIWidget.create_definition({
+        peril_text_display_widget = create_widget_definition({
             { value_id = "percent_text", style_id = "percent_text_style", pass_type = "text", value = "", style = peril_text_style },
         }, "peril_text_display_node"),
 
-        ammo_reserve_display_widget = UIWidget.create_definition({
+        ammo_reserve_display_widget = create_widget_definition({
             { value_id = "reserve_text_value", style_id = "reserve_text_style", pass_type = "text", value = "", style = ammo_reserve_text_style },
         }, "ammo_reserve_text_display_node"),
 
-        ammo_clip_text_display_widget = UIWidget.create_definition({
+        ammo_clip_text_display_widget = create_widget_definition({
             { value_id = "ammo_clip_value_text", style_id = "ammo_clip_text_style", pass_type = "text", value = "", style = ammo_clip_text_style },
         }, "ammo_clip_text_display_node"),
 
-        stimm_indicator_widget = UIWidget.create_definition({
+        stimm_indicator_widget = create_widget_definition({
             { pass_type = "texture", value_id = "stimm_icon",       style_id = "stimm_icon",       style = { color = ARGB.GENERIC_WHITE, offset = { 0, 0, 0 }, visible = false, horizontal_alignment = "left", vertical_alignment = "center", size = { u * 15, u * 15 } } },
             { pass_type = "text",    value_id = "stimm_timer_text", style_id = "stimm_timer_text", value = "",                                                                                                                                                            size = { u * 200, u * 30 }, style = stimm_timer_text_style },
         }, "stimm_indicator"),
 
-        crate_indicator_widget = UIWidget.create_definition({
+        crate_indicator_widget = create_widget_definition({
             { pass_type = "texture", value_id = "crate_icon", style_id = "crate_icon", style = { color = ARGB.GENERIC_WHITE, offset = { 0, 0, 0 }, visible = false } }
         }, "crate_indicator"),
 
-        health_text_display_widget = UIWidget.create_definition({
+        health_text_display_widget = create_widget_definition({
             { value_id = "health_text_value", style_id = "health_text_style", pass_type = "text", value = "", style = health_text_style },
         }, "health_text_display_node"),
     },
@@ -192,7 +197,8 @@ local feature_bindings = {
 local colors = { ARGB = ARGB, RGBA1 = RGBA1 }
 local default_args = { size = size }
 
-for _, binding in ipairs(feature_bindings) do
+for i = 1, #feature_bindings do
+    local binding = feature_bindings[i]
     local feature = mod:io_dofile("RingHud/scripts/mods/RingHud/features/" .. binding.name)
     if feature and feature.add_widgets then
         feature.add_widgets(Definitions.widget_definitions, nil, binding.args or default_args, colors)

@@ -2,9 +2,66 @@
 local mod = get_mod("ZipIt2"); if not mod then return end
 
 local Vo = require("scripts/utilities/vo")
+local ChatManager = require("scripts/managers/chat/chat_manager")
+local ChatManagerConstants = require("scripts/foundation/managers/chat/chat_manager_constants")
+local PlayerCharacterSoundEventAliases = require("scripts/settings/sound/player_character_sound_event_aliases")
 
-local rawget, _G, type, pairs = rawget, _G, type, pairs
+local rawget, _G, type, pairs, os, string, tonumber, math = rawget, _G, type, pairs, os, string, tonumber, math
 local WwiseWorld = rawget(_G, "WwiseWorld")
+local os_clock = os.clock
+local string_find = string.find
+local Localize = Localize
+
+local function _switches_include_selected_voice(switches)
+    if type(switches) ~= "table" then
+        return false
+    end
+
+    local count = #switches
+
+    for i = 1, count do
+        if switches[i] == "selected_voice" then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function _collect_selected_voice_event_paths(value, out)
+    if type(value) == "string" then
+        if string_find(value, "wwise/events/player/play_", 1, true) == 1 then
+            out[value] = true
+        end
+
+        return
+    end
+
+    if type(value) ~= "table" then
+        return
+    end
+
+    for _, nested_value in pairs(value) do
+        _collect_selected_voice_event_paths(nested_value, out)
+    end
+end
+
+local function _build_player_nonverbal_sound_event_lookups()
+    local alias_lookup = {}
+    local path_lookup = {}
+
+    for alias_name, alias_data in pairs(PlayerCharacterSoundEventAliases) do
+        if type(alias_data) == "table" and _switches_include_selected_voice(alias_data.switch) then
+            alias_lookup[alias_name] = true
+            _collect_selected_voice_event_paths(alias_data.events, path_lookup)
+        end
+    end
+
+    return alias_lookup, path_lookup
+end
+
+local PLAYER_NONVERBAL_SOUND_EVENT_ALIASES, PLAYER_NONVERBAL_SOUND_EVENT_PATHS =
+    _build_player_nonverbal_sound_event_lookups()
 
 local function _voice_profile_from_unit(unit)
     if not unit then
@@ -27,6 +84,112 @@ local function _local_player_unit()
     local local_player = player_manager and player_manager:local_player_safe(1)
 
     return local_player and local_player.player_unit or nil
+end
+
+local function _chat_manager()
+    local _Managers = rawget(_G, "Managers")
+
+    return _Managers and _Managers.chat or nil
+end
+
+local function _current_game_mode_name()
+    local _Managers = rawget(_G, "Managers")
+    local state = _Managers and _Managers.state
+    local game_mode_manager = state and state.game_mode
+
+    if game_mode_manager and game_mode_manager.game_mode_name then
+        return game_mode_manager:game_mode_name()
+    end
+
+    return false
+end
+
+local function _ensure_other_player_com_wheel_throttle_state()
+    local current_game_mode = _current_game_mode_name() or false
+
+    if mod._zipit2_other_player_com_wheel_throttle_game_mode ~= current_game_mode then
+        mod._zipit2_other_player_com_wheel_throttle_game_mode = current_game_mode
+        mod._zipit2_other_player_com_wheel_throttle_by_player = {}
+    elseif type(mod._zipit2_other_player_com_wheel_throttle_by_player) ~= "table" then
+        mod._zipit2_other_player_com_wheel_throttle_by_player = {}
+    end
+
+    return mod._zipit2_other_player_com_wheel_throttle_by_player
+end
+
+local function _should_throttle_other_player_com_wheel(unit, voice_profile, concept)
+    local S = mod._zipit2_settings or {}
+    local throttle_seconds = S.other_players_com_wheel_throttle_seconds or 0
+
+    if throttle_seconds < 1 or not unit then
+        return false
+    end
+
+    local local_player_unit = _local_player_unit()
+
+    if unit == local_player_unit then
+        return false
+    end
+
+    local D = mod._zipit2_discovery or {}
+    local player_voice_set = D.player_voice_set or {}
+
+    if not player_voice_set[voice_profile] then
+        return false
+    end
+
+    if mod.zipit2_classify_player_voice_identifier(concept) ~= "com_wheel" then
+        return false
+    end
+
+    local throttle_by_player = _ensure_other_player_com_wheel_throttle_state()
+    local current_time = os_clock()
+    local next_allowed_time = throttle_by_player[unit] or 0
+
+    if current_time < next_allowed_time then
+        return true
+    end
+
+    throttle_by_player[unit] = current_time + throttle_seconds
+
+    return false
+end
+
+local function _should_mute_player_nonverbal_sound_event(event_name)
+    local S = mod._zipit2_settings or {}
+
+    if S.player_nonverbal_sounds_enabled ~= false then
+        return false
+    end
+
+    if type(event_name) ~= "string" or event_name == "" then
+        return false
+    end
+
+    if PLAYER_NONVERBAL_SOUND_EVENT_ALIASES[event_name] then
+        return true
+    end
+
+    if PLAYER_NONVERBAL_SOUND_EVENT_PATHS[event_name] then
+        return true
+    end
+
+    return false
+end
+
+local function _should_mute_enemy_generic_vo(unit, breed_name_or_nil)
+    local voice_profile = _voice_profile_from_unit(unit)
+
+    if type(breed_name_or_nil) == "string" and breed_name_or_nil ~= "" then
+        return mod.zipit2_should_mute_enemy_dialogue_breed(
+            voice_profile,
+            { enemy_tag = breed_name_or_nil },
+            nil,
+            nil
+        )
+    end
+
+    return mod.zipit2_should_mute_enemy_dialogue_breed(voice_profile, nil, nil, nil)
 end
 
 local function _get_chat_channel_by_tag(channel_tag)
@@ -106,6 +269,163 @@ local function _register_selected_wheel_option_telemetry(option)
     end
 end
 
+local function _voice_chat_settings_table()
+    local user_setting = Application.user_setting
+
+    if type(user_setting) ~= "function" then
+        return nil
+    end
+
+    return user_setting("sound_settings")
+end
+
+local function _voice_chat_saved_slider_value()
+    local sound_settings = _voice_chat_settings_table()
+    local value = sound_settings and sound_settings.options_voip_volume_slider_v2
+
+    if value == nil then
+        return 50
+    end
+
+    value = tonumber(value) or 0
+
+    if value < 0 then
+        return 0
+    end
+
+    if value > 100 then
+        return 100
+    end
+
+    return value
+end
+
+local function _voice_chat_saved_render_volume()
+    local value = _voice_chat_saved_slider_value()
+
+    if value <= 0.01 then
+        return 0
+    end
+
+    return math.lerp(25, 75, value / 100)
+end
+
+local function _voice_chat_saved_mode()
+    local user_setting = Application.user_setting
+    local value = type(user_setting) == "function" and user_setting("sound_settings", "voice_chat") or nil
+
+    if value == 0 or value == 1 or value == 2 then
+        return value
+    end
+
+    if IS_WINDOWS then
+        return 2
+    end
+
+    return 1
+end
+
+local function _desired_local_mic_muted(chat_manager)
+    if mod.zipit2_is_voice_chat_output_muted and mod.zipit2_is_voice_chat_output_muted() then
+        return true
+    end
+
+    local voice_chat_mode = _voice_chat_saved_mode()
+
+    if voice_chat_mode == 0 then
+        return true
+    end
+
+    if voice_chat_mode == 1 then
+        return false
+    end
+
+    local input_service = chat_manager and chat_manager._input_service
+
+    if input_service and input_service:has("voip_push_to_talk") and input_service:get("voip_push_to_talk") then
+        return false
+    end
+
+    return true
+end
+
+local function _apply_voice_chat_render_volume_to_connected_sessions(render_volume)
+    local Vivox = rawget(_G, "Vivox")
+
+    if not Vivox or type(Vivox.session_set_local_render_volume) ~= "function" then
+        return
+    end
+
+    local chat_manager = _chat_manager()
+    local channels = chat_manager and chat_manager:connected_voip_channels()
+
+    if type(channels) ~= "table" then
+        return
+    end
+
+    for session_handle, _ in pairs(channels) do
+        Vivox.session_set_local_render_volume(session_handle, render_volume)
+    end
+end
+
+local function _apply_current_voice_chat_output_volume()
+    local is_temporarily_muted = mod.zipit2_is_voice_chat_output_muted and mod.zipit2_is_voice_chat_output_muted()
+    local render_volume = is_temporarily_muted and 0 or _voice_chat_saved_render_volume()
+
+    _apply_voice_chat_render_volume_to_connected_sessions(render_volume)
+end
+
+local function _apply_current_local_mic_state(chat_manager)
+    if not chat_manager or type(chat_manager.mute_local_mic) ~= "function" then
+        return
+    end
+
+    chat_manager:mute_local_mic(_desired_local_mic_muted(chat_manager))
+end
+
+local function _refresh_voice_chat_for_game_mode(chat_manager)
+    local current_game_mode = _current_game_mode_name() or false
+
+    if mod._zipit2_voice_chat_output_game_mode ~= current_game_mode then
+        mod._zipit2_voice_chat_output_game_mode = current_game_mode
+
+        if type(mod.zipit2_reset_voice_chat_output_mute) == "function" then
+            mod.zipit2_reset_voice_chat_output_mute()
+        end
+    end
+
+    _apply_current_voice_chat_output_volume()
+    _apply_current_local_mic_state(chat_manager or _chat_manager())
+end
+
+mod.zipit2_execute_voice_chat_toggle = mod.zipit2_execute_voice_chat_toggle or function()
+    if not mod:is_enabled() then
+        return
+    end
+
+    local is_muted = mod.zipit2_is_voice_chat_output_muted and mod.zipit2_is_voice_chat_output_muted() == true
+    local new_muted = not is_muted
+
+    if type(mod.zipit2_set_voice_chat_output_muted) == "function" then
+        mod.zipit2_set_voice_chat_output_muted(new_muted)
+    end
+
+    local chat_manager = _chat_manager()
+
+    _apply_current_voice_chat_output_volume()
+    _apply_current_local_mic_state(chat_manager)
+
+    if new_muted then
+        mod:echo(" " ..
+            Localize("loc_settings_menu_group_voice_chat_settings") ..
+            " - " .. Localize("loc_setting_voice_chat_presets_mic_muted"))
+    else
+        mod:echo(" " ..
+            Localize("loc_settings_menu_group_voice_chat_settings") ..
+            " - " .. Localize("loc_setting_checkbox_on"))
+    end
+end
+
 mod.zipit2_execute_selected_wheel_option = mod.zipit2_execute_selected_wheel_option or function()
     local player_unit = _local_player_unit()
 
@@ -151,10 +471,18 @@ mod.zipit2_register_audio_hooks = mod.zipit2_register_audio_hooks or function()
             return func(unit, concept, trigger_id, target_unit)
         end
 
+        if mod.zipit2_should_mute_bot and mod.zipit2_should_mute_bot(unit) then
+            return
+        end
+
         local voice_profile = _voice_profile_from_unit(unit)
 
         if voice_profile then
             if mod.zipit2_should_mute_voice_profile(voice_profile, concept) then
+                return
+            end
+
+            if _should_throttle_other_player_com_wheel(unit, voice_profile, concept) then
                 return
             end
         elseif mod.zipit2_should_mute_on_demand_sound_event(concept) then
@@ -162,6 +490,71 @@ mod.zipit2_register_audio_hooks = mod.zipit2_register_audio_hooks or function()
         end
 
         return func(unit, concept, trigger_id, target_unit)
+    end)
+
+    mod:hook(Vo, "enemy_generic_vo_event", function(func, unit, trigger_id, breed_name_or_nil, target_distance)
+        if not mod:is_enabled() then
+            return func(unit, trigger_id, breed_name_or_nil, target_distance)
+        end
+
+        if _should_mute_enemy_generic_vo(unit, breed_name_or_nil) then
+            return
+        end
+
+        return func(unit, trigger_id, breed_name_or_nil, target_distance)
+    end)
+
+    mod:hook(Vo, "enemy_alerted_idle_event", function(func, unit, breed_name)
+        if not mod:is_enabled() then
+            return func(unit, breed_name)
+        end
+
+        if _should_mute_enemy_generic_vo(unit, breed_name) then
+            return
+        end
+
+        return func(unit, breed_name)
+    end)
+
+    mod:hook(ChatManager, "mute_local_mic", function(func, self, mute, ...)
+        if mod:is_enabled() and mod.zipit2_is_voice_chat_output_muted and mod.zipit2_is_voice_chat_output_muted() then
+            mute = true
+        end
+
+        return func(self, mute, ...)
+    end)
+
+    mod:hook(ChatManager, "mic_volume_changed", function(func, self, ...)
+        local result = func(self, ...)
+
+        if mod:is_enabled() then
+            _apply_current_voice_chat_output_volume()
+        end
+
+        return result
+    end)
+
+    mod:hook(ChatManager, "_handle_event", function(func, self, message, ...)
+        local result = func(self, message, ...)
+
+        if not mod:is_enabled() then
+            return result
+        end
+
+        local Vivox = rawget(_G, "Vivox")
+        local media_stream_updated = Vivox and Vivox.EventType_MEDIA_STREAM_UPDATED
+
+        if message and message.event == media_stream_updated then
+            local session_handle = message.session_handle
+            local session = self._sessions and session_handle and self._sessions[session_handle]
+            local session_media_state = session and session.session_media_state
+
+            if session_media_state == ChatManagerConstants.ChannelConnectionState.CONNECTED then
+                _refresh_voice_chat_for_game_mode(self)
+            end
+        end
+
+        return result
     end)
 
     mod:hook("HudElementSmartTagging", "_play_tag_sound", function(func, self, tag_instance, event_name)
@@ -197,6 +590,10 @@ mod.zipit2_register_audio_hooks = mod.zipit2_register_audio_hooks or function()
         mod:hook(WwiseWorld, "trigger_resource_event", function(func, wwise_world, event_name, ...)
             if not mod:is_enabled() then
                 return func(wwise_world, event_name, ...)
+            end
+
+            if _should_mute_player_nonverbal_sound_event(event_name) then
+                return
             end
 
             if mod.zipit2_should_mute_breed_sound_event(event_name) then

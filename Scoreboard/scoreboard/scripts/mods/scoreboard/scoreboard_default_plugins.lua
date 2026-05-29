@@ -354,7 +354,11 @@ mod.drop_crate = function(self, event_name, event_index, unit, first_person, con
 		local account_id = player:account_id() or player:name()
 		if mod.crates_equiped[unit] then
 			local crate = mod.crates_equiped[unit]
-			local text = Localize(mod.pickups_text[crate])
+			-- @Backup158: prevents crash from localizing nil, if they add more pocketables
+			local text = ""
+			if mod.pickups_text[crate] then
+				text = Localize(mod.pickups_text[crate])
+			end
 			if crate == "med_crate_pocketable" then
 				-- Message
 				if mod:get("message_health_placed") then
@@ -408,12 +412,14 @@ mod.pickups = {
 	loc_pickup_pocketable_ammo_crate_01 = "ammo_cache_pocketable",
 	loc_pickup_side_mission_pocketable_01 = "grimoire_pocketable",
 	loc_pickup_side_mission_pocketable_02 = "scripture_pocketable",
+	loc_game_mode_expedition_pickup_price_desc = "expedition_pocketable",
 }
 mod.pickups_text = {
 	med_crate_pocketable = "loc_pickup_pocketable_medical_crate_01",
 	ammo_cache_pocketable = "loc_pickup_pocketable_ammo_crate_01",
 	grimoire_pocketable = "loc_pickup_side_mission_pocketable_01",
 	scripture_pocketable = "loc_pickup_side_mission_pocketable_02",
+	expedition_pocketable = "loc_game_mode_expedition_pickup_price_desc",
 }
 mod.forge_material = {
 	loc_pickup_small_metal = "small_metal",
@@ -436,9 +442,7 @@ mod.ammunition_percentage = {
 	small_clip = 0.15,
 	large_clip = 0.5,
 }
-
 mod.current_ammo = {}
-
 mod.interaction_units = {}
 
 mod:hook(CLASS.InteracteeExtension, "stopped", function(func, self, result, ...)
@@ -487,6 +491,9 @@ mod:hook(CLASS.InteracteeExtension, "stopped", function(func, self, result, ...)
 						color = Color.citadel_dawnstone(255, true)
 					elseif pickup == "scripture_pocketable" then
 						option = "scripture_grimoire_pickup"
+						color = Color.citadel_dawnstone(255, true)
+					elseif pickup == "expedition_pocketable" then
+						option = "message_expedition_pocketable_pickup"
 						color = Color.citadel_dawnstone(255, true)
 					end
 					-- Message
@@ -556,23 +563,12 @@ mod:hook(CLASS.InteracteeExtension, "stopped", function(func, self, result, ...)
 					local unit_data_extension = ScriptUnit.extension(unit, "unit_data_system")
 					local wieldable_component = unit_data_extension:read_component("slot_secondary")
 					-- Get ammo numbers
-						local function n(val)
-							local tv = _G.type(val)
-							if tv == "table" then
-								return tonumber(val[1]) or 0
-							end
-							if tv == "number" or tv == "string" then
-								return tonumber(val) or 0
-							end
-							return 0
-						end
-
-						local ammo_clip = n(wieldable_component.current_ammunition_clip)
-						local max_ammo_clip = n(wieldable_component.max_ammunition_clip)
-						local max_ammo_reserve = n(wieldable_component.max_ammunition_reserve)
-						local current_ammo_reserve = n(mod.current_ammo[unit])
-						local max_ammo = max_ammo_reserve + max_ammo_clip
-						local current_ammo = current_ammo_reserve + ammo_clip
+					local ammo_clip = wieldable_component.current_ammunition_clip[1]
+					local max_ammo_clip = wieldable_component.max_ammunition_clip[1]
+					local max_ammo_reserve = wieldable_component.max_ammunition_reserve
+					local current_ammo_reserve = mod.current_ammo[unit]
+					local max_ammo = max_ammo_reserve + max_ammo_clip
+					local current_ammo = current_ammo_reserve + ammo_clip
 					local max_take = max_ammo - current_ammo
 					if ammo == "small_clip" then
 						mod:update_stat("ammo_small_picked_up", account_id, 1)
@@ -627,7 +623,6 @@ mod:hook(CLASS.InteracteeExtension, "stopped", function(func, self, result, ...)
 	end
 	func(self, result, ...)
 end)
-
 
 mod:hook(CLASS.InteracteeExtension, "started", function(func, self, interactor_unit, ...)
 
@@ -731,6 +726,9 @@ mod.bosses = {
 	"renegade_captain",
 	"renegade_twin_captain",
 	"renegade_twin_captain_two",
+	"cultist_captain",
+	"chaos_mutator_daemonhost",
+	"chaos_ogryn_houndmaster",
 }
 mod.current_health = {}
 mod.last_enemy_interaction = {}

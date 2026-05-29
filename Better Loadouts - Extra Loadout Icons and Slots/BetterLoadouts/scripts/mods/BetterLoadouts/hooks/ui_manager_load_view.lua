@@ -16,16 +16,15 @@ local PRESET_HOST_VIEWS = {
 local REQUIRED_PACKAGES = {
     "packages/ui/hud/player_weapon/player_weapon",
     "packages/ui/views/mission_board_view/mission_board_view",
-    -- "packages/ui/views/masteries_overview_view/masteries_overview_view",
     "packages/ui/views/cosmetics_vendor_view/cosmetics_vendor_view",
-    -- "packages/ui/hud/interaction_hud/interaction_hud",
     "packages/ui/hud/interaction/interaction",
     "packages/ui/views/barber_vendor_background_view/barber_vendor_background_view",
     "packages/ui/views/training_grounds_options_view/training_grounds_options_view",
     "packages/ui/hud/world_markers/world_markers",
-    -- "packages/ui/hud/player_ability/player_ability",
     "content/ui/materials/icons/throwables/hud/missile_launcher",
-    -- "packages/ui/hud/weapon_counter/weapon_counter",
+    "packages/ui/views/scanner_display_view/scanner_display_view",
+    "packages/ui/views/expedition_play_view/expedition_play_view",
+    "packages/ui/hud/mission_objective_feed/mission_objective_feed",
 }
 
 local function ensure_package_loaded(package_manager, package_name, reference_name)

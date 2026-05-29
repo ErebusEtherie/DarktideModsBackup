@@ -446,7 +446,7 @@ function VanillaHudManager.init()
                         local should_hide = false
 
                         -- Condition A: Psyker Archetype
-                        if player and player.archetype_name and player:archetype_name() == "psyker" then
+                        if player and not player.__deleted and player.archetype_name and player:archetype_name() == "psyker" then
                             should_hide = true
                         end
 

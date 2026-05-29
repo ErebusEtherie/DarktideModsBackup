@@ -26,6 +26,35 @@ local U                  = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/u
 
 mod:io_dofile("RingHud/scripts/mods/RingHud/context/wield_context")
 
+local math_abs             = math.abs
+local math_max             = math.max
+local tonumber             = tonumber
+local apply_shake_offset   = U.apply_shake_to_style_offset
+
+-- PERFORMANCE: Pre-generate string keys to prevent constant string allocations/concatenations every frame
+local MAX_PREGEN           = 30
+local STR_DODGE_BAR        = {}
+local STR_CHARGE_SEG       = {}
+local STR_CHARGE_SEG_EDGE  = {}
+local STR_GRENADE_SEG      = {}
+local STR_GRENADE_SEG_EDGE = {}
+local STR_AMMO_MULTI       = {}
+local STR_TALENT_SEG       = {}
+local STR_ADAMANT_SEG      = {}
+local STR_ADAMANT_SEG_EDGE = {}
+
+for i = 1, MAX_PREGEN do
+    STR_DODGE_BAR[i]        = "dodge_bar_" .. i
+    STR_CHARGE_SEG[i]       = "charge_seg_" .. i
+    STR_CHARGE_SEG_EDGE[i]  = "charge_seg_edge_" .. i
+    STR_GRENADE_SEG[i]      = "grenade_segment_" .. i
+    STR_GRENADE_SEG_EDGE[i] = "grenade_segment_edge_" .. i
+    STR_AMMO_MULTI[i]       = "ammo_clip_filled_multi_" .. i
+    STR_TALENT_SEG[i]       = "talent_seg_" .. i
+    STR_ADAMANT_SEG[i]      = "talent_adamant_seg_" .. i
+    STR_ADAMANT_SEG_EDGE[i] = "talent_adamant_seg_" .. i .. "_edge"
+end
+
 -- ## 2. CLASS DEFINITION ##
 local HudElementRingHud_player         = class("HudElementRingHud_player", "HudElementBase")
 
@@ -75,6 +104,9 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
         return
     end
 
+    local settings = mod._settings
+    if not settings then return end
+
     Intensity.update(dt, t)
 
     -- Rebuild-on-demand
@@ -103,7 +135,7 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
     -- ADS scale override
     if ads_active ~= self._was_ads then
         self._was_ads = ads_active
-        local ads_s = tonumber(mod._settings.ads_scale_override)
+        local ads_s = tonumber(settings.ads_scale_override)
         mod._runtime_overrides = mod._runtime_overrides or {}
         if ads_active and ads_s and ads_s > 0 then
             mod._runtime_overrides.ring_scale = ads_s
@@ -119,7 +151,7 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
     if not widgets then return end
 
     if self._pocketable_pickup_visibility_timer > 0 then
-        self._pocketable_pickup_visibility_timer = math.max(0, self._pocketable_pickup_visibility_timer - dt)
+        self._pocketable_pickup_visibility_timer = math_max(0, self._pocketable_pickup_visibility_timer - dt)
     end
 
     local hud_state = RingHudState.get_hud_data_state(self)
@@ -128,7 +160,7 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
     self._apply_shake = false
     self._is_player_dead = false
 
-    local shake_mode = mod._settings.crosshair_shake_dropdown
+    local shake_mode = settings.crosshair_shake_dropdown
 
     if hud_state.player_extensions then
         local ud = hud_state.player_extensions.unit_data
@@ -148,9 +180,8 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
         end
     end
 
-    -- Update logic (unchanged)
-    if math.abs(hud_state.health_data.current_fraction - self._previous_health_fraction) > 0.001 or
-        math.abs(hud_state.health_data.corruption_fraction - self._previous_corruption_fraction) > 0.001
+    if math_abs(hud_state.health_data.current_fraction - self._previous_health_fraction) > 0.001 or
+        math_abs(hud_state.health_data.corruption_fraction - self._previous_corruption_fraction) > 0.001
     then
         if mod.thv_player_recent_change_bump then
             mod.thv_player_recent_change_bump()
@@ -171,7 +202,7 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
     end
     self._previous_crate_item_name = hud_state.crate_item_name
 
-    local stamina_threshold = tonumber(mod._settings.stamina_viz_threshold) or 1.0
+    local stamina_threshold = tonumber(settings.stamina_viz_threshold) or 1.0
 
     local hide_threshold = 1.0
     if stamina_threshold >= 0.01 and stamina_threshold <= 0.10 then
@@ -200,14 +231,14 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
         end
     end
 
-    if mod._settings.ammo_reserve_dropdown ~= "ammo_reserve_disabled" then
+    if settings.ammo_reserve_dropdown ~= "ammo_reserve_disabled" then
         local max_reserve = tonumber(ad.max_reserve) or 0
         local cur_reserve = tonumber(ad.current_reserve) or 0
 
         if max_reserve > 0 then
             local reserve_frac = math.min(cur_reserve / max_reserve, 1.0)
             local prev         = self._prev_reserve_frac_for_bump
-            if prev ~= nil and math.abs(reserve_frac - prev) > 0.001 then
+            if prev ~= nil and math_abs(reserve_frac - prev) > 0.001 then
                 if mod.ammo_vis_player_recent_change_bump then
                     mod.ammo_vis_player_recent_change_bump()
                 end
@@ -221,7 +252,7 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
     end
 
     local hotkey_active_override = mod.show_all_hud_hotkey_active or false
-    local vis_mode               = mod._settings.ads_visibility_dropdown
+    local vis_mode               = settings.ads_visibility_dropdown
     if vis_mode == "ads_vis_hotkey" and ads_active then
         hotkey_active_override = true
     end
@@ -249,7 +280,6 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
     if AbilityFeature.update then AbilityFeature.update(widgets.ability_timer, hud_state, hotkey_active_override) end
     if PocketableFeature.update then PocketableFeature.update(widgets, hud_state, hotkey_active_override) end
 
-    -- Talent: explicitly uses the same hotkey override pipeline as the rest of RingHud.
     TalentFeature.update(widgets.talent_bar, hud_state, hotkey_active_override)
 
     if not hud_state.player_extensions then
@@ -272,12 +302,19 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
     end
 
     -- Use cached state from update()
-    local ads_active        = self._ads_active
-    local apply_shake       = self._apply_shake
-    local user_bias_px      = U.effective_bias(ads_active)
+    local ads_active         = self._ads_active
+    local apply_shake        = self._apply_shake
+    local user_bias_px       = U.effective_bias(ads_active)
+    local n_user_bias_px     = -user_bias_px
 
-    local text_bias_setting = tonumber(mod._settings and mod._settings.player_hud_text_offset) or 0
-    local text_bias_px      = text_bias_setting * (mod.scalable_unit or 1)
+    local text_bias_setting  = tonumber(mod._settings and mod._settings.player_hud_text_offset) or 0
+    local text_bias_px       = text_bias_setting * (mod.scalable_unit or 1)
+    local stimm_timer_base_x = 2 * (mod.scalable_unit or 1)
+    local stimm_timer_base_y = -(6 * (mod.scalable_unit or 1))
+
+    local text_bias_comb     = user_bias_px + text_bias_px
+    local n_text_bias_comb   = -text_bias_comb
+    local bias_1_5           = user_bias_px * 1.5
 
     -- -------------- PERIL BAR + TEXT --------------
     do
@@ -285,20 +322,20 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         if pb and pb.style then
             local changed = false
             if pb.style.peril_bar then
-                if U.apply_shake_to_style_offset(pb.style.peril_bar, 0, 0, 1, apply_shake, dx, dy,
-                        -user_bias_px, user_bias_px) then
+                if apply_shake_offset(pb.style.peril_bar, 0, 0, 1, apply_shake, dx, dy,
+                        n_user_bias_px, user_bias_px) then
                     changed = true
                 end
             end
             if pb.style.peril_edge then
-                if U.apply_shake_to_style_offset(pb.style.peril_edge, 0, 0, 1, apply_shake, dx, dy,
-                        -user_bias_px, user_bias_px) then
+                if apply_shake_offset(pb.style.peril_edge, 0, 0, 1, apply_shake, dx, dy,
+                        n_user_bias_px, user_bias_px) then
                     changed = true
                 end
             end
             if pb.style.peril_other_edge then
-                if U.apply_shake_to_style_offset(pb.style.peril_other_edge, 0, 0, 1, apply_shake, dx, dy,
-                        -user_bias_px, user_bias_px) then
+                if apply_shake_offset(pb.style.peril_other_edge, 0, 0, 1, apply_shake, dx, dy,
+                        n_user_bias_px, user_bias_px) then
                     changed = true
                 end
             end
@@ -312,9 +349,9 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         if db and db.style then
             local changed = false
             for i = 1, (mod.MAX_DODGE_SEGMENTS or 6) do
-                local st = db.style["dodge_bar_" .. i]
-                if st and U.apply_shake_to_style_offset(st, 0, 0, 1, apply_shake, dx, dy,
-                        user_bias_px, -user_bias_px) then
+                local st = db.style[STR_DODGE_BAR[i]]
+                if st and apply_shake_offset(st, 0, 0, 1, apply_shake, dx, dy,
+                        user_bias_px, n_user_bias_px) then
                     changed = true
                 end
             end
@@ -328,13 +365,13 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         if sb and sb.style then
             local changed = false
             if sb.style.stamina_bar and
-                U.apply_shake_to_style_offset(sb.style.stamina_bar, 0, 0, 1, apply_shake, dx, dy,
-                    -user_bias_px, -user_bias_px) then
+                apply_shake_offset(sb.style.stamina_bar, 0, 0, 1, apply_shake, dx, dy,
+                    n_user_bias_px, n_user_bias_px) then
                 changed = true
             end
             if sb.style.stamina_edge and
-                U.apply_shake_to_style_offset(sb.style.stamina_edge, 0, 0, 2, apply_shake, dx, dy,
-                    -user_bias_px, -user_bias_px) then
+                apply_shake_offset(sb.style.stamina_edge, 0, 0, 2, apply_shake, dx, dy,
+                    n_user_bias_px, n_user_bias_px) then
                 changed = true
             end
             if changed then sb.dirty = true end
@@ -348,22 +385,22 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
             local changed = false
 
             -- Legacy 2-segment bar (still used for non-dual-shivs)
-            if cb.style.charge_bar_1 and U.apply_shake_to_style_offset(
+            if cb.style.charge_bar_1 and apply_shake_offset(
                     cb.style.charge_bar_1, 0, 0, 1, apply_shake, dx, dy, user_bias_px, user_bias_px
                 ) then
                 changed = true
             end
-            if cb.style.charge_bar_1_edge and U.apply_shake_to_style_offset(
+            if cb.style.charge_bar_1_edge and apply_shake_offset(
                     cb.style.charge_bar_1_edge, 0, 0, 2, apply_shake, dx, dy, user_bias_px, user_bias_px
                 ) then
                 changed = true
             end
-            if cb.style.charge_bar_2 and U.apply_shake_to_style_offset(
+            if cb.style.charge_bar_2 and apply_shake_offset(
                     cb.style.charge_bar_2, 0, 0, 2, apply_shake, dx, dy, user_bias_px, user_bias_px
                 ) then
                 changed = true
             end
-            if cb.style.charge_bar_2_edge and U.apply_shake_to_style_offset(
+            if cb.style.charge_bar_2_edge and apply_shake_offset(
                     cb.style.charge_bar_2_edge, 0, 0, 3, apply_shake, dx, dy, user_bias_px, user_bias_px
                 ) then
                 changed = true
@@ -372,15 +409,15 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
             -- New: segmented dual-shivs passes (if present)
             local max_segments = mod.MAX_CHARGE_SEGMENTS or 6
             for i = 1, max_segments do
-                local st  = cb.style["charge_seg_" .. i]
-                local ste = cb.style["charge_seg_edge_" .. i]
+                local st  = cb.style[STR_CHARGE_SEG[i]]
+                local ste = cb.style[STR_CHARGE_SEG_EDGE[i]]
 
-                if st and U.apply_shake_to_style_offset(
+                if st and apply_shake_offset(
                         st, 0, 0, 2, apply_shake, dx, dy, user_bias_px, user_bias_px
                     ) then
                     changed = true
                 end
-                if ste and U.apply_shake_to_style_offset(
+                if ste and apply_shake_offset(
                         ste, 0, 0, 3, apply_shake, dx, dy, user_bias_px, user_bias_px
                     ) then
                     changed = true
@@ -395,39 +432,39 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
     do
         local tcor = widgets.toughness_bar_corruption
         if tcor and tcor.style and tcor.style.corruption_segment then
-            if U.apply_shake_to_style_offset(tcor.style.corruption_segment, 0, 0, 0, apply_shake, dx, dy,
-                    0, (user_bias_px * 1.5)) then
+            if apply_shake_offset(tcor.style.corruption_segment, 0, 0, 0, apply_shake, dx, dy,
+                    0, bias_1_5) then
                 tcor.dirty = true
             end
             if tcor.style.corruption_segment_edge and
-                U.apply_shake_to_style_offset(tcor.style.corruption_segment_edge, 0, 0, 1, apply_shake, dx, dy,
-                    0, (user_bias_px * 1.5)) then
+                apply_shake_offset(tcor.style.corruption_segment_edge, 0, 0, 1, apply_shake, dx, dy,
+                    0, bias_1_5) then
                 tcor.dirty = true
             end
         end
 
         local thp = widgets.toughness_bar_health
         if thp and thp.style and thp.style.health_segment then
-            if U.apply_shake_to_style_offset(thp.style.health_segment, 0, 0, 1, apply_shake, dx, dy,
-                    0, (user_bias_px * 1.5)) then
+            if apply_shake_offset(thp.style.health_segment, 0, 0, 1, apply_shake, dx, dy,
+                    0, bias_1_5) then
                 thp.dirty = true
             end
             if thp.style.health_segment_edge and
-                U.apply_shake_to_style_offset(thp.style.health_segment_edge, 0, 0, 2, apply_shake, dx, dy,
-                    0, (user_bias_px * 1.5)) then
+                apply_shake_offset(thp.style.health_segment_edge, 0, 0, 2, apply_shake, dx, dy,
+                    0, bias_1_5) then
                 thp.dirty = true
             end
         end
 
         local tdm = widgets.toughness_bar_damage
         if tdm and tdm.style and tdm.style.damage_segment then
-            if U.apply_shake_to_style_offset(tdm.style.damage_segment, 0, 0, 2, apply_shake, dx, dy,
-                    0, (user_bias_px * 1.5)) then
+            if apply_shake_offset(tdm.style.damage_segment, 0, 0, 2, apply_shake, dx, dy,
+                    0, bias_1_5) then
                 tdm.dirty = true
             end
             if tdm.style.damage_segment_edge and
-                U.apply_shake_to_style_offset(tdm.style.damage_segment_edge, 0, 0, 3, apply_shake, dx, dy,
-                    0, (user_bias_px * 1.5)) then
+                apply_shake_offset(tdm.style.damage_segment_edge, 0, 0, 3, apply_shake, dx, dy,
+                    0, bias_1_5) then
                 tdm.dirty = true
             end
         end
@@ -439,13 +476,13 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         if gb and gb.style then
             local changed = false
             for i = 1, (mod.MAX_GRENADE_SEGMENTS_DISPLAY or 14) do
-                local st  = gb.style["grenade_segment_" .. i]
-                local ste = gb.style["grenade_segment_edge_" .. i]
-                if st and U.apply_shake_to_style_offset(st, 0, 0, 1, apply_shake, dx, dy,
+                local st  = gb.style[STR_GRENADE_SEG[i]]
+                local ste = gb.style[STR_GRENADE_SEG_EDGE[i]]
+                if st and apply_shake_offset(st, 0, 0, 1, apply_shake, dx, dy,
                         0, user_bias_px) then
                     changed = true
                 end
-                if ste and U.apply_shake_to_style_offset(ste, 0, 0, 2, apply_shake, dx, dy,
+                if ste and apply_shake_offset(ste, 0, 0, 2, apply_shake, dx, dy,
                         0, user_bias_px) then
                     changed = true
                 end
@@ -459,20 +496,20 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         local acb = widgets.ammo_clip_bar
         if acb and acb.style then
             local changed = false
-            if acb.style.ammo_clip_unfilled_background and U.apply_shake_to_style_offset(
-                    acb.style.ammo_clip_unfilled_background, 0, 0, 0, apply_shake, dx, dy, -user_bias_px, -user_bias_px
+            if acb.style.ammo_clip_unfilled_background and apply_shake_offset(
+                    acb.style.ammo_clip_unfilled_background, 0, 0, 0, apply_shake, dx, dy, n_user_bias_px, n_user_bias_px
                 ) then
                 changed = true
             end
-            if acb.style.ammo_clip_filled_single and U.apply_shake_to_style_offset(
-                    acb.style.ammo_clip_filled_single, 0, 0, 1, apply_shake, dx, dy, -user_bias_px, -user_bias_px
+            if acb.style.ammo_clip_filled_single and apply_shake_offset(
+                    acb.style.ammo_clip_filled_single, 0, 0, 1, apply_shake, dx, dy, n_user_bias_px, n_user_bias_px
                 ) then
                 changed = true
             end
             for i = 1, (mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY or 5) do
-                local st = acb.style["ammo_clip_filled_multi_" .. i]
-                if st and U.apply_shake_to_style_offset(st, 0, 0, 1, apply_shake, dx, dy,
-                        -user_bias_px, -user_bias_px) then
+                local st = acb.style[STR_AMMO_MULTI[i]]
+                if st and apply_shake_offset(st, 0, 0, 1, apply_shake, dx, dy,
+                        n_user_bias_px, n_user_bias_px) then
                     changed = true
                 end
             end
@@ -486,22 +523,22 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         if tb and tb.style then
             local changed = false
 
-            if tb.style.talent_bar and U.apply_shake_to_style_offset(
-                    tb.style.talent_bar, 0, 0, 1, apply_shake, dx, dy, user_bias_px, -user_bias_px
+            if tb.style.talent_bar and apply_shake_offset(
+                    tb.style.talent_bar, 0, 0, 1, apply_shake, dx, dy, user_bias_px, n_user_bias_px
                 ) then
                 changed = true
             end
-            if tb.style.talent_bar_edge and U.apply_shake_to_style_offset(
-                    tb.style.talent_bar_edge, 0, 0, 2, apply_shake, dx, dy, user_bias_px, -user_bias_px
+            if tb.style.talent_bar_edge and apply_shake_offset(
+                    tb.style.talent_bar_edge, 0, 0, 2, apply_shake, dx, dy, user_bias_px, n_user_bias_px
                 ) then
                 changed = true
             end
 
             -- Psyker segmented passes (so shake/bias affects them too)
             for i = 1, 3 do
-                local st = tb.style["talent_seg_" .. i]
-                if st and U.apply_shake_to_style_offset(
-                        st, 0, 0, 1, apply_shake, dx, dy, user_bias_px, -user_bias_px
+                local st = tb.style[STR_TALENT_SEG[i]]
+                if st and apply_shake_offset(
+                        st, 0, 0, 1, apply_shake, dx, dy, user_bias_px, n_user_bias_px
                     ) then
                     changed = true
                 end
@@ -509,16 +546,16 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
 
             -- Adamant segmented passes (base + notch edge)
             for i = 1, 4 do
-                local st  = tb.style["talent_adamant_seg_" .. i]
-                local ste = tb.style["talent_adamant_seg_" .. i .. "_edge"]
+                local st  = tb.style[STR_ADAMANT_SEG[i]]
+                local ste = tb.style[STR_ADAMANT_SEG_EDGE[i]]
 
-                if st and U.apply_shake_to_style_offset(
-                        st, 0, 0, 1, apply_shake, dx, dy, user_bias_px, -user_bias_px
+                if st and apply_shake_offset(
+                        st, 0, 0, 1, apply_shake, dx, dy, user_bias_px, n_user_bias_px
                     ) then
                     changed = true
                 end
-                if ste and U.apply_shake_to_style_offset(
-                        ste, 0, 0, 2, apply_shake, dx, dy, user_bias_px, -user_bias_px
+                if ste and apply_shake_offset(
+                        ste, 0, 0, 2, apply_shake, dx, dy, user_bias_px, n_user_bias_px
                     ) then
                     changed = true
                 end
@@ -534,15 +571,15 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         if stw and stw.style then
             local changed = false
             if stw.style.stimm_icon then
-                if U.apply_shake_to_style_offset(stw.style.stimm_icon, 0, 0, 0, apply_shake, dx, dy,
-                        user_bias_px, -user_bias_px) then
+                if apply_shake_offset(stw.style.stimm_icon, 0, 0, 0, apply_shake, dx, dy,
+                        user_bias_px, n_user_bias_px) then
                     changed = true
                 end
             end
 
             if stw.style.stimm_timer_text then
-                if U.apply_shake_to_style_offset(stw.style.stimm_timer_text, 0, 0, 1, apply_shake, dx, dy,
-                        (user_bias_px + text_bias_px), -(user_bias_px + text_bias_px)) then
+                if apply_shake_offset(stw.style.stimm_timer_text, stimm_timer_base_x, stimm_timer_base_y, 1, apply_shake, dx, dy,
+                        text_bias_comb, n_text_bias_comb) then
                     changed = true
                 end
             end
@@ -552,8 +589,8 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
 
         local cw = widgets.crate_indicator_widget
         if cw and cw.style and cw.style.crate_icon then
-            if U.apply_shake_to_style_offset(cw.style.crate_icon, 0, 0, 0, apply_shake, dx, dy,
-                    user_bias_px, -user_bias_px) then
+            if apply_shake_offset(cw.style.crate_icon, 0, 0, 0, apply_shake, dx, dy,
+                    user_bias_px, n_user_bias_px) then
                 cw.dirty = true
             end
         end
@@ -563,8 +600,8 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
     do
         local pt = widgets.peril_text_display_widget
         if pt and pt.style and pt.style.percent_text_style then
-            if U.apply_shake_to_style_offset(pt.style.percent_text_style, 0, 0, 2, apply_shake, dx, dy,
-                    -(user_bias_px + text_bias_px), (user_bias_px + text_bias_px)) then
+            if apply_shake_offset(pt.style.percent_text_style, 0, 0, 2, apply_shake, dx, dy,
+                    n_text_bias_comb, text_bias_comb) then
                 pt.dirty = true
             end
         end
@@ -573,32 +610,32 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
         if at and at.style and at.style.ability_text then
             local base_x = Definitions.text_offset
             local base_y = Definitions.offset_correction
-            if U.apply_shake_to_style_offset(at.style.ability_text, base_x, base_y, 2, apply_shake, dx, dy,
-                    (user_bias_px + text_bias_px), (user_bias_px + text_bias_px)) then
+            if apply_shake_offset(at.style.ability_text, base_x, base_y, 2, apply_shake, dx, dy,
+                    text_bias_comb, text_bias_comb) then
                 at.dirty = true
             end
         end
 
         local ar = widgets.ammo_reserve_display_widget
         if ar and ar.style and ar.style.reserve_text_style then
-            if U.apply_shake_to_style_offset(ar.style.reserve_text_style, 0, 0, 2, apply_shake, dx, dy,
-                    -(user_bias_px + text_bias_px), -(user_bias_px + text_bias_px)) then
+            if apply_shake_offset(ar.style.reserve_text_style, 0, 0, 2, apply_shake, dx, dy,
+                    n_text_bias_comb, n_text_bias_comb) then
                 ar.dirty = true
             end
         end
 
         local act = widgets.ammo_clip_text_display_widget
         if act and act.style and act.style.ammo_clip_text_style then
-            if U.apply_shake_to_style_offset(act.style.ammo_clip_text_style, 0, 0, 1, apply_shake, dx, dy,
-                    -(user_bias_px + text_bias_px), 0) then
+            if apply_shake_offset(act.style.ammo_clip_text_style, 0, 0, 1, apply_shake, dx, dy,
+                    n_text_bias_comb, 0) then
                 act.dirty = true
             end
         end
 
         local ht = widgets.health_text_display_widget
         if ht and ht.style and ht.style.health_text_style then
-            if U.apply_shake_to_style_offset(ht.style.health_text_style, 0, 0, 1, apply_shake, dx, dy,
-                    0, (user_bias_px * 1.5) + text_bias_px) then
+            if apply_shake_offset(ht.style.health_text_style, 0, 0, 1, apply_shake, dx, dy,
+                    0, bias_1_5 + text_bias_px) then
                 ht.dirty = true
             end
         end
@@ -620,14 +657,43 @@ function HudElementRingHud_player:draw(dt, t, ui_renderer, render_settings, inpu
     local force_show = (self._force_show_active == true)
     local vis_mode   = mod._settings.ads_visibility_dropdown
 
+    local hide_hud   = false
     if not force_show then
         if (vis_mode == "ads_vis_hide_in_ads" and ads_active) or
             (vis_mode == "ads_vis_hide_outside_ads" and not ads_active) then
+            hide_hud = true
+        end
+    end
+
+    local saved_alphas = nil
+    if hide_hud then
+        local clip_mode = mod._settings.ammo_clip_dropdown
+        local clip_ads_exception = ads_active and
+            (clip_mode == "ammo_clip_bar_ads" or clip_mode == "ammo_clip_bar_forecast_ads")
+
+        if not clip_ads_exception then
             return
+        end
+
+        saved_alphas = {}
+        local widgets = self._widgets_by_name
+        if widgets then
+            for name, widget in pairs(widgets) do
+                saved_alphas[widget] = widget.alpha_multiplier
+                if name ~= "ammo_clip_bar" and name ~= "ammo_clip_text_display_widget" then
+                    widget.alpha_multiplier = 0
+                end
+            end
         end
     end
 
     HudElementRingHud_player.super.draw(self, dt, t, ui_renderer, render_settings, input_service)
+
+    if saved_alphas then
+        for widget, alpha in pairs(saved_alphas) do
+            widget.alpha_multiplier = alpha
+        end
+    end
 end
 
 return HudElementRingHud_player

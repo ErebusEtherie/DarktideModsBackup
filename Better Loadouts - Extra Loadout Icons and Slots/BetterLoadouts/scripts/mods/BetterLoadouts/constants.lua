@@ -4,7 +4,6 @@ if not mod then
     return
 end
 
--- Single shared namespace for all constants/helpers.
 mod.BL = mod.BL or {}
 
 -- ---------------------------------------------------------------------------
@@ -18,10 +17,10 @@ mod.BL.ICON_FIELDS = {
     "display_icon_material",
     "icon",
     "small_icon",
-    "texture", -- rare, but cheap to check
+    "texture",
 }
 
--- Extra Unicode (Private Use) code points you want available for preset icons.
+-- Extra Unicode (Private Use) code points available for preset icons.
 mod.BL.UNICODE_EXTRA_CODES = {
     0xE053, 0xE000, 0xE001, 0xE002, 0xE003,
     0xE004, 0xE005, 0xE006, 0xE007, 0xE01F,
@@ -34,7 +33,6 @@ mod.BL.UNICODE_EXTRA_CODES = {
 }
 
 -- Default extra material icons to append after the 25 vanilla preset icons.
--- (These are used to seed your private icon pool; order preserved.)
 mod.BL.DEFAULT_CUSTOM_ICON_PATHS = {
     "content/ui/materials/icons/item_types/ranged_weapons",
     "content/ui/materials/icons/circumstances/assault_01",
@@ -60,6 +58,11 @@ mod.BL.DEFAULT_CUSTOM_ICON_PATHS = {
     "content/ui/materials/hud/interactions/icons/landmine_shock",
     "content/ui/materials/hud/interactions/icons/time_syringe",
     "content/ui/materials/hud/interactions/icons/barrel_explosive",
+    "content/ui/materials/backgrounds/scanner/scanner_decoration_skull",
+    "content/ui/materials/hud/interactions/icons/expeditions_death",
+    "content/ui/materials/hud/interactions/icons/help",
+    "content/ui/materials/icons/weapons/actions/ads",
+    "content/ui/materials/icons/weapons/actions/flashlight",
 }
 
 mod.BL.TEXT_ICON_FONT_TYPE = "itc_novarese_bold"
@@ -132,6 +135,9 @@ function mod.BL.layout_for_limit(limit)
     elseif limit == 60 then
         -- Wide bar: 30 columns * 2 rows = 60, with roomier spacing than compact mode
         return _wide_roomy_layout(2, 30)
+    elseif limit == 30 then
+        -- Single wide row: 30 columns * 1 row = 30
+        return _wide_roomy_layout(1, 30)
     end
 
     -- Classic vertical bar: 2 columns * 14 rows = 28

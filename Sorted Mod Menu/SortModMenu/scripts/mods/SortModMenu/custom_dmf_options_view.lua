@@ -547,6 +547,10 @@ DMFOptionsView.update = function (self, dt, t, input_service, view_data)
                   end
               end
               
+              -- Reset the scroll to the top when typing
+              if grid.set_scrollbar_progress then
+                  grid:set_scrollbar_progress(0) 
+              end
           end
       end
 
@@ -867,6 +871,26 @@ DMFOptionsView._setup_category_config = function (self, config)
   -- Sort categories alphabetically by display_name
   local sortmodmenu = get_mod("SortModMenu")
 
+  -- Check if any mods are hidden
+  local hidden_mods = {}
+  for i = 0, 9 do
+      local hidden_mod_name = sortmodmenu:get("hidden_" .. i)
+      if hidden_mod_name and hidden_mod_name ~= "None" and hidden_mod_name ~= "" then
+          hidden_mods[sortmodmenu.process_mod_name(hidden_mod_name)] = true
+      end
+  end
+
+  -- Delete hidden entries
+  for i = #entries, 1, -1 do
+      local entry = entries[i]
+      local processed_name = sortmodmenu.process_mod_name(entry.display_name)
+      
+      if hidden_mods[processed_name] then
+          table.remove(entries, i)
+      end
+  end
+
+  -- Build our list of pinned mods
   local pinned_priority = {}
   for i = 0, 9 do
       local pinned_mod_name = sortmodmenu:get("pin_" .. i)
@@ -879,6 +903,10 @@ DMFOptionsView._setup_category_config = function (self, config)
   local pinned_icon = sortmodmenu:get("pinned_icon") .. " " or "None"
   if pinned_icon ~= "None" then 
     for _, entry in ipairs(entries) do
+        -- Strip color codes and glyphs from entry if desired
+        if sortmodmenu:get("modname_cleaned") == true then 
+          entry.display_name = sortmodmenu.strip_color_codes_and_glyphs(entry.display_name)
+        end
         local processed_name = sortmodmenu.process_mod_name(entry.display_name)
         if pinned_priority[processed_name] then
             -- Only add the glyph if it's not already there (to prevent double-prefixing)
@@ -1133,6 +1161,13 @@ DMFOptionsView._update_settings_content_widgets = function (self, dt, t, input_s
       if update then
         update(self, widget, input_service, dt, t)
       end
+
+      -- CHANGE START text_input
+      -- Allows text_input widgets to stop typing with escape, without closing the entire mod options menu
+      if widget.content.is_writing then
+        self._selected_settings_widget = widget
+      end
+      -- CHANGE END text_input
     end
 
     if selected_settings_widget and self._close_selected_setting then

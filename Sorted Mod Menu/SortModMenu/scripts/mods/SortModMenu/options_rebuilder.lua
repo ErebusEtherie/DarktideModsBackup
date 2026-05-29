@@ -135,6 +135,7 @@ local function _build_sentinels_from_ui()
         ["pinned_icon"]       = true,
         ["searchbox_enabled"] = true,
         ["pinned_mods_group"] = true,
+        ["hidden_mods_group"] = true,
     }
 
     -- Also add the individual pin IDs (pin_0 through pin_9)

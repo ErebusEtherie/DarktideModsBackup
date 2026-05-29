@@ -8,6 +8,9 @@ return {
 			mod_localization = "Compass Range Finder/scripts/mods/Compass Range Finder/Compass Range Finder_localization",
 		})
 	end,
-	version = "1.2.1",
+	version = "1.3",
+	after = {
+		"Extra Opportunities",
+	},
 	packages = {},
 }

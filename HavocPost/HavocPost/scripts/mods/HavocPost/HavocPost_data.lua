@@ -7,6 +7,12 @@ return {
     options = {
         widgets = {
             {
+                setting_id    = "show_post_button",
+                type          = "checkbox",
+                default_value = true,
+                tooltip       = "show_post_button_tooltip",
+            },
+            {
                 setting_id    = "show_startup_message",
                 type          = "checkbox",
                 default_value = true,
@@ -39,8 +45,14 @@ return {
             {
                 setting_id    = "show_status_messages",
                 type          = "checkbox",
-                default_value = false,
+                default_value = true,
                 tooltip       = "show_status_messages_tooltip",
+            },
+            {
+                setting_id    = "debug_mode",
+                type          = "checkbox",
+                default_value = false,
+                tooltip       = "debug_mode_tooltip",
             },
         },
     },

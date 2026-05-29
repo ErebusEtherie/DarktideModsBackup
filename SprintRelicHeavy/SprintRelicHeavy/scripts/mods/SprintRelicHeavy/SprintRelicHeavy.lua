@@ -6,6 +6,7 @@
 -- from wrong-branch heavies/lights to awkward movement pacing and input-hook
 -- timing bugs. Future work should start from the main sprint route and only
 -- add state-driven assists that prove they do not degrade that baseline feel.
+-- Fixed. Truly the most cursed project
 local mod = get_mod("SprintRelicHeavy")
 
 local HEALTH_ALIVE = HEALTH_ALIVE
@@ -21,20 +22,15 @@ local RELIC_BLADE_WEAPONS = {
 
 local MANUAL_OVERRIDE_DURATION = 0.20
 local INTERRUPT_OVERRIDE_DURATION = 0.20
-local DEFAULT_SPRINT_PRIME_DELAY = 0.02
-local DEFAULT_BLOCK_CANCEL_HOLD = 0.10
 local BLOCK_CANCEL_TIMEOUT = 0.25
 local HEAVY_PRESS_RETRY = 0.08
-local HEAVY_FAIL_TIMEOUT = 0.18
 local WRONG_BRANCH_ABORT_TIME = 0.04
 local SEEK_STAB_TIMEOUT = 0.45
-local AUTO_FORWARD_PRIME_DELAY = 0.06
-local DEBUG_NOTIFY_COOLDOWN = 0.20
+local VANILLA_SPRINT_FORWARD_THRESHOLD = 0.70
 
 local CROSSHAIR_GREEN = { 255, 64, 255, 96 }
 local CROSSHAIR_RED = { 255, 255, 176, 72 }
 local CROSSHAIR_WHITE = { 255, 255, 255, 255 }
-local CROSSHAIR_YELLOW = { 255, 255, 220, 64 }
 
 local INTERCEPTED_INPUTS = {
 	action_one_hold = true,
@@ -69,30 +65,19 @@ local controller = {
 	stab_consumed = false,
 	stab_hit_confirmed = false,
 	path_confirmed = false,
-	attempt_id = 0,
-	trace_attempt = nil,
-	last_debug_signature = "",
-	last_debug_notify_t = 0,
 }
 
 local player_weapon_extension = nil
-local setting_enabled = true
-local sprint_prime_delay = DEFAULT_SPRINT_PRIME_DELAY
+local override_sprint = true
 local use_block_cancel = true
-local block_cancel_hold = DEFAULT_BLOCK_CANCEL_HOLD
-local debug_mode = false
-local trace_mode = false
+local helper_hotkey_held = false
 
 local function refresh_settings()
-	local stored_enable_mod = mod:get("enable_mod")
+	local stored_override_sprint = mod:get("override_sprint")
 	local stored_use_block_cancel = mod:get("use_block_cancel")
-	local stored_debug_mode = mod:get("debug_mode")
-	local stored_trace_mode = mod:get("trace_mode")
 
-	setting_enabled = stored_enable_mod == nil and true or stored_enable_mod
+	override_sprint = stored_override_sprint == nil and true or stored_override_sprint
 	use_block_cancel = stored_use_block_cancel == nil and true or stored_use_block_cancel
-	debug_mode = stored_debug_mode == nil and false or stored_debug_mode
-	trace_mode = stored_trace_mode == nil and false or stored_trace_mode
 end
 
 local function gameplay_time()
@@ -136,10 +121,6 @@ local function reset_controller()
 	controller.stab_consumed = false
 	controller.stab_hit_confirmed = false
 	controller.path_confirmed = false
-	controller.attempt_id = 0
-	controller.trace_attempt = nil
-	controller.last_debug_signature = ""
-	controller.last_debug_notify_t = 0
 	cached_input.sprint = false
 	cached_input.sprinting = false
 	cached_input.hold_to_sprint = false
@@ -154,7 +135,6 @@ local function reset_sequence()
 	controller.stab_consumed = false
 	controller.stab_hit_confirmed = false
 	controller.path_confirmed = false
-	controller.trace_attempt = nil
 end
 
 local function cache_input(action_name, value)
@@ -210,20 +190,6 @@ local function set_external_hold_override(active)
 	controller.external_hold_override = active and true or false
 end
 
-local function toggle_mod_enabled()
-	setting_enabled = not setting_enabled
-	mod:set("enable_mod", setting_enabled, true)
-
-	if not setting_enabled then
-		reset_sequence()
-	end
-
-	mod:notify(string.format(
-		"SprintRelicHeavy: %s",
-		setting_enabled and "Enabled" or "Disabled"
-	))
-end
-
 local function current_weapon_template()
 	if not player_weapon_extension then
 		return nil
@@ -269,24 +235,17 @@ local function is_blocking()
 	return block_component and block_component.is_blocking or false
 end
 
-local function sprint_requested()
-	return cached_input.sprint or cached_input.hold_to_sprint or cached_input.sprinting or is_sprinting()
-end
-
 local function live_sprint_input_requested()
 	return cached_input.sprint or cached_input.hold_to_sprint or cached_input.sprinting
 end
 
 local function helper_trigger_requested()
-	return setting_enabled and live_sprint_input_requested()
+	return helper_hotkey_held or (override_sprint and live_sprint_input_requested())
 end
 
 local function moving_forward_requested()
-	return type(cached_input.move_forward) == "number" and cached_input.move_forward > 0
-end
-
-local function using_auto_forward()
-	return helper_trigger_requested() and not moving_forward_requested()
+	return type(cached_input.move_forward) == "number"
+		and cached_input.move_forward >= VANILLA_SPRINT_FORWARD_THRESHOLD
 end
 
 local function current_weapon_action_component()
@@ -305,13 +264,6 @@ end
 
 local function current_action_t()
 	return gameplay_time() - current_action_start_t()
-end
-
-local function current_action_settings()
-	local weapon_template = current_weapon_template()
-	local action_name = current_action_name()
-	local actions = weapon_template and weapon_template.actions
-	return actions and action_name and actions[action_name] or nil
 end
 
 local function current_sweep_state()
@@ -350,28 +302,35 @@ local function wrong_attack_branch_active(action_name)
 		and action_name ~= "action_melee_start_sprint"
 end
 
-local function heavy_chain_time()
-	local action_settings = current_action_settings()
-	local allowed_chain_actions = action_settings and action_settings.allowed_chain_actions
-	local heavy_chain = allowed_chain_actions and (allowed_chain_actions.heavy_attack or allowed_chain_actions.special_action_heavy)
-	return heavy_chain and heavy_chain.chain_time or nil
+local function weapon_action_input_valid(action_input, used_input, t)
+	if not player_weapon_extension or not player_weapon_extension.action_input_is_currently_valid then
+		return false
+	end
+
+	local query_t = t or gameplay_time()
+	local ok, is_valid = pcall(
+		player_weapon_extension.action_input_is_currently_valid,
+		player_weapon_extension,
+		"weapon_action",
+		action_input,
+		used_input,
+		query_t
+	)
+
+	return ok and is_valid or false
+end
+
+local function start_attack_ready()
+	return weapon_action_input_valid("start_attack", true)
 end
 
 local function heavy_chain_ready()
-	local chain_time = heavy_chain_time()
-	return chain_time ~= nil and current_action_t() >= chain_time or false
-end
-
-local function block_chain_time()
-	local action_settings = current_action_settings()
-	local allowed_chain_actions = action_settings and action_settings.allowed_chain_actions
-	local block_chain = allowed_chain_actions and allowed_chain_actions.block
-	return block_chain and block_chain.chain_time or nil
+	return weapon_action_input_valid("heavy_attack", true)
+		or weapon_action_input_valid("special_action_heavy", true)
 end
 
 local function block_chain_ready()
-	local chain_time = block_chain_time()
-	return chain_time ~= nil and current_action_t() >= chain_time or false
+	return weapon_action_input_valid("block", true)
 end
 
 local function windup_release_ready()
@@ -379,142 +338,19 @@ local function windup_release_ready()
 end
 
 local function helper_startup_ready()
-	return true
-end
-
-local function trace_log(message, ...)
-	if not trace_mode then
-		return
-	end
-
-	mod:echo("[RelicTrace] " .. string.format(message, ...))
-end
-
-local function attempt_source_label()
-	return "sprint"
+	return is_sprinting() and start_attack_ready()
 end
 
 local function live_charge_hold_requested()
-	return setting_enabled and live_sprint_input_requested()
-end
-
-local function start_trace_attempt(now)
-	controller.attempt_id = controller.attempt_id + 1
-	controller.trace_attempt = {
-		id = controller.attempt_id,
-		source = attempt_source_label(),
-		start_t = now,
-		windup_t = nil,
-		ready_t = nil,
-		stab_t = nil,
-		hit_t = nil,
-		consumed_t = nil,
-	}
-end
-
-local function mark_trace_time(field_name, now)
-	local attempt = controller.trace_attempt
-
-	if attempt and attempt[field_name] == nil then
-		attempt[field_name] = now
-	end
-end
-
-local function trace_delta(attempt, field_name)
-	local event_t = attempt and attempt[field_name]
-	local start_t = attempt and attempt.start_t
-
-	if not event_t or not start_t then
-		return "n/a"
-	end
-
-	return string.format("%.3f", event_t - start_t)
-end
-
-local function trace_attempt_result(result, now)
-	local attempt = controller.trace_attempt
-
-	if not trace_mode or not attempt then
-		controller.trace_attempt = nil
-		return
-	end
-
-	trace_log(
-		"#%d src=%s result=%s start->windup=%s start->ready=%s start->stab=%s start->hit=%s start->consumed=%s end=%.3f",
-		attempt.id,
-		attempt.source,
-		result,
-		trace_delta(attempt, "windup_t"),
-		trace_delta(attempt, "ready_t"),
-		trace_delta(attempt, "stab_t"),
-		trace_delta(attempt, "hit_t"),
-		trace_delta(attempt, "consumed_t"),
-		now - attempt.start_t
-	)
-
-	controller.trace_attempt = nil
-end
-
-local function debug_signature()
-	local chain_time = heavy_chain_time()
-	local current_t = current_action_t()
-	local rounded_action_t = string.format("%.2f", current_t)
-	local rounded_chain_time = chain_time and string.format("%.2f", chain_time) or "n/a"
-
-	return table.concat({
-		current_action_name(),
-		controller.sequence_state,
-		current_sweep_state(),
-		rounded_action_t,
-		rounded_chain_time,
-		tostring(heavy_chain_ready()),
-		tostring(is_sprinting()),
-	}, "|")
-end
-
-local function maybe_debug_notify()
-	if not debug_mode or not mod:is_enabled() or in_hub() or not is_relic_blade() then
-		return
-	end
-
-	local now = gameplay_time()
-	local signature = debug_signature()
-
-	if signature == controller.last_debug_signature then
-		return
-	end
-
-	if now < controller.last_debug_notify_t + DEBUG_NOTIFY_COOLDOWN then
-		controller.last_debug_signature = signature
-		return
-	end
-
-	controller.last_debug_signature = signature
-	controller.last_debug_notify_t = now
-
-	local chain_time = heavy_chain_time()
-	local action_name = current_action_name()
-	local sweep_state = current_sweep_state()
-	local message = string.format(
-		"RelicDbg: %s | seq=%s | sweep=%s | t=%.2f | heavy_chain=%s | ready=%s | sprint=%s",
-		action_name,
-		controller.sequence_state,
-		sweep_state,
-		current_action_t(),
-		chain_time and string.format("%.2f", chain_time) or "n/a",
-		heavy_chain_ready() and "yes" or "no",
-		is_sprinting() and "yes" or "no"
-	)
-
-	mod:notify(message)
+	return helper_trigger_requested()
 end
 
 local function trigger_requested()
-	return setting_enabled and live_sprint_input_requested()
+	return helper_trigger_requested()
 end
 
 local function assist_input_requested()
-	return setting_enabled and live_sprint_input_requested()
+	return helper_trigger_requested()
 end
 
 local function sequence_is_active()
@@ -532,10 +368,6 @@ end
 
 local function should_run()
 	if not mod:is_enabled() then
-		return false
-	end
-
-	if not setting_enabled then
 		return false
 	end
 
@@ -589,7 +421,8 @@ local function should_force_forward(state)
 		return false
 	end
 
-	return state ~= "idle" and state ~= "block_cancel"
+	return state == "priming_sprint"
+		or (state == "seeking_stab" and not on_sprint_stab_path())
 end
 
 local function begin_attempt(now)
@@ -600,7 +433,6 @@ local function begin_attempt(now)
 	controller.stab_consumed = false
 	controller.stab_hit_confirmed = false
 	controller.path_confirmed = false
-	start_trace_attempt(now)
 end
 
 local function update_sequence_state()
@@ -610,9 +442,6 @@ local function update_sequence_state()
 	local state = controller.sequence_state
 
 	if not should_run() then
-		if controller.trace_attempt then
-			trace_attempt_result("cancelled", now)
-		end
 		reset_sequence()
 		return controller.sequence_state
 	end
@@ -621,91 +450,59 @@ local function update_sequence_state()
 		begin_attempt(now)
 	elseif state == "priming_sprint" then
 		if sprint_stab_windup_active() then
-			mark_trace_time("windup_t", now)
 			controller.sequence_state = "windup_path"
 			controller.path_confirmed = windup_release_ready()
-			if controller.path_confirmed then
-				mark_trace_time("ready_t", now)
-			end
 		elseif sprint_stab_action_active() then
-			mark_trace_time("stab_t", now)
 			controller.sequence_state = "stab_path"
 			controller.path_confirmed = true
-		else
-			local prime_delay = sprint_prime_delay
-
-			-- Treat the helper hotkey like a full sprint+forward intent so it keeps
-			-- the fast route even when the player is not manually holding W.
-			if using_auto_forward() then
-				prime_delay = math.max(prime_delay, AUTO_FORWARD_PRIME_DELAY)
-			end
-
-			if now >= controller.sequence_started_t + prime_delay
-				and helper_startup_ready() then
-				controller.sequence_state = "seeking_stab"
-				controller.last_heavy_press_t = 0
-			end
+		elseif helper_startup_ready() then
+			controller.sequence_state = "seeking_stab"
+			controller.last_heavy_press_t = 0
 		end
 	elseif state == "seeking_stab" then
 		if sprint_stab_windup_active() then
-			mark_trace_time("windup_t", now)
 			controller.sequence_state = "windup_path"
 			controller.path_confirmed = windup_release_ready()
-			if controller.path_confirmed then
-				mark_trace_time("ready_t", now)
-			end
 		elseif sprint_stab_action_active() then
-			mark_trace_time("stab_t", now)
 			controller.sequence_state = "stab_path"
 			controller.path_confirmed = true
 		elseif wrong_attack_branch_active(action_name) and current_action_t() >= WRONG_BRANCH_ABORT_TIME then
-			trace_attempt_result("wrong_branch", now)
 			controller.sequence_state = "waiting_ready"
-		elseif now >= controller.sequence_started_t + sprint_prime_delay + SEEK_STAB_TIMEOUT then
+		elseif now >= controller.sequence_started_t + SEEK_STAB_TIMEOUT then
 			if trigger_requested() then
-				trace_attempt_result("seek_timeout_retry", now)
 				begin_attempt(now)
 			else
-				trace_attempt_result("seek_timeout", now)
 				reset_sequence()
 			end
 		end
 	elseif state == "windup_path" then
 		if sprint_stab_action_active() then
-			mark_trace_time("stab_t", now)
 			controller.sequence_state = "stab_path"
 			controller.path_confirmed = true
 		elseif action_name ~= "action_melee_start_sprint" then
-			trace_attempt_result("windup_lost", now)
 			controller.sequence_state = "waiting_ready"
 		elseif windup_release_ready() then
 			controller.path_confirmed = true
-			mark_trace_time("ready_t", now)
 		end
 	elseif state == "stab_path" then
 		if action_name == "action_sprint_heavy_stab" and sweep_state ~= "before_damage_window" then
 			controller.stab_consumed = true
-			mark_trace_time("consumed_t", now)
 		end
 
 		if use_block_cancel and controller.stab_hit_confirmed and block_chain_ready() then
 			controller.sequence_state = "block_cancel"
 			controller.release_started_t = now
 		elseif action_name ~= "action_melee_start_sprint" and action_name ~= "action_sprint_heavy_stab" then
-			trace_attempt_result(controller.stab_hit_confirmed and "hit_complete" or controller.stab_consumed and "stab_complete" or "stab_lost", now)
 			controller.sequence_state = "waiting_ready"
 		elseif controller.stab_consumed then
 			if not use_block_cancel then
-				trace_attempt_result("stab_complete", now)
 				controller.sequence_state = "waiting_ready"
 			end
 		end
 	elseif state == "block_cancel" then
-		if (action_name == "action_block" or is_blocking()) and now >= controller.release_started_t + block_cancel_hold then
-			trace_attempt_result(controller.stab_hit_confirmed and "hit_block_cancel" or "block_cancel", now)
+		if action_name == "action_block" or is_blocking() then
 			controller.sequence_state = "waiting_ready"
 		elseif now >= controller.release_started_t + BLOCK_CANCEL_TIMEOUT then
-			trace_attempt_result(controller.stab_hit_confirmed and "hit_block_timeout" or "block_timeout", now)
 			controller.sequence_state = "waiting_ready"
 		end
 	elseif state == "waiting_ready" and action_name == "none" then
@@ -934,7 +731,6 @@ end)
 
 mod:hook_safe(CLASS.HudElementCrosshair, "update", function(self)
 	apply_crosshair_tint(self._widget, crosshair_state_color())
-	maybe_debug_notify()
 end)
 
 mod:hook_safe(CLASS.AttackReportManager, "_process_attack_result", function(self, buffer_data)
@@ -954,7 +750,6 @@ mod:hook_safe(CLASS.AttackReportManager, "_process_attack_result", function(self
 	if controller.sequence_state == "stab_path"
 		and (current_action_name() == "action_sprint_heavy_stab" or controller.stab_consumed) then
 		controller.stab_hit_confirmed = true
-		mark_trace_time("hit_t", gameplay_time())
 	end
 end)
 
@@ -983,17 +778,13 @@ mod:hook("SkitariusOmnissiah", "omnissiah", function(func, self, queried_input, 
 	return outcome
 end)
 
-function mod.toggle_mod_enabled(pressed)
-	if pressed then
-		toggle_mod_enabled()
-	end
+function mod.helper_hotkey(pressed)
+	helper_hotkey_held = pressed and true or false
 end
 
 mod.on_setting_changed = function(setting_id)
-	if setting_id == "enable_mod"
-		or setting_id == "use_block_cancel"
-		or setting_id == "debug_mode"
-		or setting_id == "trace_mode" then
+	if setting_id == "override_sprint"
+		or setting_id == "use_block_cancel" then
 		refresh_settings()
 		reset_sequence()
 	end
@@ -1001,6 +792,7 @@ end
 
 mod.on_disabled = function()
 	player_weapon_extension = nil
+	helper_hotkey_held = false
 	refresh_settings()
 	reset_controller()
 end

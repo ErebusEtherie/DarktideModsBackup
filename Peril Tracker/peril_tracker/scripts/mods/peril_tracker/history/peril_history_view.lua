@@ -62,7 +62,7 @@ local function session_to_entry(session)
         if ov.fatal then fatal = fatal + 1 else survived = survived + 1 end
     end
 
-    local map    = session.map or "Unknown Map"
+    local map    = mod.lib_missions.localize_name(session.map) or session.map or "Unknown Map"
     local player = session.player or ""
     local date   = format_timestamp(session.timestamp)
     local dur_m  = math.floor((session.duration or 0) / 60)

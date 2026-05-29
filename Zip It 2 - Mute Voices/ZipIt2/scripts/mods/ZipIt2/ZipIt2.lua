@@ -2,7 +2,7 @@
 local mod = get_mod("ZipIt2")
 if not mod then return end
 
-mod.version = "ZipIt2 version 1.2.0"
+mod.version = "ZipIt2 version 1.5.1"
 
 if mod._zipit2_loaded then return end
 mod._zipit2_loaded = true

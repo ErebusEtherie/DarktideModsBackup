@@ -30,6 +30,11 @@ local mod = get_mod("BrokerAutoStim")
 							default_value = false
 						},
 						{
+							setting_id    = "not_with_stimm_supply",
+							type          = "checkbox",
+							default_value = false
+						},
+						{
 							setting_id      = "stim_trigger_mode",
 							type            = "dropdown",
 							default_value   = "combat_only",

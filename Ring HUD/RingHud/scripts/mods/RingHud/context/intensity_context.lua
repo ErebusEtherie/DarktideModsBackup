@@ -178,7 +178,7 @@ local function _scan_team_collapse()
     local down = 0
 
     for _, ply in pairs(players) do
-        local u = ply and ply.player_unit
+        local u = ply and not ply.__deleted and ply.player_unit
         if u and Unit.alive(u) and u ~= local_unit then
             local dead_or_hog =
                 (TeamStatus and TeamStatus.for_unit and (function()

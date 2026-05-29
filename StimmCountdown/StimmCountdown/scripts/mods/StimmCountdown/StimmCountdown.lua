@@ -1,13 +1,14 @@
 local mod = get_mod("StimmCountdown")
 
+local StimmCountdownCore = mod:io_dofile("StimmCountdown/scripts/mods/StimmCountdown/StimmCountdown_core")
+
 local UIWidget = require("scripts/managers/ui/ui_widget")
 local UIHudSettings = require("scripts/settings/ui/ui_hud_settings")
 local UIFontSettings = require("scripts/managers/ui/ui_font_settings")
 
-local STIMM_BUFF_NAME = "syringe_broker_buff"
 local STIMM_SLOT_NAME = "slot_pocketable_small"
-local STIMM_ABILITY_TYPE = "pocketable_ability"
 local STIMM_ICON_MATERIAL = "content/ui/materials/icons/pocketables/hud/syringe_broker"
+local STIMM_PACKAGE_REFERENCE_NAME = "StimmCountdown"
 local STIMM_READY_SOUND_EVENT_DEFAULT = "wwise/events/ui/play_hud_heal_2d"
 
 local ACTIVE_COLOR = UIHudSettings.color_tint_main_1
@@ -42,6 +43,44 @@ local settings_cache = {
 	font_type = "machine_medium",
 	font_size = 30,
 }
+
+local stimm_icon_package_load_id = nil
+
+local function ensure_stimm_icon_package_loaded()
+	if stimm_icon_package_load_id then
+		return
+	end
+
+	local package_manager = Managers.package
+
+	if not package_manager or type(package_manager.load) ~= "function" then
+		return
+	end
+
+	local ok, load_id = pcall(function()
+		return package_manager:load(STIMM_ICON_MATERIAL, STIMM_PACKAGE_REFERENCE_NAME, nil, true)
+	end)
+
+	if ok then
+		stimm_icon_package_load_id = load_id
+	end
+end
+
+local function release_stimm_icon_package()
+	if not stimm_icon_package_load_id then
+		return
+	end
+
+	local package_manager = Managers.package
+
+	if package_manager and type(package_manager.release) == "function" then
+		pcall(function()
+			package_manager:release(stimm_icon_package_load_id)
+		end)
+	end
+
+	stimm_icon_package_load_id = nil
+end
 
 local function resolve_color_from_setting_value(value, fallback)
 	if type(value) == "string" and Color[value] then
@@ -81,6 +120,52 @@ end
 
 refresh_settings()
 
+mod.on_all_mods_loaded = function()
+	ensure_stimm_icon_package_loaded()
+end
+
+mod.on_unload = function()
+	release_stimm_icon_package()
+end
+
+mod.stimm_countdown_api = {
+	pocketable_profiles = {
+		{
+			id = "broker_syringe",
+			archetype_name = "broker",
+			ability_type = "pocketable_ability",
+			ability_group = "broker_syringe",
+			active_buff_template = "syringe_broker_buff",
+		},
+	},
+	buff_entries = {
+		{ template = "syringe_broker_buff", archetype_name = "broker" },
+		{ template = "syringe_speed_boost_buff" },
+		{ template = "syringe_power_boost_buff" },
+		{ template = "syringe_ability_boost_buff" },
+		{ template = "syringe_heal_corruption_buff" },
+	},
+	get_display_for_unit = function(player_unit)
+		if mod.is_enabled and not mod:is_enabled() then
+			return nil
+		end
+
+		local api = mod.stimm_countdown_api
+		local settings = {
+			show_active = mod:get("show_active") ~= false,
+			show_cooldown = mod:get("show_cooldown") ~= false,
+			show_decimals = mod:get("show_decimals") ~= false,
+		}
+
+		return StimmCountdownCore.compute_timer_display_for_consuming_mods(
+			player_unit,
+			settings,
+			api.pocketable_profiles,
+			api.buff_entries
+		)
+	end,
+}
+
 mod.on_setting_changed = function(setting_id)
 	if setting_id == "reset_color_settings" then
 		if mod:get("reset_color_settings") == 1 then
@@ -107,7 +192,7 @@ mod.on_setting_changed = function(setting_id)
 			mod:set("font_type", "machine_medium")
 			mod:set("font_size", 30)
 		end
-		elseif setting_id == "reset_sound_settings" then
+	elseif setting_id == "reset_sound_settings" then
 		if mod:get("reset_sound_settings") == 1 then
 			mod:notify(mod:localize("reset_sound_settings"))
 			mod:set("reset_sound_settings", 0)
@@ -425,40 +510,6 @@ mod:hook_require(
 	end
 )
 
-local function is_broker_class(player)
-	if not player then
-		return false
-	end
-
-	local archetype_name = player:archetype_name()
-	return archetype_name == "broker"
-end
-
-local function get_buff_remaining_time(buff_extension, buff_template_name)
-	if not buff_extension then
-		return 0
-	end
-
-	local buffs_by_index = buff_extension._buffs_by_index
-	if not buffs_by_index then
-		return 0
-	end
-
-	local timer = 0
-	for _, buff in pairs(buffs_by_index) do
-		if buff then
-			local template = buff:template()
-			if template and template.name == buff_template_name then
-				local remaining = buff:duration_progress() or 1
-				local duration = buff:duration() or 15
-				timer = math.max(timer, duration * remaining)
-			end
-		end
-	end
-
-	return timer
-end
-
 local function play_sound_event(event_name, ui_element)
 	if not event_name or event_name == "" then
 		return false
@@ -529,12 +580,6 @@ mod:hook_safe("HudElementPlayerWeapon", "update", function(self, dt, t, ui_rende
 		return
 	end
 
-	if not is_broker_class(player) then
-		restore_original_colors(self, icon_widget, background_widget)
-		widget.content.visible = false
-		return
-	end
-
 	local player_unit = player.player_unit
 
 	local buff_extension = ScriptUnit.has_extension(player_unit, "buff_system")
@@ -544,20 +589,31 @@ mod:hook_safe("HudElementPlayerWeapon", "update", function(self, dt, t, ui_rende
 		return
 	end
 
-	local display_text = ""
-	local display_color = COOLDOWN_COLOR
-	local should_show = false
+	local tr = StimmCountdownCore.compute_pocketable_stimm_timer_state(player_unit, {
+		show_active = settings_cache.show_active,
+		show_cooldown = settings_cache.show_cooldown,
+		show_decimals = settings_cache.show_decimals,
+	}, mod.stimm_countdown_api.pocketable_profiles)
 
-	local show_decimals = settings_cache.show_decimals
-	local show_active = settings_cache.show_active
-	local show_cooldown = settings_cache.show_cooldown
+	if not tr.has_matched_pocketable then
+		restore_original_colors(self, icon_widget, background_widget)
+		widget.content.text = ""
+		widget.content.visible = false
+		widget.visible = false
+		widget.dirty = true
+		return
+	end
+
+	local display_text = tr.text
+	local display_color = COOLDOWN_COLOR
+	local should_show = tr.visible
+
 	local show_ready_notification = settings_cache.show_ready_notification
 
 	local enable_ready_override = settings_cache.enable_ready_override
 	local enable_active_override = settings_cache.enable_active_override
 	local enable_cooldown_override = settings_cache.enable_cooldown_override
 
-	local ready_countdown_color = settings_cache.ready_countdown_color
 	local ready_icon_color = settings_cache.ready_icon_color
 	local active_countdown_color = settings_cache.active_countdown_color
 	local active_icon_color = settings_cache.active_icon_color
@@ -574,60 +630,30 @@ mod:hook_safe("HudElementPlayerWeapon", "update", function(self, dt, t, ui_rende
 	local line_color_to_apply = nil
 	local bg_color_to_apply = nil
 
-	local ability_extension = self._ability_extension
-	local equipped_abilities = ability_extension and ability_extension:equipped_abilities()
-	local pocketable_ability = equipped_abilities and equipped_abilities[STIMM_ABILITY_TYPE]
-	local has_broker_syringe = pocketable_ability and pocketable_ability.ability_group == "broker_syringe"
-	local remaining_cooldown = has_broker_syringe and ability_extension and ability_extension:remaining_ability_cooldown(STIMM_ABILITY_TYPE)
-	local has_cooldown = remaining_cooldown and remaining_cooldown >= 0.05
+	local has_cooldown = tr.has_cooldown
+	local is_ready = tr.is_ready
 
-	if not has_broker_syringe then
-		restore_original_colors(self, icon_widget, background_widget)
-		widget.content.text = ""
-		widget.content.visible = false
-		widget.visible = false
-		widget.dirty = true
-		return
-	end
-
-	local remaining_buff_time = get_buff_remaining_time(buff_extension, STIMM_BUFF_NAME)
-	local has_active_buff = remaining_buff_time and remaining_buff_time >= 0.05
-	local is_ready = has_broker_syringe and not has_active_buff and not has_cooldown
-
-	if show_active and has_active_buff then
-		if show_decimals then
-			display_text = string.format("%.1f", remaining_buff_time)
-		else
-			display_text = string.format("%.0f", math.ceil(remaining_buff_time))
-		end
+	if tr.phase == "active" then
 		display_color = enable_active_override and active_countdown_color or ACTIVE_COLOR
+
 		if enable_active_override then
 			icon_color_to_apply = active_icon_color
 			line_color_to_apply = active_icon_color
 			bg_color_to_apply = active_icon_color
 		end
-		should_show = true
-	elseif is_ready then
+	elseif tr.is_ready then
 		if enable_ready_override then
 			icon_color_to_apply = ready_icon_color
 			line_color_to_apply = ready_icon_color
 			bg_color_to_apply = ready_icon_color
 		end
-		should_show = false
-	elseif show_cooldown then
-		if has_cooldown then
-			if show_decimals then
-				display_text = string.format("%.1f", remaining_cooldown)
-			else
-				display_text = string.format("%.0f", math.ceil(remaining_cooldown))
-			end
-			display_color = enable_cooldown_override and cooldown_countdown_color or COOLDOWN_COLOR
-			if enable_cooldown_override then
-				icon_color_to_apply = cooldown_icon_color
-				line_color_to_apply = cooldown_icon_color
-				bg_color_to_apply = cooldown_icon_color
-			end
-			should_show = true
+	elseif tr.phase == "cooldown" then
+		display_color = enable_cooldown_override and cooldown_countdown_color or COOLDOWN_COLOR
+
+		if enable_cooldown_override then
+			icon_color_to_apply = cooldown_icon_color
+			line_color_to_apply = cooldown_icon_color
+			bg_color_to_apply = cooldown_icon_color
 		end
 	end
 
@@ -650,6 +676,8 @@ mod:hook_safe("HudElementPlayerWeapon", "update", function(self, dt, t, ui_rende
 			local became_ready_after_cooldown = is_ready and not self._stimm_ready_prev and (self._stimm_prev_has_cooldown or has_cooldown)
 
 			if became_ready_after_cooldown then
+				ensure_stimm_icon_package_loaded()
+
 				local line_color = enable_notification_override and notification_line_color or NOTIFICATION_LINE_DEFAULT
 				local icon_color = enable_notification_override and notification_icon_color or NOTIFICATION_ICON_DEFAULT
 				local background_color = enable_notification_override and notification_background_color or NOTIFICATION_BACKGROUND_DEFAULT

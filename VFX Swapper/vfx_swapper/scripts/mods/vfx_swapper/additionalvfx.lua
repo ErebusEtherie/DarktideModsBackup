@@ -22,6 +22,29 @@ local function debug_log(message)
     end
 end
 
+-- Cached settings to avoid per-call mod:get() on hot paths
+local _cached_disable_toxin_death_vfx = false
+local _cached_disable_death_vfx = false
+local _cached_disable_rotten_armor_stages = false
+local _cached_disable_rampaging_vfx = false
+local _cached_disable_corrupted_enemies_color = false
+local _cached_disable_rotten_armor_impact = false
+
+local function refresh_additionalvfx_cache()
+    _cached_disable_toxin_death_vfx = mod:get("disable_toxin_death_vfx")
+    _cached_disable_death_vfx = mod:get("disable_death_vfx")
+    _cached_disable_rotten_armor_stages = mod:get("disable_rotten_armor_stages")
+    _cached_disable_rampaging_vfx = mod:get("disable_rampaging_vfx")
+    _cached_disable_corrupted_enemies_color = mod:get("disable_corrupted_enemies_color")
+    _cached_disable_rotten_armor_impact = mod:get("disable_rotten_armor_impact")
+end
+
+-- Expose refresh function so on_setting_changed can call it
+mod._refresh_additionalvfx_cache = refresh_additionalvfx_cache
+
+-- Initialize cache
+refresh_additionalvfx_cache()
+
 
 
 -- ============================================================================
@@ -31,7 +54,7 @@ end
 mod:hook("WeaponSystem", "rpc_trigger_husk_explosion", function(func, self, channel_id, explosion_template_id, position, rotation, radius_variable_value, weapon_charge_level, optional_attacking_owner_unit_id)
         -- Lookup explosion template name from network ID
     local explosion_template_name = NetworkLookup.explosion_templates[explosion_template_id]
-    if mod:get("disable_toxin_death_vfx") and BLOCKED_VFX_RPC[explosion_template_name] then
+    if _cached_disable_toxin_death_vfx and BLOCKED_VFX_RPC[explosion_template_name] then
         return
     end
         
@@ -61,7 +84,7 @@ mod:hook("FxSystem", "trigger_vfx", function(func, self, vfx_name, position, opt
     --     debug_log("[VFX] " .. tostring(vfx_name))
     -- end
     
-    if mod:get("disable_death_vfx") then
+    if _cached_disable_death_vfx then
         if BLOCKED_VFX[vfx_name] then
             -- if DEBUG_VFX_LOGGING then
             --     debug_log("[FxSystem BLOCKED] " .. tostring(vfx_name))
@@ -80,7 +103,7 @@ mod:hook("FxSystem", "rpc_trigger_vfx", function(func, self, channel_id, vfx_id,
     local vfx_name = NetworkLookup.vfx[vfx_id]
     
     -- Skip blocked VFX
-    if mod:get("disable_death_vfx") then
+    if _cached_disable_death_vfx then
         if vfx_name and BLOCKED_VFX[vfx_name] then
             -- if DEBUG_VFX_LOGGING then
             --     debug_log("[FxSystem RPC BLOCKED] " .. tostring(vfx_name))
@@ -96,7 +119,7 @@ end)
 mod:hook("FxSystem", "start_template_effect", function(func, self, template, optional_unit, optional_node, optional_position)
     local template_name = template and template.name
 
-    if mod:get("disable_rotten_armor_stages") then
+    if _cached_disable_rotten_armor_stages then
         if template_name == "mutator_rotten_armor_stages" then
             return
         end
@@ -111,7 +134,7 @@ end)
 mod:hook("FxSystem", "rpc_start_template_effect", function(func, self, channel_id, buffer_index, template_id, optional_unit_id, optional_node, optional_position)
     local template_name = NetworkLookup.effect_templates[template_id]
 
-    if mod:get("disable_rotten_armor_stages") then
+    if _cached_disable_rotten_armor_stages then
         if template_name == "mutator_rotten_armor_stages" then
             return
         end
@@ -152,100 +175,190 @@ local BOLSTER_4_COLOR = {
 local HavocTemplates = require("scripts/settings/buff/havoc_buff_templates")
 local BuffSettings = require("scripts/settings/buff/buff_settings")
 local minion_effects_priorities = BuffSettings.minion_effects_priorities
+mod._original_bolstering_minion_effects = {}
+		-- node_effects_priotity = minion_effects_priorities.mutators,
+		-- stack_material_vectors = {
+		-- 	material_vector = {
+		-- 		name = "stimmed_color",
+		-- 		value = BOLSTER_1_COLOR,
+		-- 		priority = minion_effects_priorities.mutators,
+		-- 	},
+		-- 	material_vector = {
+		-- 		name = "stimmed_color",
+		-- 		value = BOLSTER_2_COLOR,
+		-- 		priority = minion_effects_priorities.mutators,
+		-- 	},
+		-- 	material_vector = {
+		-- 		name = "stimmed_color",
+		-- 		value = BOLSTER_3_COLOR,
+		-- 		priority = minion_effects_priorities.mutators,
+		-- 	},
+		-- 	material_vector = {
+		-- 		name = "stimmed_color",
+		-- 		value = BOLSTER_4_COLOR,
+		-- 		priority = minion_effects_priorities.mutators,
+		-- 	},
+		-- 	material_vector = {
+		-- 		name = "stimmed_color",
+		-- 		value = BOLSTERING_COLOR,
+		-- 		priority = minion_effects_priorities.mutators,
+		-- 	},
+		-- },
+		-- stack_node_effects = {
+		-- 	[5] = {
+		-- 		    node_name = "j_lefteye",
+		-- 		    vfx = {
+		-- 			    orphaned_policy = "stop",
+		-- 			    particle_effect = "content/fx/particles/enemies/red_glowing_eyes",
+		-- 			    stop_type = "destroy",
+		-- 		        material_variables = {
+		-- 			    {
+		-- 				    material_name = "eye_socket",
+		-- 				    variable_name = "material_variable_21872256",
+		-- 				    value = BOLSTERING_COLOR,
+		-- 			    },
+		-- 			    {
+		-- 				    material_name = "eye_glow",
+		-- 				    variable_name = "trail_color",
+		-- 				    value = BOLSTERING_COLOR,
+		-- 			    },
+		-- 			    {
+		-- 				    material_name = "eye_glow",
+		-- 				    variable_name = "material_variable_21872256_69bf7e2a",
+		-- 				    value = BOLSTER_1_COLOR,
+		-- 			    },
+		-- 		    },
+		-- 	    },
+		--     },
+		--     {
+		-- 	        node_name = "j_righteye",
+		-- 	        vfx = {
+		-- 		        orphaned_policy = "stop",
+		-- 		        particle_effect = "content/fx/particles/enemies/red_glowing_eyes",
+		-- 		        stop_type = "destroy",
+		-- 		        material_variables = {
+		-- 		        {
+		-- 			        material_name = "eye_socket",
+		-- 			        variable_name = "material_variable_21872256",
+		-- 			        value = BOLSTERING_COLOR,
+		-- 			    },
+		-- 			    {
+		-- 			        material_name = "eye_glow",
+		-- 			        variable_name = "trail_color",
+		-- 			        value = BOLSTERING_COLOR,
+		-- 			    },
+		-- 			    {
+		-- 			        material_name = "eye_glow",
+		-- 			        variable_name = "material_variable_21872256_69bf7e2a",
+		-- 				value = BOLSTERING_COLOR,
+		-- 			    },
+		-- 		    },
+		-- 	    },
+		--     },
+		-- },
+		-- material_vector = {
+		-- 		name = "stimmed_color",
+		-- 		value = BOLSTER_1_COLOR,
+		-- 		priority = minion_effects_priorities.mutators,
+		-- 	},
+	    -- }
+
 mod.havoc_enemy_vfx = function(self)
+	mod._original_bolstering_minion_effects = HavocTemplates.havoc_bolstering.minion_effects
     if mod:get("disable_rampaging_vfx") then
         HavocTemplates.havoc_bolstering.minion_effects.node_effects_priotity = nil
         HavocTemplates.havoc_bolstering.minion_effects.stack_material_vectors = nil
         HavocTemplates.havoc_bolstering.minion_effects.stack_node_effects = nil
         HavocTemplates.havoc_bolstering.minion_effects.material_vector = nil
     else 
-        HavocTemplates.havoc_bolstering.minion_effects = {
-		node_effects_priotity = minion_effects_priorities.mutators,
-		stack_material_vectors = {
-			material_vector = {
-				name = "stimmed_color",
-				value = BOLSTER_1_COLOR,
-				priority = minion_effects_priorities.mutators,
-			},
-			material_vector = {
-				name = "stimmed_color",
-				value = BOLSTER_2_COLOR,
-				priority = minion_effects_priorities.mutators,
-			},
-			material_vector = {
-				name = "stimmed_color",
-				value = BOLSTER_3_COLOR,
-				priority = minion_effects_priorities.mutators,
-			},
-			material_vector = {
-				name = "stimmed_color",
-				value = BOLSTER_4_COLOR,
-				priority = minion_effects_priorities.mutators,
-			},
-			material_vector = {
-				name = "stimmed_color",
-				value = BOLSTERING_COLOR,
-				priority = minion_effects_priorities.mutators,
-			},
-		},
-		stack_node_effects = {
-			[5] = {
-				    node_name = "j_lefteye",
-				    vfx = {
-					    orphaned_policy = "stop",
-					    particle_effect = "content/fx/particles/enemies/red_glowing_eyes",
-					    stop_type = "destroy",
-				        material_variables = {
-					    {
-						    material_name = "eye_socket",
-						    variable_name = "material_variable_21872256",
-						    value = BOLSTERING_COLOR,
-					    },
-					    {
-						    material_name = "eye_glow",
-						    variable_name = "trail_color",
-						    value = BOLSTERING_COLOR,
-					    },
-					    {
-						    material_name = "eye_glow",
-						    variable_name = "material_variable_21872256_69bf7e2a",
-						    value = BOLSTER_1_COLOR,
-					    },
-				    },
-			    },
-		    },
-		    {
-			        node_name = "j_righteye",
-			        vfx = {
-				        orphaned_policy = "stop",
-				        particle_effect = "content/fx/particles/enemies/red_glowing_eyes",
-				        stop_type = "destroy",
-				        material_variables = {
-				        {
-					        material_name = "eye_socket",
-					        variable_name = "material_variable_21872256",
-					        value = BOLSTERING_COLOR,
-					    },
-					    {
-					        material_name = "eye_glow",
-					        variable_name = "trail_color",
-					        value = BOLSTERING_COLOR,
-					    },
-					    {
-					        material_name = "eye_glow",
-					        variable_name = "material_variable_21872256_69bf7e2a",
-						value = BOLSTERING_COLOR,
-					    },
-				    },
-			    },
-		    },
-		},
-		material_vector = {
-				name = "stimmed_color",
-				value = BOLSTER_1_COLOR,
-				priority = minion_effects_priorities.mutators,
-			},
-	    }
+        HavocTemplates.havoc_bolstering.minion_effects = mod._original_bolstering_minion_effects
+		-- {
+		-- node_effects_priotity = minion_effects_priorities.mutators,
+		-- stack_material_vectors = {
+		-- 	material_vector = {
+		-- 		name = "stimmed_color",
+		-- 		value = BOLSTER_1_COLOR,
+		-- 		priority = minion_effects_priorities.mutators,
+		-- 	},
+		-- 	material_vector = {
+		-- 		name = "stimmed_color",
+		-- 		value = BOLSTER_2_COLOR,
+		-- 		priority = minion_effects_priorities.mutators,
+		-- 	},
+		-- 	material_vector = {
+		-- 		name = "stimmed_color",
+		-- 		value = BOLSTER_3_COLOR,
+		-- 		priority = minion_effects_priorities.mutators,
+		-- 	},
+		-- 	material_vector = {
+		-- 		name = "stimmed_color",
+		-- 		value = BOLSTER_4_COLOR,
+		-- 		priority = minion_effects_priorities.mutators,
+		-- 	},
+		-- 	material_vector = {
+		-- 		name = "stimmed_color",
+		-- 		value = BOLSTERING_COLOR,
+		-- 		priority = minion_effects_priorities.mutators,
+		-- 	},
+		-- },
+		-- stack_node_effects = {
+		-- 	[5] = {
+		-- 		    node_name = "j_lefteye",
+		-- 		    vfx = {
+		-- 			    orphaned_policy = "stop",
+		-- 			    particle_effect = "content/fx/particles/enemies/red_glowing_eyes",
+		-- 			    stop_type = "destroy",
+		-- 		        material_variables = {
+		-- 			    {
+		-- 				    material_name = "eye_socket",
+		-- 				    variable_name = "material_variable_21872256",
+		-- 				    value = BOLSTERING_COLOR,
+		-- 			    },
+		-- 			    {
+		-- 				    material_name = "eye_glow",
+		-- 				    variable_name = "trail_color",
+		-- 				    value = BOLSTERING_COLOR,
+		-- 			    },
+		-- 			    {
+		-- 				    material_name = "eye_glow",
+		-- 				    variable_name = "material_variable_21872256_69bf7e2a",
+		-- 				    value = BOLSTER_1_COLOR,
+		-- 			    },
+		-- 		    },
+		-- 	    },
+		--     },
+		--     {
+		-- 	        node_name = "j_righteye",
+		-- 	        vfx = {
+		-- 		        orphaned_policy = "stop",
+		-- 		        particle_effect = "content/fx/particles/enemies/red_glowing_eyes",
+		-- 		        stop_type = "destroy",
+		-- 		        material_variables = {
+		-- 		        {
+		-- 			        material_name = "eye_socket",
+		-- 			        variable_name = "material_variable_21872256",
+		-- 			        value = BOLSTERING_COLOR,
+		-- 			    },
+		-- 			    {
+		-- 			        material_name = "eye_glow",
+		-- 			        variable_name = "trail_color",
+		-- 			        value = BOLSTERING_COLOR,
+		-- 			    },
+		-- 			    {
+		-- 			        material_name = "eye_glow",
+		-- 			        variable_name = "material_variable_21872256_69bf7e2a",
+		-- 				value = BOLSTERING_COLOR,
+		-- 			    },
+		-- 		    },
+		-- 	    },
+		--     },
+		-- },
+		-- material_vector = {
+		-- 		name = "stimmed_color",
+		-- 		value = BOLSTER_1_COLOR,
+		-- 		priority = minion_effects_priorities.mutators,
+		-- 	},
+	    -- }
     end
     
     if mod:get("disable_corrupted_enemies_vfx") then
@@ -258,9 +371,17 @@ mod.havoc_enemy_vfx = function(self)
     end
 end
 
+-- mod.bolstered_settings = function()
+-- 	if HavocTemplates.havoc_bolstering.minion_effects.node_effects_priotity = nil then
+-- 		return false
+-- 	end
+-- 	local old_minion_effects = HavocTemplates.havoc_bolstering.minion_effects
+-- 	-- HavocTemplates.havoc_bolstering.minion_effects = nil
+-- 	return old_minion_effects
+-- end
 --  corrupted enemies color
 mod:hook("Unit", "set_vector3_for_materials", function(func, unit, material_name, color, ...)
-    if mod:get("disable_corrupted_enemies_color") then
+    if _cached_disable_corrupted_enemies_color then
         if material_name == "stimmed_color" and color then
             -- debug_log(material_name .. " " .. tostring(color)) --[[ TODO: remove ]]
             local r, g, b = Vector3.to_elements(color)
@@ -275,7 +396,7 @@ end)
 
 --  rotten armor impact vfx (leak)
 mod:hook("MinionBuffExtension", "has_keyword", function(func, self, keyword)
-    if mod:get("disable_rotten_armor_impact") and keyword == "rotten_armor" then
+    if _cached_disable_rotten_armor_impact and keyword == "rotten_armor" then
         return false
     end
     return func(self, keyword)

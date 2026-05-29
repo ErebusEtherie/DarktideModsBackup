@@ -21,7 +21,7 @@ local WRU_ICONS  = {
 ----------------------------------------------------------------
 
 local function _safe_profile(player)
-    if not player then
+    if not player or player.__deleted then
         return nil
     end
 
@@ -53,7 +53,7 @@ local function _default_character_name(player, profile)
     end
 
     -- Fallback: player:name() or raw 'name'
-    if player then
+    if player and not player.__deleted then
         local name_member = player.name
 
         if type(name_member) == "function" then
@@ -405,26 +405,6 @@ local function _colored_markup(text, tint_argb255)
 end
 
 ----------------------------------------------------------------
--- Primary-name builder
-----------------------------------------------------------------
-
-local function _build_primary_plain(player, profile, optional_prefix)
-    local prof   = profile or _safe_profile(player)
-    local name   = _default_character_name(player, prof)
-
-    local prefix = optional_prefix
-    if prefix == nil then
-        prefix = Name.glyph_prefix(player, prof)
-    end
-
-    if prefix and prefix ~= "" then
-        return tostring(prefix) .. tostring(name or ""), prof
-    end
-
-    return tostring(name or ""), prof
-end
-
-----------------------------------------------------------------
 -- Single compose function
 ----------------------------------------------------------------
 function Name.compose(player, profile, tint_argb255, seeded_text, optional_prefix, context_or_opts)
@@ -436,32 +416,30 @@ function Name.compose(player, profile, tint_argb255, seeded_text, optional_prefi
         context = context_or_opts.context or context_or_opts.ref
     end
 
-    local primary_plain, prof = _build_primary_plain(player, profile, optional_prefix)
+    local prof = profile or _safe_profile(player)
+    local character_name = _default_character_name(player, prof)
 
-    -- Step 1: base, slot-tinted primary name (glyph + name), with WHITE_TAG
-    -- marking the end of the primary segment.
-    local tinted_primary = _colored_markup(primary_plain, tint_argb255)
-
-    -- Step 2: docked tiles get WRU/TL applied on top of the tinted primary.
-    local result = tinted_primary
-
+    -- 1. Apply WRU to the raw character name first (if docked)
+    local display_name = character_name
     if context == "docked" then
-        -- [NEW] For docked mode, re-apply the slot tint after the primary block.
-        -- This ensures default-colored text from WRU/TL inherits the slot tint.
-        if tint_argb255 and type(tint_argb255) == "table" then
-            local r = tint_argb255[2] or 255
-            local g = tint_argb255[3] or 255
-            local b = tint_argb255[4] or 255
-            result = result .. string.format("{#color(%d,%d,%d)}", r, g, b)
-        end
+        display_name = _apply_who_are_you(display_name, player, context)
+    end
 
-        result = _apply_who_are_you(result, player, context)
+    -- 2. Build primary plain (glyph + display_name)
+    local prefix = optional_prefix
+    if prefix == nil then
+        prefix = Name.glyph_prefix(player, prof)
+    end
+
+    local primary_plain = (prefix and prefix ~= "") and (tostring(prefix) .. tostring(display_name)) or
+        tostring(display_name)
+
+    -- 3. Apply slot tint markup (wraps everything WRU added, securely coloring it)
+    local result = _colored_markup(primary_plain, tint_argb255)
+
+    -- 4. Apply True Level (if docked)
+    if context == "docked" then
         result = _apply_true_level(result, player, prof, context)
-
-        -- [NEW] Close any open color tags from our re-application
-        if tint_argb255 then
-            result = result .. "{#reset()}"
-        end
     end
 
     return result
@@ -478,7 +456,10 @@ function Name.default(player)
         tint = mod.team_slot_tint_argb(player, nil)
     end
 
-    local primary_plain = _build_primary_plain(player, prof, nil)
+    local character_name = _default_character_name(player, prof)
+    local prefix = Name.glyph_prefix(player, prof)
+    local primary_plain = (prefix and prefix ~= "") and (tostring(prefix) .. tostring(character_name)) or
+        tostring(character_name)
 
     return _colored_markup(primary_plain, tint)
 end

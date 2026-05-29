@@ -374,6 +374,12 @@ mod_data.options = {
 					sub_widgets   = { --[[...]] } -- optional
 				},
 				{
+					setting_id    = "ganger_rage_onhit",
+					type          = "checkbox",
+					default_value = false,
+					sub_widgets   = { --[[...]] } -- optional
+				},
+				{
 					setting_id    = "ganger_focus",
 					type          = "checkbox",
 					default_value = false,
@@ -579,6 +585,12 @@ mod_data.options = {
 			sub_widgets = {
 				{
 					setting_id    = "weapon_enabled",
+					type          = "checkbox",
+					default_value = false,
+					sub_widgets   = { --[[...]] } -- optional
+				},
+				{
+					setting_id    = "paul_recharge",
 					type          = "checkbox",
 					default_value = false,
 					sub_widgets   = { --[[...]] } -- optional

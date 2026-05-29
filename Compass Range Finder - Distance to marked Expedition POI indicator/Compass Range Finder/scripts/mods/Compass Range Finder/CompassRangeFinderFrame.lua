@@ -4,7 +4,7 @@ local UIRenderer = require("scripts/managers/ui/ui_renderer")
 local UIFonts = require("scripts/managers/ui/ui_fonts")
 local UIFontSettings = require("scripts/managers/ui/ui_font_settings")
 
-local Vector3 = Vector3
+local Vector3 = rawget(_G, "Vector3")
 local math_ceil = math.ceil
 local math_max = math.max
 
@@ -77,6 +77,13 @@ local last_tint = {
 
 local FrameRenderer = {}
 
+-- Helper: Update color channels for a color array
+local function update_color_channels(array, color)
+	array[2] = color[2]
+	array[3] = color[3]
+	array[4] = color[4]
+end
+
 local function apply_color_tint(color)
 	if last_tint.r == color[2] and last_tint.g == color[3] and last_tint.b == color[4] then
 		return
@@ -87,21 +94,10 @@ local function apply_color_tint(color)
 	last_tint.b = color[4]
 
 	text_color[1] = 255
-	text_color[2] = color[2]
-	text_color[3] = color[3]
-	text_color[4] = color[4]
-
-	frame_border_color[2] = color[2]
-	frame_border_color[3] = color[3]
-	frame_border_color[4] = color[4]
-
-	frame_border_inner_color[2] = color[2]
-	frame_border_inner_color[3] = color[3]
-	frame_border_inner_color[4] = color[4]
-
-	frame_corner_color[2] = color[2]
-	frame_corner_color[3] = color[3]
-	frame_corner_color[4] = color[4]
+	update_color_channels(text_color, color)
+	update_color_channels(frame_border_color, color)
+	update_color_channels(frame_border_inner_color, color)
+	update_color_channels(frame_corner_color, color)
 end
 
 local function draw_box_border(ui_renderer, x, y, z, width, height, thickness, color)
@@ -121,7 +117,8 @@ FrameRenderer.draw = function(ui_renderer, distance, color, screen_position)
 	local distance_text = tostring(distance) .. "m"
 
 	local configured_font_size = mod:get("distance_font_size") or 22
-	local renderer_scale = ui_renderer.scale or ((rawget(_G, "RESOLUTION_LOOKUP") and RESOLUTION_LOOKUP.scale) or 1)
+	local resolution_lookup = rawget(_G, "RESOLUTION_LOOKUP")
+	local renderer_scale = ui_renderer.scale or (resolution_lookup and resolution_lookup.scale) or 1
 	local font_size = math_ceil(configured_font_size * renderer_scale)
 
 	apply_color_tint(color)
@@ -161,16 +158,17 @@ FrameRenderer.draw = function(ui_renderer, distance, color, screen_position)
 		draw_box_border(ui_renderer, inner_x, inner_y, inner_z, inner_w, inner_h, 1, frame_border_inner_color)
 	end
 
-	local top_left_corner_position = Vector3(frame_x, frame_y, frame_z)
-	local top_right_corner_position = Vector3(frame_x + frame_width - corner_size, frame_y, frame_z)
-	local bottom_left_corner_position = Vector3(frame_x, frame_y + frame_height - corner_size, frame_z)
-	local bottom_right_corner_position = Vector3(frame_x + frame_width - corner_size, frame_y + frame_height - corner_size, frame_z)
 	local corner_size_vector = Vector3(corner_size, corner_size, 1)
+	local corner_positions = {
+		Vector3(frame_x, frame_y, frame_z),
+		Vector3(frame_x + frame_width - corner_size, frame_y, frame_z),
+		Vector3(frame_x, frame_y + frame_height - corner_size, frame_z),
+		Vector3(frame_x + frame_width - corner_size, frame_y + frame_height - corner_size, frame_z),
+	}
 
-	UIRenderer.draw_rect(ui_renderer, top_left_corner_position, corner_size_vector, frame_corner_color)
-	UIRenderer.draw_rect(ui_renderer, top_right_corner_position, corner_size_vector, frame_corner_color)
-	UIRenderer.draw_rect(ui_renderer, bottom_left_corner_position, corner_size_vector, frame_corner_color)
-	UIRenderer.draw_rect(ui_renderer, bottom_right_corner_position, corner_size_vector, frame_corner_color)
+	for _, corner_pos in ipairs(corner_positions) do
+		UIRenderer.draw_rect(ui_renderer, corner_pos, corner_size_vector, frame_corner_color)
+	end
 
 	UIRenderer.draw_text(ui_renderer, distance_text, font_size, font_type, text_position, text_size, text_color, text_options)
 end

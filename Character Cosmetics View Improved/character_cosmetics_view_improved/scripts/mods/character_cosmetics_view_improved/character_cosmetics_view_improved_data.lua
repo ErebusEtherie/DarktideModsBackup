@@ -11,6 +11,12 @@ return {
 				type = "group",
 				sub_widgets = {
 					{
+						setting_id = "mod_name_pizazz_toggle",
+						type = "checkbox",
+						default_value = true,
+						tooltip = "mod_name_pizazz_tooltip",
+					},
+					{
 						setting_id = "show_commodores",
 						type = "dropdown",
 						default_value = "loc_VPCC_show_all_commodores",
