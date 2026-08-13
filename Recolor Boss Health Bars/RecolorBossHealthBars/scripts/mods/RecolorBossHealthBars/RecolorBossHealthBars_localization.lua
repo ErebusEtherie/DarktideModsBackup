@@ -59,6 +59,24 @@ local loc = {
 		["zh-cn"] = "\n最多可以同时在屏幕上显示的Boss血条行数。\n\n每行包含两个Boss血条。",
 		["zh-tw"] = "\n一次可以在螢幕上顯示的最大Boss血條行數。\n\n每行包含兩個Boss血條。\n\n行數的最大值受螢幕高度限制。",
 	},
+	dying_boss_toggles = {
+		en = "Recolor health bar during death animation",
+	},
+	tooltip_dying_color_toggle = {
+		en = "\nThe health bars of Daemonhosts (both common and Hexbound) lingers on the screen for a few seconds during their death animation.\n\nIf this toggle is on, the health bars of specified Daemonhosts will be recolored during that time.",
+	},
+	dying_color_toggle_daemonhost = {
+		en = "Common Daemonhost",
+	},
+	dying_color_toggle_hex_dh = {
+		en = "Hexbound Daemonhost",
+	},
+	dying_boss_color = {
+		en = "Color of dying Daemonhosts",
+	},
+	--tooltip_dying_boss_color = {
+	--	en = "\nThe health bars of Daemonhosts (common and Hexbound) lingers on the screen for a few seconds during their death animation.\n\nIf the relevant toggle is on, the health bars of Daemonhosts will be recolored during that time.",
+	--},
 	two = {
 		en = "2",
 		["zh-tw"] = "2",
@@ -66,6 +84,12 @@ local loc = {
 	four = {
 		en = "4",
 		["zh-tw"] = "4",
+	},
+	debugging = {
+		en = "Debugging mode",
+	},
+	tooltip_debugging = {
+		en = "\nLeave this off unless you want to see some dev stuff pop up in the chat. :)",
 	},
 }
 
@@ -105,6 +129,10 @@ for _, unit_type in pairs(unit_type_array) do
 	for _, col in pairs({"alpha","r","g","b", "toggle"}) do
 		loc["color_"..unit_type.."_"..col] = loc_col[col]
 	end
+end
+
+for _, col in pairs({"r", "g", "b"}) do
+	loc["dying_boss_color_"..col] = loc_col[col]
 end
 
 return loc

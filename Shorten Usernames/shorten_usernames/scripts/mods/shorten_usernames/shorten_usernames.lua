@@ -12,14 +12,13 @@ local _shorten_name = function(text, max_length, truncation_string)
 	local truncated = false
 
 	while i <= len do
-		local char = string.sub(text, i, i)
-		
-		if char == "{" and string.sub(text, i, i+1) == "{#" then
+		if string.sub(text, i, i+1) == "{#" then
 			local j = string.find(text, "}", i)
 			if j then
 				result = result .. string.sub(text, i, j)
 				i = j + 1
 			else
+				local char = string.sub(text, i, i)
 				visible_len = visible_len + 1
 				if visible_len <= max_length then
 					result = result .. char
@@ -30,6 +29,22 @@ local _shorten_name = function(text, max_length, truncation_string)
 				i = i + 1
 			end
 		else
+			local b = string.byte(text, i)
+			local char_bytes = 1
+			if b >= 0xC0 then
+				if b >= 0xE0 then
+					if b >= 0xF0 then
+						char_bytes = 4
+					else
+						char_bytes = 3
+					end
+				else
+					char_bytes = 2
+				end
+			end
+
+			local char = string.sub(text, i, i + char_bytes - 1)
+
 			visible_len = visible_len + 1
 			if visible_len <= max_length then
 				result = result .. char
@@ -37,12 +52,8 @@ local _shorten_name = function(text, max_length, truncation_string)
 				result = result .. truncation_string
 				truncated = true
 			end
-			i = i + 1
+			i = i + char_bytes
 		end
-	end
-
-	if truncated then
-		result = result .. "{#reset()}"
 	end
 
 	return result
@@ -53,7 +64,7 @@ local _is_in_gameplay = function()
 	if not game_mode_manager then
 		return false
 	end
-	
+
 	local game_mode_name = game_mode_manager:game_mode_name()
 	return game_mode_name ~= nil and game_mode_name ~= "hub"
 end
@@ -89,51 +100,10 @@ local _is_myself = function(account_id)
 	return account_id == player_account_id
 end
 
-mod:hook(CLASS.PlayerInfo, "character_name", function(func, self)
+mod:hook(CLASS.HumanPlayer, "name", function(func, self)
 	local name = func(self)
-	if self._player and not self._player:is_human_controlled() then
-		return name
-	end
-	local is_self = self._is_own_player
+	local is_self = self:local_player_id() == 1
 	return mod.shorten(name, is_self)
-end)
-
-mod:hook_origin(CLASS.PlayerInfo, "user_display_name", function(self, use_stale, no_platform_icon)
-	local name = self._user_display_name
-	if use_stale and name then
-		return name
-	end
-	local presence = self:_get_presence()
-	local platform_social = self._platform_social
-	name = presence and presence:platform_persona_name_or_account_name(self._platform, self._platform_id) or platform_social and platform_social:name() or
-		self._account_name or "N/A"
-
-	local platform_icon, color_override = self:platform_icon()
-
-	if self._player and not self._player:is_human_controlled() then
-		if platform_icon and not no_platform_icon then
-			name = string.format("%s %s", platform_icon, name)
-		end
-		if not no_platform_icon then
-			color_override = nil
-		end
-		self._user_display_name = name
-		return name, color_override
-	end
-
-	local is_self = self._is_own_player
-	name = mod.shorten(name, is_self)
-
-	if platform_icon and not no_platform_icon then
-		name = string.format("%s %s", platform_icon, name)
-	end
-
-	if not no_platform_icon then
-		color_override = nil
-	end
-
-	self._user_display_name = name
-	return name, color_override
 end)
 
 mod:hook(CLASS.RemotePlayer, "name", function(func, self)
@@ -144,81 +114,61 @@ mod:hook(CLASS.RemotePlayer, "name", function(func, self)
 	return mod.shorten(name, false)
 end)
 
-mod:hook(CLASS.RemotePlayer, "character_name", function(func, self)
-	local name = func(self)
-	if not self:is_human_controlled() then
+local _shorten_account_name = function(name, account_id)
+	if not name then
 		return name
 	end
-	return mod.shorten(name, false)
-end)
+	local is_self = _is_myself(account_id)
 
-mod:hook(CLASS.HumanPlayer, "name", function(func, self)
-	local name = func(self)
-	local is_self = self:local_player_id() == 1 -- Assuming local player 1 is myself
-	return mod.shorten(name, is_self)
-end)
+	if is_self then
+		if not mod:get("shorten_myself") then
+			return name
+		end
+	else
+		if not mod:get("shorten_teammates") then
+			return name
+		end
+	end
 
-mod:hook(CLASS.BotPlayer, "name", function(func, self)
-	local name = func(self)
-	return name
-end)
-
-mod:hook(CLASS.PresenceEntryMyself, "character_name", function(func, self)
-	local name = func(self)
-	return mod.shorten(name, true)
-end)
-
-mod:hook(CLASS.PresenceEntryImmaterium, "character_name", function(func, self)
-	local name = func(self)
-	if self._player and not self._player:is_human_controlled() then
+	if not mod:get("enable_shorten_account_name") then
 		return name
 	end
-	return mod.shorten(name, false)
-end)
 
-mod:hook_require("scripts/utilities/profile_utils", function(instance)
-	mod:hook(instance, "character_name", function(func, profile)
-		local name = func(profile)
-		if not profile.account_id then
-			return name
-		end
-		local player = Managers.player:player_by_account_id(profile.account_id)
-		if player and not player:is_human_controlled() then
-			return name
-		end
-		local is_self = _is_myself(profile.account_id)
-		return mod.shorten(name, is_self)
-	end)
-end)
+	if mod:get("only_in_gameplay") and not _is_in_gameplay() then
+		return name
+	end
+
+	local icon_prefix = ""
+	if name and string.len(name) > 4
+		and string.byte(name, 1) == 0xEE
+		and string.byte(name, 2) == 0x81
+		and string.byte(name, 4) == 0x20 then
+		icon_prefix = string.sub(name, 1, 4)
+		name = string.sub(name, 5)
+	end
+
+	local max_len = mod:get("max_length_account_name")
+	local truncation_string = mod:get("truncation_string")
+	return icon_prefix .. _shorten_name(name, max_len, truncation_string)
+end
 
 mod.on_all_mods_loaded = function()
 	local who_are_you = get_mod("who_are_you")
 	if who_are_you then
 		mod:hook(who_are_you, "account_name", function(func, id)
 			local name = func(id)
-			local is_self = _is_myself(id)
-			
-			if is_self then
-				if not mod:get("shorten_myself") then
-					return name
-				end
-			else
-				if not mod:get("shorten_teammates") then
-					return name
-				end
-			end
+			return _shorten_account_name(name, id)
+		end)
+	end
 
-			if not mod:get("enable_shorten_account_name") then
-				return name
+	local state_your_name = get_mod("state_your_name")
+	if state_your_name and state_your_name.identity then
+		mod:hook(state_your_name.identity, "record", function(func, self, account_id, profile, character_name, player_info, slot_color)
+			local record = func(self, account_id, profile, character_name, player_info, slot_color)
+			if record and record.account_name then
+				record.account_name = _shorten_account_name(record.account_name, account_id)
 			end
-
-			if mod:get("only_in_gameplay") and not _is_in_gameplay() then
-				return name
-			end
-
-			local max_len = mod:get("max_length_account_name")
-			local truncation_string = mod:get("truncation_string")
-			return _shorten_name(name, max_len, truncation_string)
+			return record
 		end)
 	end
 end

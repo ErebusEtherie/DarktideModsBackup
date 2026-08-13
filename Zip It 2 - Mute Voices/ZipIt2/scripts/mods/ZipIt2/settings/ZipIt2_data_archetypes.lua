@@ -26,14 +26,13 @@ local function _gender_suffix_for_personality(opt, voice_profile)
     return ""
 end
 
--- Performance Impact: Moderate (runs only once during initial mod setup).
 mod.zipit2_build_archetypes = function(D)
     do
         local archetypes = {}
         local archetypes_len = 0
         local archetype_set = {}
 
-        local src = (UiSettings and (UiSettings.archetype_font_icon or UiSettings.archetype_font_icon_simple)) or {}
+        local src = (UiSettings and (UiSettings.archetype_font_icon or UiSettings.archetype_font_icon)) or {}
         if type(src) == "table" then
             for arch, _ in pairs(src) do
                 if type(arch) == "string" and arch ~= "" then

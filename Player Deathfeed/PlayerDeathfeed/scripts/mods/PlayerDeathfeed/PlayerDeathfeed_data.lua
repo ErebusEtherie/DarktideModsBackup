@@ -33,16 +33,7 @@ return {
 						type = "checkbox",
 						default_value = true,
 					},
-					--{
-					--	setting_id = "report_down_feed",
-					--	type = "checkbox",
-					--	default_value = true,
-					--},
-					--{
-					--	setting_id = "report_death_feed",
-					--	type = "checkbox",
-					--	default_value = true,
-					--},
+
 					{
 						setting_id = "show_type_feed",
 						type = "checkbox",
@@ -97,22 +88,14 @@ return {
 						type = "checkbox",
 						default_value = true,
 					},
-					--{
-					--	setting_id = "report_down_notification",
-					--	type = "checkbox",
-					--	default_value = true,
-					--},
+
 					{
 						setting_id = "knock_color",
 						type = "dropdown",
 						default_value = "item_rarity_dark_5",
 						options = get_color_options()
 					},
-					--{
-					--	setting_id = "report_death_notification",
-					--	type = "checkbox",
-					--	default_value = true,
-					--},
+
 					{
 						setting_id = "dead_color",
 						type = "dropdown",
@@ -130,18 +113,10 @@ return {
 						type = "checkbox",
 						default_value = false,
 					},
-					--{
-					--	setting_id = "echo_note",
-					--	type = "checkbox",
-					--	default_value = false,
-					--},
+
 				},
 			},
-			{
-				setting_id = "Debug",
-				type = "checkbox",
-				default_value = false,
-			},
+
 		},
 	},
 }

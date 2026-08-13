@@ -18,6 +18,7 @@ local clean_brd_name = function(breed_name)
 end
 
 local trackable_breeds = {
+    "chaos_armored_hound",
     "chaos_hound",
     "chaos_poxwalker_bomber",
     "cultist_grenadier",
@@ -25,6 +26,7 @@ local trackable_breeds = {
     "flamer",
     "renegade_grenadier",
     "renegade_netgunner",
+    "renegade_plasma_gunner",
     "renegade_sniper",
     "monsters",
     "monsters_wk",
@@ -175,6 +177,11 @@ loc_raw.setting = {
         ["zh-cn"] = "界面覆盖名称样式",
         ["zh-tw"] = "介面疊加名稱樣式",
     },
+    show_overlay_background = {
+        en = "Overlay background",
+        -- Need loc - ["zh-cn"] = 
+        -- Need loc - ["zh-tw"] = 
+    },
     debugging = {
         en = "Debugging mode",
         ["zh-cn"] = "调试模式",
@@ -290,6 +297,9 @@ loc_raw.tooltip = {
         en = "\nEnable or disable the display of a permanent overlay, which tracks the number of currently active enemies of certain types.\n\nEach enemy type can have its overlay behaviour changed separately, though setting this to \"off\" disables the overlay globally, regardless of other overlay settings.",
         ["zh-cn"] = "\n显示或隐藏永久界面覆盖，用于跟踪当前存活的特定敌人数量。\n\n每种敌人可以单独配置界面覆盖选项，但如果禁用此全局选项，则单独的选项会被忽略。",
         ["zh-tw"] = "\n顯示或隱藏永久的介面疊加，用來追蹤目前存活的特定敵人數量。\n\n每種敵人可以單獨配置介面疊加選項，但若停用此全域選項，則單獨的選項會被忽略。",
+    },
+    tooltip_show_overlay_background = {
+        en = "\nShow a background behind, and borders around the overlay to make it easier to read."
     },
     tooltip_debugging = {
         en = "\nLeave this off unless you want to see some dev stuff pop up in the chat. :)",
@@ -550,6 +560,10 @@ overlay_name_sets.short = {
         ["zh-cn"] = "陷阱",
         ["zh-tw"] = "陷阱",
     },
+    renegade_plasma_gunner = {
+        en = "PLSM",
+        -- Needs loc
+    },
     renegade_sniper = {
         en = "SNP",
         ["zh-cn"] = "狙击",
@@ -569,6 +583,22 @@ overlay_name_sets.short = {
         en = "BST*",
         ["zh-cn"] = "纳垢*",
         ["zh-tw"] = "納垢*",
+    },
+    chaos_ogryn_houndmaster = {
+        en = "PACK",
+        -- Need loc
+    },
+    chaos_ogryn_houndmaster_wk = {
+        en = "PACK*",
+        -- Need loc
+    },
+    chaos_armored_hound = {
+        en = "A-HND",
+        -- Need loc
+    },
+    chaos_armored_hound_wk = {
+        en = "A-HND*",
+        -- Need loc
     },
     chaos_plague_ogryn = {
         en = "PLG",
@@ -643,6 +673,10 @@ overlay_name_sets.long = {
         ["zh-cn"] = "陷阱手",
         ["zh-tw"] = "陷阱手",
     },
+    renegade_plasma_gunner = {
+        en = "PLASM",
+        -- Needs loc
+    },
     renegade_sniper = {
         en = "SNIP",
         ["zh-cn"] = "狙击手",
@@ -662,6 +696,22 @@ overlay_name_sets.long = {
         en = "BEAST*",
         ["zh-cn"] = "纳垢兽*",
         ["zh-tw"] = "納垢巨獸*",
+    },
+    chaos_ogryn_houndmaster = {
+        en = "PACKMST",
+        -- Need loc
+    },
+    chaos_ogryn_houndmaster_wk = {
+        en = "PACKMST*",
+        -- Need loc
+    },
+    chaos_armored_hound = {
+        en = "ARM-HND",
+        -- Need loc
+    },
+    chaos_armored_hound_wk = {
+        en = "ARM-HND*",
+        -- Need loc
     },
     chaos_plague_ogryn = {
         en = "OGRYN",
@@ -736,6 +786,10 @@ overlay_name_sets.full = {
         ["zh-cn"] = "陷阱手",
         ["zh-tw"] = "陷阱手",
     },
+    renegade_plasma_gunner = {
+        en = "Plasma",
+        -- Needs loc
+    },
     renegade_sniper = {
         en = "Sniper",
         ["zh-cn"] = "狙击手",
@@ -755,6 +809,22 @@ overlay_name_sets.full = {
         en = "Beast*",
         ["zh-cn"] = "纳垢兽*",
         ["zh-tw"] = "納垢巨獸*",
+    },
+    chaos_ogryn_houndmaster = {
+        en = "PackMaster",
+        -- Need loc
+    },
+    chaos_ogryn_houndmaster_wk = {
+        en = "PackMaster*",
+        -- Need loc
+    },
+    chaos_armored_hound = {
+        en = "Arm. Hound",
+        -- Need loc
+    },
+    chaos_armored_hound_wk = {
+        en = "Arm. Hound*",
+        -- Need loc
     },
     chaos_plague_ogryn = {
         en = "Ogryn",
@@ -823,6 +893,18 @@ loc_raw.mod_ui["flamer_notif_name"] = {
     en = "Flamer",
     ["zh-cn"] = "火焰兵",
     ["zh-tw"] = "火焰兵",
+}
+
+----------------
+-- Armored Hound
+
+loc_raw.subcategory["chaos_armored_hound"] = {
+    en = "Armored Hound",
+    -- Need loc
+}
+loc_raw.mod_ui["chaos_armored_hound_notif_name"] = {
+    en = "Armored Hound",
+    -- Need loc
 }
 
 -------------
@@ -895,6 +977,18 @@ loc_raw.mod_ui["renegade_netgunner_notif_name"] = {
     ["zh-tw"] = "陷阱兵",
 }
 
+----------------
+-- Plasma gunner
+
+loc_raw.subcategory["renegade_plasma_gunner"] = {
+    en = "Plasma Gunner",
+    -- Needs loc
+}
+loc_raw.mod_ui["renegade_plasma_gunner_notif_name"] = {
+    en = "Plasma Gunner",
+    -- Needs loc
+}
+
 ---------
 -- Sniper
 
@@ -952,6 +1046,30 @@ loc_raw.mod_ui["chaos_beast_of_nurgle_wk_notif_name"] = {
     en = "BEAST OF NURGLE (Weak)",
     ["zh-cn"] = "纳垢兽（虚弱）",
     ["zh-tw"] = "納垢巨獸（虛弱）",
+}
+
+-- Packmaster - Other locs
+
+loc_raw.mod_ui["chaos_ogryn_houndmaster_notif_name"] = {
+    en = "PACKMASTER",
+        -- Need loc
+}
+
+loc_raw.mod_ui["chaos_ogryn_houndmaster_wk_notif_name"] = {
+    en = "PACKMASTER (Weak)",
+        -- Need loc
+}
+
+-- Armored Hound - Other locs
+
+loc_raw.mod_ui["chaos_armored_hound_notif_name"] = {
+    en = "ARMORED HOUND",
+        -- Need loc
+}
+
+loc_raw.mod_ui["chaos_armored_hound_wk_notif_name"] = {
+    en = "ARMORED HOUND (Weak)",
+        -- Need loc
 }
 
 -- Plague Ogryn - Other locs

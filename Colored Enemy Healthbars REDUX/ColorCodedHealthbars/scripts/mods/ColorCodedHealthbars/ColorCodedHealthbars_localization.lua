@@ -221,6 +221,11 @@ local localization = {
 		["zh-cn"] = "文字阴影",
 		ru = "Тень текста",
 	},
+	name_background_enabled = {
+		en = "Show Name Background",
+		["zh-cn"] = "显示名称背景",
+		ru = "Показать фон имени",
+	},
 	text_outline_enabled = {
 		en = "Text Outline",
 		["zh-cn"] = "文字轮廓",
@@ -379,6 +384,126 @@ local localization = {
 		["zh-cn"] = "精英近战蓝色",
 		ru = "Синий элитных ближних",
 	},
+	elite_gunner_color_r = {
+		en = "Gunner Red",
+		["zh-cn"] = "机枪手红色",
+		ru = "Красный Пулемётчиков",
+	},
+	elite_gunner_color_g = {
+		en = "Gunner Green",
+		["zh-cn"] = "机枪手绿色",
+		ru = "Зелёный Пулемётчиков",
+	},
+	elite_gunner_color_b = {
+		en = "Gunner Blue",
+		["zh-cn"] = "机枪手蓝色",
+		ru = "Синий Пулемётчиков",
+	},
+	elite_shocktrooper_color_r = {
+		en = "Shocktrooper Red",
+		["zh-cn"] = "冲锋队员红色",
+		ru = "Красный Штурмовиков",
+	},
+	elite_shocktrooper_color_g = {
+		en = "Shocktrooper Green",
+		["zh-cn"] = "冲锋队员绿色",
+		ru = "Зелёный Штурмовиков",
+	},
+	elite_shocktrooper_color_b = {
+		en = "Shocktrooper Blue",
+		["zh-cn"] = "冲锋队员蓝色",
+		ru = "Синий Штурмовиков",
+	},
+	elite_rager_color_r = {
+		en = "Rager Red",
+		["zh-cn"] = "狂暴者红色",
+		ru = "Красный Разъярённых",
+	},
+	elite_rager_color_g = {
+		en = "Rager Green",
+		["zh-cn"] = "狂暴者绿色",
+		ru = "Зелёный Разъярённых",
+	},
+	elite_rager_color_b = {
+		en = "Rager Blue",
+		["zh-cn"] = "狂暴者蓝色",
+		ru = "Синий Разъярённых",
+	},
+	elite_mauler_color_r = {
+		en = "Mauler Red",
+		["zh-cn"] = "重锤兵红色",
+		ru = "Красный Изуверов",
+	},
+	elite_mauler_color_g = {
+		en = "Mauler Green",
+		["zh-cn"] = "重锤兵绿色",
+		ru = "Зелёный Изуверов",
+	},
+	elite_mauler_color_b = {
+		en = "Mauler Blue",
+		["zh-cn"] = "重锤兵蓝色",
+		ru = "Синий Изуверов",
+	},
+	elite_crusher_color_r = {
+		en = "Crusher Red",
+		["zh-cn"] = "压碎者红色",
+		ru = "Красный Крушителей",
+	},
+	elite_crusher_color_g = {
+		en = "Crusher Green",
+		["zh-cn"] = "压碎者绿色",
+		ru = "Зелёный Крушителей",
+	},
+	elite_crusher_color_b = {
+		en = "Crusher Blue",
+		["zh-cn"] = "压碎者蓝色",
+		ru = "Синий Крушителей",
+	},
+	elite_bulwark_color_r = {
+		en = "Bulwark Red",
+		["zh-cn"] = "壁垒兵红色",
+		ru = "Красный Бастионов",
+	},
+	elite_bulwark_color_g = {
+		en = "Bulwark Green",
+		["zh-cn"] = "壁垒兵绿色",
+		ru = "Зелёный Бастионов",
+	},
+	elite_bulwark_color_b = {
+		en = "Bulwark Blue",
+		["zh-cn"] = "壁垒兵蓝色",
+		ru = "Синий Бастионов",
+	},
+	elite_reaper_color_r = {
+		en = "Reaper Red",
+		["zh-cn"] = "收割者红色",
+		ru = "Красный Жнецов",
+	},
+	elite_reaper_color_g = {
+		en = "Reaper Green",
+		["zh-cn"] = "收割者绿色",
+		ru = "Зелёный Жнецов",
+	},
+	elite_reaper_color_b = {
+		en = "Reaper Blue",
+		["zh-cn"] = "收割者蓝色",
+		ru = "Синий Жнецов",
+	},
+	elite_radio_operator_color_r = {
+		en = "Radio Operator Red",
+		["zh-cn"] = "通讯兵红色",
+		ru = "Красный Радистов",
+	},
+	elite_radio_operator_color_g = {
+		en = "Radio Operator Green",
+		["zh-cn"] = "通讯兵绿色",
+		ru = "Зелёный Радистов",
+	},
+	elite_radio_operator_color_b = {
+		en = "Radio Operator Blue",
+		["zh-cn"] = "通讯兵蓝色",
+		ru = "Синий Радистов",
+	},
 	
 	-- Special Subcategory Colors
 	special_subcategory_colors = {
@@ -445,6 +570,118 @@ local localization = {
 		en = "Trapper Blue",
 		["zh-cn"] = "陷阱手蓝色",
 		ru = "Синий Ловцов",
+	},
+	special_mutant_color_r = {
+		en = "Mutant Red",
+		["zh-cn"] = "变种人红色",
+		ru = "Красный Мутантов",
+	},
+	special_mutant_color_g = {
+		en = "Mutant Green",
+		["zh-cn"] = "变种人绿色",
+		ru = "Зелёный Мутантов",
+	},
+	special_mutant_color_b = {
+		en = "Mutant Blue",
+		["zh-cn"] = "变种人蓝色",
+		ru = "Синий Мутантов",
+	},
+	special_burster_color_r = {
+		en = "Poxburster Red",
+		["zh-cn"] = "腐疫爆破者红色",
+		ru = "Красный Гнилостных разрывников",
+	},
+	special_burster_color_g = {
+		en = "Poxburster Green",
+		["zh-cn"] = "腐疫爆破者绿色",
+		ru = "Зелёный Гнилостных разрывников",
+	},
+	special_burster_color_b = {
+		en = "Poxburster Blue",
+		["zh-cn"] = "腐疫爆破者蓝色",
+		ru = "Синий Гнилостных разрывников",
+	},
+	special_flamer_color_r = {
+		en = "Flamer Red",
+		["zh-cn"] = "火焰兵红色",
+		ru = "Красный Огнемётчиков",
+	},
+	special_flamer_color_g = {
+		en = "Flamer Green",
+		["zh-cn"] = "火焰兵绿色",
+		ru = "Зелёный Огнемётчиков",
+	},
+	special_flamer_color_b = {
+		en = "Flamer Blue",
+		["zh-cn"] = "火焰兵蓝色",
+		ru = "Синий Огнемётчиков",
+	},
+	special_bomber_color_r = {
+		en = "Bomber Red",
+		["zh-cn"] = "投弹手红色",
+		ru = "Красный Гренадёров",
+	},
+	special_bomber_color_g = {
+		en = "Bomber Green",
+		["zh-cn"] = "投弹手绿色",
+		ru = "Зелёный Гренадёров",
+	},
+	special_bomber_color_b = {
+		en = "Bomber Blue",
+		["zh-cn"] = "投弹手蓝色",
+		ru = "Синий Гренадёров",
+	},
+
+	-- Debuff Stack Settings
+	debuff_stack_settings = {
+		en = "Debuff Stack Settings",
+		["zh-cn"] = "减益层数设置",
+		ru = "Настройки стаков дебаффов",
+	},
+	show_debuff_stacks = {
+		en = "Show Debuff Stacks (Bleed/Burn/etc.)",
+		["zh-cn"] = "显示减益层数（流血/燃烧等）",
+		ru = "Показать стаки дебаффов (кровотечение/горение и др.)",
+	},
+	debuff_font_size = {
+		en = "Debuff Text Size",
+		["zh-cn"] = "减益文字大小",
+		ru = "Размер текста дебаффов",
+	},
+	debuff_offset_y = {
+		en = "Debuff Row Vertical Offset",
+		["zh-cn"] = "减益行垂直偏移",
+		ru = "Вертикальное смещение строки дебаффов",
+	},
+	show_debuff_bleed = {
+		en = "Track Bleed",
+		["zh-cn"] = "追踪流血",
+		ru = "Отслеживать кровотечение",
+	},
+	show_debuff_burn = {
+		en = "Track Burn",
+		["zh-cn"] = "追踪燃烧",
+		ru = "Отслеживать горение",
+	},
+	show_debuff_soulblaze = {
+		en = "Track Soulblaze",
+		["zh-cn"] = "追踪灵魂灼烧",
+		ru = "Отслеживать пламя души",
+	},
+	show_debuff_shock = {
+		en = "Track Electrocution",
+		["zh-cn"] = "追踪电击",
+		ru = "Отслеживать электрошок",
+	},
+	show_debuff_toxin = {
+		en = "Track Toxin",
+		["zh-cn"] = "追踪毒素",
+		ru = "Отслеживать токсин",
+	},
+	show_debuff_brittle = {
+		en = "Track Brittleness",
+		["zh-cn"] = "追踪脆弱",
+		ru = "Отслеживать хрупкость",
 	},
 }
 

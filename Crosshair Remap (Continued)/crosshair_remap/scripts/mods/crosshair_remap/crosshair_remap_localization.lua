@@ -7,8 +7,8 @@ local builtin_crosshairs_localization = {
 		["zh-cn"] = "倒 V 形",
 	},
 	small_circle_crosshair = {
-		en = "Small Circle",
-		["zh-cn"] = "小圆圈",
+		en = "Alternative Circle",
+		["zh-cn"] = "改版圆圈",
 	},
 	small_cross_no_spread_crosshair = {
 		en = "Small Cross (No Spread)",
@@ -100,6 +100,10 @@ local localization = {
 	dot_crosshair = {
 		en = Localize("loc_setting_crosshair_type_override_dot"),
 	},
+	dot_special_crosshair = {
+		en = "Circle",
+		["zh-cn"] = "圆圈",
+	},
 	flamer_crosshair = {
 		en = "Flamer",
 		["zh-cn"] = "喷火",
@@ -131,13 +135,20 @@ local localization = {
 		en = "Melee Weapons and Actions",
 		["zh-cn"] = "近战武器和动作",
 	},
+	melee_special_class = {
+		en = "Melee Weapon Special State",
+		["zh-cn"] = "近战武器特殊状态",
+	},
 	ability_class = {
 		en = "Combat Ability in Progress",
 		["zh-cn"] = "主动技能进行时",
 	},
 	missile_launcher_class = {
-		en = "Mission Launcher",
+		en = "Missile Launcher",
 		["zh-cn"] = "导弹发射器",
+	},
+	cryptic_servo_skull_class = {
+		en = Localize("loc_talent_cryptic_servo_skull"),
 	},
 	psyker_smite_class = {
 		en = Localize("loc_class_psyker_title") .. " " .. Localize("loc_ability_psyker_smite"),
@@ -258,6 +269,15 @@ local localization = {
 	},
 	needlepistol_class = {
 		en = Localize("loc_weapon_family_needlepistol_p1_m1"),
+	},
+	arc_rifle_class = {
+		en = Localize("loc_weapon_family_arc_rifle_p1_m1"),
+	},
+	galvanic_rifle_class = {
+		en = Localize("loc_weapon_family_galvanic_rifle_p1_m1"),
+	},
+	phosphor_pistol_class = {
+		en = Localize("loc_weapon_family_phosphor_pistol_p1_m1"),
 	},
 
 	primary = {

@@ -1,6 +1,6 @@
 return {
 	run = function()
-		fassert(rawget(_G, "quick_level_mastery"), "`quick_level_mastery` encountered an error loading the Darktide Mod Framework.")
+		fassert(_G.quick_level_mastery or new_mod, "`quick_level_mastery` encountered an error loading the Darktide Mod Framework.")
 
 		new_mod("quick_level_mastery", {
 			mod_script       = "quick_level_mastery/scripts/quick_level_mastery_main",

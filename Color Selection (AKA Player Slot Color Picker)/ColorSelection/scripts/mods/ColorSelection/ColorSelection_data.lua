@@ -1,11 +1,90 @@
 local mod = get_mod("ColorSelection")
 
-return {
-  name = mod:localize("mod_name"),
-  description = mod:localize("mod_description"),
-  is_togglable = true,
-  options = {
-    widgets = {
+local default_slot_colors = {
+    {r = 226, g = 210, b = 117},
+    {r = 180, g = 88,  b = 108},
+    {r = 84,  g = 172, b = 121},
+    {r = 126, g = 153, b = 230},
+    {r = 128, g = 128, b = 128},
+}
+
+local function slot_widgets(slot)
+    local prefix = string.format("slot%d", slot)
+    local defaults = default_slot_colors[slot]
+
+    return {
+        setting_id = prefix,
+        type = "group",
+        tab = "Colors",
+        sub_widgets = {
+            {
+                setting_id = prefix .. "_r",
+                type = "numeric",
+                default_value = defaults.r,
+                range = {0,255},
+            },
+            {
+                setting_id = prefix .. "_g",
+                type = "numeric",
+                default_value = defaults.g,
+                range = {0,255},
+            },
+            {
+                setting_id = prefix .. "_b",
+                type = "numeric",
+                default_value = defaults.b,
+                range = {0,255},
+            },
+        }
+    }
+end
+
+local default_class_colors = {
+    veteran = {r = 84,  g = 172, b = 121},
+    zealot  = {r = 180, g = 88,  b = 108},
+    psyker  = {r = 126, g = 153, b = 230},
+    ogryn   = {r = 226, g = 210, b = 117},
+    broker  = {r = 217, g = 104, b = 41},
+    adamant = {r = 138, g = 43,  b = 226},
+    cryptic = {r = 32,  g = 178, b = 170},
+}
+
+local function class_widgets(class_name)
+    local defaults = default_class_colors[class_name]
+
+    return {
+        setting_id = class_name,
+        type = "group",
+        tab = "Class Colors",
+        sub_widgets = {
+            {
+                setting_id = class_name .. "_r",
+                type = "numeric",
+                default_value = defaults.r,
+                range = {0,255},
+            },
+            {
+                setting_id = class_name .. "_g",
+                type = "numeric",
+                default_value = defaults.g,
+                range = {0,255},
+            },
+            {
+                setting_id = class_name .. "_b",
+                type = "numeric",
+                default_value = defaults.b,
+                range = {0,255},
+            },
+        }
+    }
+end
+
+local widgets = {
+  {
+    setting_id = "general_settings",
+    type = "group",
+    tab = "General",
+    sub_widgets = {
       {
         setting_id = "open_color_customizer_bind",
         type = "keybind",
@@ -17,212 +96,124 @@ return {
         function_name = "open_color_customizer"
       },
       {
-        type = "group",
-        setting_id = "player_color_group",
-        title = "player_color_header",
-        tooltip = "slot1_color_tooltip",
-        sub_widgets = {
-          {
-            type = "numeric",
-            setting_id = "player_color_r",
-            title = "label_red",
-            default_value = 226,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-          {
-            type = "numeric",
-            setting_id = "player_color_g",
-            title = "label_green",
-            default_value = 210,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-          {
-            type = "numeric",
-            setting_id = "player_color_b",
-            title = "label_blue",
-            default_value = 117,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-        },
+        setting_id = "force_local_slot_1",
+        type = "checkbox",
+        default_value = true,
       },
       {
-        type = "group",
-        setting_id = "player2_color_group",
-        title = "player2_color_header",
-        tooltip = "slot2_color_tooltip",
-        sub_widgets = {
-          {
-            type = "numeric",
-            setting_id = "player2_color_r",
-            title = "label_red",
-            default_value = 180,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-          {
-            type = "numeric",
-            setting_id = "player2_color_g",
-            title = "label_green",
-            default_value = 88,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-          {
-            type = "numeric",
-            setting_id = "player2_color_b",
-            title = "label_blue",
-            default_value = 108,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-        },
+        setting_id = "color_by_class",
+        type = "checkbox",
+        default_value = false,
+        title = "color_by_class",
+        tooltip = "color_by_class_tooltip",
       },
       {
-        type = "group",
-        setting_id = "player3_color_group",
-        title = "player3_color_header",
-        tooltip = "slot3_color_tooltip",
-        sub_widgets = {
-          {
-            type = "numeric",
-            setting_id = "player3_color_r",
-            title = "label_red",
-            default_value = 84,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-          {
-            type = "numeric",
-            setting_id = "player3_color_g",
-            title = "label_green",
-            default_value = 172,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-          {
-            type = "numeric",
-            setting_id = "player3_color_b",
-            title = "label_blue",
-            default_value = 121,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-        },
+        setting_id = "color_outlines",
+        type = "checkbox",
+        default_value = true,
+        title = "color_outlines",
+        tooltip = "color_outlines_tooltip",
       },
       {
-        type = "group",
-        setting_id = "player4_color_group",
-        title = "player4_color_header",
-        tooltip = "slot4_color_tooltip",
-        sub_widgets = {
-          {
-            type = "numeric",
-            setting_id = "player4_color_r",
-            title = "label_red",
-            default_value = 126,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-          {
-            type = "numeric",
-            setting_id = "player4_color_g",
-            title = "label_green",
-            default_value = 153,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-          {
-            type = "numeric",
-            setting_id = "player4_color_b",
-            title = "label_blue",
-            default_value = 230,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-        },
+        setting_id = "color_dog_outlines",
+        type = "checkbox",
+        default_value = true,
+        title = "color_dog_outlines",
+        tooltip = "color_dog_outlines_tooltip",
       },
+      {
+        setting_id = "color_bots",
+        type = "checkbox",
+        default_value = true,
+        title = "color_bots",
+        tooltip = "color_bots_tooltip",
+      },
+      {
+        setting_id = "color_local_outside_mission",
+        type = "checkbox",
+        default_value = true,
+        title = "color_local_outside_mission",
+        tooltip = "color_local_outside_mission_tooltip",
+      },
+      {
+        setting_id = "color_custom_outside_mission",
+        type = "checkbox",
+        default_value = true,
+        title = "color_custom_outside_mission",
+        tooltip = "color_custom_outside_mission_tooltip",
+      },
+      {
+        setting_id = "chat_local_name_style",
+        type = "dropdown",
+        default_value = "colored_you",
+        options = {
+          { text = "chat_style_vanilla", value = "vanilla" },
+          { text = "chat_style_colored_you", value = "colored_you" },
+          { text = "chat_style_character", value = "character" },
+          { text = "chat_style_account", value = "account" },
+        },
+        title = "chat_local_name_style",
+        tooltip = "chat_local_name_style_tooltip",
+      },
+    }
+  }
+}
 
-      -- UI element color options
-      {
-        setting_id = "ui_coloring_group",
-        type = "group",
-        title = "ui_coloring_header",
-        sub_widgets = {
-          {
-            type = "checkbox",
-            setting_id = "color_hud_names",
-            default_value = true,
-            tooltip = "color_hud_names_tooltip",
-          },
-          {
-            type = "checkbox",
-            setting_id = "color_nameplate_names",
-            default_value = true,
-            tooltip = "color_nameplate_names_tooltip",
-          },
-          {
-            type = "checkbox",
-            setting_id = "color_chat_names",
-            default_value = true,
-            tooltip = "color_all_ui_names_tooltip",
-          },
-          {
-            type = "checkbox",
-            setting_id = "color_lobby_names",
-            default_value = true,
-            tooltip = "color_all_ui_names_tooltip",
-          },
-        },
-      },
-      -- Bot color options
-      {
-        type = "group",
-        setting_id = "bot_color_group",
-        title = "bot_color_header",
-        tooltip = "bot_color_tooltip",
-        sub_widgets = {
-          {
+for slot=1,4 do
+    widgets[#widgets+1] = slot_widgets(slot)
+end
+
+local classes = {"veteran", "zealot", "psyker", "ogryn", "broker", "adamant", "cryptic"}
+for _, class_name in ipairs(classes) do
+    widgets[#widgets+1] = class_widgets(class_name)
+end
+
+widgets[#widgets+1] = {
+    setting_id = "bot",
+    type = "group",
+    tab = "Colors",
+    sub_widgets = {
+        {
+            setting_id = "bot_r",
             type = "numeric",
-            setting_id = "bot_color_r",
-            title = "label_red",
             default_value = 128,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-          {
-            type = "numeric",
-            setting_id = "bot_color_g",
-            title = "label_green",
-            default_value = 128,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
-          {
-            type = "numeric",
-            setting_id = "bot_color_b",
-            title = "label_blue",
-            default_value = 128,
-            range = { 0, 255 },
-            decimals_number = 0,
-          },
+            range = {0,255},
         },
-      },
-      {
-        setting_id = "debug_mode_group",
-        type = "group",
-        title = "debug_mode_group",
-        sub_widgets = {
-          {
-            type = "checkbox",
-            setting_id = "debug_mode",
-            default_value = false,
-            tooltip = "debug_mode_tooltip",
-          },
+        {
+            setting_id = "bot_g",
+            type = "numeric",
+            default_value = 128,
+            range = {0,255},
         },
-      },
+        {
+            setting_id = "bot_b",
+            type = "numeric",
+            default_value = 128,
+            range = {0,255},
+        },
+    }
+}
+
+widgets[#widgets+1] = {
+  setting_id = "debug_mode_group",
+  type = "group",
+  tab = "Debug",
+  title = "debug_mode_group",
+  sub_widgets = {
+    {
+      type = "checkbox",
+      setting_id = "debug_mode",
+      default_value = false,
+      tooltip = "debug_mode_tooltip",
     },
+  },
+}
+
+return {
+  name = mod:localize("mod_name"),
+  description = mod:localize("mod_description"),
+  is_togglable = true,
+  options = {
+    widgets = widgets
   },
 }

@@ -77,7 +77,6 @@ local last_tint = {
 
 local FrameRenderer = {}
 
--- Helper: Update color channels for a color array
 local function update_color_channels(array, color)
 	array[2] = color[2]
 	array[3] = color[3]

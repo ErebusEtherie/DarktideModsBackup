@@ -3,10 +3,10 @@
 
 local mod = get_mod("Enhanced_descriptions")
 
--- ИСПОЛЬЗУЕМ КЭШИРОВАННЫЕ УТИЛИТЫ
+-- Using cached utilities - Используем кэшированные утилиты
 local Utils = mod.get_utils()
 
--- ИМПОРТ ВСЕХ НУЖНЫХ ФУНКЦИЙ И КОНСТАНТ
+-- Importing all necessary functions and constants - Импорт всех нужных функций и констант
 local create_template = Utils.create_template
 local loc_text = Utils.loc_text
 local CKWord = Utils.CKWord
@@ -17,7 +17,7 @@ local Dot_nc = Utils.DOT_NC or "•"
 local Dot_red = Utils.DOT_RED or "•"
 local Dot_green = Utils.DOT_GREEN or "•"
 
--- Основные данные локализации
+-- Main localization data - Основные данные локализации
 local menus_templates = {
 	-- TEMPLATE
 		-- ["loc_code"] = {
@@ -536,7 +536,7 @@ local menus_templates = {
 	["loc_stats_display_finesse_stat"] = {
 		-- en = "Finesse",
 		ru = "Ловкость", -- руоф Точность
-		["zh-tw"] = "技巧", -- 技巧
+		["zh-tw"] = "靈巧", -- 靈巧
 		["zh-cn"] = "灵巧", -- 灵巧
 	},
 	["loc_stats_display_flame_size_stat"] = {
@@ -622,7 +622,7 @@ local menus_templates = {
 	},
 }
 
--- Автоматическое создание шаблонов
+-- Automatic template creation - Автоматическое создание шаблонов
 local localization_templates = {}
 for loc_key, locales in pairs(menus_templates) do
 	for locale, text in pairs(locales) do

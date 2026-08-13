@@ -1,5 +1,385 @@
 local mod = get_mod("markers_aio")
 
+local HudElementWorldMarkers = require("scripts/ui/hud/elements/world_markers/hud_element_world_markers")
+local UIWidget = require("scripts/managers/ui/ui_widget")
+local UIScenegraph = require("scripts/managers/ui/ui_scenegraph")
+local HudElementSmartTagging = require("scripts/ui/hud/elements/smart_tagging/hud_element_smart_tagging")
+
+local SpecialRulesSettings = require("scripts/settings/ability/special_rules_settings")
+local CompanionServoSkullSettings = require("scripts/settings/companion/companion_servo_skull_settings")
+
+mod.frame_settings = {}
+local function build_frame_settings()
+	local fs = mod.frame_settings
+
+	local is_ads = false
+	local player = Managers.player:local_player_safe(1)
+
+	if player then
+		local unit = player.player_unit
+		if unit then
+			local ude = ScriptUnit.extension(unit, "unit_data_system")
+			if ude then
+				local af = ude:read_component("alternate_fire")
+				is_ads = af and af.is_active or false
+			end
+		end
+	end
+
+	fs.is_ads = is_ads
+
+	-- LOS global settings
+	fs.los_enabled = mod:get("los_fade_enable") == true
+	fs.los_opacity = (mod:get("los_opacity")) / 100
+	fs.ads_los_opacity = (mod:get("ads_los_opacity")) / 100
+	fs.ads_blend = math.lerp(fs.ads_blend or 0, is_ads and 1 or 0, 0.25)
+
+	fs.distance_text_enable = mod:get("distance_text_enable")
+	fs.distance_text_position = mod:get("distance_text_position")
+	fs.distance_text_scale = mod:get("distance_text_scale")
+
+	fs.med_station_max_distance = mod:get("med_station_max_distance")
+
+	-- Feature toggles
+	fs.enable = fs.enable or {}
+	fs.enable.tome = mod:get("tome_enable")
+	fs.enable.material = mod:get("material_enable")
+	fs.enable.ammo_med = mod:get("ammo_med_enable")
+	fs.enable.stimm = mod:get("stimm_enable")
+	fs.enable.chest = mod:get("chest_enable")
+	fs.enable.heretical_idol = mod:get("heretical_idol_enable")
+	fs.enable.event = mod:get("event_enable")
+	fs.enable.luggable = mod:get("luggable_enable")
+	fs.enable.martyrs_skull = mod:get("martyrs_skull_enable")
+	fs.enable.rations = mod:get("event_enable")
+	fs.enable.atonement = mod:get("event_enable")
+	fs.enable.expedition = mod:get("expedition_enable")
+	fs.enable.servo_skull = mod:get("servo_skull_enable")
+	fs.enable.unknown = mod:get("unknown_enable")
+	fs.enable.servo_skull_enable_assistance_module = mod:get("servo_skull_enable_assistance_module")
+	fs.enable.player_assistance = mod:get("player_assistance_enable")
+
+	-- Extra global settings
+	fs.marker_background_colour = mod:get("marker_background_colour")
+	fs.font_type = mod:get("font_type")
+	fs.recolor_stimm_compat_enable = mod:get("recolor_stimm_compat_enable")
+	fs.mod_name_pizazz_toggle = mod:get("mod_name_pizazz_toggle")
+
+	-- Flat additional settings accessed by marker files
+	fs.martyrs_skull_guide_enable = mod:get("martyrs_skull_guide_enable")
+	fs.martyrs_skull_guide_markers_enable = mod:get("martyrs_skull_guide_markers_enable")
+	fs.martyrs_skull_guide_disable_if_collected = mod:get("martyrs_skull_guide_disable_if_collected")
+	fs.martyrs_skull_border_colour = mod:get("martyrs_skull_border_colour")
+	fs.servo_skull_icon = mod:get("servo_skull_icon")
+	fs.decoding_icon = mod:get("decoding_icon")
+	fs.servo_skull_pulse_when_stalled = mod:get("servo_skull_pulse_when_stalled")
+	fs.servo_skull_border_colour = mod:get("servo_skull_border_colour")
+	fs.servo_skull_stalled_border_colour = mod:get("servo_skull_stalled_border_colour")
+	fs.servo_skull_active_border_colour = mod:get("servo_skull_active_border_colour")
+	fs.servo_skull_colour_R = mod:get("servo_skull_colour_R")
+	fs.servo_skull_colour_G = mod:get("servo_skull_colour_G")
+	fs.servo_skull_colour_B = mod:get("servo_skull_colour_B")
+	fs.servo_skull_stalled_colour_R = mod:get("servo_skull_stalled_colour_R")
+	fs.servo_skull_stalled_colour_G = mod:get("servo_skull_stalled_colour_G")
+	fs.servo_skull_stalled_colour_B = mod:get("servo_skull_stalled_colour_B")
+	fs.servo_skull_active_colour_R = mod:get("servo_skull_active_colour_R")
+	fs.servo_skull_active_colour_G = mod:get("servo_skull_active_colour_G")
+	fs.servo_skull_active_colour_B = mod:get("servo_skull_active_colour_B")
+	fs.player_assistance_icon = mod:get("player_assistance_icon")
+	fs.player_assistance_servo_skull_icon = mod:get("player_assistance_servo_skull_icon")
+	fs.player_assistance_pulse_when_stalled = mod:get("player_assistance_pulse_when_stalled")
+	fs.player_assistance_border_colour = mod:get("player_assistance_border_colour")
+	fs.player_assistance_stalled_border_colour = mod:get("player_assistance_stalled_border_colour")
+	fs.player_assistance_active_border_colour = mod:get("player_assistance_active_border_colour")
+	fs.player_assistance_default_colour_R = mod:get("player_assistance_default_colour_R")
+	fs.player_assistance_default_colour_G = mod:get("player_assistance_default_colour_G")
+	fs.player_assistance_default_colour_B = mod:get("player_assistance_default_colour_B")
+	fs.player_assistance_stalled_colour_R = mod:get("player_assistance_stalled_colour_R")
+	fs.player_assistance_stalled_colour_G = mod:get("player_assistance_stalled_colour_G")
+	fs.player_assistance_stalled_colour_B = mod:get("player_assistance_stalled_colour_B")
+	fs.player_assistance_active_colour_R = mod:get("player_assistance_active_colour_R")
+	fs.player_assistance_active_colour_G = mod:get("player_assistance_active_colour_G")
+	fs.player_assistance_active_colour_B = mod:get("player_assistance_active_colour_B")
+	fs.event_require_line_of_sight = mod:get("event_require_line_of_sight")
+	fs.event_keep_on_screen = mod:get("event_keep_on_screen")
+	fs.event_border_colour = mod:get("event_border_colour")
+	fs.event_colour_R = mod:get("event_colour_R")
+	fs.event_colour_G = mod:get("event_colour_G")
+	fs.event_colour_B = mod:get("event_colour_B")
+	fs.event_max_distance = mod:get("event_max_distance")
+	fs.rations_keep_on_screen = mod:get("rations_keep_on_screen")
+	fs.unknown_border_colour = mod:get("unknown_border_colour")
+	fs.unknown_markers_extra_allowed = mod:get("unknown_markers_extra_allowed")
+	fs.unknown_colour_R = mod:get("unknown_colour_R")
+	fs.unknown_colour_G = mod:get("unknown_colour_G")
+	fs.unknown_colour_B = mod:get("unknown_colour_B")
+	fs.chest_icon = mod:get("chest_icon")
+	fs.chest_border_colour = mod:get("chest_border_colour")
+	fs.chest_icon_colour_R = mod:get("chest_icon_colour_R")
+	fs.chest_icon_colour_G = mod:get("chest_icon_colour_G")
+	fs.chest_icon_colour_B = mod:get("chest_icon_colour_B")
+	fs.luggable_icon = mod:get("luggable_icon")
+	fs.luggable_border_colour = mod:get("luggable_border_colour")
+	fs.icon_colour_R = mod:get("icon_colour_R")
+	fs.icon_colour_G = mod:get("icon_colour_G")
+	fs.icon_colour_B = mod:get("icon_colour_B")
+	fs.idol_border_colour = mod:get("idol_border_colour")
+
+	-- Per-type settings cache
+	fs.per_type = fs.per_type or {}
+	local pt = fs.per_type
+
+	local marker_types = {
+		"tome",
+		"material",
+		"ammo_med",
+		"stimm",
+		"chest",
+		"heretical_idol",
+		"event",
+		"luggable",
+		"martyrs_skull",
+		"expedition",
+		"servo_skull",
+		"unknown",
+		"player_assistance",
+	}
+
+	for _, t in ipairs(marker_types) do
+		pt[t] = pt[t] or {}
+		pt[t].max_distance = mod:get(t .. "_max_distance")
+		pt[t].require_line_of_sight = mod:get(t .. "_require_line_of_sight")
+		pt[t].keep_on_screen = mod:get(t .. "_keep_on_screen")
+		pt[t].scale = mod:get(t .. "_scale") or 100
+		pt[t].alpha = mod:get(t .. "_alpha") or 1
+		pt[t].colour_R = mod:get(t .. "_colour_R")
+		pt[t].colour_G = mod:get(t .. "_colour_G")
+		pt[t].colour_B = mod:get(t .. "_colour_B")
+		pt[t].border_colour = mod:get(t .. "_border_colour")
+	end
+
+	-- Non-standard marker types (share event_* settings)
+	pt.stolen_rations = pt.stolen_rations or {}
+	pt.tainted_device = pt.tainted_device or {}
+	pt.tainted_skull = pt.tainted_skull or {}
+	pt.rations = pt.rations or {}
+	pt.atonement = pt.atonement or {}
+
+	pt.stolen_rations.max_distance = mod:get("stolen_rations_max_distance") or mod:get("event_max_distance")
+	pt.stolen_rations.require_line_of_sight = mod:get("stolen_rations_require_line_of_sight")
+		or mod:get("event_require_line_of_sight")
+	pt.stolen_rations.keep_on_screen = mod:get("rations_keep_on_screen")
+
+	pt.tainted_device.max_distance = mod:get("tainted_device_max_distance") or mod:get("event_max_distance")
+	pt.tainted_device.require_line_of_sight = mod:get("tainted_device_require_line_of_sight")
+		or mod:get("event_require_line_of_sight")
+	pt.tainted_device.keep_on_screen = mod:get("event_keep_on_screen")
+
+	pt.tainted_skull.max_distance = mod:get("tainted_skull_max_distance") or mod:get("event_max_distance")
+	pt.tainted_skull.require_line_of_sight = mod:get("event_require_line_of_sight")
+	pt.tainted_skull.keep_on_screen = mod:get("event_keep_on_screen")
+
+	pt.rations.max_distance = pt.ammo_med.max_distance
+	pt.rations.require_line_of_sight = mod:get("event_require_line_of_sight")
+	pt.rations.keep_on_screen = mod:get("rations_keep_on_screen")
+
+	pt.atonement.max_distance = pt.event.max_distance
+	pt.atonement.require_line_of_sight = mod:get("event_require_line_of_sight")
+	pt.atonement.keep_on_screen = mod:get("event_keep_on_screen")
+
+	-- Event-shared colour settings
+	for _, t in ipairs({ "stolen_rations", "tainted_device", "tainted_skull", "rations", "atonement" }) do
+		pt[t].colour_R = mod:get("event_colour_R")
+		pt[t].colour_G = mod:get("event_colour_G")
+		pt[t].colour_B = mod:get("event_colour_B")
+		pt[t].border_colour = mod:get("event_border_colour")
+	end
+
+	-- Mirror per-type keys for files that use flat access
+	fs.chest_max_distance = pt.chest.max_distance
+	fs.chest_keep_on_screen = pt.chest.keep_on_screen
+	fs.material_max_distance = pt.material.max_distance
+	fs.material_keep_on_screen = pt.material.keep_on_screen
+	fs.tome_max_distance = pt.tome.max_distance
+	fs.tome_keep_on_screen = pt.tome.keep_on_screen
+	fs.stimm_max_distance = pt.stimm.max_distance
+	fs.stimm_keep_on_screen = pt.stimm.keep_on_screen
+	fs.heretical_idol_max_distance = pt.heretical_idol.max_distance
+	fs.heretical_idol_keep_on_screen = pt.heretical_idol.keep_on_screen
+	fs.heretical_idol_enable = fs.enable.heretical_idol
+
+	-- Ammo/med sub-type settings
+	fs.ammo_med_max_distance = mod:get("ammo_med_max_distance")
+	fs.ammo_med_keep_on_screen = mod:get("ammo_med_keep_on_screen")
+	fs.ammo_med_require_line_of_sight = mod:get("ammo_med_require_line_of_sight")
+	fs.med_station_require_line_of_sight = mod:get("med_station_require_line_of_sight")
+	fs.med_station_max_distance = mod:get("med_station_max_distance")
+	fs.display_med_ring = mod:get("display_med_ring")
+	fs.display_med_charges = mod:get("display_med_charges")
+	fs.display_ammo_charges = mod:get("display_ammo_charges")
+	fs.change_colour_for_ammo_charges = mod:get("change_colour_for_ammo_charges")
+	fs.display_field_improv_colour = mod:get("display_field_improv_colour")
+	fs.display_field_improv_icon = mod:get("display_field_improv_icon")
+	fs.ammo_med_markers_alternate_large_ammo_icon = mod:get("ammo_med_markers_alternate_large_ammo_icon")
+	fs.field_improv_colour_R = mod:get("field_improv_colour_R")
+	fs.field_improv_colour_G = mod:get("field_improv_colour_G")
+	fs.field_improv_colour_B = mod:get("field_improv_colour_B")
+	fs.ammo_small_colour_R = mod:get("ammo_small_colour_R")
+	fs.ammo_small_colour_G = mod:get("ammo_small_colour_G")
+	fs.ammo_small_colour_B = mod:get("ammo_small_colour_B")
+	fs.ammo_small_border_colour = mod:get("ammo_small_border_colour")
+	fs.ammo_large_colour_R = mod:get("ammo_large_colour_R")
+	fs.ammo_large_colour_G = mod:get("ammo_large_colour_G")
+	fs.ammo_large_colour_B = mod:get("ammo_large_colour_B")
+	fs.ammo_large_border_colour = mod:get("ammo_large_border_colour")
+	fs.ammo_crate_colour_R = mod:get("ammo_crate_colour_R")
+	fs.ammo_crate_colour_G = mod:get("ammo_crate_colour_G")
+	fs.ammo_crate_colour_B = mod:get("ammo_crate_colour_B")
+	fs.ammo_crate_border_colour = mod:get("ammo_crate_border_colour")
+	fs.med_crate_colour_R = mod:get("med_crate_colour_R")
+	fs.med_crate_colour_G = mod:get("med_crate_colour_G")
+	fs.med_crate_colour_B = mod:get("med_crate_colour_B")
+	fs.med_crate_border_colour = mod:get("med_crate_border_colour")
+	fs.grenade_colour_R = mod:get("grenade_colour_R")
+	fs.grenade_colour_G = mod:get("grenade_colour_G")
+	fs.grenade_colour_B = mod:get("grenade_colour_B")
+	fs.grenade_border_colour = mod:get("grenade_border_colour")
+
+	-- Stimm colour settings
+	fs.power_stimm_icon_colour_R = mod:get("power_stimm_icon_colour_R")
+	fs.power_stimm_icon_colour_G = mod:get("power_stimm_icon_colour_G")
+	fs.power_stimm_icon_colour_B = mod:get("power_stimm_icon_colour_B")
+	fs.power_stimm_border_colour = mod:get("power_stimm_border_colour")
+	fs.speed_stimm_icon_colour_R = mod:get("speed_stimm_icon_colour_R")
+	fs.speed_stimm_icon_colour_G = mod:get("speed_stimm_icon_colour_G")
+	fs.speed_stimm_icon_colour_B = mod:get("speed_stimm_icon_colour_B")
+	fs.speed_stimm_border_colour = mod:get("speed_stimm_border_colour")
+	fs.boost_stimm_icon_colour_R = mod:get("boost_stimm_icon_colour_R")
+	fs.boost_stimm_icon_colour_G = mod:get("boost_stimm_icon_colour_G")
+	fs.boost_stimm_icon_colour_B = mod:get("boost_stimm_icon_colour_B")
+	fs.boost_stimm_border_colour = mod:get("boost_stimm_border_colour")
+	fs.corruption_stimm_icon_colour_R = mod:get("corruption_stimm_icon_colour_R")
+	fs.corruption_stimm_icon_colour_G = mod:get("corruption_stimm_icon_colour_G")
+	fs.corruption_stimm_icon_colour_B = mod:get("corruption_stimm_icon_colour_B")
+	fs.corruption_stimm_border_colour = mod:get("corruption_stimm_border_colour")
+	fs.broker_stimm_icon_colour_R = mod:get("broker_stimm_icon_colour_R")
+	fs.broker_stimm_icon_colour_G = mod:get("broker_stimm_icon_colour_G")
+	fs.broker_stimm_icon_colour_B = mod:get("broker_stimm_icon_colour_B")
+	fs.broker_stimm_border_colour = mod:get("broker_stimm_border_colour")
+	fs.broker_stimm_enable = mod:get("broker_stimm_enable")
+	fs.stimm_require_line_of_sight = mod:get("stimm_require_line_of_sight")
+	fs.boost_stimm_require_line_of_sight = mod:get("boost_stimm_require_line_of_sight")
+	fs.corruption_stimm_require_line_of_sight = mod:get("corruption_stimm_require_line_of_sight")
+	fs.power_stimm_require_line_of_sight = mod:get("power_stimm_require_line_of_sight")
+	fs.speed_stimm_require_line_of_sight = mod:get("speed_stimm_require_line_of_sight")
+	fs.broker_stimm_require_line_of_sight = mod:get("broker_stimm_require_line_of_sight")
+	fs.toggle_background_colour = mod:get("toggle_background_colour")
+
+	-- Material settings
+	fs.plasteel_icon_colour_R = mod:get("plasteel_icon_colour_R")
+	fs.plasteel_icon_colour_G = mod:get("plasteel_icon_colour_G")
+	fs.plasteel_icon_colour_B = mod:get("plasteel_icon_colour_B")
+	fs.diamantine_icon_colour_R = mod:get("diamantine_icon_colour_R")
+	fs.diamantine_icon_colour_G = mod:get("diamantine_icon_colour_G")
+	fs.diamantine_icon_colour_B = mod:get("diamantine_icon_colour_B")
+	fs.material_small_border_colour = mod:get("material_small_border_colour")
+	fs.material_large_border_colour = mod:get("material_large_border_colour")
+	fs.toggle_large_plasteel = mod:get("toggle_large_plasteel")
+	fs.toggle_small_plasteel = mod:get("toggle_small_plasteel")
+	fs.toggle_large_diamantine = mod:get("toggle_large_diamantine")
+	fs.toggle_small_diamantine = mod:get("toggle_small_diamantine")
+
+	-- Tome settings
+	fs.grim_colour_R = mod:get("grim_colour_R")
+	fs.grim_colour_G = mod:get("grim_colour_G")
+	fs.grim_colour_B = mod:get("grim_colour_B")
+	fs.script_colour_R = mod:get("script_colour_R")
+	fs.script_colour_G = mod:get("script_colour_G")
+	fs.script_colour_B = mod:get("script_colour_B")
+	fs.tome_border_colour = mod:get("tome_border_colour")
+
+	-- Expedition settings
+	fs.expedition_border_colour_1 = mod:get("expedition_border_colour_1")
+	fs.expedition_border_colour_2 = mod:get("expedition_border_colour_2")
+	fs.expedition_border_colour_3 = mod:get("expedition_border_colour_3")
+	fs.expedition_pickups_colour_R = mod:get("expedition_pickups_colour_R")
+	fs.expedition_pickups_colour_G = mod:get("expedition_pickups_colour_G")
+	fs.expedition_pickups_colour_B = mod:get("expedition_pickups_colour_B")
+	fs.expedition_currency_colour_R = mod:get("expedition_currency_colour_R")
+	fs.expedition_currency_colour_G = mod:get("expedition_currency_colour_G")
+	fs.expedition_currency_colour_B = mod:get("expedition_currency_colour_B")
+	fs.expedition_reliquary_colour_R = mod:get("expedition_reliquary_colour_R")
+	fs.expedition_reliquary_colour_G = mod:get("expedition_reliquary_colour_G")
+	fs.expedition_reliquary_colour_B = mod:get("expedition_reliquary_colour_B")
+	fs.expedition_remnants_colour_R = mod:get("expedition_remnants_colour_R")
+	fs.expedition_remnants_colour_G = mod:get("expedition_remnants_colour_G")
+	fs.expedition_remnants_colour_B = mod:get("expedition_remnants_colour_B")
+	fs.expedition_crate_colour_R = mod:get("expedition_crate_colour_R")
+	fs.expedition_crate_colour_G = mod:get("expedition_crate_colour_G")
+	fs.expedition_crate_colour_B = mod:get("expedition_crate_colour_B")
+	fs.expedition_colour_R = mod:get("expedition_colour_R")
+	fs.expedition_colour_G = mod:get("expedition_colour_G")
+	fs.expedition_colour_B = mod:get("expedition_colour_B")
+
+	-- Check if local player has the Cryptic servo skull blitz equipped
+	fs.servo_skull_equipped = false
+	if player and player.player_unit and Unit.alive(player.player_unit) then
+		local talent_ext = ScriptUnit.has_extension(player.player_unit, "talent_system")
+		if talent_ext then
+			local sr = SpecialRulesSettings.special_rules
+			fs.servo_skull_equipped = talent_ext:has_special_rule(sr.cryptic_servo_skull_hack)
+				or talent_ext:has_special_rule(sr.cryptic_servo_skull_inject_ally)
+				or talent_ext:has_special_rule(sr.cryptic_servo_skull_flamethrower)
+		end
+	end
+
+	-- Inject ally servo skull state
+	fs.inject_ally = nil
+	if player and player.player_unit and Unit.alive(player.player_unit) then
+		local talent_ext = ScriptUnit.has_extension(player.player_unit, "talent_system")
+		if
+			talent_ext
+			and talent_ext:has_special_rule(SpecialRulesSettings.special_rules.cryptic_servo_skull_inject_ally)
+		then
+			local spawner_ext = ScriptUnit.has_extension(player.player_unit, "companion_spawner_system")
+			if spawner_ext then
+				local comp_unit =
+					spawner_ext:spawned_unit_lookup(SpecialRulesSettings.special_rules.cryptic_servo_skull_inject_ally)
+				if comp_unit and Unit.alive(comp_unit) then
+					local ability_ext = ScriptUnit.has_extension(player.player_unit, "ability_system")
+					if
+						ability_ext
+						and ability_ext:remaining_ability_charges("grenade_ability")
+							>= CompanionServoSkullSettings.ability_charges.inject_ally
+					then
+						fs.inject_ally = {
+							companion_unit = comp_unit,
+						}
+					end
+				end
+			end
+		end
+	end
+
+	-- Check if the inject_ally skull is actively performing an injection
+	fs.servo_skull_injecting = false
+	if fs.inject_ally then
+		local comp_unit = fs.inject_ally.companion_unit
+		if comp_unit and Unit.alive(comp_unit) then
+			local game_session = Managers.state.game_session:game_session()
+			local go_id = Managers.state.unit_spawner:game_object_id(comp_unit)
+			if game_session and go_id then
+				local state = GameSession.game_object_field(game_session, go_id, "state")
+				if state == "inject_ally" then
+					fs.servo_skull_injecting = true
+				end
+			end
+		end
+	end
+end
+
+build_frame_settings()
+
 mod:io_dofile("markers_aio/scripts/mods/markers_aio/ammo_med_markers")
 mod:io_dofile("markers_aio/scripts/mods/markers_aio/chest_markers")
 mod:io_dofile("markers_aio/scripts/mods/markers_aio/heretical_idol_markers")
@@ -14,6 +394,9 @@ mod:io_dofile("markers_aio/scripts/mods/markers_aio/stolen_rations_markers")
 mod:io_dofile("markers_aio/scripts/mods/markers_aio/atonement_markers")
 mod:io_dofile("markers_aio/scripts/mods/markers_aio/unknown_markers")
 mod:io_dofile("markers_aio/scripts/mods/markers_aio/expedition_markers")
+mod:io_dofile("markers_aio/scripts/mods/markers_aio/servo_skull_markers")
+mod:io_dofile("markers_aio/scripts/mods/markers_aio/player_assistance_markers")
+mod:io_dofile("markers_aio/scripts/mods/markers_aio/icon_package_loader")
 
 mod:io_dofile("markers_aio/scripts/mods/markers_aio/markers_aio_localization")
 
@@ -23,11 +406,6 @@ local ChestMarkerTemplate = mod:io_dofile("markers_aio/scripts/mods/markers_aio/
 local MartyrsSkullMarkerTemplate = mod:io_dofile("markers_aio/scripts/mods/markers_aio/martyrs_skull_markers_template")
 local MartyrsSkullMarkerGuideTemplate =
 	mod:io_dofile("markers_aio/scripts/mods/markers_aio/martyrs_skull_markers_guide_template")
-
-local HudElementWorldMarkers = require("scripts/ui/hud/elements/world_markers/hud_element_world_markers")
-local UIWidget = require("scripts/managers/ui/ui_widget")
-local UIScenegraph = require("scripts/managers/ui/ui_scenegraph")
-local HudElementSmartTagging = require("scripts/ui/hud/elements/smart_tagging/hud_element_smart_tagging")
 
 -- Guide widget element registration
 local GUIDE_WIDGET_PATH = "markers_aio/scripts/mods/markers_aio/martyrs_skull_guide_widget"
@@ -83,10 +461,9 @@ mod.guide_widget_clear = function()
 	end
 end
 
--- Per-frame computed settings
-mod.frame_settings = {}
-
 mod:hook_safe(CLASS.HudElementWorldMarkers, "init", function(self)
+	build_frame_settings()
+
 	-- add new marker templates to templates table
 	self._marker_templates[HereticalIdolTemplate.name] = HereticalIdolTemplate
 	self._marker_templates["nurgle_totem"] = HereticalIdolTemplate
@@ -98,7 +475,8 @@ mod:hook_safe(CLASS.HudElementWorldMarkers, "init", function(self)
 	-- reset runtime state on (re)init to avoid growth across missions/hot-joins
 	mod.active_chests = {}
 	mod.current_heretical_idol_markers = {}
-	processed_idols = {}
+	mod.totem_units = {}
+	mod.medical_crate_charges = {}
 	mod.reset_martyrs_skull_guides()
 
 	-- scan for nurgle totems that already exist (covers menu→game transition after mod reload)
@@ -126,6 +504,7 @@ mod:hook_safe(CLASS.HudElementWorldMarkers, "init", function(self)
 			"mod_marker_luggable_name",
 			"mod_marker_expedition_name",
 			"mod_marker_event_name",
+			"mod_marker_servo_skull_name",
 			"mod_marker_unknown_name",
 		}
 		for _, key in ipairs(mod_names) do
@@ -250,59 +629,12 @@ mod:hook_safe(CLASS.MissionObjectiveSystem, "hot_join_sync", function(self, send
 	mod.scan_for_existing_totems()
 end)
 
-local function build_frame_settings(mod)
-	local fs = mod.frame_settings
-
-	local is_ads = false
-	local player = Managers.player:local_player(1)
-	if player then
-		local unit = player.player_unit
-		if unit then
-			local ude = ScriptUnit.extension(unit, "unit_data_system")
-			if ude then
-				local af = ude:read_component("alternate_fire")
-				is_ads = af and af.is_active or false
-			end
-		end
-	end
-
-	fs.is_ads = is_ads
-
-	-- LOS global settings
-	fs.los_enabled = mod:get("los_fade_enable") == true
-	fs.los_opacity = (mod:get("los_opacity")) / 100
-	fs.ads_los_opacity = (mod:get("ads_los_opacity")) / 100
-	fs.ads_blend = math.lerp(fs.ads_blend or 0, is_ads and 1 or 0, 0.25)
-
-	fs.distance_text_enable = mod:get("distance_text_enable")
-	fs.distance_text_position = mod:get("distance_text_position")
-	fs.distance_text_scale = mod:get("distance_text_scale")
-
-	fs.med_station_max_distance = mod:get("med_station_max_distance")
-
-	-- Feature toggles
-	fs.enable = {
-		tome = mod:get("tome_enable"),
-		material = mod:get("material_enable"),
-		ammo_med = mod:get("ammo_med_enable"),
-		stimm = mod:get("stimm_enable"),
-		chest = mod:get("chest_enable"),
-		heretical_idol = mod:get("heretical_idol_enable"),
-		event = mod:get("event_enable"),
-		luggable = mod:get("luggable_enable"),
-		martyrs_skull = mod:get("martyrs_skull_enable"),
-		rations = mod:get("event_enable"),
-		atonement = mod:get("event_enable"),
-		expedition = mod:get("expedition_enable"),
-		unknown = mod:get("unknown_enable"),
-	}
-end
-
 mod.get_marker_pickup_type = function(marker)
 	if
 		marker.type ~= "interaction"
 		or not marker.unit
 		or not Unit
+		or type(marker.unit) ~= "userdata"
 		or not Unit.alive(marker.unit)
 		or not Unit.has_data(marker.unit, "pickup_type")
 	then
@@ -419,6 +751,8 @@ HudElementWorldMarkers._get_fade = function(self, fade_settings, distance)
 	end
 end
 
+local temp_drawable_markers = {}
+
 local HudElementWorldMarkersSettings =
 	require("scripts/ui/hud/elements/world_markers/hud_element_world_markers_settings")
 
@@ -429,7 +763,8 @@ HudElementWorldMarkers._draw_markers = function(self, dt, t, input_service, ui_r
 	end
 
 	local markers_by_type = self._markers_by_type
-	local drawable_markers = {}
+	local drawable_markers = temp_drawable_markers
+	table.clear(drawable_markers)
 
 	for _, markers in pairs(markers_by_type) do
 		for i = 1, #markers do
@@ -529,7 +864,17 @@ end
 
 HudElementWorldMarkers._calculate_markers = function(self, dt, t, input_service, ui_renderer, render_settings)
 	-- Build frame state
-	build_frame_settings(mod)
+	-- Throttle
+	local update_interval = 20
+	self._update_time = (self._update_time or 0) + dt
+	self._total_update_time = (self._total_update_time or 0) + dt
+
+	if self._update_time > update_interval then
+		self._update_time = 0
+		build_frame_settings()
+	end
+
+	local fs = mod.frame_settings
 
 	if mod._needs_totem_scan then
 		mod._needs_totem_scan = false
@@ -561,6 +906,8 @@ HudElementWorldMarkers._calculate_markers = function(self, dt, t, input_service,
 		local markers_by_type = self._markers_by_type
 		local ALIVE = ALIVE
 
+		table.clear(temp_marker_raycast_queue)
+
 		for marker_type, markers in pairs(markers_by_type) do
 			for i = 1, #markers do
 				-- DEFAULT STUFF
@@ -578,7 +925,8 @@ HudElementWorldMarkers._calculate_markers = function(self, dt, t, input_service,
 
 					local max_distance = template.max_distance
 					if marker.markers_aio_type then
-						max_distance = mod:get(marker.markers_aio_type .. "_max_distance")
+						local pt = fs.per_type
+						max_distance = pt[marker.markers_aio_type] and pt[marker.markers_aio_type].max_distance
 					end
 
 					-- Never distance-cull base game objective markers
@@ -781,10 +1129,10 @@ HudElementWorldMarkers._calculate_markers = function(self, dt, t, input_service,
 
 		if raycasts_allowed then
 			self:_raycast_markers(temp_marker_raycast_queue)
+			table.clear(temp_marker_raycast_queue)
 		end
 
 		-- MARKERS AIO
-		dbg_markers = markers_by_type
 		for marker_type, markers in pairs(markers_by_type) do
 			for i = 1, #markers do
 				local marker = markers[i]
@@ -799,7 +1147,17 @@ HudElementWorldMarkers._calculate_markers = function(self, dt, t, input_service,
 						update_function(self, ui_renderer, marker.widget, marker, template, dt, t)
 					end
 
-					local fs = mod.frame_settings
+					-- Hide distance text on objective markers for decoder devices
+					if marker.type == "objective" and marker.widget then
+						local unit = marker.unit
+						if unit and type(unit) == "userdata" and Unit.alive(unit) then
+							local decoder_ext = ScriptUnit.has_extension(unit, "decoder_device_system")
+							if decoder_ext and decoder_ext:unit_is_enabled() and not decoder_ext:is_finished() then
+								marker.widget.content.text = ""
+							end
+						end
+					end
+
 					if fs.enable.tome then
 						mod.update_tome_markers(self, marker)
 					end
@@ -826,6 +1184,16 @@ HudElementWorldMarkers._calculate_markers = function(self, dt, t, input_service,
 					end
 					if fs.enable.expedition then
 						mod.update_expedition_markers(self, marker)
+					end
+					if fs.enable.servo_skull and marker.type ~= "objective" and marker.type ~= "player_assistance" then
+						mod.update_servo_skull_markers(self, marker)
+					end
+					if
+						fs.enable.player_assistance
+						and marker.type ~= "objective"
+						and marker.type ~= "player_assistance"
+					then
+						mod.update_player_assistance_markers(self, marker)
 					end
 					if fs.enable.event then
 						mod.update_tainted_skull_markers(self, marker)
@@ -857,7 +1225,7 @@ HudElementWorldMarkers._calculate_markers = function(self, dt, t, input_service,
 						mod.fade_icon_not_in_los(marker, ui_renderer)
 					end
 
-					mod.adjust_scale(self, marker, ui_renderer)
+					mod.adjust_scale(self, marker, ui_renderer, t)
 
 					-- apply marker distance text if enabled
 					local widget = marker.widget
@@ -946,9 +1314,17 @@ HudElementInteraction._update_interactee_data = function(self, interactee_unit, 
 	local marker = nil
 
 	-- MARKERS AIO OVERRIDE
+	-- Keep markers alive for decoder devices as long as the device is enabled
+	-- and not finished, even while the skull is actively hacking (show_marker
+	-- returns false when the minigame is active). Use the decoder extension
+	-- directly instead of interaction_type since the interaction may change or
+	-- deactivate during the skull's hacking cycle.
+	local decoder_ext = ScriptUnit.has_extension(interactee_unit, "decoder_device_system")
+	local is_decoder_device = decoder_ext and decoder_ext:unit_is_enabled() and not decoder_ext:is_finished()
+
 	local max_spawn_distance_sq = 10000 -- 100m
 
-	if render_marker and camera_position then
+	if interactee_unit ~= player_unit and render_marker and camera_position then
 		local interactee_position = Unit.world_position(interactee_unit, 1)
 		local distance_sq = Vector3.distance_squared(interactee_position, camera_position)
 
@@ -970,7 +1346,7 @@ HudElementInteraction._update_interactee_data = function(self, interactee_unit, 
 
 			Managers.event:trigger("add_world_marker_unit", marker_type, interactee_unit, marker_callback, extension)
 		end
-	elseif interaction_units[interactee_unit] then
+	elseif interaction_units[interactee_unit] and not is_decoder_device then
 		local marker_id = interaction_units[interactee_unit].marker_id
 
 		if marker_id then
@@ -979,6 +1355,19 @@ HudElementInteraction._update_interactee_data = function(self, interactee_unit, 
 		end
 	end
 end
+mod.auspex_active = false
+mod:hook_safe(CLASS.AuspexEffects, "wield", function(self)
+	if self._is_husk then
+		return
+	end
+	mod.auspex_active = true
+end)
+mod:hook_safe(CLASS.AuspexEffects, "unwield", function(self)
+	if self._is_husk then
+		return
+	end
+	mod.auspex_active = false
+end)
 
 -- Fade out markers that are behind objects, depending on the set "los_opacity"
 mod.fade_icon_not_in_los = function(marker, ui_renderer)
@@ -992,8 +1381,15 @@ mod.fade_icon_not_in_los = function(marker, ui_renderer)
 	end
 
 	local fs = mod.frame_settings
-	local mod_alpha = mod:get(marker.markers_aio_type .. "_alpha") or 1
-	local mod_max_distance = mod:get(marker.markers_aio_type .. "_max_distance") or 30
+	local pt = fs.per_type[marker.markers_aio_type]
+	local mod_alpha = pt and pt.alpha or 1
+	local mod_max_distance = pt and pt.max_distance or 30
+
+	-- force increase max distance of marker if tagged
+	local is_tagged = marker.widget and marker.widget.content and marker.widget.content.tagged
+	if is_tagged then
+		mod_max_distance = 100
+	end
 
 	-- No raycast yet = assume blocked LOS
 	local has_raycast = marker.raycast_result ~= nil
@@ -1053,6 +1449,10 @@ mod.fade_icon_not_in_los = function(marker, ui_renderer)
 		end
 	end
 
+	if mod.auspex_active then
+		target_alpha = 0.05
+	end
+
 	------------------------------------------------
 	-- Init + smoothing
 	------------------------------------------------
@@ -1063,21 +1463,29 @@ mod.fade_icon_not_in_los = function(marker, ui_renderer)
 	return target_alpha
 end
 
-local function can_draw(marker)
-	return true
-end
-
 local do_draw = function(marker)
-	if can_draw(marker) then
-		marker.draw = true
-	else
-		marker.draw = false
-	end
+	marker.draw = true
 end
 
 local dont_draw = function(marker)
 	if not marker then
 		return
+	end
+	local fs = mod.frame_settings
+	local pt = fs.per_type[marker.markers_aio_type]
+	local mod_keep_on_screen = pt and pt.keep_on_screen
+	local is_tagged = marker.widget and marker.widget.content and marker.widget.content.tagged
+
+	if marker.is_inside_frustum then
+		if is_tagged then
+			marker.draw = true
+		else
+			marker.draw = false
+		end
+	elseif is_tagged and mod_keep_on_screen then
+		marker.draw = true
+	else
+		marker.draw = false
 	end
 end
 
@@ -1087,11 +1495,12 @@ mod.adjust_los_requirement = function(marker)
 	end
 
 	local fs = mod.frame_settings
+	local pt = fs.per_type[marker.markers_aio_type]
 	local mod_require_los = marker.aio_check_line_of_sight
 	if mod_require_los == nil then
-		mod_require_los = mod:get(marker.markers_aio_type .. "_require_line_of_sight")
+		mod_require_los = pt and pt.require_line_of_sight
 	end
-	local mod_keep_on_screen = mod:get(marker.markers_aio_type .. "_keep_on_screen")
+	local mod_keep_on_screen = pt and pt.keep_on_screen
 	local is_tagged = marker.widget and marker.widget.content and marker.widget.content.tagged
 	local is_blocked = not marker.raycast_result
 
@@ -1117,7 +1526,7 @@ mod.adjust_los_requirement = function(marker)
 end
 
 -- Adjust the scale of markers, according to their percentage scale setting.
-mod.adjust_scale = function(self, marker, ui_renderer)
+mod.adjust_scale = function(self, marker, ui_renderer, t)
 	marker.scale_original = marker.scale
 
 	local widget = marker.widget
@@ -1134,13 +1543,23 @@ mod.adjust_scale = function(self, marker, ui_renderer)
 	local mod_scale = scale
 
 	if marker.markers_aio_type then
-		local mod_scale = mod:get(marker.markers_aio_type .. "_scale") or 100
+		local fs = mod.frame_settings
+		local pt = fs.per_type[marker.markers_aio_type]
+		local mod_scale = pt and pt.scale or 100
 		mod_scale = mod_scale / 100
 		scale = mod_scale
 	end
 
 	marker.scale = self:_get_scale(scale_settings, distance)
 	local new_scale = marker.ignore_scale and 1 or marker.scale * scale
+
+	if marker.servo_skull_pulse and t then
+		local pulse_speed = 2
+		local pulse_amplitude = 0.2
+		local pulse = (math.sin(t * pulse_speed * math.pi * 2) + 1) / 2
+		new_scale = new_scale * (1 + pulse * pulse_amplitude)
+	end
+
 	marker.scale = new_scale
 
 	self:_apply_scale(widget, new_scale)
@@ -1212,7 +1631,9 @@ mod.adjust_distance_visibility = function(marker)
 		return
 	end
 
-	local mod_max_distance = mod:get(marker.markers_aio_type .. "_max_distance")
+	local fs = mod.frame_settings
+	local pt = fs.per_type[marker.markers_aio_type]
+	local mod_max_distance = pt and pt.max_distance
 
 	if mod_max_distance and marker.distance > mod_max_distance then
 		dont_draw(marker)
@@ -1223,20 +1644,36 @@ end
 HudElementSmartTagging._is_marker_valid_for_tagging = function(self, player_unit, marker, distance)
 	local template = marker.template
 
-	if not template.using_smart_tag_system then
+	if template.using_smart_tag_system and not template.get_smart_tag_id then
 		return false
+	end
+
+	if not template.using_smart_tag_system then
+		local unit = marker.unit
+		if unit and type(unit) == "userdata" and Unit.alive(unit) then
+			local ie = ScriptUnit.has_extension(unit, "interactee_system")
+			if not (ie and ie:interaction_type() == "decoding") then
+				return false
+			end
+		else
+			return false
+		end
 	end
 
 	local marker_unit = marker.unit
 	local smart_tag_extension = marker_unit and ScriptUnit.has_extension(marker_unit, "smart_tag_system")
 	local tag_id = template.get_smart_tag_id and template.get_smart_tag_id(marker)
 
-	-- Allow AIO custom markers (chest, heretical idol, ammo/med) without smart_tag_extension or tag_id
+	-- Allow AIO custom markers (chest, heretical idol, ammo/med, servo skull) without smart_tag_extension or tag_id
 	if marker_unit and not smart_tag_extension and not tag_id then
 		if marker.markers_aio_type then
 			-- AIO marker without native smart tag support: allow through, tag_id stays nil
 		else
-			return false
+			-- Also allow hackable terminals (servo skull targets) even before markers_aio_type is set
+			local ie = ScriptUnit.has_extension(marker_unit, "interactee_system")
+			if not (ie and ie:interaction_type() == "decoding") then
+				return false
+			end
 		end
 	end
 
@@ -1248,13 +1685,18 @@ HudElementSmartTagging._is_marker_valid_for_tagging = function(self, player_unit
 		if marker.markers_aio_type then
 			local check_los = marker.aio_check_line_of_sight
 			if check_los == nil then
-				check_los = mod:get(marker.markers_aio_type .. "_require_line_of_sight")
+				local fs = mod.frame_settings
+				local pt = fs.per_type[marker.markers_aio_type]
+				check_los = pt and pt.require_line_of_sight
 			end
 			if check_los ~= false then
 				return false
 			end
 		else
-			return false
+			local ie = ScriptUnit.has_extension(marker_unit, "interactee_system")
+			if not (ie and ie:interaction_type() == "decoding") then
+				return false
+			end
 		end
 	end
 
@@ -1275,6 +1717,19 @@ HudElementSmartTagging._is_marker_valid_for_tagging = function(self, player_unit
 	end
 
 	return true
+end
+
+HudElementSmartTagging._handle_selected_marker = function(self, marker)
+	local marker_template = marker.template
+	local tag_id = marker_template.get_smart_tag_id and marker_template.get_smart_tag_id(marker)
+	if tag_id then
+		self:_trigger_smart_tag_interaction(tag_id)
+	else
+		local marker_unit = marker.unit
+		if marker_unit then
+			self:_trigger_smart_tag_unit_contextual(marker_unit)
+		end
+	end
 end
 
 HudElementSmartTagging._handle_interaction_draw = function(self, dt, t, input_service, ui_renderer, render_settings)
@@ -1375,6 +1830,8 @@ HudElementSmartTagging._handle_interaction_draw = function(self, dt, t, input_se
 							display_name = mod:localize("mod_marker_expedition_name")
 						elseif aio_type == "event" then
 							display_name = mod:localize("mod_marker_event_name")
+						elseif aio_type == "servo_skull" then
+							display_name = mod:localize("mod_marker_servo_skull_name")
 						elseif aio_type == "unknown" then
 							display_name = mod:localize("mod_marker_unknown_name")
 						else
@@ -1441,8 +1898,6 @@ mod:hook_safe(HudElementSmartTagging, "_update_tag_interaction_information", fun
 			-- Set word wrap and max width on description text so long guide text wraps
 			local style = widget.style and widget.style.description_text
 
-			dbg_1 = widget
-			dbg_2 = data
 			if style and not style.word_wrap then
 				style.size = { 500, 100 }
 				style.word_wrap = true
@@ -1535,6 +1990,10 @@ mod.martyrs_skull_toggle_los = function()
 	mod.toggle_los("martyrs_skull")
 end
 
+mod.servo_skull_toggle_los = function()
+	mod.toggle_los("servo_skull")
+end
+
 mod.toggle_los = function(marker_type)
 	if marker_type then
 		if mod:get(marker_type .. "_require_line_of_sight") == false then
@@ -1547,6 +2006,8 @@ end
 
 -- UPDATE COLOURS IN SETTINGS PAGE IN REAL TIME (OH YES)
 mod.on_setting_changed = function(setting_id)
+	mod._frame_settings_dirty = true
+
 	if not setting_id then
 		return
 	end

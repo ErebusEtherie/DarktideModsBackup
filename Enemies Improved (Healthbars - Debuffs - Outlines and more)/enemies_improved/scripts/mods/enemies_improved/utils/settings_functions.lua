@@ -1,6 +1,12 @@
 local mod = get_mod("enemies_improved")
 mod:io_dofile("enemies_improved/scripts/mods/enemies_improved/enemies_improved_localization")
 local next = next
+local string_find = string.find
+local string_gsub = string.gsub
+
+-- Re-entrancy guard: prevents recursive on_setting_changed calls
+-- (e.g. init_healthbar_defaults calling mod:set which triggers on_setting_changed again)
+local _in_settings_update = false
 
 -----------------------------------------------------------------------
 -- Settings changed
@@ -18,6 +24,7 @@ local enemy_type_settings = {
 	["healthbar_type_colour_R"] = 255,
 	["healthbar_type_colour_G"] = 0,
 	["healthbar_type_colour_B"] = 0,
+	["healthbar_type_always_show"] = false,
 
 	["healthbar_icon_type_enable"] = true,
 	["healthbar_icon_type_scale"] = 1,
@@ -25,6 +32,14 @@ local enemy_type_settings = {
 	["healthbar_icon_type_colour_R"] = 200,
 	["healthbar_icon_type_colour_G"] = 150,
 	["healthbar_icon_type_colour_B"] = 0,
+
+	["debuff_type_enable"] = true,
+
+	["healthbar_type_y_offset"] = 0,
+	["healthbar_type_y_offset_enabled"] = false,
+
+	["debuff_type_show_on_body_override"] = false,
+	["marker_type_enable"] = false,
 
 	["reset_type_to_default"] = false,
 }
@@ -34,6 +49,8 @@ local enemy_override_settings = {
 
 	["markers_individual_toggle"] = false,
 	["healthbar_individual_enable"] = false,
+	["healthbar_individual_force"] = false,
+	["healthbar_individual_always_show"] = false,
 	["healthbar_individual_colour_R"] = 255,
 	["healthbar_individual_colour_G"] = 0,
 	["healthbar_individual_colour_B"] = 0,
@@ -46,6 +63,16 @@ local enemy_override_settings = {
 	["distance_individual_enable"] = false,
 	["distance_individual_value"] = 30,
 
+	["outline_distance_individual_enable"] = false,
+	["outline_distance_individual_value"] = 30,
+
+	["debuff_individual_enable"] = true,
+
+	["healthbar_individual_y_offset"] = 0,
+	["healthbar_individual_y_offset_enabled"] = false,
+
+	["debuff_individual_show_on_body_override"] = false,
+
 	["reset_individual_to_default"] = false,
 }
 
@@ -53,6 +80,7 @@ mod.reset_type_to_default = function(enemy_type)
 	-- reset all options to nil so that the defaults will be loaded...
 	mod:set("healthbar_" .. enemy_type .. "_colour_R", nil)
 	mod:set("healthbar_" .. enemy_type .. "_enable", nil)
+	mod:set("healthbar_" .. enemy_type .. "_always_show", nil)
 
 	mod:set("healthbar_icon_" .. enemy_type .. "_enable", nil)
 	mod:set("healthbar_icon_" .. enemy_type .. "_scale", nil)
@@ -62,7 +90,12 @@ mod.reset_type_to_default = function(enemy_type)
 	mod:set("outline_" .. enemy_type .. "_enable", nil)
 	mod:set("outline_" .. enemy_type .. "_colour_R", nil)
 
-	local reset_message = mod:localize("reset_type_to_default_message") or ""
+	mod:set("debuff_" .. enemy_type .. "_enable", nil)
+	mod:set("debuff_" .. enemy_type .. "_show_on_body_override", nil)
+
+	mod:set("healthbar_" .. enemy_type .. "_y_offset_enabled", nil)
+
+	local reset_message = mod.custom_localize("reset_type_to_default_message") or ""
 	mod:notify(reset_message:gsub("_type_", "_" .. enemy_type .. "_"))
 
 	mod.init_healthbar_defaults()
@@ -71,11 +104,29 @@ end
 mod.reset_individual_to_default = function(enemy_type)
 	-- reset all options to nil so that the defaults will be loaded...
 	mod:set("healthbar_" .. enemy_type .. "_colour_R", nil)
+	mod:set("healthbar_" .. enemy_type .. "_enable", nil)
+	mod:set("healthbar_" .. enemy_type .. "_force", nil)
+	mod:set("healthbar_" .. enemy_type .. "_always_show", nil)
 
 	mod:set("distance_" .. enemy_type .. "_enable", nil)
 	mod:set("distance_" .. enemy_type .. "_value", nil)
 
-	local reset_message = mod:localize("reset_individual_to_default_message") or ""
+	mod:set("outline_" .. enemy_type .. "_enable", nil)
+	mod:set("outline_" .. enemy_type .. "_colour_R", nil)
+
+	mod:set("outline_distance_" .. enemy_type .. "_enable", nil)
+	mod:set("outline_distance_" .. enemy_type .. "_value", nil)
+
+	mod:set("markers_" .. enemy_type .. "_enable", nil)
+
+	mod:set("debuff_" .. enemy_type .. "_enable", nil)
+
+	mod:set("healthbar_" .. enemy_type .. "_y_offset_enabled", nil)
+	mod:set("healthbar_" .. enemy_type .. "_y_offset", nil)
+
+	mod:set("debuff_" .. enemy_type .. "_show_on_body_override", nil)
+
+	local reset_message = mod.custom_localize("reset_individual_to_default_message") or ""
 	mod:notify(reset_message:gsub("_individual_", "_" .. enemy_type .. "_"))
 
 	mod.init_healthbar_defaults()
@@ -85,21 +136,10 @@ local BreedQueries = require("scripts/utilities/breed_queries")
 local minion_breeds = BreedQueries.minion_breeds_by_name()
 
 mod.set_breed_colours = function()
-	if mod:get("healthbar_colour_preset") == "red" then
-		mod.BREED_COLOURS = {
-			horde = { 255, 255, 40, 40 },
-			elite = { 255, 255, 40, 40 },
-			captain = { 255, 255, 40, 40 },
-			disabler = { 255, 255, 40, 40 },
-			witch = { 255, 255, 40, 40 },
-			monster = { 255, 255, 40, 40 },
-			sniper = { 255, 255, 40, 40 },
-			far = { 255, 255, 40, 40 },
-			special = { 255, 255, 40, 40 },
-			enemy = { 255, 255, 40, 40 },
-		}
-	elseif mod:get("healthbar_colour_preset") == "colourful" then
-		mod.BREED_COLOURS = {
+	local bc = mod.BREED_COLOURS
+	if not bc then
+		-- First call: create the table and initialize all sub-tables
+		bc = {
 			horde = { 255, 150, 60, 60 },
 			elite = { 255, 0, 120, 255 },
 			captain = { 255, 255, 140, 0 },
@@ -110,32 +150,66 @@ mod.set_breed_colours = function()
 			far = { 255, 0, 255, 120 },
 			special = { 255, 255, 0, 255 },
 			enemy = { 255, 200, 200, 200 },
+			shield = { 255, 200, 200, 200 },
 		}
-	else
-		mod.BREED_COLOURS = {
-			horde = { 255, 150, 60, 60 },
-			elite = { 255, 0, 120, 255 },
-			captain = { 255, 255, 140, 0 },
-			disabler = { 255, 255, 255, 0 },
-			witch = { 255, 255, 0, 180 },
-			monster = { 255, 180, 0, 255 },
-			sniper = { 255, 255, 0, 0 },
-			far = { 255, 0, 255, 120 },
-			special = { 255, 255, 0, 255 },
-			enemy = { 255, 200, 200, 200 },
-		}
+		mod.BREED_COLOURS = bc
 	end
-	mod.BREED_COLOURS_DEFAULT = table.clone(mod.BREED_COLOURS)
+	local preset = mod:get("healthbar_colour_preset")
+	if preset == "red" then
+		bc.horde[1], bc.horde[2], bc.horde[3], bc.horde[4] = 255, 255, 40, 40
+		bc.elite[1], bc.elite[2], bc.elite[3], bc.elite[4] = 255, 255, 40, 40
+		bc.captain[1], bc.captain[2], bc.captain[3], bc.captain[4] = 255, 255, 40, 40
+		bc.disabler[1], bc.disabler[2], bc.disabler[3], bc.disabler[4] = 255, 255, 40, 40
+		bc.witch[1], bc.witch[2], bc.witch[3], bc.witch[4] = 255, 255, 40, 40
+		bc.monster[1], bc.monster[2], bc.monster[3], bc.monster[4] = 255, 255, 40, 40
+		bc.sniper[1], bc.sniper[2], bc.sniper[3], bc.sniper[4] = 255, 255, 40, 40
+		bc.far[1], bc.far[2], bc.far[3], bc.far[4] = 255, 255, 40, 40
+		bc.special[1], bc.special[2], bc.special[3], bc.special[4] = 255, 255, 40, 40
+		bc.enemy[1], bc.enemy[2], bc.enemy[3], bc.enemy[4] = 255, 255, 40, 40
+		bc.shield[1], bc.shield[2], bc.shield[3], bc.shield[4] = 255, 255, 40, 40
+	elseif preset == "colourful" then
+		bc.horde[1], bc.horde[2], bc.horde[3], bc.horde[4] = 255, 150, 60, 60
+		bc.elite[1], bc.elite[2], bc.elite[3], bc.elite[4] = 255, 0, 120, 255
+		bc.captain[1], bc.captain[2], bc.captain[3], bc.captain[4] = 255, 255, 140, 0
+		bc.disabler[1], bc.disabler[2], bc.disabler[3], bc.disabler[4] = 255, 255, 255, 0
+		bc.witch[1], bc.witch[2], bc.witch[3], bc.witch[4] = 255, 255, 0, 180
+		bc.monster[1], bc.monster[2], bc.monster[3], bc.monster[4] = 255, 180, 0, 255
+		bc.sniper[1], bc.sniper[2], bc.sniper[3], bc.sniper[4] = 255, 255, 0, 0
+		bc.far[1], bc.far[2], bc.far[3], bc.far[4] = 255, 0, 255, 120
+		bc.special[1], bc.special[2], bc.special[3], bc.special[4] = 255, 255, 0, 255
+		bc.enemy[1], bc.enemy[2], bc.enemy[3], bc.enemy[4] = 255, 200, 200, 200
+		bc.shield[1], bc.shield[2], bc.shield[3], bc.shield[4] = 255, 200, 200, 200
+	else
+		bc.horde[1], bc.horde[2], bc.horde[3], bc.horde[4] = 255, 150, 60, 60
+		bc.elite[1], bc.elite[2], bc.elite[3], bc.elite[4] = 255, 0, 120, 255
+		bc.captain[1], bc.captain[2], bc.captain[3], bc.captain[4] = 255, 255, 140, 0
+		bc.disabler[1], bc.disabler[2], bc.disabler[3], bc.disabler[4] = 255, 255, 255, 0
+		bc.witch[1], bc.witch[2], bc.witch[3], bc.witch[4] = 255, 255, 0, 180
+		bc.monster[1], bc.monster[2], bc.monster[3], bc.monster[4] = 255, 180, 0, 255
+		bc.sniper[1], bc.sniper[2], bc.sniper[3], bc.sniper[4] = 255, 255, 0, 0
+		bc.far[1], bc.far[2], bc.far[3], bc.far[4] = 255, 0, 255, 120
+		bc.special[1], bc.special[2], bc.special[3], bc.special[4] = 255, 255, 0, 255
+		bc.enemy[1], bc.enemy[2], bc.enemy[3], bc.enemy[4] = 255, 200, 200, 200
+		bc.shield[1], bc.shield[2], bc.shield[3], bc.shield[4] = 255, 200, 200, 200
+	end
 end
 
 mod.healthbar_colour_preset_changed = function()
+	-- Apply the selected preset to BREED_COLOURS, then reset the saved group colours to it
 	mod.set_breed_colours()
-	for breed, color in next, mod.BREED_COLOURS_DEFAULT do
+	if not mod.BREED_COLOURS_DEFAULT then
+		mod.BREED_COLOURS_DEFAULT = table.clone(mod.BREED_COLOURS)
+	end
+
+	-- Update the default colours to match the new preset so future individual overrides seed from it
+	mod.BREED_COLOURS_DEFAULT = table.clone(mod.BREED_COLOURS)
+
+	for breed, color in next, mod.BREED_COLOURS do
 		local r = color[2]
 		local g = color[3]
 		local b = color[4]
 
-		-- only set if not already saved
+		-- reset the saved group colours to the new preset
 		mod:set("healthbar_" .. breed .. "_colour_R", r)
 		mod:set("healthbar_" .. breed .. "_colour_G", g)
 		mod:set("healthbar_" .. breed .. "_colour_B", b)
@@ -144,6 +218,15 @@ end
 
 mod.init_healthbar_defaults = function()
 	mod.set_breed_colours()
+	if not mod.BREED_COLOURS_DEFAULT then
+		mod.BREED_COLOURS_DEFAULT = table.clone(mod.BREED_COLOURS)
+	end
+
+	-- vanguard (shield) healthbars are hidden by default unless explicitly enabled via group or individual overrides
+	if mod:get("healthbar_shield_enable") == nil then
+		mod:set("healthbar_shield_enable", false)
+	end
+
 	-- bar colours
 	for breed, color in next, mod.BREED_COLOURS_DEFAULT do
 		local r = color[2]
@@ -194,7 +277,11 @@ mod.init_healthbar_defaults = function()
 
 			if breed_settings then
 				local tags = breed_settings.tags
-				local breed_type = mod.find_breed_category_by_tags(tags)
+				local breed_type = mod.find_breed_category_by_tags(tags, enemy_individual)
+
+				--if breed_settings.name == "renegade_vanguard" or breed_settings.name == "cultist_vanguard" then
+				--	breed_type = "elite"
+				--end
 
 				-- healthbar
 				for breed, color in next, mod.BREED_COLOURS_DEFAULT do
@@ -446,7 +533,7 @@ mod.update_dmf_settings_colours = function(setting_id)
 		base_key = string.gsub(base_key, "_G$", "")
 		base_key = string.gsub(base_key, "_B$", "")
 
-		local old_title = mod:localize(base_key)
+		local old_title = mod.custom_localize(base_key)
 		local new_title = nil
 
 		-- Recompute localization table
@@ -480,8 +567,12 @@ mod.update_dmf_settings_colours = function(setting_id)
 
 		local view = Managers.ui:view_instance("dmf_options_view")
 
-		if view and view._settings_category_widgets and view._settings_category_widgets[mod:localize("mod_name")] then
-			for _, data in next, view._settings_category_widgets[mod:localize("mod_name")] do
+		if
+			view
+			and view._settings_category_widgets
+			and view._settings_category_widgets[mod.custom_localize("mod_name")]
+		then
+			for _, data in next, view._settings_category_widgets[mod.custom_localize("mod_name")] do
 				local widget = data.widget
 				if not widget or not widget.content.text then
 					break
@@ -517,11 +608,32 @@ mod.load_toggled_debuffs_state = function()
 
 		if debuff_setting ~= nil then
 			mod.update_debuff_toggles(debuff.name, debuff_setting)
+		elseif mod.default_disabled_debuffs[debuff.name] then
+			mod.update_debuff_toggles(debuff.name, false)
 		end
 	end
 end
 
 mod.on_setting_changed = function(setting_id)
+	-- Re-entrancy guard: skip if we are already inside an update cycle
+	-- (prevents recursive calls from mod:set() inside init_healthbar_defaults, etc.)
+	if _in_settings_update then
+		return
+	end
+	_in_settings_update = true
+
+	local ok, err = pcall(function()
+		mod._on_setting_changed_impl(setting_id)
+	end)
+
+	_in_settings_update = false
+
+	if not ok then
+		mod:error("on_setting_changed error: " .. tostring(err))
+	end
+end
+
+mod._on_setting_changed_impl = function(setting_id)
 	local fs = mod.frame_settings
 
 	if setting_id == "debuff_toggles" then
@@ -532,7 +644,7 @@ mod.on_setting_changed = function(setting_id)
 		if setting ~= nil then
 			mod:set("debuff_selected_enable", setting)
 		else
-			mod:set("debuff_selected_enable", true)
+			mod:set("debuff_selected_enable", not mod.default_disabled_debuffs[selected_option])
 		end
 	end
 
@@ -557,6 +669,7 @@ mod.on_setting_changed = function(setting_id)
 	then
 		mod.set_debuff_colours(mod:get("debuff_group_selected"))
 	end
+
 	local selected_enemy_type = mod:get("enemy_group")
 	if not selected_enemy_type then
 		return
@@ -589,9 +702,15 @@ mod.on_setting_changed = function(setting_id)
 
 	mod.update_breed_colours()
 
-	-- rebuild outlines
-	local outline_settings = require("scripts/settings/outline/outline_settings")
-	mod.apply_enemy_outlines(outline_settings)
+	-- Only rebuild outlines when outline-related settings changed
+	if setting_id == "outlines_enable"
+		or string_find(setting_id, "outline_")
+		or setting_id == "enemy_group"
+		or setting_id == "individual_overrides"
+	then
+		local outline_settings = require("scripts/settings/outline/outline_settings")
+		mod.apply_enemy_outlines(outline_settings)
+	end
 
 	-- update breed settings
 	mod.update_breed_icons()
@@ -608,8 +727,6 @@ mod.on_setting_changed = function(setting_id)
 	if mod:get(reset_setting_id_individual) == true then
 		mod:set(reset_setting_id_individual, false)
 	end
-
-	mod.update_settings_values()
 
 	-- update colours when the dropdown selectors are changed...
 	if setting_id == "individual_overrides" or setting_id == "enemy_group" then
@@ -628,8 +745,6 @@ mod.on_setting_changed = function(setting_id)
 	end
 
 	mod.update_dmf_settings_colours(setting_id)
-
-	mod.build_frame_settings()
 end
 
 -- Rebuilds all enemies improved UI stuff if the settings menu is closed, as by default the UI elements go invisible
@@ -660,8 +775,8 @@ local last_scroll_amount = 0
 local last_category = nil
 
 local function is_my_category(self)
-	return self._selected_category == mod:localize("mod_name")
-		or self._selected_category == mod:localize("mod_name_pizazz")
+	return self._selected_category == mod.custom_localize("mod_name")
+		or self._selected_category == mod.custom_localize("mod_name_pizazz")
 end
 
 mod:hook_safe(CLASS.BaseView, "on_exit", function(self)

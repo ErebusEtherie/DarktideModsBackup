@@ -239,6 +239,8 @@ local melee_sequence_options = {
     { text = "light_attack",        value = "light_attack" },
     { text = "heavy_attack",        value = "heavy_attack" },
     { text = "special_action",      value = "special_action" },
+    { text = "special_heavy",       value = "special_heavy" },
+    { text = "special_invert",      value = "special_invert" },
     { text = "block",               value = "block" },
     { text = "push",                value = "push" },
     { text = "push_attack",         value = "push_attack" },
@@ -451,6 +453,7 @@ return {
                             { text = "thrust",          value = "thrust" },
                             { text = "slow_and_steady", value = "slow_and_steady" },
                             { text = "crunch",          value = "crunch" },
+                            { text = "mechsword",       value = "mechsword" },
                         }
                     },
                     {
@@ -459,6 +462,7 @@ return {
                         default_value = 0,
                         range = { 0, 4 },
                         unit_text = "buff_stacks",
+                        tooltip = "heavy_buff_stacks_tooltip",
                     },
                     {
                         setting_id = "heavy_buff_special",
@@ -470,7 +474,7 @@ return {
                         setting_id = "special_buff_stacks",
                         type = "numeric",
                         default_value = 0,
-                        range = { 0, 3 },
+                        range = { 0, 8 },
                         unit_text = "buff_stacks",
                     },
                     {
@@ -688,7 +692,7 @@ return {
                         setting_id = "rate_of_fire_ads",
                         type = "numeric",
                         default_value = 0,
-                        range = { 0, 500 },
+                        range = { 0, 800 },
                         unit_text = "rate_of_fire",
                         decimals_number = 0
                     },
@@ -696,7 +700,7 @@ return {
                         setting_id = "rate_of_fire_hip",
                         type = "numeric",
                         default_value = 0,
-                        range = { 0, 500 },
+                        range = { 0, 800 },
                         unit_text = "rate_of_fire",
                         decimals_number = 0
                     },

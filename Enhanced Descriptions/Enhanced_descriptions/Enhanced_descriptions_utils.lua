@@ -3,11 +3,11 @@
 
 local mod = get_mod("Enhanced_descriptions")
 
--- Глобальные кэши для цветов и цифр
+-- Global caches for colors and numbers - Глобальные кэши для цветов и цифр
 local _global_colors_cache = nil
 local _global_numbers_cache = nil
 
--- Функция для получения глобального кэша цветов
+-- Function for getting the global color cache - Функция для получения глобального кэша цветов
 local function get_global_colors()
 	if not _global_colors_cache then
 		local colors_data = mod.get_current_language_colors()
@@ -16,7 +16,7 @@ local function get_global_colors()
 	return _global_colors_cache
 end
 
--- Функция для получения глобального кэша цифр
+-- Function to get the global cache of digits - Функция для получения глобального кэша цифр
 local function get_global_numbers()
 	if not _global_numbers_cache then
 		local colors_data = mod.get_current_language_colors()
@@ -25,7 +25,7 @@ local function get_global_numbers()
 	return _global_numbers_cache
 end
 
--- Функция для получения текущего языка
+-- Function to get the current language - Функция для получения текущего языка
 local function get_current_language()
 	local colors_data = {}
 	
@@ -46,21 +46,21 @@ local function get_current_language()
 	return "en"
 end
 
--- Умный CKWord - теперь понимает цифры и ключевые слова
+-- Smart CKWord - understands Numbers and Keywords - Умный CKWord - понимает цифры и ключевые слова
 local function CKWord(fallback_text, key_or_table, maybe_key)
 	local color_table, key
 
 	if maybe_key == nil then
 		key = key_or_table
-		-- Автоматически определяем, где искать:
-		-- 1. Сначала пробуем в ключевых словах
+		-- Automatically determine where to look - Автоматически определяем, где искать:
+		-- 1. First, try to search in Keywords. - Сначала пробуем в ключевых словах
 		local colors_data = get_global_colors()
 		color_table = colors_data.keywords or {}
-		-- 2. Если не нашли в ключевых словах, пробуем в цифрах
+		-- 2. If didn’t find it in Keywords, try in Numbers - Если не нашли в ключевых словах, пробуем в цифрах
 		if not color_table[key] then
 			local numbers_data = get_global_numbers()
 			color_table = numbers_data
-			-- 3. Если и там нет, возвращаем к ключевым словам (для fallback)
+			-- 3. If it's not there either, return to the Keywords (for fallback) - Если и там нет, возвращаем к ключевым словам (для fallback)
 			if not color_table[key] then
 				color_table = colors_data.keywords or {}
 			end
@@ -81,7 +81,7 @@ local function CKWord(fallback_text, key_or_table, maybe_key)
 	return fallback_text or ""
 end
 
--- Функция для цифр для удобства
+-- Function for numbers for convenience - Функция для цифр для удобства
 local function CNumb(fallback_text, key)
 	local numbers_data = get_global_numbers()
 	
@@ -97,14 +97,14 @@ local function CNumb(fallback_text, key)
 	return fallback_text or ""
 end
 
--- Функция для получения цветных цифр с суффиксом
+-- Function to get colored numbers with a suffix - Функция для получения цветных цифр с суффиксом
 local function get_number_color(number_value)
-	-- Преобразуем число в строку и добавляем суффикс _rgb
+	-- Convert the number to a string and add the _rgb suffix - Преобразуем число в строку и добавляем суффикс _rgb
 	local key = tostring(number_value) .. "_rgb"
 	return CNumb(number_value, key)
 end
 
--- Остальные функции...
+-- Other functions - Остальные функции
 local function get_colors()
 	local colors_data = {}
 	
@@ -125,12 +125,12 @@ local function get_colors()
 	return {}, {}, "en"
 end
 
--- Функция создания шаблона
+-- Template creation function - Функция создания шаблона
 local function create_template(id, loc_keys, locales, handle_func)
 	return { id = id, loc_keys = loc_keys, locales = locales, handle_func = handle_func }
 end
 
--- Функция для статичного текста
+-- Function for static text - Функция для статичного текста
 local function loc_text(text)
 	if type(text) == "table" then
 		return function(locale) 
@@ -142,7 +142,7 @@ local function loc_text(text)
 	end
 end
 
--- ЧАСТО ПОВТОРЯЕМЫЕ ФРАЗЫ
+-- FREQUENTLY REPEATED PHRASES - ЧАСТО ПОВТОРЯЕМЫЕ ФРАЗЫ
 local function CPhrs(key)
 	local colors_data = get_global_colors()
 	local current_lang = get_current_language()
@@ -151,14 +151,14 @@ local function CPhrs(key)
 		return ""
 	end
 
-	-- Если не английский, ищем локализованную версию
+	-- If it's not English, look for a localized version - Если не английский, ищем локализованную версию
 	if current_lang and current_lang ~= "en" then
 		local lang_key = key .. "_" .. current_lang
 		if colors_data.phrs[lang_key] then
 			return colors_data.phrs[lang_key]
 		end
 
-		-- Специальные случаи для языков с дефисом
+		-- Special cases for hyphenated languages - Специальные случаи для языков с дефисом
 		if current_lang == "zh-cn" then
 			lang_key = key .. "_zh_cn"
 		elseif current_lang == "zh-tw" then
@@ -172,11 +172,11 @@ local function CPhrs(key)
 		end
 	end
 
-	-- Fallback на английский
+	-- Fallback in English - Откат на английский
 	return colors_data.phrs[key] or ""
 end
 
--- ЗАМЕТКИ
+-- NOTES - ЗАМЕТКИ
 local function CNote(key)
 	local colors_data = get_global_colors()
 	local current_lang = get_current_language()
@@ -207,18 +207,18 @@ local function CNote(key)
 	return colors_data.nts[key] or ""
 end
 
--- Функция очистки глобального кэша
+-- Global cache clearing function - Функция очистки глобального кэша
 local function clear_global_cache()
 	_global_colors_cache = nil
 	_global_numbers_cache = nil
 end
 
--- Константы
+-- Constants - Константы
 local DOT_RED = "{#color(255, 35, 5)}•{#reset()}"
 local DOT_NC = "•"
 local DOT_GREEN = "{#color(35, 255, 5)}•{#reset()}"
 
--- Экспортируемый объект
+-- Exported objects - Экспортируемый объекты
 local Utils = {
 	clear_global_cache = clear_global_cache,
 	get_current_language = get_current_language,
@@ -226,10 +226,10 @@ local Utils = {
 	create_template = create_template,
 	get_colors = get_colors,
 	loc_text = loc_text,
-	CKWord = CKWord,						-- Умная функция для всего
-	CNumb = CNumb,							-- Специально для цифр
-	CPhrs = CPhrs,							-- Фразы
-	CNote = CNote,							-- Заметки
+	CKWord = CKWord,						-- Smart function for everything - Умная функция для всего
+	CNumb = CNumb,							-- Especially for numbers - Специально для цифр
+	CPhrs = CPhrs,							-- Phrases - Фразы
+	CNote = CNote,							-- Notes - Заметки
 	DOT_NC = DOT_NC,
 	DOT_RED = DOT_RED,
 	DOT_GREEN = DOT_GREEN,

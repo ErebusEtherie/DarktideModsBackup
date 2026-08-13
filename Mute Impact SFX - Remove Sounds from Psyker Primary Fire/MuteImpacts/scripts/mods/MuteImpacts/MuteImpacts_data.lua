@@ -15,14 +15,17 @@ local sounds_to_toggle = mod.sounds_to_toggle
 -- ################################
 -- Widget Creation
 -- ################################
-local final_widgets = {}
+local final_widgets = Script.new_map( #sounds_to_toggle )
+local final_widgets_iterator = 1
 
 for _, setting_table in ipairs(sounds_to_toggle) do 
-	table_insert(final_widgets, {
+	final_widgets[final_widgets_iterator] = {
 		setting_id = setting_table.internal_id,
         type = "checkbox",
+		tooltip = setting_table.sound_event,
         default_value = not setting_table.do_not_disable_by_default,
-	})
+	}
+	final_widgets_iterator = final_widgets_iterator + 1
 end
 
 return {

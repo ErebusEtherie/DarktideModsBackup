@@ -1,4 +1,5 @@
 local mod = get_mod("Killfeed_Reborn")
+local color_defaults = mod:io_dofile("Killfeed_Reborn/scripts/mods/Killfeed_Reborn/data/color_defaults")
 
 local function rgb_widget(setting_id, default_value)
     return {
@@ -51,6 +52,7 @@ return {
             {
                 setting_id = "killfeed_settings_group",
                 type = "group",
+                tab = "General",
                 sub_widgets = {
                     {
                         setting_id = "metrics",
@@ -80,27 +82,74 @@ return {
                         options = number_options(4, 25),
                     },
                     {
-                        setting_id = "neon",
-                        type = "checkbox",
-                        default_value = true,
+                        setting_id = "other_settings_group",
+                        type = "group",
+                        sub_widgets = {
+                            {
+                                setting_id = "chat_colors",
+                                type = "checkbox",
+                                default_value = true,
+                            },
+                            {
+                                setting_id = "unknown_profile_logging",
+                                type = "checkbox",
+                                default_value = false,
+                            },
+                        },
                     },
                 },
             },
 
             --------------------------------------------------
-            -- KILLFEED COLOR
+            -- KILLER COLORS
             --------------------------------------------------
             {
                 setting_id = "killfeed_color_group",
                 type = "group",
+                tab = "Killer Colors",
                 sub_widgets = {
-                    killer_color_group(1, { 255, 230, 130 }),
-                    killer_color_group(2, { 120, 180, 255 }),
-                    killer_color_group(3, { 140, 230, 170 }),
-                    killer_color_group(4, { 255, 150, 210 }),
-                    color_group("action_color_group", "action", { 255, 255, 255 }),
-                    color_group("death_action_color_group", "death_action", { 175, 0, 255 }),
-                    color_group("victim_color_group", "victim", { 255, 90, 90 }),
+                    killer_color_group(1, color_defaults.killer_1),
+                    killer_color_group(2, color_defaults.killer_2),
+                    killer_color_group(3, color_defaults.killer_3),
+                    killer_color_group(4, color_defaults.killer_4),
+                }
+            },
+
+            --------------------------------------------------
+            -- PHRASE COLORS
+            --------------------------------------------------
+            {
+                setting_id = "phrase_color_group",
+                type = "group",
+                tab = "Phrase Colors",
+                sub_widgets = {
+                    color_group("action_color_group", "action", color_defaults.action),
+                    color_group("death_action_color_group", "death_action", color_defaults.death_action),
+                    color_group("victim_color_group", "victim", color_defaults.victim),
+                }
+            },
+
+            --------------------------------------------------
+            -- NEON
+            --------------------------------------------------
+            {
+                setting_id = "neon_settings_group",
+                type = "group",
+                tab = "NEON",
+                sub_widgets = {
+                    {
+                        setting_id = "neon",
+                        type = "checkbox",
+                        default_value = true,
+                    },
+                    {
+                        setting_id = "neon_everything",
+                        type = "checkbox",
+                        default_value = false,
+                    },
+                    color_group("neon_start_color_group", "neon_start", color_defaults.neon_start),
+                    color_group("neon_middle_color_group", "neon_middle", color_defaults.neon_middle),
+                    color_group("neon_end_color_group", "neon_end", color_defaults.neon_end),
                 }
             },
 
@@ -110,6 +159,7 @@ return {
             {
                 setting_id = "phrase_settings",
                 type = "group",
+                tab = "Phrase Chance",
                 sub_widgets = {
                     {
                         setting_id = "generic_specific",
@@ -121,35 +171,11 @@ return {
                         setting_id = "funny_chance",
                         type = "numeric",
                         default_value = 10,
-                        range = {0,10},
+                        range = {0,50},
                     },
                 },
             },
 
-            --------------------------------------------------
-            -- DEBUG SETTINGS
-            --------------------------------------------------
-            {
-                setting_id = "debug_settings",
-                type = "group",
-                sub_widgets = {
-                    {
-                        setting_id = "category_check",
-                        type = "checkbox",
-                        default_value = false,
-                    },
-                    {
-                        setting_id = "output_to_file",
-                        type = "checkbox",
-                        default_value = false,
-                    },
-                    {
-                        setting_id = "local_player",
-                        type = "checkbox",
-                        default_value = false,
-                    },
-                },
-            },
         }
     }
 }

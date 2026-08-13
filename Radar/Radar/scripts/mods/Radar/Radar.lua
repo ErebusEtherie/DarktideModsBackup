@@ -1,6 +1,8 @@
 local mod = get_mod("Radar")
 local Pickups = require("scripts/settings/pickup/pickups")
 local PlayerUnitStatus = require("scripts/utilities/attack/player_unit_status")
+local PlayerUnitVisualLoadout = require("scripts/extension_systems/visual_loadout/utilities/player_unit_visual_loadout")
+local CompanionServoSkullSettings = require("scripts/settings/companion/companion_servo_skull_settings")
 
 local function _install(resource_path, env)
     local installer = mod:io_dofile(resource_path)
@@ -16,6 +18,8 @@ local shared_env = {
     mod = mod,
     Pickups = Pickups,
     PlayerUnitStatus = PlayerUnitStatus,
+    PlayerUnitVisualLoadout = PlayerUnitVisualLoadout,
+    CompanionServoSkullSettings = CompanionServoSkullSettings,
 }
 
 setmetatable(shared_env, { __index = _G })
@@ -24,6 +28,9 @@ _install("Radar/scripts/mods/Radar/Radar_enemy_definitions", shared_env)
 _install("Radar/scripts/mods/Radar/Radar_runtime_helpers", shared_env)
 _install("Radar/scripts/mods/Radar/Radar_expeditions", shared_env)
 _install("Radar/scripts/mods/Radar/Radar_tracking", shared_env)
+_install("Radar/scripts/mods/Radar/Radar_navmesh", shared_env)
+
+mod:io_dofile("Radar/scripts/mods/Radar/compatibility/Radar_strikemap")
 
 -- save scroll position
 -- Author: Alfthebigheaded

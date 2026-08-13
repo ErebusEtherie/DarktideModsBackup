@@ -7,7 +7,8 @@ local Colors         = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/RingH
 
 local AbilityFeature = {}
 
-local CHARGE_GLYPH   = "" -- private-use glyph
+-- local CHARGE_GLYPH   = ""
+local CHARGE_GLYPH   = "•"
 
 ----------------------------------------------------------------
 -- Internal helpers
@@ -109,18 +110,6 @@ local function _set_text(widget, style, text, font_size, color, font_type, drop_
     return changed
 end
 
--- Core cooldown formatter (single value)
-local function _format_single_cd(cd)
-    if cd <= 1 then
-        return string.format("%.1fs", math.max(0, cd))
-    else
-        return string.format("%ds", math.ceil(cd))
-    end
-end
-
--- Public helper: expose the same cooldown formatting to other features
-AbilityFeature.format_single_cd = _format_single_cd
-
 local function _prefix_pips(pips)
     if not pips or pips <= 0 then
         return ""
@@ -141,55 +130,18 @@ local function _effective_text_size(default_size)
 end
 
 ----------------------------------------------------------------
--- Public helpers: font settings for buff / cooldown timers
+-- Layout Application
 ----------------------------------------------------------------
+function AbilityFeature.apply_layout(widget, ctx)
+    if not widget or not widget.style or not widget.style.ability_text then return end
 
--- Buff timers (ability buff + stimm buff) use machine_medium + drop shadow.
-function AbilityFeature.get_buff_font_settings()
-    -- font_type, drop_shadow
-    return "machine_medium", true
-end
+    local u = mod.scalable_unit or 1
+    local base_x = u * 52.8 -- Equivalent to Definitions.text_offset
+    local base_y = u * 13.2 -- Equivalent to Definitions.offset_correction
 
-function AbilityFeature.get_cd_font_settings()
-    local font_type = mod._settings and mod._settings.player_hud_font
-
-    if not font_type or font_type == "" then
-        font_type = "proxima_nova_bold"
+    if U.apply_shake_to_style_offset(widget.style.ability_text, base_x, base_y, 2, ctx.apply_shake, ctx.dx, ctx.dy, ctx.text_bias_comb, ctx.text_bias_comb) then
+        widget.dirty = true
     end
-
-    local drop_shadow = UIFontSettings.hud_body and UIFontSettings.hud_body.drop_shadow or nil
-    return font_type, drop_shadow
-end
-
-----------------------------------------------------------------
--- Public helper: buff timer text + color
---
--- Returns:
---   text  → "3", "2", "1.0", "0.9", ...
---   color → ARGB table using the standard ability buff ramp
-----------------------------------------------------------------
-function AbilityFeature.buff_timer_text_and_color(current, max_duration)
-    local value = current or 0
-    local max   = max_duration or 0
-
-    if value <= 0 or max <= 0 then
-        return "", nil
-    end
-
-    local clamped   = math.max(0, value)
-    local intensity = U.calculate_opacity(clamped, max)
-
-    local text
-    if clamped <= 1 then
-        -- Under 1s: show one decimal place
-        text = string.format("%.1f", clamped)
-    else
-        -- ≥1s: show whole seconds (no suffix)
-        text = string.format("%d", math.ceil(clamped))
-    end
-
-    local color = { intensity, intensity, 255 - intensity, 0 }
-    return text, color
 end
 
 ----------------------------------------------------------------
@@ -241,9 +193,9 @@ function AbilityFeature.update(widget, hud_state, _hotkey_override)
         if _allow_subsecond_update(widget, t) or content.ability_text == "" then
             -- Use shared helper for text + color
             local text, text_color =
-                AbilityFeature.buff_timer_text_and_color(data.buff_timer_value, data.buff_max_duration)
+                U.buff_timer_text_and_color(data.buff_timer_value, data.buff_max_duration)
 
-            local buff_font_type, buff_drop_shadow = AbilityFeature.get_buff_font_settings()
+            local buff_font_type, buff_drop_shadow = U.get_buff_font_settings()
             changed = _set_text(widget, style, text, buff_font_size, text_color, buff_font_type, buff_drop_shadow)
                 or changed
         end
@@ -262,7 +214,7 @@ function AbilityFeature.update(widget, hud_state, _hotkey_override)
     local cd_remaining           = math.max(0, data.ability_cooldown_remaining or 0)
     local has_cd_flag            = ((#cds > 0) or (cd_remaining > 0 and data.is_ability_on_cooldown_for_timer == true))
     local white                  = table.clone(mod.PALETTE_ARGB255.GENERIC_WHITE)
-    local font_type, drop_shadow = AbilityFeature.get_cd_font_settings()
+    local font_type, drop_shadow = U.get_cd_font_settings()
 
     local function _set_cd_text(text, wants_subsec, color_override)
         local color = color_override or white
@@ -286,7 +238,7 @@ function AbilityFeature.update(widget, hud_state, _hotkey_override)
         -- Original behavior: only show when no charges remain.
         if data.is_ability_on_cooldown_for_timer == true and no_charges and cd_remaining > 0 then
             local wants_subsec = cd_remaining <= 1
-            _set_cd_text(_format_single_cd(cd_remaining), wants_subsec)
+            _set_cd_text(U.format_single_cd(cd_remaining), wants_subsec)
         else
             if content.ability_text ~= "" then
                 changed = _set_text(widget, style, "", buff_font_size, nil, nil, nil) or changed
@@ -303,7 +255,7 @@ function AbilityFeature.update(widget, hud_state, _hotkey_override)
                 color = mod.PALETTE_ARGB255.SPEED_BLUE
             end
 
-            _set_cd_text(_format_single_cd(cd_remaining), wants_subsec, color)
+            _set_cd_text(U.format_single_cd(cd_remaining), wants_subsec, color)
         else
             if content.ability_text ~= "" then
                 changed = _set_text(widget, style, "", buff_font_size, nil, nil, nil) or changed
@@ -315,7 +267,7 @@ function AbilityFeature.update(widget, hud_state, _hotkey_override)
         -- If any charge is cooling: show <pips><lowest ETA>; hide if none cooling.
         if has_cd_flag then
             local lowest       = (#cds > 0) and cds[1] or cd_remaining
-            local text         = _prefix_pips(remaining_charges) .. _format_single_cd(lowest)
+            local text         = _prefix_pips(remaining_charges) .. U.format_single_cd(lowest)
             local wants_subsec = lowest <= 1
             _set_cd_text(text, wants_subsec)
         else
@@ -330,7 +282,7 @@ function AbilityFeature.update(widget, hud_state, _hotkey_override)
         if has_cd_flag then
             local lowest       = (#cds > 0) and cds[1] or cd_remaining
             local count        = math.max(0, tonumber(remaining_charges) or 0)
-            local text         = tostring(count) .. CHARGE_GLYPH .. _format_single_cd(lowest)
+            local text         = tostring(count) .. CHARGE_GLYPH .. U.format_single_cd(lowest)
             local wants_subsec = lowest <= 1
             _set_cd_text(text, wants_subsec)
         else

@@ -16,6 +16,8 @@ local Name                          = mod.team_names or mod:io_dofile("RingHud/s
 local Definitions                   = W.build_definitions()
 local HudElementRingHud_team_docked = class("HudElementRingHud_team_docked", "HudElementBase")
 
+local STATE_THROTTLE_RATE           = 1 / 30 -- ~33ms
+
 local function _peer_id(player)
     if not player or player.__deleted then return nil end
     if type(player.peer_id) == "function" then
@@ -34,67 +36,11 @@ local function _apply_RingHud_state_team_to_widgets(tile_w, name_w, RingHud_stat
     end
 end
 
--- Compatibility shim:
--- LoadoutMonitor expects this method to exist because it normally runs inside HudElementPlayerPanelBase descendants.
-function HudElementRingHud_team_docked:_set_widget_visible(widget, visible, ui_renderer)
-    if not widget then
-        return
-    end
-
-    widget.content = widget.content or {}
-
-    if not widget.dirty then
-        widget.dirty = (widget.content.visible ~= visible)
-    end
-
-    widget.content.visible = visible
-
-    if not visible and ui_renderer then
-        UIWidget.destroy(ui_renderer, widget)
-    end
-end
-
--- Delegates LoadoutMonitor's own update+visibility logic onto one of our per-tile widgets.
-local function _update_loadout_monitor_widget(self, lm_mod, loadout_w, dt, t, player, ui_renderer)
-    if not (lm_mod and loadout_w and player and ui_renderer) then
-        if loadout_w then
-            loadout_w.visible = false
-            if loadout_w.content then loadout_w.content.visible = false end
-        end
-        return
-    end
-
-    -- LoadoutMonitor intentionally ignores bots; we should force-hide in that case
-    if player.__deleted or (type(player.is_human_controlled) == "function" and not player:is_human_controlled()) then
-        self:_set_widget_visible(loadout_w, false, ui_renderer)
-        loadout_w.visible = false
-        return
-    end
-
-    -- LoadoutMonitor expects to find the widget at _widgets_by_name.playerloadout_intel
-    local saved = self._widgets_by_name and self._widgets_by_name.playerloadout_intel
-    self._widgets_by_name.playerloadout_intel = loadout_w
-
-    if type(lm_mod.update_loadout) == "function" then
-        lm_mod.update_loadout(self, dt, t, player, ui_renderer)
-    else
-        self:_set_widget_visible(loadout_w, false, ui_renderer)
-    end
-
-    -- Restore whatever was there (or nil)
-    self._widgets_by_name.playerloadout_intel = saved
-
-    -- Keep our element-level widget.visible aligned with what LM sets on widget.content.visible
-    local cv = loadout_w.content and loadout_w.content.visible
-    loadout_w.visible = (cv == true)
-end
-
 function HudElementRingHud_team_docked:init(parent, draw_layer, start_scale)
     HudElementRingHud_team_docked.super.init(self, parent, draw_layer, start_scale, Definitions)
 
-    self._tile_widget_names    = { "rh_team_tile_1", "rh_team_tile_2", "rh_team_tile_3" }
-    self._name_widget_names    = { "rh_team_name_1", "rh_team_name_2", "rh_team_name_3" }
-    self._loadout_widget_names = { "rh_team_loadout_1", "rh_team_loadout_2", "rh_team_loadout_3" }
+    self._tile_widget_names = { "rh_team_tile_1", "rh_team_tile_2", "rh_team_tile_3" }
+    self._name_widget_names = { "rh_team_name_1", "rh_team_name_2", "rh_team_name_3" }
 
     for name, w in pairs(self._widgets_by_name or {}) do
         if string.find(name, "^rh_team_") then
@@ -104,9 +50,67 @@ function HudElementRingHud_team_docked:init(parent, draw_layer, start_scale)
 
     self._show_respawns_in_floating = false
     self._switching_any_visible     = false
+
+    self._state_rebuild_dt_accum    = 0
+end
+
+-- Override base _draw_widgets to skip widget.visible==false entirely.
+-- Base calls UIWidget.draw on every widget; engine respects .visible internally,
+-- but the FFI call and Lua pass loop still run.
+function HudElementRingHud_team_docked:_draw_widgets(dt, t, input_service, ui_renderer, render_settings)
+    local widgets = self._widgets
+    if not widgets then return end
+
+    local draw_widget = UIWidget.draw
+
+    for i = 1, #widgets do
+        local widget = widgets[i]
+
+        if widget and widget.visible ~= false then
+            draw_widget(widget, ui_renderer)
+        end
+    end
+end
+
+local function _hide_all_widgets(self_elem)
+    local wbn = self_elem._widgets_by_name
+    local twn = self_elem._tile_widget_names
+    local nwn = self_elem._name_widget_names
+
+    for i = 1, 3 do
+        local tile_w = wbn[twn[i]]
+        local name_w = wbn[nwn[i]]
+
+        if tile_w then
+            tile_w.visible = false
+        end
+
+        if name_w then
+            name_w.visible = false
+        end
+    end
 end
 
 function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_settings, input_service)
+    local accum = (self._state_rebuild_dt_accum or 0) + (dt or 0)
+
+    if accum < STATE_THROTTLE_RATE and not mod._teamhud_needs_rebuild then
+        self._state_rebuild_dt_accum = accum
+
+        HudElementRingHud_team_docked.super.update(
+            self,
+            dt,
+            t,
+            ui_renderer,
+            render_settings,
+            input_service
+        )
+
+        return
+    end
+
+    self._state_rebuild_dt_accum = 0
+
     if mod._teamhud_needs_rebuild then
         mod._teamhud_needs_rebuild = false
 
@@ -114,11 +118,17 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
         W = mod:io_dofile("RingHud/scripts/mods/RingHud/core/RingHud_definitions_team_docked")
 
         Definitions = W.build_definitions()
-        HudElementRingHud_team_docked.super.init(self, self._parent, self._draw_layer, self._scale, Definitions)
 
-        self._tile_widget_names    = { "rh_team_tile_1", "rh_team_tile_2", "rh_team_tile_3" }
-        self._name_widget_names    = { "rh_team_name_1", "rh_team_name_2", "rh_team_name_3" }
-        self._loadout_widget_names = { "rh_team_loadout_1", "rh_team_loadout_2", "rh_team_loadout_3" }
+        HudElementRingHud_team_docked.super.init(
+            self,
+            self._parent,
+            self._draw_layer,
+            self._scale,
+            Definitions
+        )
+
+        self._tile_widget_names = { "rh_team_tile_1", "rh_team_tile_2", "rh_team_tile_3" }
+        self._name_widget_names = { "rh_team_name_1", "rh_team_name_2", "rh_team_name_3" }
 
         for name, w in pairs(self._widgets_by_name or {}) do
             if string.find(name, "^rh_team_") then
@@ -129,53 +139,65 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
 
     local s               = mod._settings or {}
     local mode            = s.team_hud_mode or "team_hud_docked"
-    local mode_is_docked  = (mode == "team_hud_docked" or mode == "team_hud_floating_docked")
+    local mode_is_docked  = mode == "team_hud_docked" or mode == "team_hud_floating_docked"
     local players         = U.sorted_teammates()
 
-    local force_show_team = (mod.show_all_hud_hotkey_active == true) and (mode ~= "team_hud_disabled")
-
-    -- LoadoutMonitor compat (cached once in RingHud.lua:on_all_mods_loaded)
-    local lm_mod          = mod._compat_loadout_monitor
-
-    local function _hide_all()
-        for i = 1, 3 do
-            local tile_w    = self._widgets_by_name[self._tile_widget_names[i]]
-            local name_w    = self._widgets_by_name[self._name_widget_names[i]]
-            local loadout_w = self._widgets_by_name[self._loadout_widget_names[i]]
-            if tile_w then tile_w.visible = false end
-            if name_w then name_w.visible = false end
-            if loadout_w then
-                loadout_w.visible = false
-                if loadout_w.content then loadout_w.content.visible = false end
-            end
-        end
-    end
+    local force_show_team = mod.show_all_hud_hotkey_active == true
+        and mode ~= "team_hud_disabled"
 
     if mode == "team_hud_disabled" or mode == "team_hud_floating_vanilla" then
-        _hide_all()
+        _hide_all_widgets(self)
+
         self._show_respawns_in_floating = false
         self._switching_any_visible     = false
+
+        HudElementRingHud_team_docked.super.update(
+            self,
+            dt,
+            t,
+            ui_renderer,
+            render_settings,
+            input_service
+        )
+
         return
     end
 
-    -- Floating modes: this element is only used for respawn digits; never show LoadoutMonitor widgets here.
+    -- Floating modes: this element is only used for respawn digits.
     if not mode_is_docked then
         if mode ~= "team_hud_floating" then
-            _hide_all()
+            _hide_all_widgets(self)
+
             self._show_respawns_in_floating = false
             self._switching_any_visible     = false
+
+            HudElementRingHud_team_docked.super.update(
+                self,
+                dt,
+                t,
+                ui_renderer,
+                render_settings,
+                input_service
+            )
+
             return
         end
 
         local any_respawns = false
+
         for i = 1, #players do
-            local p        = players[i]
-            local ally_tbl = RingHud_state_team.build(p and not p.__deleted and p.player_unit, nil, {
-                player     = p,
-                t          = t,
-                force_show = force_show_team,
-                peer_id    = _peer_id(p),
-            })
+            local p = players[i]
+            local ally_tbl = RingHud_state_team.build(
+                p and not p.__deleted and p.player_unit,
+                nil,
+                {
+                    player     = p,
+                    t          = t,
+                    force_show = force_show_team,
+                    peer_id    = _peer_id(p),
+                }
+            )
+
             if ally_tbl
                 and ally_tbl.status
                 and ally_tbl.status.kind == "dead"
@@ -191,25 +213,35 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
         self._switching_any_visible     = false
 
         if not any_respawns then
-            _hide_all()
+            _hide_all_widgets(self)
+
+            HudElementRingHud_team_docked.super.update(
+                self,
+                dt,
+                t,
+                ui_renderer,
+                render_settings,
+                input_service
+            )
+
             return
         end
 
-        for i = 1, 3 do
-            local tile_w    = self._widgets_by_name[self._tile_widget_names[i]]
-            local name_w    = self._widgets_by_name[self._name_widget_names[i]]
-            local loadout_w = self._widgets_by_name[self._loadout_widget_names[i]] -- always hidden in this mode
-            if loadout_w then
-                loadout_w.visible = false
-                if loadout_w.content then loadout_w.content.visible = false end
-            end
+        local wbn = self._widgets_by_name or {}
 
-            if not tile_w or not name_w then goto continue end
+        for i = 1, 3 do
+            local tile_w = wbn[self._tile_widget_names[i]]
+            local name_w = wbn[self._name_widget_names[i]]
+
+            if not tile_w or not name_w then
+                goto continue
+            end
 
             tile_w._ringhud_is_team_tile = true
             name_w._ringhud_is_team_tile = true
 
             local player = players[i]
+
             if not player or player.__deleted then
                 tile_w.visible = false
                 name_w.visible = false
@@ -218,30 +250,55 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
 
             local unit        = player.player_unit
             local name_str    = Name.default(player)
-            local fake_marker = { data = { rh_name_composed = name_str } }
+            local fake_marker = {
+                data = {
+                    rh_name_composed = name_str
+                }
+            }
 
-            local ally_tbl    = RingHud_state_team.build(unit, fake_marker, {
-                player     = player,
-                t          = t,
-                force_show = force_show_team,
-                peer_id    = _peer_id(player),
-            })
+            local ally_tbl    = RingHud_state_team.build(
+                unit,
+                fake_marker,
+                {
+                    player     = player,
+                    t          = t,
+                    force_show = force_show_team,
+                    peer_id    = _peer_id(player),
+                }
+            )
 
             local show_this   = ally_tbl
                 and ally_tbl.status
-                and (ally_tbl.status.kind == "dead")
-                and (ally_tbl.assist and ally_tbl.assist.respawn_digits)
+                and ally_tbl.status.kind == "dead"
+                and ally_tbl.assist
+                and ally_tbl.assist.respawn_digits
 
             tile_w.visible    = show_this and true or false
             name_w.visible    = show_this and true or false
-            if not show_this then goto continue end
 
-            _apply_RingHud_state_team_to_widgets(tile_w, name_w, ally_tbl, unit)
+            if not show_this then
+                goto continue
+            end
+
+            _apply_RingHud_state_team_to_widgets(
+                tile_w,
+                name_w,
+                ally_tbl,
+                unit
+            )
 
             ::continue::
         end
 
-        HudElementRingHud_team_docked.super.update(self, dt, t, ui_renderer, render_settings, input_service)
+        HudElementRingHud_team_docked.super.update(
+            self,
+            dt,
+            t,
+            ui_renderer,
+            render_settings,
+            input_service
+        )
+
         return
     end
 
@@ -249,89 +306,89 @@ function HudElementRingHud_team_docked:update(dt, t, ui_renderer, render_setting
     self._show_respawns_in_floating = false
     self._switching_any_visible     = false
 
+    local wbn                       = self._widgets_by_name or {}
+
     for i = 1, 3 do
-        local tile_w    = self._widgets_by_name[self._tile_widget_names[i]]
-        local name_w    = self._widgets_by_name[self._name_widget_names[i]]
-        local loadout_w = self._widgets_by_name[self._loadout_widget_names[i]]
+        local tile_w = wbn[self._tile_widget_names[i]]
+        local name_w = wbn[self._name_widget_names[i]]
 
         if not tile_w or not name_w then
-            if loadout_w then
-                loadout_w.visible = false
-                if loadout_w.content then loadout_w.content.visible = false end
-            end
             goto continue
         end
 
         tile_w._ringhud_is_team_tile = true
         name_w._ringhud_is_team_tile = true
-        if loadout_w then loadout_w._ringhud_is_team_tile = true end
 
         local player = players[i]
+
         if not player or player.__deleted then
             tile_w.visible = false
             name_w.visible = false
-            if loadout_w then
-                loadout_w.visible = false
-                if loadout_w.content then loadout_w.content.visible = false end
-            end
             goto continue
         end
 
-        local unit     = player.player_unit
-        local ally_tbl = RingHud_state_team.build(unit, nil, {
-            player     = player,
-            t          = t,
-            force_show = force_show_team,
-            peer_id    = _peer_id(player),
-        })
+        local unit = player.player_unit
+        local ally_tbl = RingHud_state_team.build(
+            unit,
+            nil,
+            {
+                player     = player,
+                t          = t,
+                force_show = force_show_team,
+                peer_id    = _peer_id(player),
+            }
+        )
 
-        if not (ally_tbl and ally_tbl.ok) then
+        if not ally_tbl or not ally_tbl.ok then
             tile_w.visible = false
             name_w.visible = false
-            if loadout_w then
-                loadout_w.visible = false
-                if loadout_w.content then loadout_w.content.visible = false end
-            end
             goto continue
         end
 
         tile_w.visible = true
         name_w.visible = true
 
-        _apply_RingHud_state_team_to_widgets(tile_w, name_w, ally_tbl, unit)
-
-        -- LoadoutMonitor panel (uses LM's *own* tactical-overlay visibility toggles)
-        if loadout_w and lm_mod then
-            _update_loadout_monitor_widget(self, lm_mod, loadout_w, dt, t, player, ui_renderer)
-
-            -- Hard gate: if our tile isn't visible for any reason, never show the LM panel either.
-            if not tile_w.visible then
-                self:_set_widget_visible(loadout_w, false, ui_renderer)
-                loadout_w.visible = false
-            end
-        elseif loadout_w then
-            loadout_w.visible = false
-            if loadout_w.content then loadout_w.content.visible = false end
-        end
+        _apply_RingHud_state_team_to_widgets(
+            tile_w,
+            name_w,
+            ally_tbl,
+            unit
+        )
 
         ::continue::
     end
 
-    HudElementRingHud_team_docked.super.update(self, dt, t, ui_renderer, render_settings, input_service)
+    HudElementRingHud_team_docked.super.update(
+        self,
+        dt,
+        t,
+        ui_renderer,
+        render_settings,
+        input_service
+    )
 end
 
 function HudElementRingHud_team_docked:draw(dt, t, ui_renderer, render_settings, input_service)
     local s    = mod._settings or {}
     local mode = s.team_hud_mode or "team_hud_docked"
 
-    if not (mode == "team_hud_docked"
-            or mode == "team_hud_floating_docked")
+    if not (
+            mode == "team_hud_docked"
+            or mode == "team_hud_floating_docked"
+        )
         and not self._show_respawns_in_floating
     then
         return
     end
 
-    return HudElementRingHud_team_docked.super.draw(self, dt, t, ui_renderer, render_settings, input_service)
+    return HudElementRingHud_team_docked.super.draw(
+        self,
+        dt,
+        t,
+        ui_renderer,
+        render_settings,
+        input_service
+    )
 end
 
 return HudElementRingHud_team_docked

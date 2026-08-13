@@ -2,19 +2,37 @@
 local mod = get_mod("RingHud")
 if not mod then return {} end
 
-local UIWidget           = require("scripts/managers/ui/ui_widget")
-local Notch              = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/notch_split")
-local U                  = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
+local UIWidget       = require("scripts/managers/ui/ui_widget")
+local Notch          = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/notch_split")
+local U              = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
 
-local StaminaFeature     = {}
+local StaminaFeature = {}
 
 local SETTINGS           = mod._settings
-
--- =========================
--- Stamina arc envelope (must match widget defaults)
--- =========================
 local STAMINA_ARC_BOTTOM = 0.51
-local STAMINA_ARC_TOP    = 0.99
+local STAMINA_ARC_TOP    = 0.995
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Layout Application
+-- ─────────────────────────────────────────────────────────────────────────────
+function StaminaFeature.apply_layout(widget, ctx)
+    if not widget or not widget.style then return end
+
+    local changed = false
+    local style = widget.style
+    local apply_shake_offset = U.apply_shake_to_style_offset
+
+    if style.stamina_bar and apply_shake_offset(
+            style.stamina_bar, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, ctx.n_user_bias_px, ctx.n_user_bias_px) then
+        changed = true
+    end
+    if style.stamina_edge and apply_shake_offset(
+            style.stamina_edge, 0, 0, 2, ctx.apply_shake, ctx.dx, ctx.dy, ctx.n_user_bias_px, ctx.n_user_bias_px) then
+        changed = true
+    end
+
+    if changed then widget.dirty = true end
+end
 
 -- Draw/update the stamina arc + edge using the shared notch helper.
 function StaminaFeature.update(hud_element, widget, hud_state, hotkey_override)
@@ -60,12 +78,12 @@ function StaminaFeature.update(hud_element, widget, hud_state, hotkey_override)
         return
     end
 
-    local display_fraction = math.clamp(fraction, 0, 1)
-    local base_mv          = base_style.material_values
-    local edge_mv          = edge_style.material_values
+    local display_fraction                    = math.clamp(fraction, 0, 1)
+    local base_mv                             = base_style.material_values
+    local edge_mv                             = edge_style.material_values
 
     -- Split parent arc into base(1) + edge(0) with fixed internal gap
-    local r                = Notch.notch_split(STAMINA_ARC_TOP, STAMINA_ARC_BOTTOM, display_fraction)
+    local r                                   = Notch.notch_split(STAMINA_ARC_TOP, STAMINA_ARC_BOTTOM, display_fraction)
 
     -- Base slice (filled)
     if base_mv.amount ~= 1 then
@@ -109,11 +127,14 @@ function StaminaFeature.add_widgets(dst, styles, metrics, colors)
                 angle                = 0,
                 material_values      = {
                     amount = 1,
+                    radius = 50,
                     glow_on_off = 0,
                     lightning_opacity = 0,
                     arc_top_bottom = { STAMINA_ARC_TOP, STAMINA_ARC_BOTTOM },
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color = { 1, 1, 1, 1 },
+                    -- SizeThicknessOutline = { 0.6, 0.03, 0.011 },
+                    SizeThicknessOutline = { 0.45, 0.03, 0.02 },
                 },
             },
         },
@@ -133,11 +154,14 @@ function StaminaFeature.add_widgets(dst, styles, metrics, colors)
                 angle                = 0,
                 material_values      = {
                     amount = 0,
+                    radius = 50,
                     glow_on_off = 0,
                     lightning_opacity = 0,
                     arc_top_bottom = { STAMINA_ARC_TOP, STAMINA_ARC_BOTTOM },
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color = { 1, 1, 1, 1 },
+                    -- SizeThicknessOutline = { 0.6, 0.03, 0.011 },
+                    SizeThicknessOutline = { 0.45, 0.03, 0.02 },
                 },
             },
         },

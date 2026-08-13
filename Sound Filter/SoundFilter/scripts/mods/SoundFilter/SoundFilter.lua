@@ -44,6 +44,7 @@ mod:hook("WwiseWorld","trigger_resource_event",function(func, s, file_path, ...)
     elseif not mod:get("flamer_explosion") and (file_path == "wwise/events/weapon/play_explosion_flamer_tank") then return
     elseif not mod:get("flamer_fuse") and (file_path == "wwise/events/weapon/play_flamer_explosion_fuse" or file_path == "wwise/events/weapon/stop_flamer_explosion_fuse") then return
     elseif not mod:get("flamer_fuse") and (file_path == "wwise/events/weapon/play_flamer_explosion_fuse_flame" or file_path == "wwise/events/weapon/stop_flamer_explosion_fuse_flame") then return
+    elseif not mod:get("crit_swing") and (file_path == "wwise/events/weapon/play_indicator_crit_melee_swing") then return
     
     elseif not mod:get("signal") and (file_path == "wwise/events/minions/play_signal_horde_poxwalkers_2d" or file_path == "wwise/events/minions/play_signal_horde_poxwalkers_3d" or file_path == "wwise/events/minions/play_mid_event_horde_signal") then return
     elseif not mod:get("ambush") and (file_path == "wwise/events/minions/play_minion_horde_poxwalker_ambush_2d" or file_path == "wwise/events/minions/play_minion_horde_poxwalker_ambush_3d") then return
@@ -116,6 +117,12 @@ mod:hook("WwiseWorld","trigger_resource_event",function(func, s, file_path, ...)
     elseif not mod:get("smite") and (file_path == "wwise/events/weapon/play_psyker_smite_charge" or file_path == "wwise/events/weapon/stop_psyker_smite_charge") then return 
     elseif not mod:get("smite") and (file_path == "wwise/events/weapon/play_psyker_chain_lightning_heavy" or file_path == "wwise/events/weapon/stop_psyker_chain_lightning_heavy") then return
     elseif not mod:get("smite") and (file_path == "wwise/events/weapon/play_psyker_chain_lightning" or file_path == "wwise/events/weapon/stop_psyker_chain_lightning") then return
+
+    elseif not mod:get("staff_small_explosion") and (file_path == "wwise/events/weapon/play_explosion_force_sml") then return
+    elseif not mod:get("staff_medium_explosion") and (file_path == "wwise/events/weapon/play_explosion_force_med") then return
+    elseif not mod:get("staff_projectile") and (file_path == "wwise/events/weapon/play_psyker_smite_fire_projectile" or file_path == "wwise/events/weapon/stop_psyker_smite_fire_projectile" or file_path == "wwise/events/weapon/play_psyker_smite_fire") then return
+
+
     end
     return func(s, file_path, ...)
 end)

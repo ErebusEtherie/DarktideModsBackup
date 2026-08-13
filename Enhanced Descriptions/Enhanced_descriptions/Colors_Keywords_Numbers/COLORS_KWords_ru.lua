@@ -7,6 +7,7 @@ local InputUtils = require("scripts/managers/input/input_utils")
 --		Ключ_rgb_ru			"Значение"						-- Где используется?
 local CONFIG = {
 	bleed_text_colour = {
+		Krovotechenie =		"Кровотечение",					-- Таланты
 		krovotechenie =		"кровотечение",					-- Таланты
 		krovotecheniem =	"кровотечением",				-- Таланты
 		krovotechenia =		"кровотечения",					-- Таланты, Благословения
@@ -16,6 +17,7 @@ local CONFIG = {
 		hrupkosti =			"хрупкости",					-- Таланты, Благословения
 	},
 	burn_text_colour = {
+		Gorenie =			"Горение",						-- Таланты, Благословения
 		gorenia =			"горения",						-- Таланты, Благословения
 		goriaschej =		"горящей",						-- Благословения
 		goriaschih =		"горящих",						-- Благословения
@@ -74,7 +76,7 @@ local CONFIG = {
 		krit_udar_uron =	"урон критического удара",		-- Таланты
 		krit_udara_uron =	"урону критического удара",		-- Таланты, Благословения
 
-		Krt_uron =			"Крит. урон",					-- Таланты
+		Krt_uron =			"Критический урон",				-- Таланты
 		krit_uron =			"критический урон",				-- Таланты, Примечания внизу
 		krit_uronu =		"критическому урону",			-- Таланты, Благословения
 
@@ -105,7 +107,12 @@ local CONFIG = {
 		Combat_Stimm =		"Боевого стима",
 	},
 	electrocuted_text_colour = {
-	-- elektroshok =		"электрошок",					-- ?
+		Elektrodugi =		"Электродуги",
+		elektrodug =		"электродуг",
+		elektroduga =		"электродуга",
+		elektrodugami =		"электродугами",
+		Elektroshok =		"Электрошок",					-- Таланты
+		elektroshok =		"электрошок",					-- Таланты
 		elektroshoka =		"электрошока",					-- Таланты, Благословения
 		elektroshokom =		"электрошоком",					-- Таланты, Благословения
 	},
@@ -154,6 +161,7 @@ local CONFIG = {
 		Cartel_Stimm =		"Особого стима Картеля",
 	},
 	soulblaze_text_colour = {
+		Gorenie_dushi =		"Горение души",					-- Таланты, Благословения
 		gorenia_dushi =		"горения души",					-- Таланты, Благословения
 	},
 	stagger_text_colour = {
@@ -166,6 +174,7 @@ local CONFIG = {
 		Oglushenie =		"Оглушение",					-- Таланты
 		Oglushite =			"Оглушите",						-- Таланты
 		oglushit =			"оглушить",						-- Таланты
+		oglushaet =			"оглушает",						-- Таланты
 		oglushaetes =		"оглушаетесь",					-- Таланты
 		oglushennyh =		"оглушённых",					-- Таланты
 
@@ -200,8 +209,9 @@ local CONFIG = {
 		stoikost =			"стойкость",					-- Таланты, Примечания внизу
 
 		TDR =				"СУС",
-	-- ur_stoikosti =		"снижение урона стойкости",		-- ?
+		ur_stoikosti =		"снижение урона стойкости",		-- ?
 		snu_ur_stoikosti =	"снижению урона стойкости",		-- Таланты
+		stoikosti_uron =	"урон стойкости",				-- Таланты
 		stoikosti_urona =	"урона стойкости",				-- Таланты
 	},
 	weakspot_text_colour = {
@@ -236,6 +246,9 @@ local CONFIG = {
 			Feel_no_pain =		"Неболита",
 
 			Desperadki =		"Отчаянной атаки",			-- Отребье
+			Overloadu =			"Перегрузку",				-- Скитарий
+			Overloada =			"Перегрузка",				-- Скитарий
+			Overloadki =		"Перегрузки",				-- Скитарий
 		},
 		luckyb_text_colour = {
 			Lucky_bullt =		"Счастливая пуля",
@@ -244,6 +257,8 @@ local CONFIG = {
 
 			stojkosti_zolot =	"стойкости",				-- Изувер
 			stojkost_zolot =	"стойкость",				-- Изувер
+			servocherep =		"сервочереп",				-- Скитарий
+			servocherepu =		"сервочереп",				-- Скитарий
 		},
 		trample_text_colour = {
 			Trample =			"Топота",
@@ -263,6 +278,9 @@ local CONFIG = {
 
 			Rampage =			"Буйство!",					-- Отребье
 			Rampaga =			"Буйства!",					-- Отребье
+			Charga =			"Заряда",					-- Скитарий
+			Charge =			"Заряд",					-- Скитарий
+			Charges =			"Заряды",					-- Скитарий
 		},
 		momentum_text_colour = {
 			Momentum =			"Моментума",
@@ -295,20 +313,25 @@ local CONFIG = {
 			Forceful =			"Неудержимости",
 
 			Shout =				"Крик",						-- Отребье
+			emkosti =			"ёмкости",					-- Скитарий
 		},
 		focust_text_colour = {
 			Focus_Target =		"Важной цели",
 			Focus_Targt =		"Важная цель",
 
-			VultsMark =			"Метки стервятника",		-- Отребье
 			Markedenemy =		"Отмеченного врага",		-- Псайкер
+			VultsMark =			"Метки стервятника",		-- Отребье
+			ElectrDisch =		"Электрический разряд",		-- Скитарий
+			ElectrDischom =		"Электрическим разрядом",	-- Скитарий
 		},
 		meleespec_text_colour = {
 			Meleespec =			"Специалиста-рукопашника",
 
 			Meleejust =			"Судьи-рукопашника",		-- Арбитрес
-
 			Exhausted =			"Истощение",				-- Отребье
+			Chordclaw =			"Аккордовых когтей",		-- Скитарий
+			Chordclaws =		"Аккордовыми когтями",		-- Скитарий
+			Chordclawe =		"Аккордовые когти",			-- Скитарий
 		},
 		rangedspec_text_colour = {
 			Rangedspec =		"Специалиста-стрелка",
@@ -332,6 +355,8 @@ local CONFIG = {
 			Chem_Toxom =		"Хим-токсином",
 
 			Med_Stimm =			"Мед стима",
+
+			AdMedSyringe =		"адаптированными медике-шприцами",	-- Скитарий
 		},
 
 -- ТАЛАНТЫ
@@ -453,6 +478,10 @@ local CONFIG = {
 		StimmSupply =		"Стим-поддержка",
 		VulturesMark =		"Метка стервятника",
 		Viscosity =			"Вязкость",
+	-- СКИТАРИЙ
+		Arcgren =			"Электродуговую гранату",
+		VoltaicExpander =	"Вольтаический расширитель",
+		PowerOverload =		"Перегрузка питания",
 
 -- ИСКУПЛЕНИЯ
 		Base_tut_p =		"Базовое обучение",

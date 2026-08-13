@@ -67,10 +67,10 @@ mod.apply_marker_fade = function(self)
 	local cam_rot = Camera.world_rotation(camera)
 	local cam_forward = Quaternion.forward(cam_rot)
 
-	local px, py, pz =
-		Unit.world_position(player_unit, 1).x,
-		Unit.world_position(player_unit, 1).y,
-		Unit.world_position(player_unit, 1).z
+	local wp = Unit.world_position(player_unit, 1)
+	local pos = wp and Vector3(wp.x, wp.y, wp.z) or nil
+	
+	local px, py, pz = wp.x, wp.y, wp.z
 	local cx, cy, cz = cam_pos.x, cam_pos.y, cam_pos.z
 	local fx, fy, fz = cam_forward.x, cam_forward.y, cam_forward.z
 
@@ -92,16 +92,15 @@ mod.apply_marker_fade = function(self)
 	for i = #marker_list, 1, -1 do
 		marker_list[i] = nil
 	end
-	if mod.DEBUG then
-		mod.markers_by_id = markers_by_id
-	end
 
 	-- BUILD MARKER LIST
 	for marker_id, marker in next, markers_by_id do
 		if marker and marker.unit and mod.detect_alive(marker.unit) then
 			local t = marker.type
-			if t == "enemy_healthbar" or t == "enemy_markers" or t == "enemy_debuff" or t == "enemy_utility_debuff" then
-				local pos = Unit.world_position(marker.unit, 1)
+			if t == "enemies_improved" or t == "enemy_utility_debuff" then
+				local wp = Unit.world_position(marker.unit, 1)
+				local pos = wp and Vector3(wp.x, wp.y, wp.z) or nil
+
 				local x, y, z = pos.x, pos.y, pos.z
 
 				local dx = x - px
@@ -127,9 +126,8 @@ mod.apply_marker_fade = function(self)
 				local draw_distance = draw_distance_base
 				local cache_entry = mod.enemy_cache[marker.unit]
 				if cache_entry and cache_entry.breed_name then
-					local ind_dist_enabled = mod:get("distance_" .. cache_entry.breed_name .. "_enable")
-					if ind_dist_enabled then
-						local ind_dist = mod:get("distance_" .. cache_entry.breed_name .. "_value")
+					if fs.breed_dist_enabled[cache_entry.breed_name] then
+						local ind_dist = fs.breed_dist_value[cache_entry.breed_name]
 						if ind_dist and ind_dist > draw_distance then
 							draw_distance = ind_dist
 						end

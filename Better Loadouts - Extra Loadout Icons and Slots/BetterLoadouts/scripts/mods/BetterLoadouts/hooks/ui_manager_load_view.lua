@@ -23,7 +23,7 @@ local REQUIRED_PACKAGES = {
     "packages/ui/hud/world_markers/world_markers",
     "content/ui/materials/icons/throwables/hud/missile_launcher",
     "packages/ui/views/scanner_display_view/scanner_display_view",
-    "packages/ui/views/expedition_play_view/expedition_play_view",
+    "packages/ui/views/expedition_view/expedition_view",
     "packages/ui/hud/mission_objective_feed/mission_objective_feed",
 }
 

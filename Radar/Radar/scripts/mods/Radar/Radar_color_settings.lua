@@ -163,6 +163,9 @@ _add_radar_color("radar_colors_group", "vertical_arrow", WHITE, "vertical_arrow_
 _add_radar_color("radar_colors_group", "radar_legend_indicator", RADAR_OUTLINE, "radar_legend_indicator_color")
 _add_radar_color("radar_colors_group", "radar_zoom_indicator", _color(210, 0, 255, 0),
     "radar_zoom_indicator_color")
+_add_radar_color("map_geometry_source", "radar_navmesh", _color(80, 101, 133, 96), "radar_navmesh_color")
+_add_radar_color("map_geometry_source", "radar_navmesh_above", _color(32, 120, 150, 185), "radar_navmesh_above_color")
+_add_radar_color("map_geometry_source", "radar_navmesh_below", _color(55, 120, 98, 76), "radar_navmesh_below_color")
 
 _add_default("enemy_boss_marker", _color(255, 255, 64, 64))
 _add_default("enemy_boss_background", _color(220, 255, 0, 0))
@@ -244,6 +247,7 @@ _add_enemy_kinds("enemy_scab_marker", {
     "enemy_renegade_executor",
     "enemy_renegade_berzerker",
     "enemy_renegade_assault",
+    "enemy_renegade_vanguard",
     "enemy_renegade_rifleman",
     "enemy_renegade_shocktrooper",
     "enemy_renegade_sniper",
@@ -261,6 +265,7 @@ _add_enemy_kinds("enemy_dreg_marker", {
     "enemy_cultist_shocktrooper",
     "enemy_cultist_mutant",
     "enemy_cultist_melee",
+    "enemy_cultist_vanguard",
 })
 _add_enemy_kinds("enemy_tox_marker", {
     "enemy_cultist_grenadier",
@@ -549,6 +554,18 @@ _add_marker({
     supports_highlight = true,
 })
 _add_marker({
+    kind = "hazard_explosive_barrel",
+    anchor = "show_explosive_barrels",
+    default = _color(255, 205, 156, 77),
+    supports_highlight = true,
+})
+_add_marker({
+    kind = "hazard_fire_barrel",
+    anchor = "show_fire_barrels",
+    default = _color(255, 255, 110, 0),
+    supports_highlight = true,
+})
+_add_marker({
     kind = "pocketable_anti_rad_stimm",
     anchor = "show_anti_rad_stimm",
     default = WHITE,
@@ -703,6 +720,12 @@ _add_marker({
     kind = "pickup_saints",
     anchor = "show_saints",
     default = _color(255, 192, 160, 0),
+    supports_highlight = true,
+})
+_add_marker({
+    kind = "pickup_leftover",
+    anchor = "show_leftover",
+    default = _color(255, 150, 190, 60),
     supports_highlight = true,
 })
 _add_marker({

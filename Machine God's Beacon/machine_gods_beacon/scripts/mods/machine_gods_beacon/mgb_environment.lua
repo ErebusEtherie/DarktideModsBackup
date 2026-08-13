@@ -30,6 +30,9 @@ local function clear_preserved_flags()
 	state.preserved_is_darkness = false
 	state.preserved_is_ventilation = false
 	state.preserved_is_toxic_gas = false
+	state.preserved_is_ember = false
+	state.preserved_is_noir = false
+	state.preserved_is_nurgle = false
 end
 
 local function store_extension_state(unit, ext)
@@ -42,12 +45,21 @@ local function store_extension_state(unit, ext)
 		return
 	end
 	state.original_extension_weights[unit] = {
-		base_weight = ext._base_weight,
-		current_weight = ext._current_weight,
 		enabled = ext._enabled,
 		name = ext._shading_environment_resource_name,
 	}
 	state.original_weights_captured = true
+end
+
+local function suppress_extension(unit, ext)
+	store_extension_state(unit, ext)
+	if ext.disable then
+		pcall(function()
+			ext:disable()
+		end)
+	else
+		ext._enabled = false
+	end
 end
 
 local function restore_all_extensions()
@@ -64,18 +76,13 @@ local function restore_all_extensions()
 	for unit, ext in pairs(sys._unit_to_extension_map) do
 		local orig = state.original_extension_weights[unit]
 		if orig then
-			if orig.base_weight then
-				ext._base_weight = orig.base_weight
-			end
-			if orig.current_weight then
-				ext._current_weight = orig.current_weight
-			end
 			if orig.enabled then
-				ext._enabled = true
 				if ext.enable then
 					pcall(function()
 						ext:enable()
 					end)
+				else
+					ext._enabled = true
 				end
 			end
 			restored = restored + 1
@@ -161,20 +168,7 @@ local function kill_extensions_by_slot()
 	local killed = 0
 	for unit, ext in pairs(sys._unit_to_extension_map) do
 		if should_block_extension_by_slot(ext) then
-			if ext._base_weight then
-				ext._base_weight = 0
-			end
-			if ext._current_weight then
-				ext._current_weight = 0
-			end
-			if ext._enabled then
-				ext._enabled = false
-				if ext.disable then
-					pcall(function()
-						ext:disable()
-					end)
-				end
-			end
+			suppress_extension(unit, ext)
 			killed = killed + 1
 		end
 	end
@@ -201,19 +195,22 @@ function mgb_environment.kill_by_classification(classification)
 			elseif classification == "lights_out" then
 				match = string.find(n, "dark")
 			elseif classification == "toxic_gas" then
+				-- -- toxic gas enabled (players hurt, need visuals)
 				-- match = string.find(n, "fog") or string.find(n, "toxic") or string.find(n, "gas")
+			elseif classification == "ember" then
+				-- TODO: "fire"/"heat"/"smoke" are guesses for the ember env resource name
+				match = string.find(n, "ember") or string.find(n, "fire") or string.find(n, "heat") or string.find(n, "smoke")
+			-- noir: film-noir colour grade, backend/event-only/unsure where this is being used
+			elseif classification == "noir" then
+				match = string.find(n, "noir")
+			elseif classification == "nurgle" then
+				match = string.find(n, "nurgle") or string.find(n, "pox") or string.find(n, "blight")
+			-- -- dawn disabled (brightens, not obscures):
+			-- elseif classification == "dawn" then
+			-- 	match = string.find(n, "dawn")
 			end
 			if match then
-				store_extension_state(unit, ext)
-				if ext._base_weight then
-					ext._base_weight = 0
-				end
-				if ext._current_weight then
-					ext._current_weight = 0
-				end
-				if ext._enabled then
-					ext._enabled = false
-				end
+				suppress_extension(unit, ext)
 				killed = killed + 1
 			end
 		end
@@ -404,8 +401,8 @@ local function should_block_themes()
 		return false
 	end
 
-	local is_special = state.is_darkness_mission or state.is_ventilation_mission or state.is_toxic_gas_mission
-	local is_preserved = state.preserved_is_darkness or state.preserved_is_ventilation or state.preserved_is_toxic_gas
+	local is_special = state.is_darkness_mission or state.is_ventilation_mission or state.is_toxic_gas_mission or state.is_ember_mission or state.is_noir_mission or state.is_nurgle_mission
+	local is_preserved = state.preserved_is_darkness or state.preserved_is_ventilation or state.preserved_is_toxic_gas or state.preserved_is_ember or state.preserved_is_noir or state.preserved_is_nurgle
 
 	if not is_special and not is_preserved then
 		return false
@@ -417,8 +414,9 @@ local function should_block_themes()
 
 	local block_darkness = (state.is_darkness_mission or state.preserved_is_darkness) and MGB.should_block_darkness and MGB.should_block_darkness()
 	local block_fog = (state.is_ventilation_mission or state.is_toxic_gas_mission or state.preserved_is_ventilation or state.preserved_is_toxic_gas) and MGB.should_block_fog and MGB.should_block_fog()
+	local block_other = (state.is_ember_mission or state.is_noir_mission or state.is_nurgle_mission or state.preserved_is_ember or state.preserved_is_noir or state.preserved_is_nurgle) and MGB.should_block_environment and MGB.should_block_environment()
 
-	return block_darkness or block_fog
+	return block_darkness or block_fog or block_other
 end
 
 local function is_theme_override(ext, sys)
@@ -492,6 +490,28 @@ function mgb_environment.apply_settings()
 			MGB.log("apply_settings: killed %d toxic gas extensions", killed_toxic)
 		end
 
+		if state.is_ember_mission then
+			local killed_ember = mgb_environment.kill_by_classification("ember")
+			MGB.log("apply_settings: killed %d ember extensions", killed_ember)
+		end
+
+		-- noir is backend/event-only and a colour grade, not vision-obscuring;
+		if state.is_noir_mission then
+			local killed_noir = mgb_environment.kill_by_classification("noir")
+			MGB.log("apply_settings: killed %d noir extensions", killed_noir)
+		end
+
+		if state.is_nurgle_mission then
+			local killed_nurgle = mgb_environment.kill_by_classification("nurgle")
+			MGB.log("apply_settings: killed %d nurgle extensions", killed_nurgle)
+		end
+
+		-- -- dawn disabled (brightens, not obscures):
+		-- if state.is_dawn_mission then
+		-- 	local killed_dawn = mgb_environment.kill_by_classification("dawn")
+		-- 	MGB.log("apply_settings: killed %d dawn extensions", killed_dawn)
+		-- end
+
 		mgb_environment.clear_shading_fog()
 
 		local unit_to_extension_map = sys._unit_to_extension_map
@@ -500,10 +520,7 @@ function mgb_environment.apply_settings()
 			for unit, ext in pairs(unit_to_extension_map) do
 				local is_override, theme_env, ext_default = is_theme_override(ext, sys)
 				if is_override then
-					store_extension_state(unit, ext)
-					ext._base_weight = 0
-					ext._current_weight = 0
-					ext._enabled = false
+					suppress_extension(unit, ext)
 					MGB.log("  killed slot[%d]: theme=%s default=%s", ext._slot or -1, theme_env or "nil", ext_default or "nil")
 					killed = killed + 1
 				end
@@ -592,6 +609,9 @@ function mgb_environment.get_status()
 		is_darkness = state.is_darkness_mission,
 		is_ventilation = state.is_ventilation_mission,
 		is_toxic_gas = state.is_toxic_gas_mission,
+		is_ember = state.is_ember_mission,
+		is_noir = state.is_noir_mission,
+		is_nurgle = state.is_nurgle_mission,
 		preserved_darkness = state.preserved_is_darkness,
 		preserved_ventilation = state.preserved_is_ventilation,
 		preserved_toxic_gas = state.preserved_is_toxic_gas,

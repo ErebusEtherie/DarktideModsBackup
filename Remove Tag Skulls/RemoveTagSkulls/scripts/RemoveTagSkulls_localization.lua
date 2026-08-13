@@ -21,8 +21,8 @@ return {
   [SettingNames.RemoveVeteranTagSkull] = {
     en = "Remove Veteran Tag Skull"
   },
-  [SettingNames.RemoveAdamantTagSkull] = {
-    en = "Remove Adamant (Dog target) Tag Skull"
+  [SettingNames.RemoveCompanionTagSkull] = {
+    en = "Remove Companion Tag Skull"
   },
   [SettingNames.KeepDaemonhostMarker] = {
     en = "Keep Daemonhost Marker"

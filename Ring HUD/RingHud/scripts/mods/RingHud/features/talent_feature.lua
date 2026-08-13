@@ -10,20 +10,21 @@ local TalentFeature           = {}
 local SETTINGS                = mod._settings
 local EPS                     = mod.NOTCH_EPSILON or 1e-4
 
--- Using standard UVs { {0,0}, {1,1} } for RingHud right-side bars
-local TALENT_ARC_MIN          = 0.51
-local TALENT_ARC_MAX          = 0.98
-
--- Psyker segmented talent (Empowered Grenades)
 local PSYKER_TALENT_SEGMENTS  = 3
 
--- Adamant segmented talent (Terminus Warrant: 1 ranged + 1 melee)
 local ADAMANT_TALENT_SEGMENTS = 2
 local ADAMANT_SEGMENT_STACKS  = 20
 local ADAMANT_MAX_STACKS      = 20
 
--- Match the dual-shivs segment gap (ChargeFeature uses SEG2_BOTTOM - SEG1_TOP).
-local SEGMENT_GAP             = 0.03
+local CRYPTIC_MAX_SEGMENTS    = 7
+
+local OGRYN_BLO_MAX_STACKS     = 10
+local OGRYN_BLO_BRIGHT_STACKS  = 9
+
+local SEGMENT_GAP              = 0.03
+local OGRYN_BLO_SEGMENT_GAP    = 0.012
+local TALENT_ARC_MIN           = 0.49
+local TALENT_ARC_MAX           = 0.98
 
 local _psyker_style_keys      = {}
 for i = 1, PSYKER_TALENT_SEGMENTS do
@@ -37,29 +38,55 @@ for i = 1, ADAMANT_TALENT_SEGMENTS do
     _adamant_style_keys_edge[i] = "talent_adamant_seg_" .. i .. "_edge"
 end
 
-local function _compute_segment_arcs(num_segments)
+local _cryptic_style_keys_base = {}
+local _cryptic_style_keys_edge = {}
+for i = 1, CRYPTIC_MAX_SEGMENTS do
+    _cryptic_style_keys_base[i] = "talent_cryptic_seg_" .. i
+    _cryptic_style_keys_edge[i] = "talent_cryptic_seg_" .. i .. "_edge"
+end
+
+local _ogryn_blo_style_keys = {}
+for i = 1, OGRYN_BLO_MAX_STACKS do
+    _ogryn_blo_style_keys[i] = "talent_ogryn_blo_seg_" .. i
+end
+
+local function _compute_segment_arcs(num_segments, lo, hi, segment_gap)
     local arcs         = {}
-    local total_arc    = TALENT_ARC_MAX - TALENT_ARC_MIN
+    local total_arc    = hi - lo
     local num_gaps     = math.max(0, num_segments - 1)
-    local gap_space    = num_gaps * SEGMENT_GAP
+    local gap          = segment_gap or SEGMENT_GAP
+    local gap_space    = num_gaps * gap
     local visual_space = math.max(0, total_arc - gap_space)
     local seg_arc      = (visual_space / num_segments)
-    local current_bot  = TALENT_ARC_MIN
+    local current_bot  = lo
 
     for i = 1, num_segments do
-        local top = math.min(TALENT_ARC_MAX, current_bot + seg_arc)
+        local top = math.min(hi, current_bot + seg_arc)
         if i == num_segments then
-            top = TALENT_ARC_MAX
+            top = hi
         end
         arcs[i] = { top, current_bot } -- {top, bottom}
-        current_bot = top + SEGMENT_GAP
+        current_bot = top + gap
     end
 
     return arcs
 end
 
-local PSYKER_ARCS  = _compute_segment_arcs(PSYKER_TALENT_SEGMENTS)
-local ADAMANT_ARCS = _compute_segment_arcs(ADAMANT_TALENT_SEGMENTS)
+local PSYKER_ARCS    = _compute_segment_arcs(PSYKER_TALENT_SEGMENTS, TALENT_ARC_MIN, TALENT_ARC_MAX)
+local ADAMANT_ARCS   = _compute_segment_arcs(ADAMANT_TALENT_SEGMENTS, TALENT_ARC_MIN, TALENT_ARC_MAX)
+local OGRYN_BLO_ARCS = _compute_segment_arcs(OGRYN_BLO_MAX_STACKS, TALENT_ARC_MIN, TALENT_ARC_MAX, OGRYN_BLO_SEGMENT_GAP)
+
+-- Cryptic keeps a count-keyed cache because its segment count can change mid-game.
+local _cryptic_arcs_cache = {}
+local function _get_cryptic_arcs(num_segments)
+    if num_segments <= 0 then return nil end
+    if _cryptic_arcs_cache[num_segments] then
+        return _cryptic_arcs_cache[num_segments]
+    end
+    local arcs = _compute_segment_arcs(num_segments, TALENT_ARC_MIN, TALENT_ARC_MAX)
+    _cryptic_arcs_cache[num_segments] = arcs
+    return arcs
+end
 
 -- Pre-calculate Opacity Tables
 local OPACITY_DIM  = { 0.7, 0.5 }
@@ -83,7 +110,6 @@ local function _fast_hide_all(widget, style)
         end
     end
 
-    -- Adamant segments
     for i = 1, ADAMANT_TALENT_SEGMENTS do
         local base = style[_adamant_style_keys_base[i]]
         local edge = style[_adamant_style_keys_edge[i]]
@@ -92,6 +118,24 @@ local function _fast_hide_all(widget, style)
         end
         if edge and edge.visible then
             edge.visible = false; changed = true
+        end
+    end
+
+    for i = 1, CRYPTIC_MAX_SEGMENTS do
+        local base = style[_cryptic_style_keys_base[i]]
+        local edge = style[_cryptic_style_keys_edge[i]]
+        if base and base.visible then
+            base.visible = false; changed = true
+        end
+        if edge and edge.visible then
+            edge.visible = false; changed = true
+        end
+    end
+
+    for i = 1, OGRYN_BLO_MAX_STACKS do
+        local seg = style[_ogryn_blo_style_keys[i]]
+        if seg and seg.visible then
+            seg.visible = false; changed = true
         end
     end
 
@@ -119,6 +163,32 @@ local function _hide_adamant_segments(style)
         end
         if edge and edge.visible then
             edge.visible = false; changed = true
+        end
+    end
+    return changed
+end
+
+local function _hide_cryptic_segments(style)
+    local changed = false
+    for i = 1, CRYPTIC_MAX_SEGMENTS do
+        local base = style[_cryptic_style_keys_base[i]]
+        local edge = style[_cryptic_style_keys_edge[i]]
+        if base and base.visible then
+            base.visible = false; changed = true
+        end
+        if edge and edge.visible then
+            edge.visible = false; changed = true
+        end
+    end
+    return changed
+end
+
+local function _hide_ogryn_blo_segments(style)
+    local changed = false
+    for i = 1, OGRYN_BLO_MAX_STACKS do
+        local seg = style[_ogryn_blo_style_keys[i]]
+        if seg and seg.visible then
+            seg.visible = false; changed = true
         end
     end
     return changed
@@ -237,21 +307,97 @@ local function _write_notched_segment(base_style, edge_style, seg_top, seg_botto
 end
 
 -- ============================================================
+-- Cryptic Update Logic
+-- ============================================================
+local function _update_cryptic(widget, style, data, force_show, partial_outline_rgba, is_hide_full_mode)
+    local changed = _hide_standard_passes(style)
+    changed = _hide_psyker_segments(style) or changed
+    changed = _hide_adamant_segments(style) or changed
+    changed = _hide_ogryn_blo_segments(style) or changed
+
+    local max_charges = math.clamp(tonumber(data and data.segment_max) or 1, 1, CRYPTIC_MAX_SEGMENTS)
+    local current_charges = math.clamp(tonumber(data and data.stacks) or 0, 0, max_charges)
+    local cooldown_fraction = math.clamp(tonumber(data and data.cooldown_fraction) or 0, 0, 1)
+
+    local arcs = _get_cryptic_arcs(max_charges)
+
+    for i = 1, CRYPTIC_MAX_SEGMENTS do
+        local base = style[_cryptic_style_keys_base[i]]
+        local edge = style[_cryptic_style_keys_edge[i]]
+
+        if base and edge and base.material_values and edge.material_values then
+            if i <= max_charges and arcs and arcs[i] then
+                local top, bottom = arcs[i][1], arcs[i][2]
+                local frac = 0
+
+                if i <= current_charges then
+                    frac = 1
+                elseif i == current_charges + 1 then
+                    frac = cooldown_fraction
+                end
+
+                local show_empty = false
+                local outline = nil
+
+                if is_hide_full_mode and current_charges == 0 and i == 1 then
+                    show_empty = true
+                    outline = partial_outline_rgba
+                end
+
+                if frac <= EPS then
+                    if force_show or show_empty then
+                        local c = false
+                        if outline then
+                            c = _set_outline_override(base, outline, false)
+                        else
+                            c = _restore_outline_default(base, false)
+                        end
+                        local mv_base = base.material_values
+                        if mv_base.amount ~= 0 then
+                            mv_base.amount = 0; c = true
+                        end
+                        c = U.mv_set_arc(mv_base, top, bottom, c)
+                        c = U.set_style_visible(base, true, c)
+                        c = U.set_style_visible(edge, false, c)
+                        changed = c or changed
+                    else
+                        local c = U.set_style_visible(base, false, false)
+                        c = U.set_style_visible(edge, false, c)
+                        changed = c or changed
+                    end
+                else
+                    changed = _write_notched_segment(base, edge, top, bottom, frac, true, partial_outline_rgba, changed) or
+                        changed
+                end
+            else
+                local c = U.set_style_visible(base, false, false)
+                c = U.set_style_visible(edge, false, c)
+                changed = c or changed
+            end
+        end
+    end
+
+    if changed then widget.dirty = true end
+end
+
+-- ============================================================
 -- Adamant Update Logic
 -- ============================================================
 local function _update_adamant(widget, style, data, force_show, partial_outline_rgba)
-    local changed        = _hide_standard_passes(style)
-    changed              = _hide_psyker_segments(style) or changed
+    local changed         = _hide_standard_passes(style)
+    changed               = _hide_psyker_segments(style) or changed
+    changed               = _hide_cryptic_segments(style) or changed
+    changed               = _hide_ogryn_blo_segments(style) or changed
 
-    local melee_stacks   = math.clamp(tonumber(data and data.adamant_tw_melee_stacks) or 0, 0, ADAMANT_MAX_STACKS)
-    local ranged_stacks  = math.clamp(tonumber(data and data.adamant_tw_ranged_stacks) or 0, 0, ADAMANT_MAX_STACKS)
+    local melee_stacks    = math.clamp(tonumber(data and data.adamant_tw_melee_stacks) or 0, 0, ADAMANT_MAX_STACKS)
+    local ranged_stacks   = math.clamp(tonumber(data and data.adamant_tw_ranged_stacks) or 0, 0, ADAMANT_MAX_STACKS)
 
-    local ranged_frac    = math.clamp(ranged_stacks / ADAMANT_MAX_STACKS, 0, 1)
-    local melee_frac     = math.clamp(melee_stacks / ADAMANT_MAX_STACKS, 0, 1)
+    local ranged_frac     = math.clamp(ranged_stacks / ADAMANT_MAX_STACKS, 0, 1)
+    local melee_frac      = math.clamp(melee_stacks / ADAMANT_MAX_STACKS, 0, 1)
 
     -- Dynamic Opacity
-    local ranged_opacity = (ranged_stacks >= 20) and OPACITY_FULL or OPACITY_DIM
-    local melee_opacity  = (melee_stacks >= 20) and OPACITY_FULL or OPACITY_DIM
+    local ranged_opacity  = (ranged_stacks >= 20) and OPACITY_FULL or OPACITY_DIM
+    local melee_opacity   = (melee_stacks >= 20) and OPACITY_FULL or OPACITY_DIM
 
     local function set_opacity(pass_base, pass_edge, opacity)
         local c = false
@@ -315,6 +461,8 @@ end
 local function _update_psyker(widget, style, data, force_show)
     local changed = _hide_standard_passes(style)
     changed = _hide_adamant_segments(style) or changed
+    changed = _hide_cryptic_segments(style) or changed
+    changed = _hide_ogryn_blo_segments(style) or changed
 
     local stacks = math.clamp(tonumber(data and data.stacks) or 0, 0, PSYKER_TALENT_SEGMENTS)
 
@@ -343,11 +491,51 @@ local function _update_psyker(widget, style, data, force_show)
 end
 
 -- ============================================================
+-- Ogryn Lucky Bullet Update Logic
+-- ============================================================
+local function _update_ogryn_blo(widget, style, data, force_show)
+    local changed = _hide_standard_passes(style)
+    changed = _hide_psyker_segments(style) or changed
+    changed = _hide_adamant_segments(style) or changed
+    changed = _hide_cryptic_segments(style) or changed
+
+    local stacks = math.clamp(tonumber(data and data.stacks) or 0, 0, OGRYN_BLO_MAX_STACKS)
+    local bright = stacks >= OGRYN_BLO_BRIGHT_STACKS
+    local opacity = bright and OPACITY_FULL or OPACITY_DIM
+    local arcs = OGRYN_BLO_ARCS
+
+    for i = 1, OGRYN_BLO_MAX_STACKS do
+        local seg = style[_ogryn_blo_style_keys[i]]
+        local arc = arcs and arcs[i]
+        if seg and seg.material_values and arc then
+            local mv = seg.material_values
+            local outline = bright and seg.__ringhud_outline_bright or seg.__ringhud_outline_dim
+
+            changed = U.mv_set_outline(mv, outline, changed)
+            if not mv.fill_outline_opacity
+                or mv.fill_outline_opacity[1] ~= opacity[1]
+                or mv.fill_outline_opacity[2] ~= opacity[2] then
+                mv.fill_outline_opacity = opacity
+                changed = true
+            end
+
+            local filled = i <= stacks
+            local visible = filled or (force_show and stacks == 0)
+            changed = _write_simple_segment(seg, arc[1], arc[2], filled and 1 or 0, visible, changed) or changed
+        end
+    end
+
+    if changed then widget.dirty = true end
+end
+
+-- ============================================================
 -- Standard Update Logic
 -- ============================================================
 local function _update_standard(widget, style, data, force_show)
     local changed = _hide_psyker_segments(style)
     changed = _hide_adamant_segments(style) or changed
+    changed = _hide_cryptic_segments(style) or changed
+    changed = _hide_ogryn_blo_segments(style) or changed
 
     local base = style.talent_bar
     local edge = style.talent_bar_edge
@@ -437,6 +625,80 @@ local function _update_standard(widget, style, data, force_show)
     if changed then widget.dirty = true end
 end
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Layout Application
+-- ─────────────────────────────────────────────────────────────────────────────
+function TalentFeature.apply_layout(widget, ctx)
+    if not widget or not widget.style then return end
+
+    local changed = false
+    local style = widget.style
+    local apply_shake_offset = U.apply_shake_to_style_offset
+
+    if style.talent_bar and apply_shake_offset(
+            style.talent_bar, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.n_user_bias_px
+        ) then
+        changed = true
+    end
+    if style.talent_bar_edge and apply_shake_offset(
+            style.talent_bar_edge, 0, 0, 2, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.n_user_bias_px
+        ) then
+        changed = true
+    end
+
+    for i = 1, PSYKER_TALENT_SEGMENTS do
+        local st = style[_psyker_style_keys[i]]
+        if st and apply_shake_offset(
+                st, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.n_user_bias_px
+            ) then
+            changed = true
+        end
+    end
+
+    for i = 1, ADAMANT_TALENT_SEGMENTS do
+        local st  = style[_adamant_style_keys_base[i]]
+        local ste = style[_adamant_style_keys_edge[i]]
+
+        if st and apply_shake_offset(
+                st, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.n_user_bias_px
+            ) then
+            changed = true
+        end
+        if ste and apply_shake_offset(
+                ste, 0, 0, 2, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.n_user_bias_px
+            ) then
+            changed = true
+        end
+    end
+
+    for i = 1, CRYPTIC_MAX_SEGMENTS do
+        local st  = style[_cryptic_style_keys_base[i]]
+        local ste = style[_cryptic_style_keys_edge[i]]
+
+        if st and apply_shake_offset(
+                st, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.n_user_bias_px
+            ) then
+            changed = true
+        end
+        if ste and apply_shake_offset(
+                ste, 0, 0, 2, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.n_user_bias_px
+            ) then
+            changed = true
+        end
+    end
+
+    for i = 1, OGRYN_BLO_MAX_STACKS do
+        local st = style[_ogryn_blo_style_keys[i]]
+        if st and apply_shake_offset(
+                st, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.n_user_bias_px
+            ) then
+            changed = true
+        end
+    end
+
+    if changed then widget.dirty = true end
+end
+
 function TalentFeature.update(widget, hud_state, hotkey_override)
     if not widget or not widget.style then return end
 
@@ -463,11 +725,28 @@ function TalentFeature.update(widget, hud_state, hotkey_override)
     local ranged_stacks        = math.clamp(tonumber(data and data.adamant_tw_ranged_stacks) or 0, 0, ADAMANT_MAX_STACKS)
 
     local visible              = false
+    local is_hide_full_mode    = false
 
     if mode == "adamant_terminus_warrant" then
         visible = (melee_stacks > 0) or (ranged_stacks > 0) or force_show
     elseif mode == "psyker_empowered_grenades" then
         visible = (stacks > 0) or (force_show and available)
+    elseif mode == "ogryn_blo_melee" then
+        visible = (stacks > 0) or (force_show and available)
+    elseif mode == "cryptic_ability_charges" then
+        local g_setting = SETTINGS.grenade_bar_dropdown
+        is_hide_full_mode = (g_setting == "grenade_hide_full_compact" or g_setting == "grenade_hide_full")
+
+        if is_hide_full_mode then
+            if stacks == (data.segment_max or 0) then
+                visible = force_show
+            else
+                visible = true
+            end
+        else
+            local has_fraction = fraction > 0
+            visible = (stacks > 0) or has_fraction or force_show
+        end
     else
         -- Standard Cooldown
         local has_fraction = fraction > 0
@@ -484,30 +763,40 @@ function TalentFeature.update(widget, hud_state, hotkey_override)
         _update_adamant(widget, widget.style, data, force_show, partial_outline_rgba)
     elseif mode == "psyker_empowered_grenades" then
         _update_psyker(widget, widget.style, data, force_show)
+    elseif mode == "ogryn_blo_melee" then
+        _update_ogryn_blo(widget, widget.style, data, force_show)
+    elseif mode == "cryptic_ability_charges" then
+        _update_cryptic(widget, widget.style, data, force_show, partial_outline_rgba, is_hide_full_mode)
     else
         _update_standard(widget, widget.style, data, force_show)
     end
 end
 
 function TalentFeature.add_widgets(widget_defs, _, layout, palettes)
-    local size             = (layout and layout.size) or { 240, 240 }
-    local inner            = (layout and layout.inner_size_factor) or 0.8
-    local parent_id        = (layout and layout.scenegraph_id) or "talent_bar"
-    local ARGB             = (palettes and palettes.ARGB) or (mod.PALETTE_ARGB255 or {})
-    local RGBA1            = (palettes and palettes.RGBA1) or (mod.PALETTE_RGBA1 or {})
+    local size                                 = (layout and layout.size) or { 240, 240 }
+    local inner                                = (layout and layout.inner_size_factor) or 0.8
+    local parent_id                            = (layout and layout.scenegraph_id) or "talent_bar"
+    local ARGB                                 = (palettes and palettes.ARGB) or (mod.PALETTE_ARGB255 or {})
+    local RGBA1                                = (palettes and palettes.RGBA1) or (mod.PALETTE_RGBA1 or {})
 
-    local inner_size       = { size[1] * inner, size[2] * inner }
+    local inner_size                           = { size[1] * inner, size[2] * inner }
 
     -- Outlines:
     --  • Default cooldown (Zealot + Broker countdown): same outline
     --  • Psyker segments: purple
     --  • Adamant Terminus Warrant: active (ranged) / inactive (melee)
-    local zealot_outline   = table.clone(RGBA1.dodge_color_negative_rgba or { 1, 0, 0, 1 })
-    local psyker_outline   = table.clone(RGBA1.GRIMOIRE_PURPLE or { 0.6, 0.2, 0.8, 1 })
-    local adamant_inactive = table.clone(RGBA1.NEEDLE_SPECIAL_INACTIVE or { 0.75, 0.75, 0.75, 1 })
-    local adamant_active   = table.clone(RGBA1.NEEDLE_SPECIAL_ACTIVE or { 0.2, 1.0, 0.8, 1 })
+    --  • Cryptic segments: cyan
+    --  • Ogryn Back Off stacks: grey below guaranteed chance, orange at 9+
+    local zealot_outline                       = table.clone(RGBA1.dodge_color_negative_rgba or { 1, 0, 0, 1 })
+    local psyker_outline                       = table.clone(RGBA1.GRIMOIRE_PURPLE or { 0.6, 0.2, 0.8, 1 })
+    local adamant_inactive                     = table.clone(RGBA1.NEEDLE_SPECIAL_INACTIVE or { 0.75, 0.75, 0.75, 1 })
+    local adamant_active                       = table.clone(RGBA1.NEEDLE_SPECIAL_ACTIVE or { 0.2, 1.0, 0.8, 1 })
+    -- local cryptic_outline                      = table.clone(RGBA1.GENERIC_CYAN or { 0.24, 0.86, 0.86, 1 })
+    local cryptic_outline                      = table.clone(RGBA1.NEEDLE_SPECIAL_ACTIVE or { 0.2, 1.0, 0.8, 1 })
+    local ogryn_blo_dim_outline                 = table.clone(RGBA1.default_damage_color_rgba or { 0.5, 0.5, 0.5, 1 })
+    local ogryn_blo_bright_outline              = table.clone(RGBA1.AMMO_ORANGE or { 1.0, 0.51, 0.0, 1 })
 
-    local passes           = {
+    local passes                               = {
         -- Cooldown base
         {
             pass_type = "rotated_texture",
@@ -530,6 +819,8 @@ function TalentFeature.add_widgets(widget_defs, _, layout, palettes)
                     arc_top_bottom       = { TALENT_ARC_MAX, TALENT_ARC_MIN },
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color        = zealot_outline,
+                    -- SizeThicknessOutline = { 0.405, 0.027, 0.018 },
+                    SizeThicknessOutline = { 0.405, 0.027, 0.037 },
                 },
             },
         },
@@ -555,6 +846,8 @@ function TalentFeature.add_widgets(widget_defs, _, layout, palettes)
                     arc_top_bottom       = { TALENT_ARC_MAX, TALENT_ARC_MIN },
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color        = table.clone(zealot_outline),
+                    -- SizeThicknessOutline = { 0.405, 0.027, 0.018 },
+                    SizeThicknessOutline = { 0.405, 0.027, 0.037 },
                 },
             },
         },
@@ -583,6 +876,8 @@ function TalentFeature.add_widgets(widget_defs, _, layout, palettes)
                     arc_top_bottom       = { TALENT_ARC_MIN, TALENT_ARC_MIN },
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color        = table.clone(psyker_outline),
+                    -- SizeThicknessOutline = { 0.405, 0.027, 0.018 },
+                    SizeThicknessOutline = { 0.405, 0.027, 0.037 },
                 },
             },
         }
@@ -616,6 +911,8 @@ function TalentFeature.add_widgets(widget_defs, _, layout, palettes)
                     arc_top_bottom       = { TALENT_ARC_MIN, TALENT_ARC_MIN },
                     fill_outline_opacity = { 0.7, 0.5 },
                     outline_color        = table.clone(outline),
+                    -- SizeThicknessOutline = { 0.405, 0.027, 0.018 },
+                    SizeThicknessOutline = { 0.405, 0.027, 0.037 },
                 },
             },
         }
@@ -643,6 +940,100 @@ function TalentFeature.add_widgets(widget_defs, _, layout, palettes)
                     arc_top_bottom       = { TALENT_ARC_MIN, TALENT_ARC_MIN },
                     fill_outline_opacity = { 0.7, 0.5 },
                     outline_color        = table.clone(outline),
+                    -- SizeThicknessOutline = { 0.405, 0.027, 0.018 },
+                    SizeThicknessOutline = { 0.405, 0.027, 0.037 },
+                },
+            },
+        }
+    end
+
+    -- Cryptic segmented passes
+    for i = 1, CRYPTIC_MAX_SEGMENTS do
+        -- Base (filled)
+        passes[#passes + 1] = {
+            pass_type = "rotated_texture",
+            value     = "content/ui/materials/effects/forcesword_bar",
+            style_id  = "talent_cryptic_seg_" .. i,
+            style     = {
+                uvs                       = { { 0, 0 }, { 1, 1 } },
+                horizontal_alignment      = "center",
+                vertical_alignment        = "center",
+                offset                    = { 0, 0, 1 },
+                size                      = inner_size,
+                color                     = ARGB.GENERIC_WHITE,
+                visible                   = false,
+                pivot                     = { 0, 0 },
+                angle                     = 0,
+                __ringhud_outline_default = table.clone(cryptic_outline),
+                material_values           = {
+                    amount               = 1,
+                    glow_on_off          = 0,
+                    lightning_opacity    = 0,
+                    arc_top_bottom       = { TALENT_ARC_MIN, TALENT_ARC_MIN },
+                    fill_outline_opacity = { 1.3, 1.3 },
+                    outline_color        = table.clone(cryptic_outline),
+                    -- SizeThicknessOutline = { 0.405, 0.027, 0.018 },
+                    SizeThicknessOutline = { 0.405, 0.027, 0.036 },
+                },
+            },
+        }
+
+        -- Edge (outline-only leading sliver)
+        passes[#passes + 1] = {
+            pass_type = "rotated_texture",
+            value     = "content/ui/materials/effects/forcesword_bar",
+            style_id  = "talent_cryptic_seg_" .. i .. "_edge",
+            style     = {
+                uvs                       = { { 0, 0 }, { 1, 1 } },
+                horizontal_alignment      = "center",
+                vertical_alignment        = "center",
+                offset                    = { 0, 0, 2 },
+                size                      = inner_size,
+                color                     = ARGB.GENERIC_WHITE,
+                visible                   = false,
+                pivot                     = { 0, 0 },
+                angle                     = 0,
+                __ringhud_outline_default = table.clone(cryptic_outline),
+                material_values           = {
+                    amount               = 0,
+                    glow_on_off          = 0,
+                    lightning_opacity    = 0,
+                    arc_top_bottom       = { TALENT_ARC_MIN, TALENT_ARC_MIN },
+                    fill_outline_opacity = { 1.3, 1.3 },
+                    outline_color        = table.clone(cryptic_outline),
+                    -- SizeThicknessOutline = { 0.405, 0.027, 0.018 },
+                    SizeThicknessOutline = { 0.405, 0.027, 0.037 },
+                },
+            },
+        }
+    end
+
+    -- Ogryn Back Off stacks (10 discrete segments)
+    for i = 1, OGRYN_BLO_MAX_STACKS do
+        passes[#passes + 1] = {
+            pass_type = "rotated_texture",
+            value     = "content/ui/materials/effects/forcesword_bar",
+            style_id  = "talent_ogryn_blo_seg_" .. i,
+            style     = {
+                uvs                       = { { 0, 0 }, { 1, 1 } },
+                horizontal_alignment      = "center",
+                vertical_alignment        = "center",
+                offset                    = { 0, 0, 1 },
+                size                      = inner_size,
+                color                     = ARGB.GENERIC_WHITE,
+                visible                   = false,
+                pivot                     = { 0, 0 },
+                angle                     = 0,
+                __ringhud_outline_dim      = table.clone(ogryn_blo_dim_outline),
+                __ringhud_outline_bright   = table.clone(ogryn_blo_bright_outline),
+                material_values           = {
+                    amount               = 1,
+                    glow_on_off          = 0,
+                    lightning_opacity    = 0,
+                    arc_top_bottom       = { TALENT_ARC_MIN, TALENT_ARC_MIN },
+                    fill_outline_opacity = { 0.7, 0.5 },
+                    outline_color        = table.clone(ogryn_blo_dim_outline),
+                    SizeThicknessOutline = { 0.405, 0.027, 0.037 },
                 },
             },
         }

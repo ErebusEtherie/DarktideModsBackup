@@ -107,6 +107,7 @@ local CONFIG = {
 	},
 	soulblaze_text_colour = {
 		Soulblaze =		"Vampa d'anima",
+		Soulblaz =		"VdA",
 	},
 	stagger_text_colour = {
 		Stagger =		"Barcollamento",

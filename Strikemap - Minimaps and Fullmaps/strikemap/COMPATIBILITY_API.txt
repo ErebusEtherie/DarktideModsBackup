@@ -1,0 +1,236 @@
+STRIKEMAP COMPATIBILITY API - for external minimap mods (e.g. Radar)
+=====================================================================
+
+Strikemap can share its parsed mission geometry with other mods through a
+small, versioned, public API. The intended combined setup:
+
+- Strikemap provides mission geometry (walkable triangles plus derived
+  vector layers: walls, stair ticks, deck hatching, incline ink, ramp
+  chains) and mission recording.
+- The external mod (e.g. Radar) provides its own minimap widget, markers,
+  filtering and interaction logic, rendered from Strikemap's geometry.
+- Both mods must be installed and enabled; neither bundles the other's
+  assets or source. Strikemap works exactly as before when no consumer
+  is present or the integration settings are disabled.
+
+Settings (Mod Options -> Strikemap -> Compatibility):
+
+- "Allow External Mods to Use Strikemap Geometry" (default: on)
+  Enables the API. When off, get_status() reports available = false and
+  get_map_context() returns nil.
+- "Geometry-Only Mode" (default: off)
+  Strikemap keeps loading maps and recording mission reports, but stops all
+  of its own live minimap work: HUD rendering, enemy/objective/supply/pickup
+  marker scans, marker line-of-sight raycasts, teammate and ping updates.
+  The report browser and saved reports keep working.
+- "Auto-Disable Minimap for External Renderers" (default: off)
+  Behaves like Geometry-Only Mode automatically while the API is enabled and
+  at least one consumer is registered via register_consumer().
+
+OBTAINING THE API
+-----------------
+
+    local strikemap = get_mod("strikemap")
+    local api = strikemap and strikemap.get_compatibility_api
+        and strikemap:get_compatibility_api()
+
+    if not api or api.api_version ~= 1 then
+        -- unsupported; fall back to your own scanner
+        return
+    end
+
+The API table is stable for the whole session; fetch it once. Never read
+Strikemap's private state, local functions or widget internals.
+
+VERSIONING
+----------
+
+api.api_version is an integer. It increases ONLY when a compatibility-
+breaking change is made to the context fields, triangle layout, spatial-
+index layout, bounds representation, coordinate conventions or lifecycle
+behaviour. Backward-compatible additions (new fields) do NOT bump it.
+Reject versions you do not support and fall back gracefully.
+
+api.get_status()
+----------------
+
+Returns a status table. NOTE: the SAME table is reused between calls -
+read its fields immediately, do not keep or mutate it.
+
+    available          boolean  the compatibility setting is enabled
+    status             string   one of:
+                                "disabled"        API setting turned off
+                                "not_in_mission"  no active mission
+                                "loading"         map still loading/parsing
+                                "map_unavailable" mission has no map data
+                                "map_loaded"      context is available
+                                "error"           context build failed
+    map_loaded         boolean  get_map_context() would return a context
+    mission_name       string or nil
+    map_id             string or nil (currently equal to mission_name)
+    geometry_revision  integer  bumps whenever the exposed geometry changes
+    geometry_only      boolean  Strikemap's own live minimap is suppressed
+    recording_active   boolean  mission report recording is enabled
+
+Poll this (e.g. once per frame or slower) instead of probing internals;
+it never raises errors.
+
+api.get_map_context()
+---------------------
+
+Returns nil while no geometry is available (see status above), otherwise
+a read-only context table. Cache it and re-fetch whenever
+status.geometry_revision changes:
+
+    if status.geometry_revision ~= cached_revision then
+        cached_context = api.get_map_context()
+        cached_revision = status.geometry_revision
+    end
+
+Fields:
+
+    api_version     integer   same as api.api_version
+    mission_name    string    Darktide mission id (e.g. "dm_forge")
+    map_id          string    stable identifier for this geometry
+    revision        integer   geometry revision this context belongs to
+    triangles       number[]  flat array, 7 numbers per walkable triangle:
+                              x1, y1, x2, y2, x3, y3, z
+    tri_count       integer   number of triangles (#triangles / 7)
+    triangle_stride integer   always 7
+    grid_cell       number    spatial-index cell size in metres
+    spatial_index   table     see below
+    bounds          table     { x0, y0, x1, y1, z0, z1 } world extents
+    minimum_z       number    = bounds.z0
+    maximum_z       number    = bounds.z1
+
+api.get_vector_context()  (added in Strikemap v2.0.0)
+-----------------------------------------------------
+
+Additive extension - older Strikemap builds do not have it, so feature-
+detect with `if api.get_vector_context then`. api_version stays 1.
+
+Returns nil whenever get_map_context() would return nil, otherwise a
+read-only context with the derived VECTOR LAYERS Strikemap's own tactical
+renderer draws. Built lazily on your first request per geometry revision,
+then the exact same table is returned until the revision changes - cache
+it alongside the map context and re-fetch both when
+status.geometry_revision changes (context.revision matches it).
+
+Fields (all world coordinates, same contract as triangles):
+
+    contours          number[]  flat, 5 per segment: x1, y1, x2, y2, z
+    contour_count     integer   number of segments (#contours / 5)
+    contour_stride    integer   always 5
+        Walkable-surface boundary segments (walls, ledges); z is the floor
+        height of the bordering surface. Strikemap draws these as bright
+        wall strokes on the player's deck, thin outlines for decks above,
+        broken dashes for decks below.
+
+    stairs            number[]  flat, 6 per segment: x1, y1, x2, y2, z1, z2
+    stair_count       integer
+    stair_stride      integer   always 6
+        Elevation cross-lines where two floor heights meet ("stair ticks");
+        z1/z2 are the two heights. Strikemap draws them only near STEEP
+        chains (see chains below) so gentle terrain does not speckle.
+
+    hatches           number[]  flat, 5 per segment: x1, y1, x2, y2, z
+    hatch_count       integer
+    hatch_stride      integer   always 5
+    hatch_spacing     number    world metres between hatch lines
+        World-anchored 45-degree pattern lines (the x+y = k family) clipped
+        to each deck. Strikemap uses them as the below-deck line pattern
+        and the optional upper-deck hatching.
+
+    slopes            number[]  flat, 5 per segment: x1, y1, x2, y2, z
+    slope_count       integer
+    slope_stride      integer   always 5
+        Incline ink: the same hatch family clipped per navmesh triangle
+        around GENTLE ramp chains. Use these (not `hatches`) to mark
+        walkable inclines - the polygon-level hatch data skips the thin
+        elevation bands ramps are made of.
+
+    transitions       number[]  flat, 4 per anchor: x, y, z_low, z_high
+    transition_count  integer
+    transition_stride integer   always 4
+        Ramp/stair contact anchors sampled roughly every 6 m along each
+        elevation-band contact.
+
+    transition_chain  integer[] 1-based chain id per transition anchor
+    chains            table[]   { zlo, zhi, steep } per chain
+        Anchors unioned into physical flights. steep = true means a real
+        staircase/steep ramp (metres of climb over a short run - Strikemap
+        draws stair ticks there); non-steep chains spanning >= 1.6 m of
+        height are the gentle inclines that receive slope ink.
+
+No spatial index is provided for vector layers: per-mission counts are a
+few thousand segments, so build and cache your own culling structure on
+your side, as with parsed spatial-index cells.
+
+COORDINATE CONTRACT
+-------------------
+
+- All coordinates are Darktide WORLD coordinates in metres, Z-up. They can
+  be compared directly with Unit.world_position values (x east, y north,
+  z height); triangle z vs. player z gives the floor/elevation relation.
+- Each triangle stores three 2D vertices (x1,y1 / x2,y2 / x3,y3) plus ONE
+  shared floor height z: triangle i (1-based) occupies
+  triangles[(i-1)*7 + 1] .. triangles[i*7].
+- Vertex winding order is NOT guaranteed; render triangles double-sided /
+  as plain 2D fills.
+- bounds is the axis-aligned extent over all triangle vertices (x0/y0 min,
+  x1/y1 max) and floor heights (z0 min, z1 max).
+
+SPATIAL INDEX
+-------------
+
+spatial_index maps cell keys to packed strings of triangle indices:
+
+    key   = gx .. ":" .. gy      -- gx = math.floor(world_x / grid_cell)
+                                  -- gy = math.floor(world_y / grid_cell)
+    value = "1,5,9"              -- comma-separated 1-based triangle indices
+
+Cells containing no triangles are absent. A triangle may appear in several
+cells; de-duplicate per frame when culling. Parse the strings lazily and
+cache the parsed arrays on YOUR side - do not write parsed results (or
+anything else) back into the context tables.
+
+DATA MUTABILITY
+---------------
+
+Both contexts share table references with Strikemap's own renderer
+(`chains`/`transition_chain` are built for the API but equally covered).
+They are strictly read-only. Consumers must not:
+
+- modify triangle values, the triangles array or any vector-layer array
+- add fields to, reorder or extend any context table
+- modify spatial-index cells
+- replace map-context or vector-context fields
+
+References stay valid until geometry_revision changes. Fixed missions usually
+keep one revision for their entire run. Expedition geometry grows live and can
+change revision as each procedural section is scanned; its triangle array may
+be extended in place and its spatial_index snapshot is replaced. Drop every
+cached context reference on a revision change. Mission and expedition-section
+transitions also invalidate the previous context.
+
+CONSUMER REGISTRATION (optional)
+--------------------------------
+
+    api.register_consumer("Radar")     -- returns true when accepted
+    api.unregister_consumer("Radar")
+
+The id is an informational string used for diagnostics (/strikemap_diag)
+and the "Auto-Disable Minimap for External Renderers" setting. Registration
+persists across missions until unregistered; register once at startup /
+on_enabled and unregister on_disabled. Neither call creates a dependency
+on the consumer, and consumer errors never disable Strikemap.
+
+ERROR HANDLING
+--------------
+
+All API functions fail safely: no exceptions propagate to the caller, and
+map-load or parse failures surface as status "map_unavailable" / "error"
+with a nil context while Strikemap's remaining features (including mission
+recording and the report browser) keep working. The API is safe to call
+from your draw function, but cache the context as shown above rather than
+re-fetching every frame.

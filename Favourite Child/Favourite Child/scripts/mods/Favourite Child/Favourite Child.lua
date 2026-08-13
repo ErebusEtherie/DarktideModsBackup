@@ -1,9 +1,9 @@
 --[[
 Title: Favourite Child
 Author: Wobin
-Date: 27/09/2025
+Date: 08/07/2026
 Repository: https://github.com/Wobin/FavouriteChild
-Version: 1.2.0
+Version: 1.2.1
 --]]
 
 
@@ -11,10 +11,19 @@ local mod = get_mod("Favourite Child")
 local currentFaves = mod:get("favourite_child_info") or {}
 
 local star_icon = "content/ui/materials/icons/presets/preset_15"
-local firstTime = false
 local table = table
 
-mod.version = "1.2.0"
+mod.version = "1.2.1"
+
+local function find_by_key(t, search_key, search_value)
+  if type(t) ~= "table" then return nil end
+  for key, value in pairs(t) do
+    if type(value) == "table" and value[search_key] == search_value then
+      return key, value
+    end
+  end
+  return nil
+end
 
 local favourite_button_def = {  
 		alignment = "right_alignment",
@@ -22,9 +31,11 @@ local favourite_button_def = {
 		input_action = "hotkey_item_favorite",
 		on_pressed_callback = "_on_favourite_selected_character_pressed",
 		visibility_function = function (parent, id)   
-         if not parent or not parent._selected_profile then return false end
-         local _, entry = table.find_by_key(parent._input_legend_element._entries, "input_action", "hotkey_item_favorite")
-         parent._input_legend_element:set_display_name( entry.id, currentFaves[parent._selected_profile.character_id] and "loc_inventory_remove_favorite" or "loc_inventory_add_favorite")
+         if not parent or not parent._selected_profile or not parent._input_legend_element then return false end
+         local _, entry = find_by_key(parent._input_legend_element._entries, "input_action", "hotkey_item_favorite")
+         if entry then
+           parent._input_legend_element:set_display_name( entry.id, currentFaves[parent._selected_profile.character_id] and "loc_inventory_remove_favorite" or "loc_inventory_add_favorite")
+         end
         return not parent._is_main_menu_open and parent._character_details_active           
 		end,	
   }
@@ -53,18 +64,20 @@ local	extra_icon_pass = {
 	}
 
 mod:hook_require("scripts/ui/views/main_menu_view/main_menu_view_definitions", function(defs)
-    local _, input = table.find_by_key(defs.legend_inputs, "display_name", "loc_main_menu_delete_button")
-    local _, alreadyExists = table.find_by_key(defs.legend_inputs, "input_action", "hotkey_item_favorite")
-    input.visibility_function = function(parent)        
-        return not parent._is_main_menu_open and parent._character_details_active and not currentFaves[parent._selected_profile.character_id]
-      end                   
+    local _, input = find_by_key(defs.legend_inputs, "display_name", "loc_main_menu_delete_button")
+    local _, alreadyExists = find_by_key(defs.legend_inputs, "input_action", "hotkey_item_favorite")
+    if input then
+      input.visibility_function = function(parent)
+          return not parent._is_main_menu_open and parent._character_details_active and not currentFaves[parent._selected_profile.character_id]
+        end
+    end
     if not alreadyExists then
       table.insert(defs.legend_inputs, favourite_button_def)
     end
 end)
 
 mod:hook_require("scripts/ui/pass_templates/character_select_pass_templates", function(defs)
-    local _, alreadyExists = table.find_by_key(defs.character_select, "value_id", "myfavchild_icon")    
+    local _, alreadyExists = find_by_key(defs.character_select, "value_id", "myfavchild_icon")
     if not alreadyExists then
       table.insert(defs.character_select, extra_icon_pass)
     end
@@ -76,10 +89,9 @@ mod.on_all_mods_loaded = function()
   mod:info(mod.version)
   Managers.package:load(package_name, "Favourite Child")
   if type(CLASS.MainMenuView) ~= "table" then 
-    Promise.delay(10):next(function() 
+    Promise.delay(10):next(function()
             mod.on_all_mods_loaded()
-            return
-        end)    
+        end)
   else
     CLASS.MainMenuView._on_favourite_selected_character_pressed = function(self)
       if not self or not self._selected_profile or not self._selected_profile.character_id then return end

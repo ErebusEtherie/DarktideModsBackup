@@ -25,13 +25,14 @@ end
 table.sort(color_options, function(a,b) return a.text < b.text end)
 table.insert(color_options, 1, { text = "default", value = "default" })
 
-local function stage_color_widgets(stage, default_r, default_g, default_b)
+local function stage_color_widgets(stage, default_r, default_g, default_b, tab_name)
 	local stage_color_options = table.clone(color_options)
 	stage_color_options[1] = { text = "default_" .. stage, value = "default" }
 	
 	return {
 		setting_id = stage,
 		type = "group",
+		tab = tab_name,
 		sub_widgets = {
 			{
 				setting_id = stage .. "_preset",
@@ -65,7 +66,13 @@ local widgets = {
 	{
 		setting_id = "display_group",
 		type = "group",
+		tab = mod:localize("general"),
 		sub_widgets = {
+			{
+				setting_id = "track_standard_stims",
+				type = "checkbox",
+				default_value = true,
+			},
 			{
 				setting_id = "font_size",
 				type = "numeric",
@@ -93,6 +100,7 @@ local widgets = {
 	{
 		setting_id = "shared_position_group",
 		type = "group",
+		tab = mod:localize("general"),
 		sub_widgets = {
 			{
 				setting_id = "shared_icon_x",
@@ -123,6 +131,7 @@ local widgets = {
 		{
 			setting_id = "ready_group",
 			type = "group",
+			tab = mod:localize("ready_group"),
 			sub_widgets = {
 				{
 					setting_id = "ready_icon_x",
@@ -146,6 +155,7 @@ local widgets = {
 		{
 			setting_id = "active_group",
 			type = "group",
+			tab = mod:localize("active_group"),
 			sub_widgets = {
 				{
 					setting_id = "active_icon_x",
@@ -186,6 +196,7 @@ local widgets = {
 		{
 			setting_id = "cooldown_group",
 			type = "group",
+			tab = mod:localize("cooldown_group"),
 			sub_widgets = {
 				{
 					setting_id = "cooldown_icon_x",
@@ -225,9 +236,9 @@ local widgets = {
 	},
 }
 
-widgets[#widgets+1] = stage_color_widgets("active", 226, 199, 126)
-widgets[#widgets+1] = stage_color_widgets("cooldown", 246, 69, 69)
-widgets[#widgets+1] = stage_color_widgets("ready", 74, 177, 85)
+widgets[#widgets+1] = stage_color_widgets("active", 226, 199, 126, mod:localize("active_group"))
+widgets[#widgets+1] = stage_color_widgets("cooldown", 246, 69, 69, mod:localize("cooldown_group"))
+widgets[#widgets+1] = stage_color_widgets("ready", 74, 177, 85, mod:localize("ready_group"))
 
 return {
 	name = mod:localize("mod_name"),

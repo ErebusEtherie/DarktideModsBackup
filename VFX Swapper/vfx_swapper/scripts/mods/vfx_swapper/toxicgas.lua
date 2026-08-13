@@ -22,11 +22,20 @@ end
 -- ============================================================================
 -- Block Toxic Gas Geysers (Corals)
 -- ============================================================================
+local _disable_coral_vfx = nil
+local _disable_toxic_gas = nil
 
+local function refresh_toxicgas_cache()
+    _disable_coral_vfx = mod:get("disable_coral_vfx")
+    _disable_toxic_gas = mod:get("disable_toxic_gas")
+end
+
+mod._refresh_toxicgas_cache = refresh_toxicgas_cache
+refresh_toxicgas_cache()
 -- The toxic gas geysers (called "corals" in the code) use Unit.flow_event to spawn VFX
 mod:hook("Unit", "flow_event", function(func, unit, event_name)
 
-    if event_name and mod:get("disable_coral_vfx") then    
+    if event_name and _disable_coral_vfx then    
         -- Block toxic gas geyser events
         if blocked_events[event_name] then
             debug_log("[BLOCKING GEYSER] " .. tostring(event_name))

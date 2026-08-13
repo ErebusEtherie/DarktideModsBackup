@@ -1,31 +1,23 @@
 -- File: RingHud/scripts/mods/RingHud/core/HudElementRingHud_team_nameplate.lua
--- Note: Compatible with edge stacking (style-offset pushes). This file does NOT
--- adjust widget.root offsets; it only hijacks nameplates to our template and handles refresh.
+-- Hijacks teammate nameplates to RingHud's floating template and handles refresh.
 local mod = get_mod("RingHud")
 if not mod then return {} end
 
-mod.floating_manager           = mod.floating_manager or {}
+mod.floating_manager             = mod.floating_manager or {}
 
-mod._deferred_marker_additions = mod._deferred_marker_additions or {}
-mod._tracked_item_units        = mod._tracked_item_units or mod:persistent_table("tracked_item_units")
-
--- Frame counter for edge-stacker resets (incremented once per HEWM:update)
-mod._edge_stack_frame_id       = mod._edge_stack_frame_id or 0
-
-----------------------------------------------------------------
--- Imports (sizes / settings constants)
-----------------------------------------------------------------
-local C                        = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/constants")
+mod._deferred_marker_additions   = mod._deferred_marker_additions or {}
+mod._tracked_item_units          = mod._tracked_item_units or mod:persistent_table("tracked_item_units")
 
 -- Central teammate-name helper (vanilla name + slot-tinted markup)
-local Name                     = mod.team_names or mod:io_dofile("RingHud/scripts/mods/RingHud/team/team_names")
+local Name                       = mod.team_names or mod:io_dofile("RingHud/scripts/mods/RingHud/team/team_names")
 
 -- Visibility helpers (kept for other uses)
-mod.team_visibility            = mod.team_visibility or mod:io_dofile("RingHud/scripts/mods/RingHud/team/visibility")
-local V                        = mod.team_visibility
+mod.team_visibility              = mod.team_visibility or mod:io_dofile("RingHud/scripts/mods/RingHud/team/visibility")
+local V                          = mod.team_visibility
 
--- Ensure a central, scale-aware step is available for the template (optional override via settings)
-mod.EDGE_STACK_GAP             = mod.EDGE_STACK_GAP or C.TILE_SIZE
+local UIWidget                   = require("scripts/managers/ui/ui_widget")
+
+local RINGHUD_WORLD_MARKER_LAYER = 310
 
 ----------------------------------------------------------------
 -- Mode helpers
@@ -78,7 +70,7 @@ local function _player_for_unit(unit)
     return nil
 end
 
--- Hijack BOTH mission teammate plate types so we always render our floating tiles at the edge.
+-- Hijack both mission teammate plate types so we always render our floating tiles.
 local HIJACKABLE_TYPES = { nameplate_party = true, nameplate_combat = true }
 
 -- Should we redirect this vanilla nameplate to our RingHud template?
@@ -236,15 +228,20 @@ local function _refresh_ringhud_marker_names(self_hewm)
     local list = self_hewm._markers_by_type.ringhud_teammate_tile
     if not list or type(list) ~= "table" then return end
 
-    local now = (Managers.time and Managers.time:time("ui")) or (Managers.time and Managers.time:time("gameplay")) or
-        os.clock()
+    local now = (Managers.time and Managers.time:time("ui"))
+        or (Managers.time and Managers.time:time("gameplay"))
+        or os.clock()
     local interval = _name_refresh_interval()
 
     local function _each(tbl, fn)
         if #tbl > 0 then
-            for i = 1, #tbl do fn(tbl[i]) end
+            for i = 1, #tbl do
+                fn(tbl[i])
+            end
         else
-            for _, v in pairs(tbl) do fn(v) end
+            for _, v in pairs(tbl) do
+                fn(v)
+            end
         end
     end
 
@@ -303,7 +300,15 @@ local function _propagate_header_to_name_text(self_hewm)
     local names_enabled = _floating_name_setting_enabled()
 
     local function each(tbl, fn)
-        if #tbl > 0 then for i = 1, #tbl do fn(tbl[i]) end else for _, v in pairs(tbl) do fn(v) end end
+        if #tbl > 0 then
+            for i = 1, #tbl do
+                fn(tbl[i])
+            end
+        else
+            for _, v in pairs(tbl) do
+                fn(v)
+            end
+        end
     end
 
     each(list, function(marker)
@@ -315,7 +320,9 @@ local function _propagate_header_to_name_text(self_hewm)
             -- Setting disables floating names: force the rendered name text to blank.
             if wc.name_text_value ~= "" then
                 wc.name_text_value = ""
-                if w then w.dirty = true end
+                if w then
+                    w.dirty = true
+                end
             end
             return
         end
@@ -334,7 +341,15 @@ local function _apply_floating_name_visibility(self_hewm)
     if not list or type(list) ~= "table" then return end
 
     local function each(tbl, fn)
-        if #tbl > 0 then for i = 1, #tbl do fn(tbl[i]) end else for _, v in pairs(tbl) do fn(v) end end
+        if #tbl > 0 then
+            for i = 1, #tbl do
+                fn(tbl[i])
+            end
+        else
+            for _, v in pairs(tbl) do
+                fn(v)
+            end
+        end
     end
 
     each(list, function(marker)
@@ -351,17 +366,77 @@ local function _apply_floating_name_visibility(self_hewm)
 end
 
 ----------------------------------------------------------------
--- Unified hook (ONLY this file hooks event_add_world_marker_unit and update)
+-- Fixed-layer RingHud marker drawing
+----------------------------------------------------------------
+local function _is_ringhud_marker_type(marker_type)
+    return type(marker_type) == "string"
+        and (
+            marker_type:sub(1, 8) == "ringhud_"
+            or marker_type:sub(1, 8) == "RingHud_"
+        )
+end
+
+local function _draw_ringhud_marker_at_fixed_layer(self_hewm, marker, ui_renderer)
+    local widget   = marker and marker.widget
+    local content  = widget and widget.content
+    local template = marker and marker.template
+
+    if not (widget and content and template) then
+        return
+    end
+
+    local distance       = content.distance
+    local scale_settings = template.scale_settings
+
+    if scale_settings then
+        marker.scale = self_hewm:_get_scale(scale_settings, distance)
+
+        self_hewm:_apply_scale(
+            widget,
+            marker.ignore_scale and 1 or marker.scale
+        )
+    end
+
+    local alpha_multiplier = 1
+    local fade_settings    = template.fade_settings
+
+    if fade_settings and not marker.block_fade_settings then
+        alpha_multiplier = self_hewm:_get_fade(fade_settings, distance)
+    end
+
+    local offset = widget.offset
+    if not offset then
+        return
+    end
+
+    local previous_z                = offset[3]
+    local previous_alpha_multiplier = widget.alpha_multiplier
+
+    offset[3]                       = RINGHUD_WORLD_MARKER_LAYER
+    widget.alpha_multiplier         = (previous_alpha_multiplier or 1) * alpha_multiplier
+
+    UIWidget.draw(widget, ui_renderer)
+
+    widget.alpha_multiplier = previous_alpha_multiplier
+    offset[3] = previous_z
+end
+
+----------------------------------------------------------------
+-- Unified hooks (ONLY this file hooks event_add_world_marker_unit, update, and _draw_markers)
 ----------------------------------------------------------------
 function mod.floating_manager.install()
     if CLASS and CLASS.HudElementWorldMarkers and not mod._floating_hijack_hooked then
-        mod:hook(CLASS.HudElementWorldMarkers, "event_add_world_marker_unit",
+        mod:hook(
+            CLASS.HudElementWorldMarkers,
+            "event_add_world_marker_unit",
             function(func, self_hewm, marker_type, unit, callback, data)
-                local heavy_check_needed = (marker_type == "nameplate_party" or marker_type == "nameplate_combat" or marker_type == "interaction")
+                local heavy_check_needed = marker_type == "nameplate_party"
+                    or marker_type == "nameplate_combat"
+                    or marker_type == "interaction"
 
                 if heavy_check_needed then
                     local ui_t = (Managers and Managers.time and Managers.time:time("ui")) or 0
-                    if not self_hewm._rh_last_ensure_t or (ui_t - self_hewm._rh_last_ensure_t) > 1 then
+                    if not self_hewm._rh_last_ensure_t or ui_t - self_hewm._rh_last_ensure_t > 1 then
                         self_hewm._rh_last_ensure_t = ui_t
                         _ensure_ringhud_template(self_hewm)
                         _sanitize_all_ringhud_templates(self_hewm)
@@ -388,7 +463,9 @@ function mod.floating_manager.install()
 
                         -- Defer adding the invisible tracker marker; ProximitySystem will process this queue.
                         if not mod._deferred_marker_additions[unit] then
-                            mod._deferred_marker_additions[unit] = { rh_pickup_name = pickup_name }
+                            mod._deferred_marker_additions[unit] = {
+                                rh_pickup_name = pickup_name
+                            }
                         end
                     end
                 end
@@ -409,20 +486,120 @@ function mod.floating_manager.install()
                         data.header_text = data.header_text or ""
                     end
 
-                    return func(self_hewm, "ringhud_teammate_tile", unit, callback, data)
+                    return func(
+                        self_hewm,
+                        "ringhud_teammate_tile",
+                        unit,
+                        callback,
+                        data
+                    )
                 end
 
-                return func(self_hewm, marker_type, unit, callback, data)
+                return func(
+                    self_hewm,
+                    marker_type,
+                    unit,
+                    callback,
+                    data
+                )
             end
         )
+
         mod._floating_hijack_hooked = true
+    end
+
+    if CLASS and CLASS.HudElementWorldMarkers and not mod._hewm_draw_markers_hooked then
+        mod:hook(
+            CLASS.HudElementWorldMarkers,
+            "_draw_markers",
+            function(func, self_hewm, dt, t, input_service, ui_renderer, render_settings)
+                local markers_by_type = self_hewm._markers_by_type
+
+                if not markers_by_type or not self_hewm:_get_camera() then
+                    return func(
+                        self_hewm,
+                        dt,
+                        t,
+                        input_service,
+                        ui_renderer,
+                        render_settings
+                    )
+                end
+
+                local has_ringhud_markers = false
+
+                for marker_type, markers in pairs(markers_by_type) do
+                    if _is_ringhud_marker_type(marker_type) and type(markers) == "table" then
+                        for i = 1, #markers do
+                            local marker = markers[i]
+
+                            if marker then
+                                marker._ringhud_saved_draw = marker.draw
+                                marker.draw = false
+                                has_ringhud_markers = true
+                            end
+                        end
+                    end
+                end
+
+                if not has_ringhud_markers then
+                    return func(
+                        self_hewm,
+                        dt,
+                        t,
+                        input_service,
+                        ui_renderer,
+                        render_settings
+                    )
+                end
+
+                local result = func(
+                    self_hewm,
+                    dt,
+                    t,
+                    input_service,
+                    ui_renderer,
+                    render_settings
+                )
+
+                for marker_type, markers in pairs(markers_by_type) do
+                    if _is_ringhud_marker_type(marker_type) and type(markers) == "table" then
+                        for i = 1, #markers do
+                            local marker = markers[i]
+
+                            if marker then
+                                local draw = marker._ringhud_saved_draw
+
+                                marker._ringhud_saved_draw = nil
+                                marker.draw = draw
+
+                                if draw then
+                                    _draw_ringhud_marker_at_fixed_layer(
+                                        self_hewm,
+                                        marker,
+                                        ui_renderer
+                                    )
+                                end
+                            end
+                        end
+                    end
+                end
+
+                return result
+            end
+        )
+
+        mod._hewm_draw_markers_hooked = true
     end
 
     local function prepass_merge_safety(self_hewm)
         _ensure_vanilla_nameplate_buckets(self_hewm)
 
-        local DEFAULT_EASING = (math and math.ease_out_quad) or function(x) return x end
+        local DEFAULT_EASING = (math and math.ease_out_quad) or function(x)
+            return x
+        end
         local tmpls = self_hewm._marker_templates
+
         if tmpls then
             for _, tpl in pairs(tmpls) do
                 local fs = tpl and tpl.fade_settings
@@ -434,6 +611,7 @@ function mod.floating_manager.install()
 
         local templates = self_hewm._marker_templates or {}
         local by_type   = self_hewm._markers_by_type or {}
+
         for marker_type, list in pairs(by_type) do
             if type(marker_type) == "string" and marker_type:sub(1, 8) == "ringhud_" then
                 if not templates[marker_type] and type(list) == "table" and next(list) ~= nil then
@@ -441,16 +619,25 @@ function mod.floating_manager.install()
                         for i = #list, 1, -1 do
                             local m = list[i]
                             if m and m.unit then
-                                Managers.event:trigger("remove_world_marker_by_unit", marker_type, m.unit)
+                                Managers.event:trigger(
+                                    "remove_world_marker_by_unit",
+                                    marker_type,
+                                    m.unit
+                                )
                             end
                             list[i] = nil
                         end
                     else
                         for _, m in pairs(list) do
                             if m and m.unit then
-                                Managers.event:trigger("remove_world_marker_by_unit", marker_type, m.unit)
+                                Managers.event:trigger(
+                                    "remove_world_marker_by_unit",
+                                    marker_type,
+                                    m.unit
+                                )
                             end
                         end
+
                         for k in pairs(list) do
                             list[k] = nil
                         end
@@ -462,32 +649,46 @@ function mod.floating_manager.install()
 
     if CLASS and CLASS.HudElementWorldMarkers and not mod._hewm_update_hooked then
         if CLASS.HudElementWorldMarkers.update then
-            mod:hook(CLASS.HudElementWorldMarkers, "update",
+            mod:hook(
+                CLASS.HudElementWorldMarkers,
+                "update",
                 function(func, self_hewm, dt, t, ui_renderer, render_settings, input_service, ...)
                     prepass_merge_safety(self_hewm)
 
-                    mod._edge_stack_frame_id = (mod._edge_stack_frame_id or 0) + 1
-
-                    local ret = func(self_hewm, dt, t, ui_renderer, render_settings, input_service, ...)
+                    local ret = func(
+                        self_hewm,
+                        dt,
+                        t,
+                        ui_renderer,
+                        render_settings,
+                        input_service,
+                        ...
+                    )
 
                     _watch_resolution_and_refresh()
                     _refresh_ringhud_marker_names(self_hewm)
-
                     _propagate_header_to_name_text(self_hewm)
-
                     _apply_floating_name_visibility(self_hewm)
 
                     return ret
-                end)
+                end
+            )
+
             mod._hewm_update_hooked = true
         elseif CLASS.HudElementWorldMarkers.update_function then
-            mod:hook(CLASS.HudElementWorldMarkers, "update_function",
+            mod:hook(
+                CLASS.HudElementWorldMarkers,
+                "update_function",
                 function(func, self_hewm, ui_renderer, dt, t, ...)
                     prepass_merge_safety(self_hewm)
 
-                    mod._edge_stack_frame_id = (mod._edge_stack_frame_id or 0) + 1
-
-                    local ret = func(self_hewm, ui_renderer, dt, t, ...)
+                    local ret = func(
+                        self_hewm,
+                        ui_renderer,
+                        dt,
+                        t,
+                        ...
+                    )
 
                     _watch_resolution_and_refresh()
                     _refresh_ringhud_marker_names(self_hewm)
@@ -495,7 +696,9 @@ function mod.floating_manager.install()
                     _apply_floating_name_visibility(self_hewm)
 
                     return ret
-                end)
+                end
+            )
+
             mod._hewm_update_hooked = true
         end
     end
@@ -506,13 +709,15 @@ function mod.floating_manager.on_hewm_ready(hewm_instance)
     mod._hewm_world_markers = hewm_instance
     _sanitize_all_ringhud_templates(hewm_instance)
     _ensure_vanilla_nameplate_buckets(hewm_instance)
+
     if _mode_is_floating() then
         _refresh_existing_nameplates()
     end
 end
 
 function mod.floating_manager.set_enabled(is_enabled)
-    mod._floating_enabled = (is_enabled == true)
+    mod._floating_enabled = is_enabled == true
+
     if mod._floating_enabled then
         _refresh_existing_nameplates()
     end
@@ -520,15 +725,28 @@ end
 
 function mod.floating_manager.bump_names()
     local hewm = rawget(mod, "_hewm_world_markers")
-    local list = hewm and hewm._markers_by_type and hewm._markers_by_type.ringhud_teammate_tile
+    local list = hewm
+        and hewm._markers_by_type
+        and hewm._markers_by_type.ringhud_teammate_tile
+
     if not list then return end
 
     local function each(tbl, fn)
-        if #tbl > 0 then for i = 1, #tbl do fn(tbl[i]) end else for _, v in pairs(tbl) do fn(v) end end
+        if #tbl > 0 then
+            for i = 1, #tbl do
+                fn(tbl[i])
+            end
+        else
+            for _, v in pairs(tbl) do
+                fn(v)
+            end
+        end
     end
 
     each(list, function(marker)
-        if marker then marker._rh_name_next_refresh_at = 0 end
+        if marker then
+            marker._rh_name_next_refresh_at = 0
+        end
     end)
 end
 
@@ -536,21 +754,23 @@ function mod.floating_manager.apply_settings(setting_id)
     if setting_id == "team_hud_mode" then
         _refresh_existing_nameplates()
     elseif setting_id == "team_tiles_scale" then
-        if type(mod.recompute_edge_marker_size) == "function" then
-            mod.recompute_edge_marker_size()
+        if type(mod.recompute_tile_scalars) == "function" then
+            mod.recompute_tile_scalars()
         else
             local C2 = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/constants")
-            if C2 and type(C2.recompute_edge_marker_size) == "function" then
-                C2.recompute_edge_marker_size()
+
+            if C2 and type(C2.recompute_tile_scalars) == "function" then
+                C2.recompute_tile_scalars()
             end
         end
-        mod.EDGE_STACK_GAP = C.TILE_SIZE
+
         if _mode_is_floating() then
             _refresh_existing_nameplates()
         end
-    elseif setting_id == "team_hp_bar" or
-        setting_id == "team_munitions" or
-        setting_id == "team_pockets" then
+    elseif setting_id == "team_hp_bar"
+        or setting_id == "team_munitions"
+        or setting_id == "team_pockets"
+    then
         if _mode_is_floating() then
             _refresh_existing_nameplates()
         end

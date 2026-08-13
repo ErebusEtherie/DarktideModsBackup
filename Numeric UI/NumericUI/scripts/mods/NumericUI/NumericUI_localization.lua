@@ -107,7 +107,7 @@ local loc = {
 	peril_icon = {
 		en = "Show peril icon",
 		["zh-cn"] = "显示危机值图标",
-		["zh-tw"] = "顯示危機值圖示",
+		["zh-tw"] = "顯示反噬圖示",
 		ru = "Показывать значок опасности",
 		fr = "Affiche l'icône du péril",
 	},
@@ -424,6 +424,9 @@ local loc = {
 		["zh-cn"] = "显示法务官标记骷髅图标",
 		["zh-tw"] = "顯示法務官標記骷髏圖示",
 	},
+	show_skit_ping_skull = {
+		en = "Show Skitarius tag skull",
+	},
 	ammo_text_font_size = {
 		en = "Ammo text font size",
 		ru = "Размер шрифта текста боеприпасов",
@@ -470,7 +473,7 @@ for _, color_name in ipairs(color_names) do
 	local color_values = Color[color_name](255, true)
 	local text = InputUtils.apply_color_to_input_text(readable(color_name), color_values)
 	loc[color_name] = {
-		en = text
+		en = text,
 	}
 end
 

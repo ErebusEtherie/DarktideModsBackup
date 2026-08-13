@@ -13,6 +13,9 @@ local UIFontSettings           = require("scripts/managers/ui/ui_font_settings")
 
 local PerilFeature             = {}
 
+local PERIL_ARC_BOTTOM        = 0.01
+local PERIL_ARC_TOP           = 0.495
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Cross-file helpers for PERIL/OVERHEAT (exposed on `mod.*`)
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -41,17 +44,49 @@ function mod.peril_read_slot_overheat(unit_data_comp_access_point, slot_name)
     return (comp and comp.overheat_current_percentage) or 0
 end
 
--- Arc envelope must match the widget defaults (arc_top_bottom = { 0.50, 0.01 })
-local PERIL_ARC_BOTTOM  = 0.01
-local PERIL_ARC_TOP     = 0.50
-
 local peril_color_steps = { 0.2125, 0.425, 0.6375, 0.834, 0.984, 1.0 }
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Layout Application
+-- ─────────────────────────────────────────────────────────────────────────────
+function PerilFeature.apply_layout(widget, text_widget, ctx)
+    local apply_shake_offset = U.apply_shake_to_style_offset
+
+    if widget and widget.style then
+        local changed = false
+        local style = widget.style
+
+        if style.peril_bar and apply_shake_offset(
+                style.peril_bar, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, ctx.n_user_bias_px, ctx.user_bias_px
+            ) then
+            changed = true
+        end
+        if style.peril_edge and apply_shake_offset(
+                style.peril_edge, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, ctx.n_user_bias_px, ctx.user_bias_px
+            ) then
+            changed = true
+        end
+        if style.peril_other_edge and apply_shake_offset(
+                style.peril_other_edge, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, ctx.n_user_bias_px, ctx.user_bias_px
+            ) then
+            changed = true
+        end
+
+        if changed then widget.dirty = true end
+    end
+
+    if text_widget and text_widget.style and text_widget.style.percent_text_style then
+        if apply_shake_offset(text_widget.style.percent_text_style, 0, 0, 2, ctx.apply_shake, ctx.dx, ctx.dy, ctx.n_text_bias_comb, ctx.text_bias_comb) then
+            text_widget.dirty = true
+        end
+    end
+end
 
 function PerilFeature.update(hud_element, widgets, hud_state, hotkey_override)
     if not widgets then return end
 
-    local widget      = widgets.peril_bar
-    local text_widget = widgets.peril_text_display_widget
+    local widget                          = widgets.peril_bar
+    local text_widget                     = widgets.peril_text_display_widget
 
     if not widget or not widget.style then return end
 
@@ -96,24 +131,34 @@ function PerilFeature.update(hud_element, widgets, hud_state, hotkey_override)
         or mod.PALETTE_RGBA1.peril_color_spectrum[1]
 
     -- Crosshair override mirrors existing behavior
+    -- OPTIMIZATION: Pre-allocated reusable color tables instead of table.clone per change
     if mod._settings.peril_crosshair_enabled and fraction > 0 then
         local last = mod._last_crosshair_override_argb
         local cur  = current_peril_color_argb
         if (not last)
             or last[1] ~= cur[1] or last[2] ~= cur[2]
             or last[3] ~= cur[3] or last[4] ~= cur[4] then
-            -- Fix: Use the Crosshair module API if available, ensuring 255 alpha
-            local target_color = table.clone(cur)
+            local target_color = mod._peril_target_color_reuse
+            if not target_color then
+                target_color = { 255, 0, 0, 0 }
+                mod._peril_target_color_reuse = target_color
+            end
             target_color[1] = 255
+            target_color[2] = cur[2]
+            target_color[3] = cur[3]
+            target_color[4] = cur[4]
 
             if mod.crosshair and mod.crosshair.set_override_color then
                 mod.crosshair.set_override_color(target_color)
             else
-                -- Fallback for legacy state
                 mod.override_color = target_color
             end
 
-            mod._last_crosshair_override_argb = table.clone(cur)
+            if not last then
+                mod._last_crosshair_override_argb = { cur[1], cur[2], cur[3], cur[4] }
+            else
+                last[1], last[2], last[3], last[4] = cur[1], cur[2], cur[3], cur[4]
+            end
         end
     elseif mod._last_crosshair_override_argb ~= nil then
         -- Fix: Use the Crosshair module API to clear
@@ -218,15 +263,20 @@ function PerilFeature.update(hud_element, widgets, hud_state, hotkey_override)
         text_changed = U.set_style_visible(label_style, want_label == true, text_changed)
 
         if want_label then
-            local text = string.format(U.percent_num_format, fraction * 100)
-            if text_widget.content.percent_text ~= text then
-                text_widget.content.percent_text = text; text_changed = true
+            local int_pct = math.floor(fraction * 100 + 0.5)
+            if text_widget._cached_int_pct ~= int_pct then
+                local text = string.format(U.percent_num_format, fraction * 100)
+                if text_widget.content.percent_text ~= text then
+                    text_widget.content.percent_text = text; text_changed = true
+                end
+                text_widget._cached_int_pct = int_pct
             end
             if U.set_style_text_color(label_style, current_peril_color_argb) then
                 text_changed = true
             end
         elseif text_widget.content.percent_text ~= "" then
             text_widget.content.percent_text = ""
+            text_widget._cached_int_pct = nil
             text_changed = true
         end
 
@@ -240,9 +290,9 @@ end
 -- Widget factory
 -- ─────────────────────────────────────────────────────────────────────────────
 function PerilFeature.add_widgets(dst, styles, metrics, colors)
-    local size  = (metrics and metrics.size) or { 240, 240 }
-    local ARGB  = (colors and colors.ARGB) or (mod.PALETTE_ARGB255 or {})
-    local RGBA1 = (colors and colors.RGBA1) or (mod.PALETTE_RGBA1 or {})
+    local size                            = (metrics and metrics.size) or { 240, 240 }
+    local ARGB                            = (colors and colors.ARGB) or (mod.PALETTE_ARGB255 or {})
+    local RGBA1                           = (colors and colors.RGBA1) or (mod.PALETTE_RGBA1 or {})
     setmetatable(ARGB, { __index = function() return { 255, 255, 255, 255 } end })
     setmetatable(RGBA1, { __index = function() return { 1, 1, 1, 1 } end })
 
@@ -266,9 +316,10 @@ function PerilFeature.add_widgets(dst, styles, metrics, colors)
                     amount = 1,
                     glow_on_off = 0,
                     lightning_opacity = 0,
-                    arc_top_bottom = { PERIL_ARC_TOP, PERIL_ARC_BOTTOM },
+                    arc_top_bottom = { PERIL_ARC_TOP, PERIL_ARC_BOTTOM }, -- Placeholder, driven by live logic
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color = { 1, 1, 1, 1 },
+                    SizeThicknessOutline = { 0.45, 0.03, 0.02 },
                 },
             },
         },
@@ -291,9 +342,10 @@ function PerilFeature.add_widgets(dst, styles, metrics, colors)
                     amount = 0,
                     glow_on_off = 0,
                     lightning_opacity = 0,
-                    arc_top_bottom = { PERIL_ARC_TOP, PERIL_ARC_BOTTOM },
+                    arc_top_bottom = { PERIL_ARC_TOP, PERIL_ARC_BOTTOM }, -- Placeholder
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color = { 1, 1, 1, 1 },
+                    SizeThicknessOutline = { 0.45, 0.03, 0.02 },
                 },
             },
         },
@@ -319,6 +371,7 @@ function PerilFeature.add_widgets(dst, styles, metrics, colors)
                     arc_top_bottom = { PERIL_ARC_TOP, PERIL_ARC_BOTTOM }, -- placeholder
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color = { 1, 1, 1, 1 },
+                    SizeThicknessOutline = { 0.45, 0.03, 0.02 },
                 },
             },
         },

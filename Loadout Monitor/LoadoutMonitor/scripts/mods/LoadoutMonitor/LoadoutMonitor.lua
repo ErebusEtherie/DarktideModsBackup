@@ -2,11 +2,11 @@ local mod = get_mod("LoadoutMonitor")
 
 -- Your mod code goes here.
 -- https://vmf-docs.verminti.de
-
 local UIWidget = require("scripts/managers/ui/ui_widget")
+local UISettings = require("scripts/settings/ui/ui_settings")
 local MasterItems = require("scripts/backend/master_items")
 local ItemUtils = require("scripts/utilities/items")
-local lid = Application.user_setting("language_id")
+local lid = Managers and Managers.localization and Managers.localization:language() or Application.user_setting("language_id")
 local function get_local_player()
 	return Managers.player:local_player(1)
 end
@@ -18,7 +18,7 @@ local feats_symbol = {
 	Aura = mod:localize("player_Feats_symbol_Aura"),
 	Keystone = mod:localize("player_Feats_symbol_Keystone"),
 }
-local archetype_symbols = {veteran = "", zealot = "", psyker = "", ogryn = "",	adamant = "",	broker = "",}
+
 local weapon_slot = {Melee = "slot_primary", Range = "slot_secondary"}
 local talents_index = {
 	veteran = {
@@ -58,15 +58,26 @@ local talents_index = {
 		Aura = {"broker_aura_gunslinger_improved","broker_coherency_melee_damage","broker_coherency_anarchist"},
 		Keystone = {"broker_keystone_vultures_mark_on_kill","broker_keystone_adrenaline_junkie","broker_keystone_chemical_dependency"},
 	},
+	cryptic = {
+		Ability = {"cryptic_chordclaw","cryptic_discharge","cryptic_precision_stance"},
+		Blitz = {"cryptic_servo_skull_improved","cryptic_grenade_ability_arc_grenade","cryptic_grenade_ability_force_field"},
+		Aura = {"cryptic_coherency_regen_aura_improved","cryptic_aura_weapon_improved","cryptic_ammo_aura"},
+		Keystone = {"cryptic_redline","cryptic_dissector","cryptic_overload_keystone"},
+	},
 }
 local feats_abbreviations = {}
+local teammates = {}
 mod.user_custom_feats_abbreviation = mod:get("user_custom_feats_abbreviation") or {}
-mod.teamatesloadout = {}
+
 mod.left_panel_lift = 0 - mod:get("left_panel_lift")
 mod.text_color = {255,239,238,238}
 
 
-
+local function clean_teammates()
+	if not table.is_empty(teammates) then
+		table.clear(teammates)
+	end
+end
 
 mod.init = function(self)
 	mod.display = {
@@ -90,7 +101,7 @@ mod.init = function(self)
 	mod.font_size = {
 		lobby = {mod:get("lobby_weapon_font_size"),mod:get("lobby_Keystone_font_size")},
 		feats = mod:get("player_feats_font_size"),
-		notable_talents = {mod:get("notable_talents_icon_size"),mod:get("notable_talents_icon_size")},
+		notable_talents = mod:get("notable_talents_icon_size"),
 		PlayerName = mod:get("player_name_font_size"),
 		companion_name = mod:get("companion_name_font_size"),
 		Feats = mod:get("player_feats_font_size"),
@@ -113,43 +124,56 @@ mod.init = function(self)
 	mod.left_panel_lift = 0 - mod:get("left_panel_lift")
 	mod.lobby_exhibition = { weapon = mod:get("lobby_exhibition_weapons"), keystone = mod:get("lobby_exhibition_Keystone")}
 	mod.endview_scoreboard_length = mod:get("endview_scoreboard_length")
-	mod.notable_talents_intensity = mod:get("notable_talents_intensity")
-	mod.teamatesloadout = {}
 	for i =1,#default_feats_order do
 		mod.display.player_Feats_order[i] = mod:get(string.format("player_Feats_order_%s",i))
 		mod.display.player_Feats_default_order = mod.display.player_Feats_order[i] == default_feats_order[i] and mod.display.player_Feats_default_order ~= false
 	end
-	mod.load_package("packages/ui/views/talent_builder_view/talent_builder_view")
 	mod.set_feat_abbreviation()
+	clean_teammates()
 end
-local function is_adamant(archetype)
-	return archetype == "adamant"
+
+local function check_player_class(archetype,target_class)
+	local archetypes = {adamant = "adamant"}
+	return archetype and archetypes[archetype] == target_class
 end
 local function player_career(profile)
 	local archetype = profile.archetype
 	local archetypename = archetype.archetype_name
 	local name = archetype.name or "404"
-	local symbol = archetype.string_symbol or archetype_symbols[name] or "?"
+	local symbol = name and UISettings.archetype_font_icon[name] or ""
 	return Localize(archetypename),symbol
 end
 
-
-mod.check_selected_feat = function(player_talents,archetype,feat_type,none)
-	local selected_feat = none or "X"
-	local feat_list = talents_index[archetype] and talents_index[archetype][feat_type]
-	if feat_list then
-		for i = 1,#feat_list do
-			if player_talents[feat_list[i]] then
-				if mod.display.player_Feats_display_type == "character" then
-					selected_feat = feats_abbreviations[feat_list[i]]
-				elseif mod.display.player_Feats_display_type == "number" then
-					selected_feat = tostring(i)
-				end
-				break
+local function check_talent(player_talents,list,none)
+	local selected_feat = none or "X" 
+	for i = 1,#list do
+		if player_talents[list[i]] then
+			if mod.display.player_Feats_display_type == "character" then
+				selected_feat = feats_abbreviations[list[i]]
+			elseif mod.display.player_Feats_display_type == "number" then
+				selected_feat = tostring(i)
 			end
+			break
 		end
 	end
 	return selected_feat
+end
+mod.check_selected_feat = function(player_talents,archetype,feat_type,none)
+	if not player_talents then return "??" end
+	local empty_symbol = none or "X"
+	local talent = empty_symbol
+	local feat_types = talents_index[archetype]
+	local feat_list = feat_types and feat_types[feat_type]
+	if feat_list then
+		talent = check_talent(player_talents,feat_list,empty_symbol)
+		if check_player_class(archetype,"adamant") and feat_type == "Keystone" then
+			local feat_dog = check_talent(player_talents,feat_types.Keystone_dog,empty_symbol)
+			if feat_dog ~= empty_symbol then
+				talent = talent .. "-" .. feat_dog
+			end
+		end		
+	end
+	return talent
 end
 
 mod.get_player_feats = function(profile)	
@@ -165,10 +189,6 @@ mod.get_player_feats = function(profile)
 				if feat_slot ~= "Disable" then
 					slots = slots + 1
 					feats[slots] = mod.check_selected_feat(talents,archetype,feat_slot)
-					if feat_slot == "Keystone" and is_adamant(archetype) then
-						slots = slots + 1
-						feats[slots] = mod.check_selected_feat(talents,archetype,"Keystone_dog")
-					end
 					if not mod.display.player_Feats_default_order then
 						feats[slots] = feats[slots]..feats_symbol[feat_slot]
 					end					
@@ -179,51 +199,50 @@ mod.get_player_feats = function(profile)
 	end
     return ""
 end
-
-local function notable_talents(profile,style)
+local noteworthy_talents = {
+	veteran = {
+		{
+			"veteran_better_deployables",
+			{255,0,206,209}
+		},
+		{
+			"veteran_combat_ability_revive_nearby_allies",
+			{255,255,215,0}
+		},
+		
+	},
+	cryptic = {
+		{
+			"cryptic_servo_skull_inject_ally",
+			{255,77,255,46},
+		},
+	
+	},
+}
+local function notable_talents(profile,widget)
 	if not mod.display.notable_talents then
-		for i = 1,5 do
-			style["loadout_intel_icon_"..tostring(i)].color[1] = 0
-		end
 		return
 	end	
 	local archetype = profile.archetype.name
-	local talents = profile.talents
-	local noteworthy = {
-		veteran = {
-			{
-				"veteran_better_deployables",
-				"content/ui/textures/icons/talents/veteran/veteran_better_deployables",
-			},
-			{
-				"veteran_reduced_threat_after_combat_ability",
-				"content/ui/textures/icons/talents/veteran/veteran_reduced_threat_when_still",
-				Color.salmon(255, true),
-			},
-		},
-	}
-	local arc = noteworthy[archetype]
-	if arc then
-		local num,icons = 1, #arc
-		if icons >= 1 then
-			for i = 1, icons do
-				local current = arc[i]
-				if talents[current[1]] then
-					local slot = "loadout_intel_icon_"..tostring(num)
-					style[slot].material_values.icon_texture = current[2]
-					style[slot].material_values.intensity = mod.notable_talents_intensity + (current[4] or 0)
-					style[slot].color = current[3] or Color.turquoise(255, true)
-					style[slot].size = mod.font_size.notable_talents
-					style[slot].offset[1] = mod.offsets.notable_talents[1] + mod.offsets.notable_talents[3] * (num - 1)
+	local talents = profile.talents	
+	local display = noteworthy_talents[archetype]
+	if display then
+		local style, content = widget.style, widget.content
+		for i = 1, 3 do
+			local slot = "loadout_intel_notable_"..tostring(i)
+			if i <= #display then
+				local setting = display[i]
+				local check = setting[1]
+				if talents[check] then
+					content[slot] = setting[3] and mod:localize(setting[3]) or mod:localize("highlight_"..check) or "?"
+					style[slot].text_color = setting[2] or {255,255,255,255}
+					style[slot].font_size = mod.font_size.notable_talents
+					style[slot].offset[1] = mod.offsets.notable_talents[1] + mod.offsets.notable_talents[3] * (i - 1)
 					style[slot].offset[2] = mod.offsets.notable_talents[2]
-					num = num + 1
-				end
-			end
-		end
-		if num < 6 then
-			for i = 5, num, -1 do
-				style["loadout_intel_icon_"..tostring(i)].color[1] = 0
-			end
+				end				
+			else
+				content[slot] = ""
+			end		
 		end
 	end
 end
@@ -255,10 +274,12 @@ local function weapon_display_name(profile,slot)
 	local loadout = profile.loadout
 	local weapon = loadout[weapon_slot[slot]]
 	local name = " "
+	local status
 	if not slot or not weapon_slot[slot] then
 		return name
 	else		
-		name = ItemUtils.display_name(weapon) or " "
+		status,name = pcall(ItemUtils.display_name,weapon)
+		if not status then name = " " end
 	end
 	return name ~= " " and string.trim(name) or " "
 end
@@ -277,7 +298,7 @@ mod.get_playerloadout_intel = function(profile,widget)
 	local Melee, Range = profile.loadout["slot_primary"], profile.loadout["slot_secondary"]
 	local content = widget.content
 	local style = widget.style
-	--local class,career,symbol = player_career(profile)
+	
 	local class,symbol = player_career(profile)
 	local main_class_method = {hide = "",name = class, symbol = symbol, both = symbol..class}
 	local weapons = {
@@ -301,7 +322,7 @@ mod.get_playerloadout_intel = function(profile,widget)
 	content.loadout_intel_Class = main_class_method[mod.display.main_class] or main_class_method.symbol
 	content.loadout_intel_PlayerName = mod.display.player_name and player_name or " "
 	content.loadout_intel_companion_name = mod.display.companion_name and companion_name or ""
-	notable_talents(profile,style)
+	notable_talents(profile,widget)
 	for k,part in pairs({"Feats","Class","PlayerName","companion_name"}) do
 		table.merge(style["loadout_intel_"..part].offset,mod.offsets[part])
 		style["loadout_intel_"..part].font_size = mod.font_size[part]
@@ -343,48 +364,84 @@ mod.get_playerloadout_intel = function(profile,widget)
 		end
 	end
 end
-function lobby_keystone(profile)
-	local archetype = profile.archetype.name
-	local talents = profile.talents
-	local Keystone = mod.check_selected_feat(talents,archetype,"Keystone","")
-	if is_adamant(archetype) then
-		local Keystone_dog = mod.check_selected_feat(talents,archetype,"Keystone_dog")
-		return string.format("%s-%s",Keystone,Keystone_dog)
+mod:hook("LobbyView","_destroy_spawn_slots",function(func,self)
+	if self._spawn_slots then
+		for i = 1,#self._spawn_slots do
+			local slot = self._spawn_slots[i]
+			local panel_widget = slot and slot.panel_widget
+			if panel_widget then
+				for ii = #panel_widget.passes + 1,1,-1 do
+					local pass = panel_widget.passes[ii]
+					if pass then
+						if pass.value_id == "loadout_intel_Melee" or pass.value_id == "loadout_intel_Range" or pass.value_id == "loadout_intel_Keystone" then
+							pass.pass_type = nil
+							pass.value_id = nil
+							pass.style_id = nil
+							table.clear(pass.data)
+							panel_widget.passes[ii] = nil
+						end
+					end
+				end
+				panel_widget.content.loadout_intel_Melee = nil
+				panel_widget.content.loadout_intel_Range = nil
+				panel_widget.content.loadout_intel_Keystone = nil
+				table.clear(panel_widget.style.loadout_intel_Melee)
+				table.clear(panel_widget.style.loadout_intel_Range)
+				table.clear(panel_widget.style.loadout_intel_Keystone)
+				panel_widget.style.loadout_intel_Melee = nil
+				panel_widget.style.loadout_intel_Range = nil
+				panel_widget.style.loadout_intel_Keystone = nil
+			end
+		end
 	end
-	return Keystone
-end
-mod.lobby_loadout = function (self, dt, t, input_service)
+	return func(self)
+end)
+mod.lobby_loadout = function (self)
 	local spawn_slots = self._spawn_slots
-
+	if not spawn_slots then
+		return
+	end
 	for i = 1, #spawn_slots do
 		local slot = spawn_slots[i]
-
-		if slot.occupied then
+		if slot then
 			local panel_widget = slot.panel_widget
-			local panel_content = panel_widget.content
-			local panel_style = panel_widget.style
-			local profile = slot.player:profile()
-			if not mod.lobby_exhibition.weapon then
+			local slot_player = slot.player
+			local profile_spawner = slot.profile_spawner
+			if panel_widget then
+				local panel_content = panel_widget.content
+				local panel_style = panel_widget.style
 				panel_content.loadout_intel_Melee = ""
 				panel_content.loadout_intel_Range = ""
-			else
-				local offset_M = mod.offsets.lobby[1]
-				local offset_gap = mod.offsets.lobby[2]
-				panel_content.loadout_intel_Melee = weapon_display_name(profile,"Melee")
-				panel_content.loadout_intel_Range = weapon_display_name(profile,"Range")
-				panel_style.loadout_intel_Melee.offset[2] = offset_M
-				panel_style.loadout_intel_Range.offset[2] = offset_M + offset_gap
-				panel_style.loadout_intel_Melee.font_size = mod.font_size.lobby[1] or 17
-				panel_style.loadout_intel_Range.font_size = mod.font_size.lobby[1] or 17
-			end
-			if not mod.lobby_exhibition.keystone then
 				panel_content.loadout_intel_Keystone = ""
-			else
-				local offset_x,offset_y = mod.offsets.lobby[3],mod.offsets.lobby[4]
-				panel_content.loadout_intel_Keystone = lobby_keystone(profile)
-				panel_style.loadout_intel_Keystone.offset[1] = offset_x
-				panel_style.loadout_intel_Keystone.offset[2] = offset_y
-				panel_style.loadout_intel_Keystone.font_size = mod.font_size.lobby[2] or 17
+				if slot.occupied and slot_player and profile_spawner:spawned() then
+					local profile = slot_player:profile()
+					if profile and profile_spawner:spawned_character_unit() then
+						
+						if mod.lobby_exhibition.weapon then
+							local offset_M = mod.offsets.lobby[1] or 165
+							local offset_gap = mod.offsets.lobby[2] or 35
+							panel_content.loadout_intel_Melee = weapon_display_name(profile,"Melee")
+							panel_content.loadout_intel_Range = weapon_display_name(profile,"Range")
+							panel_style.loadout_intel_Melee.offset[2] = offset_M
+							panel_style.loadout_intel_Range.offset[2] = offset_M + offset_gap
+							panel_style.loadout_intel_Melee.font_size = mod.font_size.lobby[1] or 17
+							panel_style.loadout_intel_Range.font_size = mod.font_size.lobby[1] or 17
+						end
+						
+						if mod.lobby_exhibition.keystone then
+							local offset_x,offset_y = mod.offsets.lobby[3] or 200,mod.offsets.lobby[4] or 235
+							local archetype = profile.archetype and profile.archetype.name
+							local talents = profile.talents
+							if archetype and talents then
+								local Keystone = mod.check_selected_feat(talents,archetype,"Keystone","X")
+								panel_content.loadout_intel_Keystone = Keystone
+								panel_style.loadout_intel_Keystone.offset[1] = offset_x
+								panel_style.loadout_intel_Keystone.offset[2] = offset_y
+								panel_style.loadout_intel_Keystone.font_size = mod.font_size.lobby[2] or 17
+							end
+						end
+					end
+				end
 			end
 		end
 	end
@@ -401,13 +458,8 @@ local function spectating_hud_tactical_overlay()
 	return false
 end
 
-local player_loaded = function(account,profile,widget)
-	if mod.teamatesloadout[account] and widget and widget.content and widget.content.loadout_intel_Melee ~= " " then
-		local Melee = profile.loadout.slot_primary.__gear_id
-		local Range = profile.loadout.slot_secondary.__gear_id
-		return Melee and Range and mod.teamatesloadout[account].Melee == Melee and mod.teamatesloadout[account].Range == Range
-	end
-	return false
+local player_loaded = function(account)
+	return teammates and teammates[account]
 end
 
 mod.update_loadout = function(self, dt, t, player, ui_renderer)
@@ -417,15 +469,11 @@ mod.update_loadout = function(self, dt, t, player, ui_renderer)
 	
 	local tactical_active = Managers.ui and Managers.ui._hud and Managers.ui._hud:tactical_overlay_active() or spectating_hud_tactical_overlay()
 	local widget = self._widgets_by_name.playerloadout_intel
-	local profile = player._profile
 	local account = player._account_id	
-	if tactical_active and not player_loaded(account,profile,widget) then
+	if tactical_active and not player_loaded(account) then
+		local profile = player._profile
 		mod.get_playerloadout_intel(profile,widget)
-		mod.teamatesloadout[account] = {
-			Melee = profile.loadout.slot_primary.__gear_id,
-			Range = profile.loadout.slot_secondary.__gear_id,
-			--scenegraph = self._ui_scenegraph.player_loadout
-		}
+		teammates[account] = true
 	end
 	self:_set_widget_visible(widget,tactical_active,ui_renderer)
 end
@@ -439,15 +487,12 @@ mod:hook_safe("HudElementTacticalOverlay","_update_left_panel_elements",function
 end)
 
 
-mod:hook_safe("CameraHandler","_switch_follow_target",function (self, new_unit)
-	mod.teamatesloadout = {}
-end)
-mod:hook_safe(CLASS.InventoryView,"on_exit",function() mod.teamatesloadout = {} end)
-mod:hook_safe("PackageSynchronizerClient","add_bot",function() mod.teamatesloadout = {} end)
-mod:hook_safe("PackageSynchronizerClient","remove_bot",function() mod.teamatesloadout = {} end)
---mod.on_game_state_changed = function(status,state_name)
---	if not table.is_empty(mod.teamatesloadout) then mod.teamatesloadout = {} end
---end
+mod:hook_safe("CameraHandler","_switch_follow_target",clean_teammates)
+mod:hook_safe(CLASS.InventoryView,"on_exit",clean_teammates)
+mod:hook_safe("PackageSynchronizerClient","add_bot",clean_teammates)
+mod:hook_safe("PackageSynchronizerClient","remove_bot",clean_teammates)
+mod:hook_safe("StateGameplay","on_enter",clean_teammates)
+
 mod.on_all_mods_loaded = function()
 	mod:init()
 end
@@ -481,90 +526,56 @@ mod.playerloadout_definition = function(instance)
 				
 			},
 			{
-				pass_type = "texture",
-				value_id = "loadout_intel_icon_1",
-				style_id = "loadout_intel_icon_1",
-				value = "content/ui/materials/icons/talents/talent_icon_container",
-                style = {
+				pass_type = "text",
+				value_id = "loadout_intel_notable_1",
+				style_id = "loadout_intel_notable_1",
+				value = "",
+				style = {
 					vertical_alignment = "top",
+					text_vertical_alignment = "top",
 					horizontal_alignment = "left",
+					text_horizontal_alignment = "left",
 					offset = {200, 0, 150},
-                    size = { 36, 36 },
-					color = Color.aqua(0, true),
-					material_values = {
-						icon_texture = "",
-						intensity = 1,
-					},
-                },
-            },
+					size = {50, 50},
+					text_color = Color.golden_rod(255, true),
+					font_size = 18,
+				},	
+				
+			},
 			{
-				pass_type = "texture",
-				value_id = "loadout_intel_icon_2",
-				style_id = "loadout_intel_icon_2",
-				value = "content/ui/materials/icons/talents/talent_icon_container",
-                style = {
+				pass_type = "text",
+				value_id = "loadout_intel_notable_2",
+				style_id = "loadout_intel_notable_2",
+				value = "",
+				style = {
 					vertical_alignment = "top",
+					text_vertical_alignment = "top",
 					horizontal_alignment = "left",
+					text_horizontal_alignment = "left",
 					offset = {200, 0, 150},
-                    size = { 36, 36 },
-					color = Color.aqua(0, true),
-					material_values = {
-						icon_texture = "",
-						intensity = 1,
-					},
-                },
-            },
+					size = {50, 50},
+					text_color = Color.golden_rod(255, true),
+					font_size = 18,
+				},	
+				
+			},
 			{
-				pass_type = "texture",
-				value_id = "loadout_intel_icon_3",
-				style_id = "loadout_intel_icon_3",
-				value = "content/ui/materials/icons/talents/talent_icon_container",
-                style = {
+				pass_type = "text",
+				value_id = "loadout_intel_notable_3",
+				style_id = "loadout_intel_notable_3",
+				value = "",
+				style = {
 					vertical_alignment = "top",
+					text_vertical_alignment = "top",
 					horizontal_alignment = "left",
+					text_horizontal_alignment = "left",
 					offset = {200, 0, 150},
-                    size = { 36, 36 },
-					color = Color.aqua(0, true),
-					material_values = {
-						icon_texture = "",
-						intensity = 1,
-					},
-                },
-            },
-			{
-				pass_type = "texture",
-				value_id = "loadout_intel_icon_4",
-				style_id = "loadout_intel_icon_4",
-				value = "content/ui/materials/icons/talents/talent_icon_container",
-                style = {
-					vertical_alignment = "top",
-					horizontal_alignment = "left",
-					offset = {200, 0, 150},
-                    size = { 36, 36 },
-					color = Color.aqua(0, true),
-					material_values = {
-						icon_texture = "",
-						intensity = 1,
-					},
-                },
-            },
-			{
-				pass_type = "texture",
-				value_id = "loadout_intel_icon_5",
-				style_id = "loadout_intel_icon_5",
-				value = "content/ui/materials/icons/talents/talent_icon_container",
-                style = {
-					vertical_alignment = "top",
-					horizontal_alignment = "left",
-					offset = {200, 0, 150},
-                    size = { 36, 36 },
-					color = Color.aqua(0, true),
-					material_values = {
-						icon_texture = "",
-						intensity = 1,
-					},
-                },
-            },
+					size = {50, 50},
+					text_color = Color.golden_rod(255, true),
+					font_size = 18,
+				},	
+				
+			},
 			{
 				pass_type = "text",
 				value_id = "loadout_intel_Class",
@@ -793,19 +804,22 @@ mod.playerloadout_definition = function(instance)
 end
 
 
-mod:hook_safe("LobbyView","_update_player_slots",mod.lobby_loadout)
 local personal_player_panel_definition_path = "scripts/ui/hud/elements/personal_player_panel/hud_element_personal_player_panel_definitions"
 local team_player_panel_definition_path = "scripts/ui/hud/elements/team_player_panel/hud_element_team_player_panel_definitions"
-local lobby_view_definition_path = "scripts/ui/views/lobby_view/lobby_view_definitions"
 mod:hook_require(personal_player_panel_definition_path,mod.playerloadout_definition)
 mod:hook_require(team_player_panel_definition_path,mod.playerloadout_definition)
+
+mod:hook_safe("LobbyView","_check_loadout_changes",mod.lobby_loadout)
+
+
+local lobby_view_definition_path = "scripts/ui/views/lobby_view/lobby_view_definitions"
 mod:hook_require(lobby_view_definition_path,function(instance)
 	local extra = {
 			{
 				pass_type = "text",
 				value_id = "loadout_intel_Melee",
 				style_id = "loadout_intel_Melee",
-				value = "",
+				value = " ",
 				style = {
 					vertical_alignment = "top",
 					text_vertical_alignment = "top",
@@ -815,7 +829,7 @@ mod:hook_require(lobby_view_definition_path,function(instance)
 					size = {250, 100},
 					text_color = mod.text_color,
 					font_size = 17,
-					line_spacing = 0.95,
+					--line_spacing = 0.95,
 				},
 				
 			},
@@ -823,7 +837,7 @@ mod:hook_require(lobby_view_definition_path,function(instance)
 				pass_type = "text",
 				value_id = "loadout_intel_Range",
 				style_id = "loadout_intel_Range",
-				value = "",
+				value = " ",
 				style = {
 					vertical_alignment = "top",
 					text_vertical_alignment = "top",
@@ -833,14 +847,14 @@ mod:hook_require(lobby_view_definition_path,function(instance)
 					size = {250, 100},
 					text_color = mod.text_color,
 					font_size = 17,
-					line_spacing = 0.95,
+					--line_spacing = 0.95,
 				},
 			},
 			{
 				pass_type = "text",
 				value_id = "loadout_intel_Keystone",
 				style_id = "loadout_intel_Keystone",
-				value = "",
+				value = " ",
 				style = {
 					vertical_alignment = "top",
 					text_vertical_alignment = "top",
@@ -850,7 +864,7 @@ mod:hook_require(lobby_view_definition_path,function(instance)
 					size = {250, 100},
 					text_color = mod.text_color,
 					font_size = 17,
-					line_spacing = 0.95,
+					--line_spacing = 0.95,
 				},
 			},
 	}
@@ -858,7 +872,9 @@ mod:hook_require(lobby_view_definition_path,function(instance)
 		UIWidget.add_definition_pass(instance.panel_definition,extra[i])
 	end
 end)
+
 -- Make tactical overlay available in meat grinder
+--[[
 mod:hook_require("scripts/ui/hud/hud_elements_player_onboarding", function(instance)
     local found = false
     -- Check if another mod already added tactical overlay
@@ -882,24 +898,24 @@ mod:hook_require("scripts/ui/hud/hud_elements_player_onboarding", function(insta
         }
     end
 end)
-
-mod.load_package = function(package_name)
-    if not Managers.package:is_loading(package_name) and not Managers.package:has_loaded(package_name) then
-        return Managers.package:load(package_name, "loadout_monitor", nil, true)
-    end
-end
-
+--]]
 mod.on_setting_changed = function(setting_name)
 	mod:init()
 end
 
 mod:command("UCTA",mod:localize("user_custom_feats_abbreviation_description"),function(a,b,...)
+	if a == "lid" then
+		mod:set("user_lid",b)
+		mod:notify("Language set to %s",b)
+		return
+	end
 	if a and b then
+		
 		local order = {tonumber(a),tonumber(b)}
 		local player = get_local_player()
 		local archetype = player._profile.archetype.name
 		
-		if order[1] and order[2] and ((order[1] >= 1 and order[1] <= 4) and ((order[2] >= 1 and order[2] <= 3) or (is_adamant(archetype) and order[2] >= 4 and order[2] <= 6))) then
+		if order[1] and order[2] and ((order[1] >= 1 and order[1] <= 4) and ((order[2] >= 1 and order[2] <= 3) or (check_player_class(archetype,"adamant") and order[2] >= 4 and order[2] <= 6))) then
 			local category
 			if order[2] >= 4 then
 				category = "Keystone_dog"
@@ -916,9 +932,8 @@ mod:command("UCTA",mod:localize("user_custom_feats_abbreviation_description"),fu
 			feats_abbreviations[feat] = new_abb
 			mod.user_custom_feats_abbreviation[feat] = new_abb
 			mod:set("user_custom_feats_abbreviation",mod.user_custom_feats_abbreviation)
-			mod.teamatesloadout = {}
+			clean_teammates()
 		end
-		
 	end
 end)
 
@@ -1060,45 +1075,44 @@ mod.scoreboard_weaponname = function(profile,weapon_type)
 end
 
 mod.update_scoreboard = function(trigger)
+	if not scoreboard then return end
 	if trigger == "on" then
-		if scoreboard then
-			local players = Managers.player and Managers.player:players()
-			if players then
-				local update_weapon = mod:get("endview_scoreboard_weapons")
-				mod:set("Loadout_weapons",update_weapon)
-				mod:set("Loadout_weapons_perk",update_weapon and mod:get("endview_scoreboard_weapons_perk"))
-				mod:set("Loadout_weapons_blessing",update_weapon and mod:get("endview_scoreboard_weapons_blessing"))
-				mod:set("Loadout_feat",mod:get("endview_scoreboard_feat"))
-				mod:set("Loadout_scoreboard_blank",mod:get("endview_scoreboard_blank"))
-				for k,player in pairs(players) do
-					local profile = player._profile
-					local account_id = player:account_id() or player:name()
-					local human = player:is_human_controlled()
-					for k,weapon_type in pairs({"Melee","Range"}) do
-						local line = {"",""}
-						local traits_text = {perk = {"",""},blessing = {"",""}}
-						if human then
-							local traits = {perk = mod.get_weapon_perk_blessing(profile,weapon_type,"perks"),blessing = mod.get_weapon_perk_blessing(profile,weapon_type,"traits")}
-							line = mod.scoreboard_weaponname(profile,weapon_type)
-							for i = 1,2 do
-								for k,v in pairs(traits) do
-									if v[i] ~= " " then
-										traits_text[k][i] = string.format("%s(%s)",v[i],v[i + 2])
-									end
+		local players = Managers.player and Managers.player:players()
+		if players then
+			local update_weapon = mod:get("endview_scoreboard_weapons")
+			mod:set("Loadout_weapons",update_weapon)
+			mod:set("Loadout_weapons_perk",update_weapon and mod:get("endview_scoreboard_weapons_perk"))
+			mod:set("Loadout_weapons_blessing",update_weapon and mod:get("endview_scoreboard_weapons_blessing"))
+			mod:set("Loadout_feat",mod:get("endview_scoreboard_feat"))
+			mod:set("Loadout_scoreboard_blank",mod:get("endview_scoreboard_blank"))
+			for k,player in pairs(players) do
+				local profile = player._profile
+				local account_id = player:account_id() or player:name()
+				local human = player:is_human_controlled()
+				for k,weapon_type in pairs({"Melee","Range"}) do
+					local line = {"",""}
+					local traits_text = {perk = {"",""},blessing = {"",""}}
+					if human then
+						local traits = {perk = mod.get_weapon_perk_blessing(profile,weapon_type,"perks"),blessing = mod.get_weapon_perk_blessing(profile,weapon_type,"traits")}
+						line = mod.scoreboard_weaponname(profile,weapon_type)
+						for i = 1,2 do
+							for k,v in pairs(traits) do
+								if v[i] ~= " " then
+									traits_text[k][i] = string.format("%s(%s)",v[i],v[i + 2])
 								end
 							end
 						end
-						traits_text.perk = traits_text.perk[1]..(traits_text.perk[2] ~= "" and " "..traits_text.perk[2] or "")
-						scoreboard:update_stat("row_scoreboard_weapon_"..weapon_type.."_perk",account_id,traits_text.perk)
-						for i =1,2 do
-							scoreboard:update_stat(string.format("row_scoreboard_weapon_%s_%s",weapon_type,i), account_id, line[i])
-							scoreboard:update_stat(string.format("row_scoreboard_weapon_%s_blessing_%s",weapon_type,i), account_id, traits_text.blessing[i])
-						end
 					end
-					local feats = human and mod.get_player_feats(profile) or " "
-					scoreboard:update_stat("row_scoreboard_player_feat", account_id, feats)
-					scoreboard:update_stat("row_scoreboard_blank_1", account_id, " ")
+					traits_text.perk = traits_text.perk[1]..(traits_text.perk[2] ~= "" and " "..traits_text.perk[2] or "")
+					scoreboard:update_stat("row_scoreboard_weapon_"..weapon_type.."_perk",account_id,traits_text.perk)
+					for i =1,2 do
+						scoreboard:update_stat(string.format("row_scoreboard_weapon_%s_%s",weapon_type,i), account_id, line[i])
+						scoreboard:update_stat(string.format("row_scoreboard_weapon_%s_blessing_%s",weapon_type,i), account_id, traits_text.blessing[i])
+					end
 				end
+				local feats = human and mod.get_player_feats(profile) or " "
+				scoreboard:update_stat("row_scoreboard_player_feat", account_id, feats)
+				scoreboard:update_stat("row_scoreboard_blank_1", account_id, " ")
 			end
 		end
 	elseif trigger == "off" then
@@ -1111,7 +1125,9 @@ mod.update_scoreboard = function(trigger)
 end
 mod:hook_safe(CLASS.EndView, "on_enter", function(...)
 	mod.update_scoreboard("on")
+	clean_teammates()
 end)
 mod:hook_safe(CLASS.EndView, "on_exit", function(...)
 	mod.update_scoreboard("off")
 end)
+

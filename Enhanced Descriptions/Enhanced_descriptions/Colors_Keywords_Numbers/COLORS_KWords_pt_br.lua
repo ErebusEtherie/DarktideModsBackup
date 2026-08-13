@@ -6,23 +6,23 @@ local InputUtils = require("scripts/managers/input/input_utils")
 -- PALAVRAS-CHAVE
 local CONFIG = {
 	bleed_text_colour = {
-		Bleed =			"Sangramento",
+		Bleed =			"sangramento",
 		Bleeding =		"Sangrando",
 		Bleeds =		"Sangra",
 	},
 	brittleness_text_colour = {
-		Brittleness =	"Fragilidade",
+		Brittleness =	"fragilidade",
 	},
 	burn_text_colour = {
-		Burn =			"Queimadura",
-		Burning =		"Queimando",
-		Heat =			"Calor",
-		Overheat =		"Superaquecimento",
+		Burn =			"queimadura",
+		Burning =		"queimando",
+		Heat =			"calor",
+		Overheat =		"superaquecimento",
 	},
 	cleave_text_colour = {
-		Cleave =		"Fender",
+		Cleave =		"fender",
 		Cleaved =		"Fendido",
-		Cleaving =		"Fende",
+		Cleaving =		"fender",
 	},
 	coherency_text_colour = {
 		Coherency =		"Coerência",
@@ -30,30 +30,30 @@ local CONFIG = {
 	combat_ability_text_colour = {
 		Ability_cd =	"Tempo de recarga de habilidade",
 		Cd =			"Tempo de recarga",
-		Cmbt_abil =		"Habilidade de combate",
-		Cmbt_abil_cd =	"Tempo de recarga de habilidade de combate",
+		Cmbt_abil =		"habilidade de combate",
+		Cmbt_abil_cd =	"Tempo de recarga da Habilidade de Combate",
 	},
 	corruption_text_colour = {
 		Corrupted =		"Corrompido",
 		Corruptdmg =	"Dano de corrupção",
-		Corruption =	"Corrupção",
+		Corruption =	"corrupção",
 	},
 	crit_text_colour = {
 		Crit =			"Crítico",
 		Critical =		"Crítico",
 
-		Crit_chance =	"Chance de crítico",
+		Crit_chance =	"chance de crítico",
 		Crt_chance =	"Chance de crítico",
 
-		Crit_hit =		"Golpe crítico",
-		Crit_hits =		"Golpes críticos",
+		Crit_hit =		"acerto crítico",
+		Crit_hits =		"acertos críticos",
 		Crt_hit_chnc =	"Chance de golpe crítico",
 		Crt_hit_col =	"Dano de golpe crítico",
 
-		Crit_strike =	"Golpe crítico",
+		Crit_strike =	"golpe crítico",
 		Crit_strikes =	"Golpes críticos",
-		Crt_chnc_r =	"Chance de golpe crítico",
-		Crt_strk_dmg =	"Dano de golpe crítico",
+		Crt_chnc_r =	"chance de golpe crítico",
+		Crt_strk_dmg =	"dano de golpe crítico",
 
 		Crit_Attk =		"Ataque crítico",
 		Crit_shots =	"Tiros críticos",
@@ -61,64 +61,65 @@ local CONFIG = {
 		Crit_dmg_r =	"Dano crítico",
 		Crt_dmg_r =		"Dano crítico",
 
-		Conc_Stimm =	"Stimm de concentração",
+		Conc_Stimm =	"Estimulante de Concentração",
 	},
 	damage_text_colour = {
-		Damage =		"Dano",
+		Damage =		"dano",
 		Damagewrp =		"Dano Warp",
 
-		Combat_Stimm =	"Stimm de combate",
+		Combat_Stimm =	"Estimulante de Combate",
 	},
 	electrocuted_text_colour = {
-		Electrocute =	"Electrocutar",
-		Electrocuted =	"Electrocutado",
+		Electrocute =	"eletrocutar",
+		Electrocuted =	"eletrocutados",
 		Electrocutes =	"Electrocuta",
 		Electrcuting =	"Electrocutante",
 		Electrocution =	"Electrocussão",
 	},
 	finesse_text_colour = {
-		Finesse =		"Fineza",
-		Finesse_dmg =	"Dano de fineza",
+		Finesse =		"finesse",
+		Finesse_dmg =	"dano de finesse",
 	},
 	health_text_colour = {
-		Health =		"Saúde",
-		Wound =			"Ferimento",
+		Health =		"vida",
+		Wound =			"ferida",
 		Wounds =		"Ferimentos",
 	},
 	hit_mass_text_colour = {
-		Hit_mass =		"Massa de impacto",
+		Hit_mass =		"massa de impacto",
 	},
 	impact_text_colour = {
-		Impact =		"Impacto",
+		Impact =		"impacto",
 	},
 	peril_text_colour = {
-		Peril =			"Perigo",
+		Peril =			"perigo",
 		Perils =		"Perigos",
 		PerilsozWarp =	"Perigos do Warp",
 	},
 	power_text_colour = {
 		Power =			"Poder",
-		Strength =		"Força",
+		Strength =		"força",
 	},
 	rending_text_colour = {
-		Rending =		"Penetração",
+		Rending =		"penetração",
 
-		Cartel_Stimm =	"Stimm especial do Cartel",
+		Cartel_Stimm =	"Estimulante Especial do Cartel",
 	},
 	soulblaze_text_colour = {
-		Soulblaze =		"Chama da Alma",
+		Soulblaze =		"chama da alma",
+		Soulblaz =		"CdA",
 	},
 	stagger_text_colour = {
-		Stagger =		"Cambaleamento",
-		Staggered =		"Cambaleante",
-		Staggering =	"Cambaleia",
+		Stagger =		"desequilibrio",
+		Staggered =		"desequilibrado",
+		Staggering =	"desequilibrar",
 		Staggers =		"Cambaleiam",
 		Stun =			"Atordoamento",
 		Stunned =		"Atordoado",
-		Stuns =			"Atordoa",
+		Stuns =			"atordoam",
 	},
 	stamina_text_colour = {
-		Stamina =		"Vigor",
+		Stamina =		"vigor",
 		Stamina_c_r =	"Custo de vigor",
 	},
 	toughness_text_colour = {
@@ -126,17 +127,17 @@ local CONFIG = {
 		TGHN =			"RESIST",
 		Tghns_dmg =		"Dano de resistência",
 		Tghns_dmg_red =	"Redução de dano de resistência",
-		Toughness =		"Resistência",
+		Toughness =		"resistência",
 	},
 	weakspot_text_colour = {
-		Weak_spot =		"Ponto fraco",
-		Weakspot = 		"Ponto fraco",
+		Weak_spot =		"ponto fraco",
+		Weakspot = 		"ponto fraco",
 		Weakspots =		"Pontos fracos",
 
-		Weakspothit =	"Acerto em ponto fraco",
-		Weakspothits =	"Acertos em pontos fracos",
+		Weakspothit =	"acerto em ponto fraco",
+		Weakspothits =	"acertos em pontos fracos",
 
-		Weakspot_dmg =	"Dano em ponto fraco",
+		Weakspot_dmg =	"dano em ponto fraco",
 	},
 
 -- CLASSES
@@ -149,7 +150,7 @@ local CONFIG = {
 		precision_text_colour = {
 			Precision =		"Precisão",
 
-			Celerity_Stimm = "Stimm de celeridade",
+			Celerity_Stimm = "Estimulante de Velocidade",
 		},
 	-- Ogryn
 	class_ogryn_text_colour = {
@@ -240,7 +241,7 @@ local CONFIG = {
 		chemtox_text_colour = {
 			Chem_Tox =		"Quimiotoxina",
 
-			Med_Stimm =		"Stimm médico",
+			Med_Stimm =		"Med-estimulante",
 		},
 
 -- TALENTOS
@@ -315,7 +316,7 @@ local CONFIG = {
 		snipcon =		"Foco do atirador",
 		smok_gr =		"Granada de fumaça",
 		survivalist =	"Sobrevivencialista",
-		voiceoc =		"Voz do Comando",
+		voiceoc =		"Voz de Comando",
 		volley_fire =	"Fogo de salva",
 		weapspec =		"Especialista em armas",
 	-- Zealot
@@ -343,16 +344,16 @@ local CONFIG = {
 		-- sedition =		"Sedição",
 	-- },
 	uprising_text_colour = {
-		uprising =		"Revolta",
+		uprising =		"Levante",
 	},
 	malice_text_colour = {
-		malice =		"Maldade",
+		malice =		"Malícia",
 	},
 	heresy_text_colour = {
 		heresy =		"Heresia",
 	},
 	damnation_text_colour = {
-		damnation =		"Danção",
+		damnation =		"Condenação",
 	},
 	auric_text_colour = {
 		auric =			"Áurico",

@@ -1,3 +1,4 @@
+---@class DMFMod
 local dmf = get_mod("DMF")
 
 -- This variable is defined here and not in widget data initialization function because some error messages
@@ -448,6 +449,8 @@ local function initialize_widget_data(mod, data, localize, collapsed_widgets)
     return initialize_keybind_data(mod, data, localize)
   elseif data.type == "numeric" then
     return initialize_numeric_data(mod, data, localize)
+  elseif data.type == "text_input" then
+    return initialize_keybind_data(mod, data, localize)
   end
   -- if data.type is incorrect, returns nil
 end

@@ -1,13 +1,13 @@
 --[[
 Title: A La Mode
 Author: Wobin
-Date: 05/04/2026
+Date: 24/06/2026
 Repository: https://github.com/Wobin/ALaMode
-Version: 3.2.1
+Version: 3.3.0
 --]]
 
 local mod = get_mod("A la Mode")
-mod.version = "3.2.1"
+mod.version = "3.3.0"
 
 local Color = Color
 

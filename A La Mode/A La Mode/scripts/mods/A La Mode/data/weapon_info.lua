@@ -50,6 +50,11 @@ local valid_weapons = {
     ["content/items/weapons/player/ranged/shotgun_p1_m3"] =         {"loc_weapon_family_shotgun_p1_m1", "terminal_text_body", "cyan"},
     ["content/items/weapons/player/ranged/shotgun_p4_m1"] =         {"loc_weapon_family_shotgun_p4_m1", "terminal_text_body", "cyan"},
     ["content/items/weapons/player/ranged/shotgun_p4_m2"] =         {"loc_weapon_family_shotgun_p4_m1", "terminal_text_body", "cyan"},
+
+    -- Cryptek / Skitarii (Mechanicus) weapons
+    ["content/items/weapons/player/melee/transonic_sword_transonic_knife_p1_m1"] = {"loc_weapon_family_transonic_sword_transonic_knife_p1_m1", "terminal_text_body", "magenta"},
+    ["content/items/weapons/player/melee/powersword_p3_m1"] =                       {"loc_weapon_family_powersword_p3_m1", "terminal_text_body", "cyan"},
+    ["content/items/weapons/player/melee/powermaul_p3_m1"] =                        {"loc_weapon_family_powermaul_p3_m1", "terminal_text_body", "cyan"},
 }
 
 return valid_weapons

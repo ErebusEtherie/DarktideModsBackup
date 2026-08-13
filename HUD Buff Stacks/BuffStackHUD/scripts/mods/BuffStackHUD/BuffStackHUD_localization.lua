@@ -41,6 +41,9 @@ local loc = {
 	flamer_assault = {
 		en = "Burning (Flamer)"
 	},
+	houndmaster_electrocution = {
+		en = "Houndmaster Electrocution"
+	},
 	ogryn_big_bully_heavy_hits_buff = {
 		en = Localize("loc_talent_ogryn_big_bully_heavy_hits")
 	},
@@ -179,6 +182,48 @@ local loc = {
 	broker_passive_sprinting_reduces_threat_buff = {
 		en = Localize("loc_talent_broker_passive_sprinting_reduces_threat")
 	},
+	broker_passive_melee_apply_brittleness_stack = {
+		en = Localize("loc_talent_broker_passive_melee_apply_brittleness")
+	},
+	broker_passive_ranged_apply_brittleness_stack = {
+		en = Localize("loc_talent_broker_passive_ranged_apply_brittleness")
+	},
+	cryptic_chordclaw_consecutive_bonus = {
+		en = Localize("loc_talent_cryptic_chordclaw_consecutive_bonus")
+	},
+	cryptic_elite_kills_damage_stack = {
+		en = Localize("loc_talent_cryptic_elite_kills_damage")
+	},
+	cryptic_hybrid_melee_damage_buff = {
+		en = Localize("loc_talent_cryptic_hybrid_damage") .. " (Melee)"
+	},
+	cryptic_hybrid_ranged_damage_buff = {
+		en = Localize("loc_talent_cryptic_hybrid_damage") .. " (Ranged)"
+	},
+	cryptic_melee_attacks_give_melee_attack_speed_stack = {
+		en = Localize("loc_talent_cryptic_melee_attacks_give_melee_attack_speed")
+	},
+	cryptic_precision_stance_damage_on_elite_kill_stack = {
+		en = Localize("loc_talent_cryptic_precision_stance")
+	},
+	cryptic_ranged_kills_tdr_stack = {
+		en = Localize("loc_talent_cryptic_ranged_kills_tdr")
+	},
+	cryptic_ranged_stacking_toughness_stack = {
+		en = Localize("loc_talent_cryptic_ranged_stacking_toughness")
+	},
+	cryptic_redline_stack = {
+		en = Localize("loc_talent_cryptic_power_generation")
+	},
+	cryptic_redline_strength_stack = {
+		en = Localize("loc_talent_cryptic_power_generation_toughness")
+	},
+	cryptic_stacking_melee_damage_buff = {
+		en = Localize("loc_talent_cryptic_stacking_melee_damage")
+	},
+	cryptic_stacking_tdr_buff = {
+		en = Localize("loc_talent_cryptic_stacking_tdr")
+	},
 	vultures_mark = {
 		en = Localize("loc_talent_broker_keystone_vultures_mark_on_kill")
 	},
@@ -187,6 +232,9 @@ local loc = {
 	},
 	weapon_trait_bespoke_combataxe_p2_guaranteed_melee_crit_after_crit_weakspot_kill_effect_percentage = {
 		en = "Combat Axe Guarantee Crit"
+	},
+	weapon_trait_bespoke_powersword_p3_guaranteed_melee_crit_on_activated_kill_effect_percentage_capped = {
+		en = "Power Sword Guarantee Crit"
 	},
 }
 
@@ -214,6 +262,9 @@ local hide_buffs = {
 	neurotoxin_interval_buff2 = 1,
 	neurotoxin_interval_buff3 = 1,
 	saw_rending_debuff = 1,
+	bleed_long = 1, -- Looks unused
+	cryptic_power_generation_strength_base_stack = 1, -- Looks unused
+	expedition_max_toughness_buff = 1, -- Unreferenced buff
 }
 
 local override_buffs = {

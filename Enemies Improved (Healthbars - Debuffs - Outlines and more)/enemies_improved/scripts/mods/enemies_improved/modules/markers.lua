@@ -6,11 +6,8 @@ local Managers = Managers
 mod.enemy_markers = mod.enemy_markers or {}
 mod.marked_dead = mod.marked_dead or {}
 
-local function _on_marker_created(marker_id, entry, unit)
-	entry.marker = mod.get_marker_by_id(marker_id)
-	mod.enemy_markers[unit] = marker_id
-	entry._marker_created = true
-	entry._marker_pending = nil
+local function _on_ei_marker_created(marker_id, entry, unit)
+	mod._on_ei_marker_created(marker_id, entry, unit)
 end
 
 -------------------------------------------------------------------
@@ -24,30 +21,45 @@ mod.update_enemy_markers = function(entry, t)
 		return
 	end
 
-	local unit_data_extension = ScriptUnit.extension(unit, "unit_data_system")
-	local breed = unit_data_extension and unit_data_extension:breed()
-	local enemy_individual = breed and breed.name
-
-	-- Check individual toggle
-	local individual_enabled = false
-	if enemy_individual then
-		local setting = mod:get("markers_" .. enemy_individual .. "_toggle")
-		if setting == true then
-			individual_enabled = true
+	-- Safety: clear stuck pending state after short time
+	if entry._ei_marker_pending and entry._ei_marker_pending_t then
+		if t - entry._ei_marker_pending_t > 2 then
+			entry._ei_marker_pending = nil
 		end
 	end
 
-	-- Allow if global enabled OR individual override enabled
-	if not fs.markers_enable and not individual_enabled then
+	--local unit_data_extension = ScriptUnit.extension(unit, "unit_data_system")
+	--local breed = unit_data_extension and unit_data_extension:breed()
+	--local enemy_individual = breed and breed.name
+
+	-- Horde filter: block unless horde enabled, clusters enabled, an individual or group override is on, or debuffed
+	local breed_name = entry.breed_name
+	local individual_enabled = breed_name and fs.breed_marker_toggle and fs.breed_marker_toggle[breed_name]
+	local group_enabled = fs.breed_marker_type_enabled and fs.breed_marker_type_enabled["horde"]
+	local unit = entry.unit
+	local debuffed_override = fs.hb_show_when_debuffed and mod.unit_has_active_debuff(unit)
+
+	if
+		entry.is_horde
+		and (not fs.markers_horde_enable)
+		and not individual_enabled
+		and not group_enabled
+		and not debuffed_override
+	then
 		return
 	end
 
-	-- Horde filter
-	if entry.is_horde and not fs.markers_horde_enable then
+	if
+		not entry.is_horde
+		and (not fs.markers_non_horde_enable)
+		and not individual_enabled
+		and not group_enabled
+		and not debuffed_override
+	then
 		return
 	end
 
-	if entry._marker_created or entry._marker_pending then
+	if entry._ei_marker_created or entry._ei_marker_pending then
 		return
 	end
 
@@ -68,9 +80,10 @@ mod.update_enemy_markers = function(entry, t)
 		return
 	end
 
-	entry._marker_pending = true
+	entry._ei_marker_pending = true
+	entry._ei_marker_pending_t = t
 
-	event_manager:trigger("add_world_marker_unit", "enemy_markers", unit, function(marker_id)
-		_on_marker_created(marker_id, entry, unit)
+	event_manager:trigger("add_world_marker_unit", "enemies_improved", unit, function(marker_id)
+		_on_ei_marker_created(marker_id, entry, unit)
 	end)
 end

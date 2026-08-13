@@ -29,6 +29,19 @@ local function _ping_sound_mode_options()
     }
 end
 
+local function _companion_servo_skull_sound_mode_options()
+    local txt_muted = Localize("loc_setting_voice_chat_presets_mic_muted")
+    local txt_empowered = Localize("loc_talent_cryptic_servo_skull_improved_tagging")
+    local txt_charged = Localize("loc_weapon_keyword_charged_attack")
+
+    return {
+        { text = Localize("loc_setting_checkbox_on"),                     value = "none",             localize = false },
+        { text = txt_muted .. ": " .. txt_empowered,                      value = "empowered",        localize = false },
+        { text = txt_muted .. ": " .. txt_charged,                        value = "charged_shooting", localize = false },
+        { text = Localize("loc_setting_dodge_stamina_hud_disabled_both"), value = "both",             localize = false },
+    }
+end
+
 local function _major_chatter_mode_options()
     return {
         { text = Localize("loc_setting_dodge_stamina_hud_both_always"),   value = "none",    localize = false },
@@ -216,7 +229,7 @@ local function _archetype_title(archetype)
     local loc = D.archetype_name_loc and D.archetype_name_loc[archetype]
 
     local name = (loc and mod.try_localize_loc_key(loc)) or archetype
-    local glyph = (UiSettings.archetype_font_icon_simple and UiSettings.archetype_font_icon_simple[archetype]) or ""
+    local glyph = (UiSettings.archetype_font_icon and UiSettings.archetype_font_icon[archetype]) or ""
 
     if glyph ~= "" then
         return glyph .. " " .. name
@@ -227,6 +240,28 @@ end
 
 local function _breed_title(group_key, group)
     return (group and group.label) or group_key
+end
+
+local function _major_tab_title(groups, classes, start_index)
+    local parts = {}
+    local parts_len = 0
+    local last_index = start_index + 2
+    local classes_count = #classes
+
+    if last_index > classes_count then
+        last_index = classes_count
+    end
+
+    for i = start_index, last_index do
+        local key = classes[i]
+        local g = groups[key]
+        local label = (g and (g.short_label or g.label)) or key
+
+        parts_len = parts_len + 1
+        parts[parts_len] = label
+    end
+
+    return table.concat(parts, "\n")
 end
 
 mod.zipit2_build_widgets = function()
@@ -308,62 +343,7 @@ mod.zipit2_build_widgets = function()
         }
 
         -- ==========================================================
-        -- 2. Combat
-        -- ==========================================================
-        local sub_combat, sub_combat_len = {}, 0
-
-        sub_combat_len = _add_checkbox(
-            sub_combat,
-            sub_combat_len,
-            "player_nonverbal_sounds_enabled",
-            " " ..
-            Localize("loc_heavy_attack") ..
-            "/" ..
-            Localize("loc_horde_tactical_overlay_category_misc") ..
-            " (" .. Localize("loc_settings_menu_category_sound") .. ")",
-            true
-        )
-        _push_setting_id("top_level", "player_nonverbal_sounds_enabled")
-
-        sub_combat_len = _add_keybind(
-            sub_combat,
-            sub_combat_len,
-            "keybind_selected_wheel_option",
-            mod:localize("selected_wheel_option_hotkey_name"),
-            "zipit2_trigger_selected_wheel_option"
-        )
-        _push_setting_id("top_level", "keybind_selected_wheel_option")
-
-        sub_combat_len = _add_dropdown(
-            sub_combat,
-            sub_combat_len,
-            "selected_wheel_option",
-            mod:localize("selected_wheel_option_name"),
-            _default_com_wheel_option_value(D),
-            _com_wheel_options(D)
-        )
-        _push_setting_id("top_level", "selected_wheel_option")
-
-        sub_gameplay_len = sub_gameplay_len + 1
-        sub_gameplay[sub_gameplay_len] = {
-            setting_id = "group_combat",
-            type = "group",
-            title = Localize("loc_keybind_category_combat"),
-            localize = false,
-            sub_widgets = sub_combat,
-        }
-
-        widgets_len = widgets_len + 1
-        widgets[widgets_len] = {
-            setting_id = "group_gameplay",
-            type = "group",
-            title = Localize("loc_settings_menu_group_gameplay_settings"),
-            localize = false,
-            sub_widgets = sub_gameplay,
-        }
-
-        -- ==========================================================
-        -- 3. Striketeam
+        -- 2. Striketeam
         -- ==========================================================
         local sub_striketeam, sub_striketeam_len = {}, 0
 
@@ -373,7 +353,9 @@ mod.zipit2_build_widgets = function()
             "keybind_toggle_voice_chat",
             " " ..
             Localize("loc_settings_menu_group_voice_chat_settings") ..
-            " - " .. Localize("loc_setting_voice_chat_presets_mic_muted"),
+            " - " ..
+            Localize("loc_setting_voice_chat_presets_mic_muted") .. " (" ..
+            Localize("loc_weapon_special_mode_switch") .. ")",
             "zipit2_toggle_voice_chat"
         )
         _push_setting_id("top_level", "keybind_toggle_voice_chat")
@@ -382,7 +364,7 @@ mod.zipit2_build_widgets = function()
             sub_striketeam,
             sub_striketeam_len,
             "mute_bots",
-            " " .. mod:localize("mute_bots_name"),
+            " " .. Localize("loc_bot_tag") .. " (" .. Localize("loc_settings_menu_category_sound") .. ")",
             false
         )
         _push_setting_id("top_level", "mute_bots")
@@ -409,13 +391,78 @@ mod.zipit2_build_widgets = function()
         )
         _push_setting_id("top_level", "other_players_com_wheel_throttle_seconds")
 
-        widgets_len = widgets_len + 1
-        widgets[widgets_len] = {
+        sub_gameplay_len = sub_gameplay_len + 1
+        sub_gameplay[sub_gameplay_len] = {
             setting_id = "group_striketeam",
             type = "group",
             title = Localize("loc_achievement_category_teamplay_label"),
             localize = false,
             sub_widgets = sub_striketeam,
+        }
+
+        widgets_len = widgets_len + 1
+        widgets[widgets_len] = {
+            setting_id = "group_gameplay",
+            type = "group",
+            title = Localize("loc_settings_menu_group_gameplay_settings"),
+            localize = false,
+            sub_widgets = sub_gameplay,
+        }
+
+        -- ==========================================================
+        -- 3. Combat
+        -- ==========================================================
+        local sub_combat, sub_combat_len = {}, 0
+
+        sub_combat_len = _add_checkbox(
+            sub_combat,
+            sub_combat_len,
+            "player_nonverbal_sounds_enabled",
+            " " ..
+            Localize("loc_heavy_attack") ..
+            "/" ..
+            Localize("loc_horde_tactical_overlay_category_misc") ..
+            " (" .. Localize("loc_settings_menu_category_sound") .. ")",
+            true
+        )
+        _push_setting_id("top_level", "player_nonverbal_sounds_enabled")
+
+        sub_combat_len = _add_dropdown(
+            sub_combat,
+            sub_combat_len,
+            "companion_servo_skull_sound_mode",
+            " " .. Localize("loc_talent_cryptic_servo_skull_improved"),
+            "none",
+            _companion_servo_skull_sound_mode_options()
+        )
+        _push_setting_id("top_level", "companion_servo_skull_sound_mode")
+
+        sub_combat_len = _add_keybind(
+            sub_combat,
+            sub_combat_len,
+            "keybind_selected_wheel_option",
+            mod:localize("selected_wheel_option_hotkey_name"),
+            "zipit2_trigger_selected_wheel_option"
+        )
+        _push_setting_id("top_level", "keybind_selected_wheel_option")
+
+        sub_combat_len = _add_dropdown(
+            sub_combat,
+            sub_combat_len,
+            "selected_wheel_option",
+            mod:localize("selected_wheel_option_name"),
+            _default_com_wheel_option_value(D),
+            _com_wheel_options(D)
+        )
+        _push_setting_id("top_level", "selected_wheel_option")
+
+        widgets_len = widgets_len + 1
+        widgets[widgets_len] = {
+            setting_id = "group_combat",
+            type = "group",
+            title = Localize("loc_keybind_category_combat"),
+            localize = false,
+            sub_widgets = sub_combat,
         }
     end
 
@@ -501,8 +548,13 @@ mod.zipit2_build_widgets = function()
         local groups = D.major_groups or {}
         local classes = D.major_classes or {}
         local classes_count = #classes
+        local tab_title = nil
 
         for i = 1, classes_count do
+            if ((i - 1) % 3) == 0 then
+                tab_title = _major_tab_title(groups, classes, i)
+            end
+
             local key = classes[i]
             local g = groups[key]
             local title = " " .. ((g and g.label) or key)
@@ -520,6 +572,8 @@ mod.zipit2_build_widgets = function()
                 mod:localize("major_npc_briefings_name"),
                 true
             )
+            sub[sub_len].tab = tab_title
+
             sub_len = _add_dropdown(
                 sub,
                 sub_len,
@@ -528,6 +582,7 @@ mod.zipit2_build_widgets = function()
                 "none",
                 _major_chatter_mode_options()
             )
+            sub[sub_len].tab = tab_title
 
             _push_setting_id("major", sid_brief)
             _push_setting_id("major", sid_chatter)
@@ -546,6 +601,7 @@ mod.zipit2_build_widgets = function()
                 title = title,
                 subtitle = subtitle,
                 localize = false,
+                tab = tab_title,
                 sub_widgets = sub,
             }
         end

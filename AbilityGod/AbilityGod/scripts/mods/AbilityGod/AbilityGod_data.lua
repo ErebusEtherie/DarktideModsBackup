@@ -206,6 +206,30 @@ return {
                     },
                 },
             },
+            {
+                setting_id = "header_cryptic",
+                type = "group",
+                sub_widgets = {
+                    {
+                        setting_id = "cryptic_chordclaw",
+                        type = "dropdown",
+                        default_value = MODE.never,
+                        options = opts_other(),
+                    },
+                    {
+                        setting_id = "cryptic_discharge",
+                        type = "dropdown",
+                        default_value = MODE.never,
+                        options = opts_other(),
+                    },
+                    {
+                        setting_id = "cryptic_stance",
+                        type = "dropdown",
+                        default_value = MODE.never,
+                        options = opts_other(),
+                    },
+                },
+            },
         },
 	},
 }

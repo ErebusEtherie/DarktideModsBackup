@@ -43,4 +43,12 @@ return {
 		en = "Vertical position of the distance display (0 = top, 1 = bottom).",
 		["zh-cn"] = "距离显示的垂直位置（0 = 顶部，1 = 底部）。",
 	},
+	mod_compass_range_finder_show_unmarked_title = {
+		en = "Show Closest Unmarked Opportunity",
+		["zh-cn"] = "显示最近的未标记机会",
+	},
+	mod_compass_range_finder_show_unmarked_description = {
+		en = "Display the closest unmarked and uncompleted opportunity if it's closer than marked targets (shown in green).",
+		["zh-cn"] = "如果最近的未标记且未完成的机会比标记目标更近，则显示它（以绿色显示）。",
+	},
 }

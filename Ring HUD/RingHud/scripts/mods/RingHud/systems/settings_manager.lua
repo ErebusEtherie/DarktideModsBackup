@@ -74,6 +74,36 @@ mod._settings = {
     hide_default_player            = mod:get("hide_default_player"),
 
     minimal_objective_feed_enabled = mod:get("minimal_objective_feed_enabled"),
+
+    -- Tuning - Ring
+    ring_bar_thickness             = mod:get("ring_bar_thickness"),
+    radius_toughness               = mod:get("radius_toughness"),
+    radius_peril                   = mod:get("radius_peril"),
+    radius_stamina                 = mod:get("radius_stamina"),
+    radius_charge                  = mod:get("radius_charge"),
+    radius_dodge                   = mod:get("radius_dodge"),
+    radius_blitz                   = mod:get("radius_blitz"),
+    radius_talent                  = mod:get("radius_talent"),
+    radius_ammo                    = mod:get("radius_ammo"),
+
+
+    -- Tuning - Arc
+    arc_toughness_pos = mod:get("arc_toughness_pos"),
+    arc_toughness_len = mod:get("arc_toughness_len"),
+    arc_peril_pos     = mod:get("arc_peril_pos"),
+    arc_peril_len     = mod:get("arc_peril_len"),
+    arc_stamina_pos   = mod:get("arc_stamina_pos"),
+    arc_stamina_len   = mod:get("arc_stamina_len"),
+    arc_charge_pos    = mod:get("arc_charge_pos"),
+    arc_charge_len    = mod:get("arc_charge_len"),
+    arc_dodge_pos     = mod:get("arc_dodge_pos"),
+    arc_dodge_len     = mod:get("arc_dodge_len"),
+    arc_blitz_pos     = mod:get("arc_blitz_pos"),
+    arc_blitz_len     = mod:get("arc_blitz_len"),
+    arc_talent_pos    = mod:get("arc_talent_pos"),
+    arc_talent_len    = mod:get("arc_talent_len"),
+    arc_ammo_pos      = mod:get("arc_ammo_pos"),
+    arc_ammo_len      = mod:get("arc_ammo_len"),
 }
 
 -- Centralized settings change handler (the only one in the mod)
@@ -85,7 +115,10 @@ function mod.on_setting_changed(setting_id)
         or setting_id == "player_hud_offset_x" or setting_id == "player_hud_offset_y"
         or setting_id == "player_hud_font"
         or setting_id == "player_hud_text_size"
-        or setting_id == "player_hud_text_offset" then
+        or setting_id == "player_hud_text_offset"
+        or string.match(setting_id, "^radius_")
+        or string.match(setting_id, "^arc_")
+        or setting_id == "ring_bar_thickness" then
         mod._ringhud_needs_rebuild = true
     end
 

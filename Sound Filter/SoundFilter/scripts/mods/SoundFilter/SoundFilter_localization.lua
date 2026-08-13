@@ -38,6 +38,12 @@ return {
 	weapon_locomotion_description = {
 		en = "Enable/Disable Weapon Locomotion Sound Effects",
 	},
+	crit_swing = {
+		en = "Melee Critical Swing Indicator Sound",
+	},
+	crit_swing_description = {
+		en = "Enable/Disable Melee Critical Swing Indicator Sound",
+	},
 	beastvomit = {
 		en = "Beast Of Nurgle Vomit",
 	},
@@ -67,6 +73,24 @@ return {
 	},
 	play_explosion_refl_small_description = {
 		en = "Small Explosion Echo for Barrels, Plasma Gun Overheat, Critical Peril Explosion",
+	},
+	staff_medium_explosion = {
+		en = "Psyker Staff Primary Fire Explosion Sound",
+	},
+	staff_medium_explosion_description = {
+		en = "Enable/Disable Psyker Staff Primary Fire Explosion Sound (All Staffs except Flame)",
+	},
+	staff_small_explosion = {
+		en = "Psyker Staff Secondary Fire Explosion Sound",
+	},
+	staff_small_explosion_description = {
+		en = "Enable/Disable Psyker Staff Secondary Fire Explosion Sound (Voidstrike & Voidblast)",
+	},
+	staff_projectile = {
+		en = "Psyker Staff Primary Attack Sound",
+	},
+	staff_projectile_description = {
+		en = "Enable/Diable Psyker Staff Primary Attack Sound (All Staffs except Flame)",
 	},
 	flamer_explosion = {
 		en = "Specialist Flamer Tank Explosion",

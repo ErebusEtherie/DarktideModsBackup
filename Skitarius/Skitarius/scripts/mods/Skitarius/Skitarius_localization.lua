@@ -1,6 +1,10 @@
 -- Chinese localization provided by jcyl2023 and SyuanTsai
 
 local Localize = Localize
+local function cf(text, color_name)
+    local color = Color[color_name](255, true)
+    return string.format("{#color(%s,%s,%s)}", color[2], color[3], color[4]) .. text .. "{#color(203,203,203)}"
+end
 
 local localizations = {
     -- Mod Details
@@ -269,10 +273,22 @@ local localizations = {
     crunch = {
         en = Localize("loc_talent_ogryn_fully_charged_attacks_gain_damage_and_stagger"),
     },
+    mechsword = {
+        en = Localize("loc_weapon_family_powersword_p3_m1")
+    },
     heavy_buff_stacks = {
         en = "Heavy Buff Stacks",
         ["zh-tw"] = "重擊強化層數",
         ["zh-cn"] = "蓄力buff层数",
+    },
+    heavy_buff_stacks_tooltip = {
+        en = string.format(
+            "Max Stacks:\n" ..
+            cf(Localize("loc_trait_bespoke_power_bonus_based_on_charge_time") .. " / " .. Localize("loc_weapon_family_crowbar_p1_m1") .. ":","terminal_text_body") .. " 3\n" ..
+            cf(Localize("loc_trait_bespoke_toughness_on_hit_based_on_charge_time") .. ":","terminal_text_body") .. " 3\n" ..
+            cf(Localize("loc_talent_ogryn_fully_charged_attacks_gain_damage_and_stagger") .. ":","terminal_text_body") .. " 4\n" ..
+            cf(Localize("loc_weapon_family_powersword_p3_m1") .. ":","terminal_text_body") .. " 4\n"
+        )
     },
     heavy_buff_special = {
         en = "Special Required For Heavy Modifier",
@@ -412,6 +428,12 @@ local localizations = {
     heavy_attack = { en = Localize("loc_weapon_action_title_heavy") },
     sprint_heavy_attack = { en = Localize("loc_heavy_attack") .. " (" .. Localize("loc_sprint_slide") .. ")" },
     special_action = { en = Localize("loc_weapon_action_title_special"), },
+    special_heavy = { en = Localize("loc_weapon_action_title_special") .. " (" .. Localize("loc_heavy_attack") .. ")" },
+    special_invert = { 
+        en = Localize("loc_weapon_action_title_special") .. " (Inverted)",
+        ["zh-tw"] = Localize("loc_weapon_action_title_special") .. " (反向)",
+        ["zh-cn"] = Localize("loc_weapon_action_title_special") .. " (反向)",
+    },
     block = { en = Localize("loc_block"), },
     push = { en = Localize("loc_pushing"), },
     push_attack = { en = Localize("loc_push_follow_up"), },
@@ -423,13 +445,13 @@ local localizations = {
         ["zh-tw"] = "重置近戰武器",
         ["zh-cn"] = "重置近战武器",
     },
-    reset_all_melee = { en = Localize("loc_talent_menu_action_clear_all_points") .. " (" .. Localize("loc_glossary_term_melee_weapons") .. ")" },
+    reset_all_melee = { en = string.upper(Localize("loc_talent_menu_action_clear_all_points") .. " (" .. Localize("loc_glossary_term_melee_weapons") .. ")") },
     reset_weapon_ranged = {
         en = "RESET RANGED WEAPON",
         ["zh-tw"] = "重置遠程武器",
         ["zh-cn"] = "重置远程武器",
     },
-    reset_all_ranged = { en = Localize("loc_talent_menu_action_clear_all_points") .. " (" .. Localize("loc_glossary_term_ranged_weapons") .. ")" },
+    reset_all_ranged = { en = string.upper(Localize("loc_talent_menu_action_clear_all_points") .. " (" .. Localize("loc_glossary_term_ranged_weapons") .. ")") },
     -- Ranged
     ranged_settings = { en = Localize("loc_glossary_term_ranged_weapons") },
     always_charge = {

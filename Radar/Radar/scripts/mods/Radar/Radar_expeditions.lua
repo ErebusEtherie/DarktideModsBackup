@@ -111,7 +111,6 @@ return function(env)
             return false
         end
 
-        -- Safe-zone store data marks sanctuary shop fixtures without also matching player-dropped deployables.
         local get_unit_store_data = game_mode.get_unit_store_data
         if type(get_unit_store_data) == "function" then
             local ok_store_data, store_data = pcall(get_unit_store_data, game_mode, unit)
@@ -600,8 +599,42 @@ return function(env)
         return _is_radar_enabled_for_current_mode(mission_name, mechanism_name)
     end
 
+    local _runtime_state_cached_t = nil
+    local _runtime_state_allowed = false
+    local _runtime_state_reason = nil
+    local _runtime_state_mission_name = nil
+    local _runtime_state_activity = nil
+    local _runtime_state_mechanism_name = nil
+    local _runtime_state_player_unit = nil
+    local _runtime_state_player_pos = nil
+
+    function _invalidate_runtime_state_cache()
+        _runtime_state_cached_t = nil
+    end
+
+    local function _store_runtime_state(allowed, reason, gameplay_t, mission_name, activity, mechanism_name,
+                                        player_unit, player_pos)
+        _runtime_state_cached_t = gameplay_t
+        _runtime_state_allowed = allowed
+        _runtime_state_reason = reason
+        _runtime_state_mission_name = mission_name
+        _runtime_state_activity = activity
+        _runtime_state_mechanism_name = mechanism_name
+        _runtime_state_player_unit = player_unit
+        _runtime_state_player_pos = player_pos
+
+        return allowed, reason, gameplay_t, mission_name, activity, mechanism_name, player_unit, player_pos
+    end
+
     function _get_runtime_state()
         local gameplay_t = _safe_gameplay_time()
+
+        if gameplay_t ~= nil and gameplay_t == _runtime_state_cached_t then
+            return _runtime_state_allowed, _runtime_state_reason, gameplay_t, _runtime_state_mission_name,
+                _runtime_state_activity, _runtime_state_mechanism_name, _runtime_state_player_unit,
+                _runtime_state_player_pos
+        end
+
         local mission_name = _safe_mission_name()
         local activity = _safe_presence_activity()
         local mechanism_name = _safe_mechanism_name()
@@ -609,54 +642,62 @@ return function(env)
         local player_pos = _safe_unit_position(player_unit)
 
         if activity == "loading" then
-            return false, "loading", gameplay_t, mission_name, activity, mechanism_name, player_unit, player_pos
+            return _store_runtime_state(false, "loading", gameplay_t, mission_name, activity, mechanism_name,
+                player_unit, player_pos)
         end
 
         if mechanism_name == "left_session" or mechanism_name == "hub" then
-            return false, "hub_mechanism", gameplay_t, mission_name, activity, mechanism_name, player_unit, player_pos
+            return _store_runtime_state(false, "hub_mechanism", gameplay_t, mission_name, activity, mechanism_name,
+                player_unit, player_pos)
         end
 
         if not mission_name then
-            return false, "no_mission", gameplay_t, mission_name, activity, mechanism_name, player_unit, player_pos
+            return _store_runtime_state(false, "no_mission", gameplay_t, mission_name, activity, mechanism_name,
+                player_unit, player_pos)
         end
 
         if mission_name == "hub_ship" then
-            return false, "hub_mission", gameplay_t, mission_name, activity, mechanism_name, player_unit, player_pos
+            return _store_runtime_state(false, "hub_mission", gameplay_t, mission_name, activity, mechanism_name,
+                player_unit, player_pos)
         end
 
         if mechanism_name == "onboarding" and mission_name ~= "tg_shooting_range" then
-            return false, "onboarding_non_psykhanium", gameplay_t, mission_name, activity, mechanism_name, player_unit,
-                player_pos
+            return _store_runtime_state(false, "onboarding_non_psykhanium", gameplay_t, mission_name, activity,
+                mechanism_name, player_unit, player_pos)
         end
 
         if _is_hub_runtime(mission_name, activity, mechanism_name) then
-            return false, "hub_runtime", gameplay_t, mission_name, activity, mechanism_name, player_unit, player_pos
+            return _store_runtime_state(false, "hub_runtime", gameplay_t, mission_name, activity, mechanism_name,
+                player_unit, player_pos)
         end
 
         if not mod:is_radar_runtime_game_mode_allowed() then
-            return false, "game_mode_disabled", gameplay_t, mission_name, activity, mechanism_name, player_unit,
-                player_pos
+            return _store_runtime_state(false, "game_mode_disabled", gameplay_t, mission_name, activity, mechanism_name,
+                player_unit, player_pos)
         end
 
         if _is_local_player_using_foreign_unit(player_unit) then
-            return false, "spectating_teammate", gameplay_t, mission_name, activity, mechanism_name, player_unit,
-                player_pos
+            return _store_runtime_state(false, "spectating_teammate", gameplay_t, mission_name, activity, mechanism_name,
+                player_unit, player_pos)
         end
 
         if not _is_player_unit_alive(player_unit) then
-            return false, "player_not_alive", gameplay_t, mission_name, activity, mechanism_name, player_unit, player_pos
+            return _store_runtime_state(false, "player_not_alive", gameplay_t, mission_name, activity, mechanism_name,
+                player_unit, player_pos)
         end
 
         if _is_player_unit_captured(player_unit) then
-            return false, "player_captured", gameplay_t, mission_name, activity, mechanism_name, player_unit, player_pos
+            return _store_runtime_state(false, "player_captured", gameplay_t, mission_name, activity, mechanism_name,
+                player_unit, player_pos)
         end
 
         if not player_pos then
-            return false, "no_player_position", gameplay_t, mission_name, activity, mechanism_name, player_unit,
-                player_pos
+            return _store_runtime_state(false, "no_player_position", gameplay_t, mission_name, activity, mechanism_name,
+                player_unit, player_pos)
         end
 
-        return true, "ok", gameplay_t, mission_name, activity, mechanism_name, player_unit, player_pos
+        return _store_runtime_state(true, "ok", gameplay_t, mission_name, activity, mechanism_name, player_unit,
+            player_pos)
     end
 
     function _is_allowed_runtime()
@@ -714,6 +755,7 @@ return function(env)
 
     function _kind_enabled(kind)
         local get_enemy_marker_mode = mod.get_enemy_marker_mode
+        local get_icon_distance_marker_display_mode = mod.get_icon_distance_marker_display_mode
         local get_expedition_marker_display_mode = mod.get_expedition_marker_display_mode
         local get_marker_display_mode = mod.get_marker_display_mode
         local get_setting = mod.get
@@ -729,8 +771,21 @@ return function(env)
             return show_players ~= false and show_players ~= "off"
         end
 
+        if kind == "player_companion_dog" or kind == "player_companion_servo_skull" then
+            local companion_setting_id = KIND_TO_SETTING[kind]
+            local companion_setting = companion_setting_id and get_setting(mod, companion_setting_id)
+
+            return companion_setting ~= false and companion_setting ~= "off"
+        end
+
         if enemy_display_mode ~= nil then
             return enemy_display_mode ~= "off"
+        end
+
+        local icon_distance_display_mode = get_icon_distance_marker_display_mode and
+            get_icon_distance_marker_display_mode(mod, kind) or nil
+        if icon_distance_display_mode ~= nil then
+            return icon_distance_display_mode ~= "off"
         end
 
         local expedition_display_mode = get_expedition_marker_display_mode and
@@ -759,7 +814,9 @@ return function(env)
             return false
         end
 
-        if kind == "player_teammate" then
+        if kind == "player_teammate"
+            or kind == "player_companion_dog"
+            or kind == "player_companion_servo_skull" then
             return false
         end
 
@@ -779,8 +836,6 @@ return function(env)
             return true
         end
 
-        -- Player-drop loot bookkeeping lives on the server; clients still identify the pickup by
-        -- pickup_type, so section filtering must not require the server-only dropped-loot table.
         local game_mode = _safe_game_mode()
         local active_section_index = _safe_expedition_active_section_index(game_mode)
 
@@ -817,7 +872,6 @@ return function(env)
         local meta = _pickup_meta(pickup_name, interaction_type, ui_interaction_type, icon, description,
             marked_by_player_slot)
 
-        -- default items
         if interaction_type == "chest" then
             return "crate_unknown", meta
         end
@@ -999,36 +1053,42 @@ return function(env)
         return kind, meta
     end
 
+    local _enemy_kind_by_breed_cache = {}
+
     function _classify_enemy_from_breed(breed_name)
-        local key = string_lower(breed_name or "")
+        local cache_key = breed_name or ""
+        local cached = _enemy_kind_by_breed_cache[cache_key]
+
+        if cached ~= nil then
+            return cached or nil
+        end
+
+        local key = string_lower(cache_key)
+        local kind = nil
 
         if key == "chaos_daemonhost" or key == "chaos_mutator_daemonhost" or string_find(key, "daemonhost", 1, true) then
-            return "enemy_daemonhost"
-        end
-
-        if TWIN_BREEDS[key] or string_find(key, "twin_captain", 1, true) then
-            return "enemy_karnak_twin"
-        end
-
-        if CAPTAIN_BREEDS[key] or string_find(key, "captain", 1, true) then
-            return "enemy_captain"
-        end
-
-        if MONSTROSITY_BREEDS[key]
+            kind = "enemy_daemonhost"
+        elseif TWIN_BREEDS[key] or string_find(key, "twin_captain", 1, true) then
+            kind = "enemy_karnak_twin"
+        elseif CAPTAIN_BREEDS[key] or string_find(key, "captain", 1, true) then
+            kind = "enemy_captain"
+        elseif MONSTROSITY_BREEDS[key]
             or string_find(key, "beast_of_nurgle", 1, true)
             or string_find(key, "plague_ogryn", 1, true)
             or string_find(key, "chaos_spawn", 1, true)
             or string_find(key, "houndmaster", 1, true) then
-            return "enemy_monstrosity"
+            kind = "enemy_monstrosity"
+        else
+            local definition = ENEMY_RADAR_DEFINITIONS_BY_BREED[key]
+
+            if definition then
+                kind = definition.kind
+            end
         end
 
-        local definition = ENEMY_RADAR_DEFINITIONS_BY_BREED[key]
+        _enemy_kind_by_breed_cache[cache_key] = kind or false
 
-        if definition then
-            return definition.kind
-        end
-
-        return nil
+        return kind
     end
 
     function _track_unit(unit, kind, source, meta)
@@ -1045,7 +1105,9 @@ return function(env)
 
         local existing = tracked_units[unit]
         local now = _safe_gameplay_time() or 0
-        local position = _safe_unit_position(unit)
+        local position = meta and _copy_vector3(meta.position) or nil
+
+        position = position or _safe_unit_position(unit)
 
         if existing then
             existing.kind = kind
@@ -1438,17 +1500,90 @@ return function(env)
         _prune_player_smart_tag_states(seen_tag_ids)
     end
 
-    local function _safe_navigation_handler_marked_by_slot(navigation_handler, level_index)
-        local player_slot_by_level_marked = navigation_handler and navigation_handler.player_slot_by_level_marked
+    local PLAYER_SLOT_MASK_BY_SLOT = {
+        1,
+        2,
+        4,
+        8,
+    }
 
-        if not player_slot_by_level_marked or level_index == nil then
+    local function _marked_player_slots_result(marked_slots, marked_level_index)
+        local local_player_slot = tonumber(_safe_player_slot(_local_player()))
+        local preferred_local_slot = nil
+        local first_numeric_slot = nil
+        local first_raw_slot = nil
+        local marked_player_slots_mask = 0
+
+        for player_slot, level_index in pairs(marked_slots) do
+            if marked_level_index == nil or level_index == marked_level_index then
+                first_raw_slot = first_raw_slot or player_slot
+
+                local numeric_slot = tonumber(player_slot)
+
+                if numeric_slot then
+                    if first_numeric_slot == nil or numeric_slot < first_numeric_slot then
+                        first_numeric_slot = numeric_slot
+                    end
+
+                    if numeric_slot == local_player_slot then
+                        preferred_local_slot = numeric_slot
+                    end
+
+                    local slot_mask = PLAYER_SLOT_MASK_BY_SLOT[numeric_slot]
+
+                    if slot_mask then
+                        marked_player_slots_mask = marked_player_slots_mask + slot_mask
+                    end
+                end
+            end
+        end
+
+        return preferred_local_slot or first_numeric_slot or first_raw_slot,
+            marked_player_slots_mask ~= 0 and marked_player_slots_mask or nil
+    end
+
+    local function _safe_navigation_handler_marked_by_slot(navigation_handler, level_index)
+        if not navigation_handler or level_index == nil then
             return nil
         end
 
-        local ok, player_slot = pcall(player_slot_by_level_marked, navigation_handler, level_index)
+        local player_slots_by_level_marked = navigation_handler.player_slots_by_level_marked
 
-        if ok then
-            return player_slot
+        if type(player_slots_by_level_marked) == "function" then
+            local ok_slots, player_slots, num_player_slots = pcall(
+                player_slots_by_level_marked,
+                navigation_handler,
+                level_index
+            )
+            local numeric_num_player_slots = tonumber(num_player_slots)
+
+            if ok_slots and type(player_slots) == "table"
+                and numeric_num_player_slots and numeric_num_player_slots > 0 then
+                return _marked_player_slots_result(player_slots)
+            end
+        end
+
+        local player_slot_by_level_marked = navigation_handler.player_slot_by_level_marked
+
+        if type(player_slot_by_level_marked) == "function" then
+            local ok_slot, player_slot = pcall(player_slot_by_level_marked, navigation_handler, level_index)
+
+            if ok_slot then
+                local numeric_slot = tonumber(player_slot)
+                local slot_mask = numeric_slot and PLAYER_SLOT_MASK_BY_SLOT[numeric_slot] or nil
+
+                return player_slot, slot_mask
+            end
+        end
+
+        local get_marked_player_slots = navigation_handler.get_marked_player_slots
+
+        if type(get_marked_player_slots) == "function" then
+            local ok_marked_slots, marked_slots = pcall(get_marked_player_slots, navigation_handler)
+
+            if ok_marked_slots and type(marked_slots) == "table" then
+                return _marked_player_slots_result(marked_slots, level_index)
+            end
         end
 
         return nil
@@ -1537,6 +1672,9 @@ return function(env)
                     safe_expedition_section_index_by_level_index(game_mode, level_index) or nil
 
                 if position and is_active_section and not is_completed then
+                    local marked_by_player_slot, marked_player_slots_mask =
+                        safe_navigation_handler_marked_by_slot(navigation_handler, level_index)
+
                     track_point(
                         string_format("%s:%s", tostring(kind), tostring(level_index)),
                         kind,
@@ -1545,8 +1683,8 @@ return function(env)
                         {
                             objective_icon = _expedition_opportunity_icon(level_index),
                             objective_title_icon = _expedition_opportunity_title_icon(location_id),
-                            marked_by_player_slot = safe_navigation_handler_marked_by_slot(navigation_handler,
-                                level_index),
+                            marked_by_player_slot = marked_by_player_slot,
+                            marked_player_slots_mask = marked_player_slots_mask,
                             expedition_level_index = level_index,
                             expedition_section_index = section_index,
                             objective_location_id = location_id,
@@ -1611,6 +1749,8 @@ return function(env)
             local entry = entries[index]
             local level_index = entry.level_index
             local position = entry.position
+            local marked_by_player_slot, marked_player_slots_mask =
+                safe_navigation_handler_marked_by_slot(navigation_handler, level_index)
 
             track_point(
                 string_format("%s:%s", tostring(kind), tostring(level_index)),
@@ -1619,7 +1759,8 @@ return function(env)
                 "expedition_navigation",
                 {
                     objective_icon = EXPEDITION_OBJECTIVE_ICON_DEFAULTS[kind],
-                    marked_by_player_slot = safe_navigation_handler_marked_by_slot(navigation_handler, level_index),
+                    marked_by_player_slot = marked_by_player_slot,
+                    marked_player_slots_mask = marked_player_slots_mask,
                     expedition_level_index = level_index,
                     expedition_section_index = entry.section_index,
                     objective_location_id = index,
@@ -1653,6 +1794,8 @@ return function(env)
 
             if position then
                 local level_index = _safe_expedition_level_index(level_data and level_data.level or nil)
+                local marked_by_player_slot, marked_player_slots_mask =
+                    _safe_navigation_handler_marked_by_slot(navigation_handler, level_index)
 
                 _track_point(
                     string_format("%s:%s:%s", tostring(kind), tostring(level_index or i),
@@ -1662,7 +1805,8 @@ return function(env)
                     "expedition_level_tag",
                     {
                         objective_icon = EXPEDITION_OBJECTIVE_ICON_DEFAULTS[kind],
-                        marked_by_player_slot = _safe_navigation_handler_marked_by_slot(navigation_handler, level_index),
+                        marked_by_player_slot = marked_by_player_slot,
+                        marked_player_slots_mask = marked_player_slots_mask,
                         expedition_level_index = level_index,
                         objective_tag = level_tag,
                         reference_name = level_data and level_data.reference_name or nil,

@@ -12,6 +12,10 @@ local GAP_Y               = C.TILE_SIZE / 1.5
 
 local STACK_Y_OFFSET      = C.STACK_Y_OFFSET or math.floor(C.TILE_SIZE * 0.5)
 
+local TEAM_RING_SIZE      = 0.45
+local TEAM_RING_THICKNESS = 0.03
+local TEAM_RING_OUTLINE   = 0.02
+
 local function _add_pass(passes, style_map, pass)
     passes[#passes + 1] = pass
     if pass.style_id and pass.style then
@@ -65,9 +69,9 @@ local function make_tile_only_widget_def(node_name)
                 uvs                  = { { 0, 0 }, { 1, 1 } },
                 horizontal_alignment = "center",
                 vertical_alignment   = "center",
-                offset               = { C.TILE_SIZE / 16, C.TILE_SIZE / 8, 1 },
+                offset               = { C.ARC_SIZE / 45 + 2, -(C.ARC_SIZE * 11 / 180) + 1, 1 },
                 size                 = { C.ARC_SIZE, C.ARC_SIZE },
-                pivot                = { C.ARC_SIZE / 2, C.ARC_SIZE },
+                pivot                = { 0, 0 },
                 angle                = 0,
                 color                = { 255, 255, 255, 255 },
                 material_values      = {
@@ -78,6 +82,7 @@ local function make_tile_only_widget_def(node_name)
                     outline_color        = { 1, 1, 1, 1 },
                     lightning_opacity    = 0,
                     glow_on_off          = 0,
+                    SizeThicknessOutline = { TEAM_RING_SIZE, TEAM_RING_THICKNESS, TEAM_RING_OUTLINE },
                 },
             }
         })
@@ -99,9 +104,9 @@ local function make_tile_only_widget_def(node_name)
                 uvs                  = { { 0, 0 }, { 1, 1 } },
                 horizontal_alignment = "center",
                 vertical_alignment   = "center",
-                offset               = { C.TILE_SIZE / 16, C.TILE_SIZE / 8, 2 },
+                offset               = { C.ARC_SIZE / 45 + 2, -(C.ARC_SIZE * 11 / 180) + 1, 2 },
                 size                 = { C.ARC_SIZE, C.ARC_SIZE },
-                pivot                = { C.ARC_SIZE / 2, C.ARC_SIZE },
+                pivot                = { 0, 0 },
                 angle                = 0,
                 color                = { 255, 255, 255, 255 },
                 material_values      = {
@@ -111,6 +116,7 @@ local function make_tile_only_widget_def(node_name)
                     outline_color        = { 0.8, 0.27, 0.8, 1.0 },
                     lightning_opacity    = 0,
                     glow_on_off          = 0,
+                    SizeThicknessOutline = { TEAM_RING_SIZE, TEAM_RING_THICKNESS, TEAM_RING_OUTLINE },
                 },
             }
         })
@@ -131,9 +137,9 @@ local function make_tile_only_widget_def(node_name)
             uvs                  = { { 0, 0 }, { 1, 1 } },
             horizontal_alignment = "center",
             vertical_alignment   = "center",
-            offset               = { C.TILE_SIZE / 16, C.TILE_SIZE / 8, 2 }, -- same z as corruption overlay
+            offset               = { C.ARC_SIZE / 45 + 2, -(C.ARC_SIZE * 11 / 180) + 1, 2 }, -- same z as corruption overlay
             size                 = { C.ARC_SIZE, C.ARC_SIZE },
-            pivot                = { C.ARC_SIZE / 2, C.ARC_SIZE },
+            pivot                = { 0, 0 },
             angle                = 0,
             color                = { 255, 255, 255, 255 },
             material_values      = {
@@ -143,6 +149,7 @@ local function make_tile_only_widget_def(node_name)
                 outline_color        = { 1, 0.2, 0.2, 1.0 },  -- overwritten at runtime as needed
                 lightning_opacity    = 0,
                 glow_on_off          = 0,
+                SizeThicknessOutline = { TEAM_RING_SIZE, TEAM_RING_THICKNESS, TEAM_RING_OUTLINE },
             },
         }
     })
@@ -161,9 +168,9 @@ local function make_tile_only_widget_def(node_name)
             uvs                  = { { 0, 0 }, { 1, 1 } },
             horizontal_alignment = "center",
             vertical_alignment   = "center",
-            offset               = { C.TILE_SIZE / 16, C.TILE_SIZE / 8, 3 }, -- above base
+            offset               = { C.ARC_SIZE / 45 + 2, -(C.ARC_SIZE * 11 / 180) + 1, 3 }, -- above base
             size                 = { C.ARC_SIZE, C.ARC_SIZE },
-            pivot                = { C.ARC_SIZE / 2, C.ARC_SIZE },
+            pivot                = { 0, 0 },
             angle                = 0,
             color                = { 255, 255, 255, 255 },
             material_values      = {
@@ -173,6 +180,7 @@ local function make_tile_only_widget_def(node_name)
                 outline_color        = { 1, 0.2, 0.2, 1.0 },  -- overwritten at runtime as needed
                 lightning_opacity    = 0,
                 glow_on_off          = 0,
+                SizeThicknessOutline = { TEAM_RING_SIZE, TEAM_RING_THICKNESS, TEAM_RING_OUTLINE },
             },
         }
     })
@@ -376,7 +384,7 @@ local function make_name_only_widget_def(node_name)
             s.text_horizontal_alignment = "center"
             s.text_vertical_alignment   = "bottom"
             s.size                      = { C.TILE_SIZE, C.TILE_SIZE / 12 }
-            s.offset                    = { 0, 0, 50 }
+            s.offset                    = { 0, 0, 0 }
             s.font_size                 = C.TILE_SIZE / 13.5
             s.visible                   = true
             return s
@@ -384,349 +392,6 @@ local function make_name_only_widget_def(node_name)
     })
 
     return UIWidget.create_definition(passes, node_name, content, style)
-end
-
---------------------------------------------------------------------------------
--- LoadoutMonitor compatibility widget (definition only)
--- (Actual feeding/visibility is handled in HudElementRingHud_team_docked.lua)
---------------------------------------------------------------------------------
-local LM_TEXT_COLOR    = { 255, 239, 238, 238 }
-local LM_TRAIT_OFFSETS = { bless = { 280 }, perk = { 370 } }
-
-local function make_loadout_monitor_widget_def(node_name)
-    -- Copied structurally from LoadoutMonitor's playerloadout_definition, but:
-    -- - mod.text_color -> LM_TEXT_COLOR (because here `mod` is RingHud, not LoadoutMonitor)
-    -- - trait_offsets  -> LM_TRAIT_OFFSETS
-    return UIWidget.create_definition(
-        {
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_Feats",
-                style_id = "loadout_intel_Feats",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { 0, 11.5, 150 },
-                    size = { 500, 100 },
-                    text_color = Color.golden_rod(255, true),
-                    font_size = 18,
-                },
-
-            },
-            {
-                pass_type = "texture",
-                value_id = "loadout_intel_icon_1",
-                style_id = "loadout_intel_icon_1",
-                value = "content/ui/materials/icons/talents/talent_icon_container",
-                style = {
-                    vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    offset = { 200, 0, 150 },
-                    size = { 36, 36 },
-                    color = Color.aqua(0, true),
-                    material_values = {
-                        icon_texture = "",
-                        intensity = 1,
-                    },
-                },
-            },
-            {
-                pass_type = "texture",
-                value_id = "loadout_intel_icon_2",
-                style_id = "loadout_intel_icon_2",
-                value = "content/ui/materials/icons/talents/talent_icon_container",
-                style = {
-                    vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    offset = { 200, 0, 150 },
-                    size = { 36, 36 },
-                    color = Color.aqua(0, true),
-                    material_values = {
-                        icon_texture = "",
-                        intensity = 1,
-                    },
-                },
-            },
-            {
-                pass_type = "texture",
-                value_id = "loadout_intel_icon_3",
-                style_id = "loadout_intel_icon_3",
-                value = "content/ui/materials/icons/talents/talent_icon_container",
-                style = {
-                    vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    offset = { 200, 0, 150 },
-                    size = { 36, 36 },
-                    color = Color.aqua(0, true),
-                    material_values = {
-                        icon_texture = "",
-                        intensity = 1,
-                    },
-                },
-            },
-            {
-                pass_type = "texture",
-                value_id = "loadout_intel_icon_4",
-                style_id = "loadout_intel_icon_4",
-                value = "content/ui/materials/icons/talents/talent_icon_container",
-                style = {
-                    vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    offset = { 200, 0, 150 },
-                    size = { 36, 36 },
-                    color = Color.aqua(0, true),
-                    material_values = {
-                        icon_texture = "",
-                        intensity = 1,
-                    },
-                },
-            },
-            {
-                pass_type = "texture",
-                value_id = "loadout_intel_icon_5",
-                style_id = "loadout_intel_icon_5",
-                value = "content/ui/materials/icons/talents/talent_icon_container",
-                style = {
-                    vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    offset = { 200, 0, 150 },
-                    size = { 36, 36 },
-                    color = Color.aqua(0, true),
-                    material_values = {
-                        icon_texture = "",
-                        intensity = 1,
-                    },
-                },
-            },
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_Class",
-                style_id = "loadout_intel_Class",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { 105, 6.5, 150 },
-                    size = { 500, 100 },
-                    text_color = Color.golden_rod(255, true),
-                    font_size = 18,
-                },
-
-            },
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_PlayerName",
-                style_id = "loadout_intel_PlayerName",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { 300, 6.5, 150 },
-                    size = { 500, 100 },
-                    text_color = Color.golden_rod(255, true),
-                    font_size = 18,
-                },
-
-            },
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_companion_name",
-                style_id = "loadout_intel_companion_name",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { 300, 6.5, 150 },
-                    size = { 500, 100 },
-                    text_color = Color.golden_rod(255, true),
-                    font_size = 18,
-                },
-
-            },
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_Melee",
-                style_id = "loadout_intel_Melee",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { 0, 29.5, 200 },
-                    size = { 275, 100 },
-                    text_color = LM_TEXT_COLOR,
-                    font_size = 20,
-                    line_spacing = 0.8,
-                },
-
-            },
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_Melee_bless_1",
-                style_id = "loadout_intel_Melee_bless_1",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { LM_TRAIT_OFFSETS.bless[1], 22.5, 200 },
-                    size = { 500, 100 },
-                    text_color = LM_TEXT_COLOR,
-                    font_size = 14,
-                },
-
-            },
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_Melee_bless_2",
-                style_id = "loadout_intel_Melee_bless_2",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { LM_TRAIT_OFFSETS.bless[1], 38.5, 200 },
-                    size = { 500, 100 },
-                    text_color = LM_TEXT_COLOR,
-                    font_size = 14,
-                },
-
-            },
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_Melee_perk_1",
-                style_id = "loadout_intel_Melee_perk_1",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { 370, 23, 200 },
-                    size = { 275, 100 },
-                    text_color = LM_TEXT_COLOR,
-                    font_size = 14,
-                },
-
-            },
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_Melee_perk_2",
-                style_id = "loadout_intel_Melee_perk_2",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { 370, 39, 200 },
-                    size = { 500, 100 },
-                    text_color = LM_TEXT_COLOR,
-                    font_size = 14,
-                },
-
-            },
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_Range",
-                style_id = "loadout_intel_Range",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { 0, 59.5, 200 },
-                    size = { 275, 100 },
-                    text_color = LM_TEXT_COLOR,
-                    font_size = 20,
-                    line_spacing = 0.8,
-                },
-
-            },
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_Range_bless_1",
-                style_id = "loadout_intel_Range_bless_1",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { LM_TRAIT_OFFSETS.bless[1], 57, 200 },
-                    size = { 500, 100 },
-                    text_color = LM_TEXT_COLOR,
-                    font_size = 14,
-                },
-
-            },
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_Range_bless_2",
-                style_id = "loadout_intel_Range_bless_2",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { LM_TRAIT_OFFSETS.bless[1], 72, 200 },
-                    size = { 500, 100 },
-                    text_color = LM_TEXT_COLOR,
-                    font_size = 14,
-                },
-
-            },
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_Range_perk_1",
-                style_id = "loadout_intel_Range_perk_1",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { 370, 57, 200 },
-                    size = { 500, 100 },
-                    text_color = LM_TEXT_COLOR,
-                    font_size = 14,
-                },
-
-            },
-            {
-                pass_type = "text",
-                value_id = "loadout_intel_Range_perk_2",
-                style_id = "loadout_intel_Range_perk_2",
-                value = " ",
-                style = {
-                    vertical_alignment = "top",
-                    text_vertical_alignment = "top",
-                    horizontal_alignment = "left",
-                    text_horizontal_alignment = "left",
-                    offset = { 370, 72, 200 },
-                    size = { 500, 100 },
-                    text_color = LM_TEXT_COLOR,
-                    font_size = 14,
-                },
-
-            },
-        },
-        node_name
-    )
 end
 
 function W.build_definitions()
@@ -739,14 +404,11 @@ function W.build_definitions()
     local off_x                 = (mod._settings and mod._settings.team_hud_offset_x) or 0
     local off_y                 = (mod._settings and mod._settings.team_hud_offset_y) or 0
 
-    local has_loadout_monitor   = (mod._compat_loadout_monitor ~= nil and mod._compat_loadout_monitor ~= false)
-
     for i = 1, 3 do
-        local base         = string.format("rh_team_%d", i)
-        local group_node   = base .. "_group"
-        local tile_node    = base .. "_tile_node"
-        local name_node    = base .. "_name_node"
-        local loadout_node = base .. "_loadout_node"
+        local base       = string.format("rh_team_%d", i)
+        local group_node = base .. "_group"
+        local tile_node  = base .. "_tile_node"
+        local name_node  = base .. "_name_node"
 
         local align_h, align_v, px, py
 
@@ -768,15 +430,15 @@ function W.build_definitions()
             py      = BASE_Y - (i - 1) * GAP_Y
         end
 
-        scenegraph_definition[group_node] = {
+        scenegraph_definition[group_node]    = {
             parent               = "screen",
             vertical_alignment   = align_v,
             horizontal_alignment = align_h,
             size                 = { C.TILE_SIZE, C.TILE_SIZE },
-            position             = { px + off_x, py + off_y, 20 + i },
+            position             = { px + off_x, py + off_y, i },
         }
 
-        scenegraph_definition[tile_node] = {
+        scenegraph_definition[tile_node]     = {
             parent               = group_node,
             vertical_alignment   = "top",
             horizontal_alignment = "left",
@@ -784,35 +446,19 @@ function W.build_definitions()
             position             = { 0, 0, 0 },
         }
 
-        scenegraph_definition[name_node] = {
+        scenegraph_definition[name_node]     = {
             parent               = group_node,
             vertical_alignment   = "top",
             horizontal_alignment = "left",
             size                 = { C.TILE_SIZE, C.TILE_SIZE / 8 },
-            position             = { 0, C.TILE_SIZE / 4, 40 },
+            position             = { 0, C.TILE_SIZE / 4, 15 },
         }
-
-        if has_loadout_monitor then
-            -- Attach the LM panel to the *group* so it can extend beyond the tile.
-            scenegraph_definition[loadout_node] = {
-                parent               = group_node,
-                vertical_alignment   = "top",
-                horizontal_alignment = "left",
-                size                 = { 500, 100 },
-                position             = { C.TILE_SIZE + 10, -12, 60 },
-            }
-        end
 
         local tile_widget_name               = string.format("rh_team_tile_%d", i)
         local name_widget_name               = string.format("rh_team_name_%d", i)
-        local loadout_widget_name            = string.format("rh_team_loadout_%d", i)
 
         widget_definitions[tile_widget_name] = make_tile_only_widget_def(tile_node)
         widget_definitions[name_widget_name] = make_name_only_widget_def(name_node)
-
-        if has_loadout_monitor then
-            widget_definitions[loadout_widget_name] = make_loadout_monitor_widget_def(loadout_node)
-        end
     end
 
     return {

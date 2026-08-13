@@ -7,6 +7,11 @@ return {
     options = {
         widgets = {
             {
+                setting_id = 'add_to_esc_menu',
+                type = 'checkbox',
+                default_value = true,
+            },
+            {
                 setting_id = 'save_history',
                 type = 'checkbox',
                 default_value = false,
@@ -74,22 +79,12 @@ return {
                 type = 'group',
                 sub_widgets = {
                     {
-                        setting_id = 'breed_monster',
+                        setting_id = 'breed_boss',
                         type = 'checkbox',
                         default_value = true,
                     },
                     {
-                        setting_id = 'breed_ritualist',
-                        type = 'checkbox',
-                        default_value = true,
-                    },
-                    {
-                        setting_id = 'breed_disabler',
-                        type = 'checkbox',
-                        default_value = true,
-                    },
-                    {
-                        setting_id = 'breed_special',
+                        setting_id = 'breed_specialist',
                         type = 'checkbox',
                         default_value = true,
                     },
@@ -100,11 +95,6 @@ return {
                     },
                     {
                         setting_id = 'breed_horde',
-                        type = 'checkbox',
-                        default_value = true,
-                    },
-                    {
-                        setting_id = 'breed_unknown',
                         type = 'checkbox',
                         default_value = true,
                     },

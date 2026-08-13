@@ -4,9 +4,9 @@
 
 local mod = get_mod("Enhanced_descriptions")
 
--- CONSTANTS AND CONFIGURATION
+-- CONSTANTS AND CONFIGURATION - КОНСТАНТЫ И КОНФИГУРАЦИЯ
 local DEFAULT_SETTINGS = {
-	-- Main modules
+	-- Main modules - Основные модули
 	enable_menus_file =				true,
 	enable_curious_file =			true,
 	enable_penances_file =			true,
@@ -16,11 +16,11 @@ local DEFAULT_SETTINGS = {
 	enable_names_tal_bless_file =	true,
 	enable_debug_mode =				false,
 
-	-- Language override
+	-- Language override - Переопределение языка
 	language_override =				"auto",
 }
 
--- Добавляем список поддерживаемых языков для опций
+-- Adding a list of supported languages for options - Добавляем список поддерживаемых языков для опций
 local SUPPORTED_LANGUAGES = {
 	{ value = "auto",			text = "language_auto" },
 	{ value = "en",				text = "language_en" },
@@ -46,7 +46,7 @@ local COLOR_SETTINGS = {
 	{ id = "bleed",				default = "ui_zealot" },
 	{ id = "brittleness",		default = "medium_orchid" },
 	{ id = "burn",				default = "sienna" },
-	{ id = "cleave",			default = "player_slot_2_bright" },
+	{ id = "cleave",			default = "indian_red" },
 	{ id = "coherency",			default = "citadel_kindleflame" },
 	{ id = "combat_ability",	default = "olive_drab" },
 	{ id = "corruption",		default = "ui_corruption_medium" },
@@ -66,51 +66,51 @@ local COLOR_SETTINGS = {
 	{ id = "toughness",			default = "ui_difficulty_1" },
 	{ id = "weakspot",			default = "green_yellow" },
 
--- Classes
-	-- Psyker
+-- Classes - Классы
+	-- Psyker - Псайкер
 	{ id = "class_psyker",		default = "player_slot_4" },
 	{ id = "precision",			default = "ui_psyker" },				-- Celerity Stimm
-	-- Ogryn
+	-- Ogryn - Огрин
 	{ id = "class_ogryn",		default = "player_slot_3" },
 	{ id = "fnp",				default = "light_coral" },				-- Scum (Desperado)
 	{ id = "luckyb",			default = "orange" },					-- Zealot (Toughness gold)
 	{ id = "trample",			default = "mb_terminal_base" },			-- Scum (Dependency)
-	-- Zealot
+	-- Zealot - Изувер
 	{ id = "class_zealot",		default = "player_slot_2" },
 	{ id = "fury",				default = "hot_pink" },					-- Scum (Rampage!)
 	{ id = "momentum",			default = "ui_red_super_light" },		-- Ogryn (Taunt), Scum (Adrenaline, Adrenaline Frenzy)
 	{ id = "stealth",			default = "ui_grey_light" },			-- Psyker (Marked)
-	-- Veteran
+	-- Veteran - Ветеран
 	{ id = "class_veteran",		default = "player_slot_1" },
 	{ id = "focus",				default = "dark_violet" },				-- Veteran (Forceful), Scum (Shout)
 	{ id = "focust",			default = "teal" },						-- Psyker (Marked Enemy), Scum (Vulture's Mark)
 	{ id = "meleespec",			default = "ui_hud_red_light" },			-- Arbites (Melee Justice), Scum (Exhausted)
 	{ id = "rangedspec",		default = "citadel_the_fang_grey" },	-- Arbites (Ranged Justice)
-	-- Arbites
+	-- Arbites - Арбитрес/Арбитратор
 	{ id = "class_arbites",		default = "plum" },
-	-- Hive Scum
+	-- Hive Scum - Отребье Улья
 	{ id = "class_scum",		default = "citadel_nurgling_green" },
 	{ id = "chemtox",			default = "online_green" },				-- Med Stimm
 
-	-- Misc
+	-- Misc - Разное
 	{ id = "talents",			default = "ui_input_color" },
 	{ id = "numbers",			default = "ui_hud_yellow_super_light" },
 	{ id = "variables",			default = "ui_hud_yellow_super_light" },
 	{ id = "note",				default = "terminal_text_warning_dark" },
 	{ id = "warning",			default = "item_rarity_6" },
 
-	-- Difficulty
+	-- Difficulty - Сложность
 	{ id = "uprising",			default = "ui_difficulty_1" },
 	{ id = "malice",			default = "ui_difficulty_2" },
 	{ id = "heresy",			default = "ui_difficulty_3" },
 	{ id = "damnation",			default = "ui_difficulty_4" },
 	{ id = "auric",				default = "ui_difficulty_5" },
 }
--- УДАЛЕНЫ! Очищаются в Enhanced_descriptions.lua
+-- REMOVED! Purged in Enhanced_descriptions.lua - УДАЛЕНЫ! Очищаются в Enhanced_descriptions.lua
 	-- { id = "talents_penances",	default = "forest_green" },
 	-- { id = "sedition",			default = "terminal_text_body" },
 
--- UTILITY FUNCTIONS
+-- UTILITY FUNCTIONS - ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 local function create_checkbox_widget(setting_id, default_value)
 	return {
 		name = mod:localize(setting_id),
@@ -175,7 +175,7 @@ local function create_color_option_group(color_setting)
 	}
 end
 
--- MAIN OPTIONS CONFIGURATION
+-- MAIN OPTIONS CONFIGURATION - ОСНОВНЫЕ ПАРАМЕТРЫ КОНФИГУРАЦИИ
 local options = {
 	name = mod:localize("mod_name"),
 	description = mod:localize("mod_description"),
@@ -185,7 +185,7 @@ local options = {
 	}
 }
 
--- 1. Общие настройки группа
+-- 1. General settings group - Группа общих настроек
 local general_settings_group = {
 	setting_id = "general_settings_group",
 	type = "group",
@@ -194,14 +194,14 @@ local general_settings_group = {
 	}
 }
 
--- 2. Модули группа
+-- 2. Modules group - Группа модулей
 local modules_group = {
 	setting_id = "modules_group",
 	type = "group",
 	sub_widgets = {}
 }
 
--- Add main module checkboxes
+-- Add main module checkboxes - Добавляем флаги основного модуля
 local main_modules = {
 	{ id = "enable_talents_file",			desc = "TALENTS Module" },
 	{ id = "enable_weapons_file",			desc = "WEAPONS Module" },
@@ -220,25 +220,25 @@ for _, module in ipairs(main_modules) do
 	))
 end
 
--- 3. Цвета группа
+-- 3. Color group - Группа цветов
 local colors_group = {
 	setting_id = "colors_group",
 	type = "group",
 	sub_widgets = {}
 }
 
--- Add color options
+-- Add color options - Добавляем опции цветов
 for _, color_setting in ipairs(COLOR_SETTINGS) do
 	table.insert(colors_group.sub_widgets, create_color_option_group(color_setting))
 end
 
--- Добавляем все группы
+-- Add all groups - Добавляем все группы
 table.insert(options.options.widgets, general_settings_group)
 table.insert(options.options.widgets, modules_group)
 table.insert(options.options.widgets, colors_group)
 
--- INITIALIZATION
--- Ensure default settings are set
+-- INITIALIZATION - ИНИЦИАЛИЗАЦИЯ
+-- Ensure default settings are set - Убеждаемся, что установлены настройки по умолчанию
 for setting_id, default_value in pairs(DEFAULT_SETTINGS) do
 	if mod:get(setting_id) == nil then
 		mod:set(setting_id, default_value)

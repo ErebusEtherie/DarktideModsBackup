@@ -46,7 +46,7 @@ return {
     en = "Pox Hound Hurt (Placeholder - Not Reccomended)",
   },
   chaos_hound_group = {
-	en = "Pox Hound Group Spawn Event",
+	en = "Pox Hound Group Spawn Event (Hunting Grounds)",
   },
   chaos_hound_maul = {
     en = "Pox Hound Tackled Player",
@@ -67,9 +67,6 @@ return {
   },
   pox_bomber_enabled = {
     en = "Pox Bomber Enabled",
-  },
-  pox_bomber_tick = {
-    en = "Pox Bomber Ticking (Broken)",
   },
   pox_bomber_wind_up = {
     en = "Pox Bomber Armed",
@@ -94,7 +91,7 @@ return {
     en = "Ogryn Taunt",
   },
   player_slide = {
-    en = "Player Slide (Dont use I'm warning you.)",
+    en = "Player Slide",
   },
   player_shout = {
     en = "Veteran shout",
@@ -112,7 +109,7 @@ return {
     en = "Veteran Execution Stance",
   },
   player_stealth = {
-    en = "Veteran Infiltrate (Music warning)"
+    en = "Veteran Infiltrate"
   },
   player_revolver = {
     en = "XIV Quickdraw Stub Revolver Firing"
@@ -133,7 +130,7 @@ return {
     en = "Healing Syringe Used"
   },
   player_frag = {
-    en = "Veteran Frag Grenade (Box o' Hurt Warning)"
+    en = "Veteran Frag/Ogryn Box Grenade"
   },
   player_krak = {
     en = "Veteran Krak Grenade"
@@ -151,7 +148,7 @@ return {
     en = "Ogryn Frag Grenade"
   },
   player_ogryn_blunt = {
-    en = "Ogryn Blunt Weapons (Clubs, Shield, ect.) LOUD!"
+    en = "Ogryn Blunt Weapons (Clubs, Shield, ect.)"
   },
   special_killed = {
     en = "Special Enemy Killed"
@@ -163,7 +160,7 @@ return {
     en = "Ogryn Point-Blank Barrage Ability"
   },
   zealot_dash = {
-    en = "Zealot Dash Ability (FotF)"
+    en = "Zealot Dash Ability"
   },
   psyker_gaze = {
     en = "Psyker Scrier's Gaze Ability"
@@ -178,16 +175,16 @@ return {
     en = "Radio Operator Calling for Backup"
   },
   horde_ambush_settings = {
-    en = "Horde Ambush Settings"
+    en = "Horde Settings"
   },
   horde_ambush_enabled = {
-    en = "Horde Ambush Enabled"
+    en = "Horde Enabled"
   },
   horde_incoming_warning = {
     en = "Horde Incoming Warning"
   },
   weapon_settings = {
-    en = "Player Weapon Settings (WARNING - VERY BUGGY & NOT RECOMMENDED)"
+    en = "Player Weapon Settings"
   },
   weapon_enabled = {
     en = "Player Weapon Enabled"
@@ -292,13 +289,13 @@ return {
     en = "Psyker Staff Impact SFX (Silent by default, DOESNT WORK WITH SURGE!)"
   },
   warp_explosion = {
-    en = "Psyker Peril Overload SFX"
+    en = "Psyker Peril Overload SFX (Unchained Sienna)"
   },
   warp_critical = {
     en = "Psyker Peril Critical (Use with Overload)"
   },
   scream_silencer = {
-    en = "Psyker Long Scream Silencer (Overloading)"
+    en = "Psyker Long Scream Silencer (Use with Overload)"
   },
   renegade_grenadier_settings = {
     en = "Renegade Grenadier Settings"
@@ -344,5 +341,23 @@ return {
   },
   paul_recharge = {
 	en = "Ogryn Power Maul Recharged Sfx"
+  },
+  chord_claw = {
+	en = "Skitarius Chord Claw Ability Sfx"
+  },
+  precision_stance = {
+    en = "Skitarius Advanced Combat Doctrine Ability"
+  },
+  precision_stance_kill = {
+	en = "Skitarius Advanced Combat Doctrine Target Killed"
+  },
+  backstab_audio = {
+	en = "Melee Backstab Attack SFX"
+  },
+  light_lasgun = {
+	en = "Light Lasgun (Mk IIb) Firing SFX"
+  },
+  heavy_lasgun = {
+	en = "Heavy Lasgun (Mk IX) Firing SFX"
   },
 }

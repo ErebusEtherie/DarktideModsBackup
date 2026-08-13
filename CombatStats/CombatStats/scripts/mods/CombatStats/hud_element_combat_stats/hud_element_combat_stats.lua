@@ -1,5 +1,6 @@
 local mod = get_mod('CombatStats')
 
+local UIWidget = mod:original_require('scripts/managers/ui/ui_widget')
 local Definitions =
     mod:io_dofile('CombatStats/scripts/mods/CombatStats/hud_element_combat_stats/hud_element_combat_stats_definitions')
 
@@ -25,6 +26,13 @@ function HudElementCombatStats:init(parent, draw_layer, start_scale)
     self:_update_position()
 end
 
+function HudElementCombatStats:set_visible(visible, ui_renderer, use_retained_mode)
+    local widget = self._widgets_by_name.session_stats
+    if widget and ui_renderer then
+        UIWidget.set_visible(widget, ui_renderer, visible)
+    end
+end
+
 function HudElementCombatStats:_update_position()
     local x = mod:get('hud_pos_x')
     local y = mod:get('hud_pos_y')
@@ -37,7 +45,8 @@ function HudElementCombatStats:_update_position()
 end
 
 function HudElementCombatStats:update(dt, t, ui_renderer, render_settings, input_service)
-    if not is_hud_enabled() then
+    self._hud_enabled = is_hud_enabled()
+    if not self._hud_enabled then
         return
     end
 
@@ -56,24 +65,34 @@ function HudElementCombatStats:update(dt, t, ui_renderer, render_settings, input
     local stats = session_data.stats
     local duration = session_data.duration
 
+    -- Duration and DPS advance every frame.
     widget.content.duration_text = string.format('%s: %.1fs', mod:localize('time'), duration)
-
-    local kill_text = string.format('%s: %d', mod:localize('kills'), stats.total_kills)
-    local kill_details = {}
-    for breed_type, count in pairs(stats.kills_by_type) do
-        table.insert(kill_details, string.format('%s:%d', breed_type:sub(1, 1):upper(), count))
-    end
-    if #kill_details > 0 then
-        kill_text = kill_text .. ' (' .. table.concat(kill_details, ' ') .. ')'
-    end
-    widget.content.kills_text = kill_text
-
     if duration > 0 and stats.total_damage > 0 then
         local dps = stats.total_damage / duration
         widget.content.dps_text = string.format('%.0f %s', dps, mod:localize('dps'))
     else
         widget.content.dps_text = string.format('0 %s', mod:localize('dps'))
     end
+
+    -- Kills breakdown only changes when total_kills changes.
+    if self._last_total_kills ~= stats.total_kills then
+        self._last_total_kills = stats.total_kills
+        local kill_text = string.format('%s: %d', mod:localize('kills'), stats.total_kills)
+        local kill_details = {}
+        for breed_type, count in pairs(stats.kills_by_type) do
+            kill_details[#kill_details + 1] = string.format('%s:%d', breed_type:sub(1, 1):upper(), count)
+        end
+        if #kill_details > 0 then
+            kill_text = kill_text .. ' (' .. table.concat(kill_details, ' ') .. ')'
+        end
+        widget.content.kills_text = kill_text
+    end
+
+    if self._last_total_damage == stats.total_damage and self._last_total_hits == stats.total_hits then
+        return
+    end
+    self._last_total_damage = stats.total_damage
+    self._last_total_hits = stats.total_hits
 
     widget.content.damage_text =
         string.format('%s: %d (%d)', mod:localize('damage'), stats.total_damage, stats.total_hits)
@@ -113,6 +132,14 @@ function HudElementCombatStats:update(dt, t, ui_renderer, render_settings, input
             text = string.format('%.0f%%', pct),
         })
     end
+    if stats.arc_damage and stats.arc_damage > 0 then
+        local pct = (stats.arc_damage / stats.total_damage * 100)
+        table.insert(damage_types, {
+            icon = 'content/ui/materials/icons/presets/preset_20',
+            color = { 255, 186, 85, 211 },
+            text = string.format('%.0f%%', pct),
+        })
+    end
     if stats.companion_damage > 0 then
         local pct = (stats.companion_damage / stats.total_damage * 100)
         table.insert(damage_types, {
@@ -134,6 +161,9 @@ function HudElementCombatStats:update(dt, t, ui_renderer, render_settings, input
     widget.content.damage_type_4_icon = damage_types[4] and damage_types[4].icon or nil
     widget.style.damage_type_4_icon.color = damage_types[4] and damage_types[4].color or Color.white(255, true)
     widget.content.damage_type_4_text = damage_types[4] and damage_types[4].text or ''
+    widget.content.damage_type_5_icon = damage_types[5] and damage_types[5].icon or nil
+    widget.style.damage_type_5_icon.color = damage_types[5] and damage_types[5].color or Color.white(255, true)
+    widget.content.damage_type_5_text = damage_types[5] and damage_types[5].text or ''
 
     local buff_types = {}
     if stats.bleed_damage > 0 then
@@ -173,7 +203,7 @@ function HudElementCombatStats:update(dt, t, ui_renderer, render_settings, input
 end
 
 function HudElementCombatStats:draw(dt, t, ui_renderer, render_settings, input_service)
-    if not is_hud_enabled() then
+    if not self._hud_enabled then
         return
     end
 

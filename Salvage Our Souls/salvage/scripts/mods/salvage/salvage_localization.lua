@@ -39,11 +39,17 @@ en = "{#color(93,101,50)}Flash warning if evacuation triggered early{#reset()}",
 warn_early_evacuation_tooltip = {
 en = "Warning on screen if Valkyrie called before final zone",
 },
+last_sanctuary_warning = {
+en = "{#color(93,101,50)}Last sanctuary warning{#reset()}",
+},
 enable_reliquaries = {
 en = "{#color(93,101,50)}Electrify Data Reliquaries{#reset()}",
 },
 enable_reliquaries_tooltip = {
 en = "Electrifies data reliquaries except when you're holding them.",
+},
+mark_reliquaries_within_100m = {
+en = "{#color(93,101,50)}Mark reliquaries within 100m{#reset()}",
 },
 enable_salvage = {
 en = "{#color(93,101,50)}Use Salvage Effects{#reset()}",

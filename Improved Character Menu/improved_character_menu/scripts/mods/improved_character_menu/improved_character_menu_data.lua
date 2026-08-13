@@ -32,17 +32,24 @@ return {
                     { setting_id = "disable_grid_dividers", type = "checkbox", default_value = true, tooltip = "disable_grid_dividers_tooltip" },
                     -- Hides the character grid scrollbar for a cleaner aesthetic.
                     { setting_id = "disable_scrollbar", type = "checkbox", default_value = true, tooltip = "disable_scrollbar_tooltip" },
-                    { setting_id = "disable_news_feed", type = "checkbox", default_value = false, tooltip = "disable_news_feed_tooltip" },
-                    { setting_id = "news_feed_offset_x", type = "numeric", default_value = -145, range = { -1000, 1000 }, decimals_number = 0, unit_text = "px" },
-                    { setting_id = "news_feed_offset_y", type = "numeric", default_value = 100, range = { -1000, 1000 }, decimals_number = 0, unit_text = "px" },
-                    { setting_id = "title_text_offset_y", type = "numeric", default_value = 150, range = { 15, 175 }, decimals_number = 0, unit_text = "px" },
-
-                    { setting_id = "body_text_offset_y", type = "numeric", default_value = 175, range = { 15, 175 }, decimals_number = 0, unit_text = "px" },
-
-                    { setting_id = "countdown_timer_offset_y", type = "numeric", default_value = 125, range = { 15, 175 }, decimals_number = 0, unit_text = "px" },
                 }
             },
-            -- Group 2: Grid Settings (numeric sliders for fine-tuning).
+            -- Group 2: News Feed (news feed visibility and layout toggles).
+            {
+                setting_id = "news_feed",
+                type = "group",
+                sub_widgets = {
+                    { setting_id = "disable_news_feed", type = "checkbox", default_value = false, tooltip = "disable_news_feed_tooltip" },
+                    { setting_id = "show_news_feed_top", type = "checkbox", default_value = true, tooltip = "show_news_feed_top_tooltip" },
+                    { setting_id = "show_news_feed_bottom", type = "checkbox", default_value = true, tooltip = "show_news_feed_bottom_tooltip" },
+                    { setting_id = "news_feed_offset_x", type = "numeric", default_value = -145, range = { -1000, 1000 }, decimals_number = 0, unit_text = "px" },
+                    { setting_id = "news_feed_offset_y", type = "numeric", default_value = 100, range = { -1000, 1000 }, decimals_number = 0, unit_text = "px" },
+                    { setting_id = "title_text_offset_y", type = "numeric", default_value = 140, range = { 15, 160 }, decimals_number = 0, unit_text = "px" },
+                    { setting_id = "body_text_offset_y", type = "numeric", default_value = 160, range = { 15, 160 }, decimals_number = 0, unit_text = "px" },
+                    { setting_id = "countdown_timer_offset_y", type = "numeric", default_value = 120, range = { 15, 160 }, decimals_number = 0, unit_text = "px" },
+                }
+            },
+            -- Group 3: Grid Settings (numeric sliders for fine-tuning).
             {
                 setting_id = "grid_settings",
                 type = "group",
@@ -67,7 +74,7 @@ return {
                     { setting_id = "character_portrait_offset_x", type = "numeric", default_value = 60, range = { 0, 100 }, decimals_number = 0, unit_text = "px" },
                 }
             },
-            -- Group 3: Metal Decorations (individual UI element toggles).
+            -- Group 4: Metal Decorations (individual UI element toggles).
             {
                 setting_id = "metal_decorations",
                 type = "group",
@@ -88,8 +95,6 @@ return {
                     { setting_id = "show_top_right", type = "checkbox", default_value = true, tooltip = "show_top_right_tooltip" },
                     { setting_id = "show_bottom_left", type = "checkbox", default_value = true, tooltip = "show_bottom_left_tooltip" },
                     { setting_id = "show_bottom_right", type = "checkbox", default_value = true, tooltip = "show_bottom_right_tooltip" },
-                    { setting_id = "show_news_feed_top", type = "checkbox", default_value = true, tooltip = "show_news_feed_top_tooltip" },
-                    { setting_id = "show_news_feed_bottom", type = "checkbox", default_value = true, tooltip = "show_news_feed_bottom_tooltip" },
                 }
             },
         }

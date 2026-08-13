@@ -1,3 +1,13 @@
+** 1.6.0 Changes **
+[New] Option to mute Skitarii servo skulls (suggested by AC3NATOR)
+
+** 1.5.2 Changes **
+[Fixed] Restored missing class icons after Skitarii update
+
+** 1.5.2 Changes **
+[Better] Minor tweak to settings layout for Alf's Mod Settings Extensions
+[Fixed] Muting mutants will also mute the special charge roar and hulk smash sounds (reported by jasonjayalap)
+
 ** 1.5.1 Changes **
 [Better] Minor tweak to settings layout for Alf's Mod Settings Extensions
 

@@ -12,6 +12,7 @@ return {
                 sub_widgets = {
                     { setting_id = "toughness", type = "checkbox", default_value = true, },
                     { setting_id = "health", type = "checkbox", default_value = true, },
+                    { setting_id = "crit_swing", type = "checkbox", default_value = true, },
                     { setting_id = "playerfootsteps", type = "checkbox", default_value = true, },
                     { setting_id = "weapon_locomotion", type = "checkbox", default_value = true, },
                     { setting_id = "ping", type = "checkbox", default_value = true, },
@@ -28,7 +29,7 @@ return {
                 type = "group",
                 sub_widgets = {
                     { setting_id = "play_explosion_grenade_frag", type = "checkbox", default_value = true, }, -- boxoboom, missile launcher, arbites grenade, shredder, gauntlet, rumbler
-                    { setting_id = "play_explosion_refl_gen", type = "checkbox", default_value = true, }, -- poxbomber, explosive barrel, all above, gas mine, flamer explosion, airdrop bomb, valk missile, exp trap, stumm grenade, shredder, boombringer, krak, box, adamant grenade, 
+                    { setting_id = "play_explosion_refl_gen", type = "checkbox", default_value = true, }, -- poxbomber, explosive barrel, all above, gas mine, flamer explosion, airdrop bomb, valk missile, exp trap, stumm grenade, shredder, boombringer, krak, box, adamant grenade,
                     { setting_id = "flamer_explosion", type = "checkbox", default_value = true, }, -- flamer tank explosion
                     { setting_id = "flamer_fuse", type = "checkbox", default_value = true, }, -- flamer fuse
                     { setting_id = "needles", type = "checkbox", default_value = true, },
@@ -103,6 +104,9 @@ return {
                     { setting_id = "ventingshriek", type = "checkbox", default_value = true, },
                     { setting_id = "scrier", type = "checkbox", default_value = true, },
                     { setting_id = "smite", type = "checkbox", default_value = true, },
+                    { setting_id = "staff_small_explosion", type = "checkbox", default_value = true, },
+                    { setting_id = "staff_medium_explosion", type = "checkbox", default_value = true, },
+                    { setting_id = "staff_projectile", type = "checkbox", default_value = true, },
                 }
             },
             {

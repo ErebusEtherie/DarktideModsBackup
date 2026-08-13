@@ -44,44 +44,11 @@ C.STIMM_ICON_SIZE              = C.TILE_SIZE / 15
 C.THROWABLE_ICON_SIZE          = C.TILE_SIZE / 10 -- keep this larger than crate/stimm by design
 
 -- =========================
--- Floating teammate tiles – shared tunables
+-- Floating teammate tiles
 -- =========================
 
 -- Base visual size of the floating teammate tile (must match template.size).
 C.MARKER_SIZE_BASE             = { 220, 140 }
-
--- Scaled marker size (kept around in case we need it elsewhere)
-mod.EDGE_MARKER_SIZE           = { C.MARKER_SIZE_BASE[1] * SCALE, C.MARKER_SIZE_BASE[2] * SCALE }
-
--- Legacy fields (harmless to keep)
-mod.EDGE_MIN_GAP               = mod.EDGE_MIN_GAP or 8
-mod.EDGE_PADDING               = mod.EDGE_PADDING or 6
-mod.EDGE_MAX_SLIDE             = mod.EDGE_MAX_SLIDE or 220
-mod.EDGE_EASE_SPEED            = mod.EDGE_EASE_SPEED or 12
-
--- === Express spacing as multiples of TILE_SIZE ===
--- Horizontal stacking step (top/bottom edges): multiplier * TILE_SIZE.
-mod.EDGE_STACK_MULT_X          = mod.EDGE_STACK_MULT_X or (C.MARKER_SIZE_BASE[1] / 200) -- ≈ 1.10
-
--- Vertical stacking step (left/right edges): multiplier * TILE_SIZE.
-mod.EDGE_STACK_MULT_Y          = mod.EDGE_STACK_MULT_Y or (C.MARKER_SIZE_BASE[2] / 200) -- ≈ 0.70
-
--- Collide gate for horizontal stacking at top/bottom:
-mod.EDGE_COLLIDE_FRAC_X        = mod.EDGE_COLLIDE_FRAC_X or 0.9
-
--- “Near the edge” epsilon; lets stacking kick in slightly before hard clamp.
-mod.EDGE_MARGIN_EPS            = mod.EDGE_MARGIN_EPS or (C.MARKER_SIZE_BASE[1] * 0.06 * SCALE)
-
--- Derived helpers: concrete pixel steps (always multiples of TILE_SIZE).
-function C.stack_step_x()
-    local s = (mod._settings and mod._settings.team_tiles_scale) or 1
-    return math.floor(((mod.EDGE_STACK_MULT_X or (C.MARKER_SIZE_BASE[1] / 200)) * (240 * s)) + 0.5)
-end
-
-function C.stack_step_y()
-    local s = (mod._settings and mod._settings.team_tiles_scale) or 1
-    return math.floor(((mod.EDGE_STACK_MULT_Y or (C.MARKER_SIZE_BASE[2] / 200)) * (240 * s)) + 0.5)
-end
 
 -- =========================
 -- Live recompute helpers (keep TILE_SIZE and all derivatives in sync)
@@ -102,25 +69,10 @@ function C.recompute_tile_scalars(s)
     return C.TILE_SIZE
 end
 
--- Keep scale-dependent values fresh when the user changes team_tiles_scale.
-function C.recompute_edge_marker_size()
-    local s = (mod._settings and mod._settings.team_tiles_scale) or 1
+-- Expose recompute helper on mod.* for cross-file callers.
+mod.recompute_tile_scalars = mod.recompute_tile_scalars or C.recompute_tile_scalars
 
-    -- Update all tile-size–derived scalars first
-    C.recompute_tile_scalars(s)
-
-    -- Update screen-space marker size and near-edge epsilon
-    mod.EDGE_MARKER_SIZE = { C.MARKER_SIZE_BASE[1] * s, C.MARKER_SIZE_BASE[2] * s }
-    mod.EDGE_MARGIN_EPS  = C.MARKER_SIZE_BASE[1] * 0.06 * s
-
-    return mod.EDGE_MARKER_SIZE
-end
-
--- Expose recompute helpers on mod.* for cross-file callers
-mod.recompute_edge_marker_size = mod.recompute_edge_marker_size or C.recompute_edge_marker_size
-mod.recompute_tile_scalars     = mod.recompute_tile_scalars or C.recompute_tile_scalars
-
--- Initial pass to ensure everything matches current settings on load
+-- Initial pass to ensure everything matches current settings on load.
 C.recompute_tile_scalars(SCALE)
 
 -- =========================

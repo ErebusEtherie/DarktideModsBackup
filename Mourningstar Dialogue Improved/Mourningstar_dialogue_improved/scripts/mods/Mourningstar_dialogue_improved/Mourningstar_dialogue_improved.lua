@@ -145,8 +145,14 @@ DialogueSystem._play_dialogue_event_implementation = function(
 	local wwise_route_key = dialogue.wwise_route
 	local class_name = extension:get_context().class_name
 
-	if class_name == "tech_priest" and wwise_route_key == 1 then
-		wwise_route_key = 21
+	if wwise_route_key == 1 then
+		self._mission_giver_dialogue_playing = true
+
+		if class_name == "tech_priest" then
+			wwise_route_key = 21
+		end
+	elseif is_a_player and class_name == "cryptic" and wwise_route_key == 0 then
+		wwise_route_key = 59
 	end
 
 	if not DEDICATED_SERVER then
@@ -172,7 +178,7 @@ DialogueSystem._play_dialogue_event_implementation = function(
 			local instance = Managers.ui:view_instance(Managers.ui:active_top_view())
 			local game_mode_name = Managers.state.game_mode:game_mode_name()
 
-			if game_mode_name == "hub" and instance then
+			if game_mode_name == "hub" --[[and instance]] then
 				dialogue.currently_playing_event_id = _play_selected_sound_event(self, extension, sound_event, dialogue)
 			else
 				dialogue.currently_playing_event_id = extension:play_event(dialogue.dialogue_sequence[1])
@@ -227,6 +233,8 @@ DialogueSystem._play_dialogue_event_implementation = function(
 
 	table.insert(self._playing_dialogues_array, 1, dialogue)
 
+	local sequence_table = dialogue.dialogue_sequence
+
 	if sequence_table ~= nil and sequence_table[1].type == "vorbis_external" or not is_sequence then
 		self._dialogue_system_subtitle:add_playing_localized_dialogue(speaker_name, dialogue)
 	end
@@ -234,8 +242,6 @@ DialogueSystem._play_dialogue_event_implementation = function(
 	if is_sequence == true then
 		mod.updateCustomRadio(self)
 	end
-
-	dbg_dialogue = dialogue
 end
 
 mod:hook_safe(CLASS.DialogueSystem, "update", function(self, context, dt, t)
@@ -828,5 +834,32 @@ mod:hook_require("scripts/ui/views/store_view/store_view_definitions", function(
 end)
 
 mod:hook_require("scripts/ui/views/store_item_detail_view/store_item_detail_view_definitions", function(definitions)
+	add_definitions(definitions)
+end)
+
+mod:hook_require("scripts/ui/views/mastery_view/mastery_view_definitions", function(definitions)
+	add_definitions(definitions)
+end)
+
+mod:hook_require("scripts/ui/views/masteries_overview_view/masteries_overview_view_definitions", function(definitions)
+	add_definitions(definitions)
+end)
+
+mod:hook_require("scripts/ui/views/live_events_view/live_events_view_definitions", function(definitions)
+	add_definitions(definitions)
+end)
+
+mod:hook_require(
+	"scripts/ui/views/player_character_options_view/player_character_options_view_definitions",
+	function(definitions)
+		add_definitions(definitions)
+	end
+)
+
+mod:hook_require("scripts/ui/views/barber_vendor_background_view/barber_vendor_background_view_definitions", function(definitions)
+	add_definitions(definitions)
+end)
+
+mod:hook_require("scripts/ui/views/character_appearance_view/character_appearance_view_definitions", function(definitions)
 	add_definitions(definitions)
 end)

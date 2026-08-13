@@ -12,7 +12,7 @@ return {
 		"CustomUIColors",
 		"psych_ward",
 	},
-	version = "1.0.4",
+	version = "1.0.6",
 	mod_id = "849",
 	packages = {},
 }

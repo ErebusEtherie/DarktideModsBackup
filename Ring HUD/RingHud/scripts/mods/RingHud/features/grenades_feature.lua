@@ -119,9 +119,10 @@ local SETTINGS              = mod._settings
 local GRENADE_OUTLINE_COLOR = mod.PALETTE_RGBA1.dodge_color_full_rgba
 local COL_DAMAGE            = mod.PALETTE_RGBA1.default_damage_color_rgba
 
-local GRENADE_ARC_MIN       = -0.25
-local GRENADE_ARC_MAX       = 0.25
+local GRENADE_ARC_MIN       = -0.255
+local GRENADE_ARC_MAX       = 0.235
 local GRENADE_SEGMENT_GAP   = 0.025
+
 local MAX                   = mod.MAX_GRENADE_SEGMENTS_DISPLAY or 14
 
 local _style_keys_seg       = {}
@@ -220,6 +221,8 @@ function GrenadesFeature.add_widgets(widget_defs, _, layout, palettes)
                     arc_top_bottom       = { 0, 0 },
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color        = table.clone(RGBA1.default_damage_color_rgba),
+                    -- SizeThicknessOutline = { 0.405, 0.027, 0.018 },
+                    SizeThicknessOutline = { 0.405, 0.027, 0.037 },
                 },
             },
         }
@@ -245,12 +248,38 @@ function GrenadesFeature.add_widgets(widget_defs, _, layout, palettes)
                     arc_top_bottom       = { 0, 0 },
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color        = table.clone(RGBA1.default_damage_color_rgba),
+                    -- SizeThicknessOutline = { 0.405, 0.027, 0.018 },
+                    SizeThicknessOutline = { 0.405, 0.027, 0.037 },
                 },
             },
         }
     end
 
     widget_defs.grenade_bar = UIWidget.create_definition(passes, "grenade_bar")
+end
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Layout Application
+-- ─────────────────────────────────────────────────────────────────────────────
+function GrenadesFeature.apply_layout(widget, ctx)
+    if not widget or not widget.style then return end
+
+    local changed = false
+    local style = widget.style
+    local apply_shake_offset = U.apply_shake_to_style_offset
+
+    for i = 1, MAX do
+        local st  = style[_style_keys_seg[i]]
+        local ste = style[_style_keys_edge[i]]
+        if st and apply_shake_offset(st, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, 0, ctx.user_bias_px) then
+            changed = true
+        end
+        if ste and apply_shake_offset(ste, 0, 0, 2, ctx.apply_shake, ctx.dx, ctx.dy, 0, ctx.user_bias_px) then
+            changed = true
+        end
+    end
+
+    if changed then widget.dirty = true end
 end
 
 -- ─────────────────────────────────────────────────────────────────────────────

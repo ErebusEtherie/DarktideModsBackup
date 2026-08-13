@@ -71,7 +71,7 @@ return {
 					{
 						setting_id = "replace_fire_grenade",
 						type = "dropdown",
-						default_value = "content/fx/particles/liquid_area/beast_of_nurgle_slime",
+						default_value = "content/fx/particles/weapons/grenades/fire_grenade/fire_grenade_player_lingering_fire",
 						options = {
 							{ text = "fire_vfx_default", value = "content/fx/particles/weapons/grenades/fire_grenade/fire_grenade_player_lingering_fire" },
 							{ text = "vfx_circle_only", value = "CIRCLE_ONLY" },
@@ -85,7 +85,7 @@ return {
 					{
 						setting_id = "replace_rotten_armor",
 						type = "dropdown",
-						default_value = "content/fx/particles/weapons/grenades/gas_grenade_ground",
+						default_value = "content/fx/particles/weapons/grenades/gas_grenade_gas",
 						options = {
 							{ text = "rotten_vfx_default", value = "content/fx/particles/weapons/grenades/gas_grenade_gas" },
 							{ text = "gas_vfx_ground_cloud", value = "content/fx/particles/weapons/grenades/gas_grenade_ground" },
@@ -94,12 +94,13 @@ return {
 							{ text = "summoning_circle", value = "content/fx/particles/enemies/renegade_psyker/renegade_psyker_summoning_circle" },
 							{ text = "vfx_circle_only", value = "CIRCLE_ONLY" },
 							{ text = "lightning_liquid_area", value = "content/fx/particles/liquid_area/lightning_liguid_area" },
+
 						},
 					},
 					{
 						setting_id = "replace_havoc_enemy_corruption_liquid",
 						type = "dropdown",
-						default_value = "content/fx/particles/enemies/renegade_psyker/renegade_psyker_summoning_circle",
+						default_value = "content/fx/particles/liquid_area/nurgle_corruption_goo",
 						options = {
 							{ text = "blight_vfx_default", value = "content/fx/particles/liquid_area/nurgle_corruption_goo" },
 							{ text = "gas_vfx_ground_cloud", value = "content/fx/particles/weapons/grenades/gas_grenade_ground" },
@@ -122,12 +123,7 @@ return {
 							{ text = "fire_vfx_beast_slime", value = "content/fx/particles/liquid_area/beast_of_nurgle_slime" },
 							{ text = "fire_vfx_beast_goo", value = "content/fx/particles/liquid_area/nurgle_corruption_goo" },
 							{ text = "lightning_liquid_area", value = "content/fx/particles/liquid_area/lightning_liguid_area" },
-							-- { text = "test_twin_nade_passive", value = "content/fx/particles/weapons/grenades/twin_grenade_passive"},
 							{ text = "curroptor_goo", value = "content/fx/particles/liquid_area/corruptor_nurgle_goo"},
-							-- { text = "lightning_strike_charge", value = "content/fx/units/environment/expeditions/wastes/decal_lightning_strike_charge" },
-							-- { text = "lightning_strike_ground_indicator_charge", value = "content/fx/particles/environment/expeditions/wastes/lightning_strike_ground_indicator_charge" },
-							-- { text = "lightning_strike_ground_large_01", value = "content/fx/units/environment/expeditions/wastes/vfx_lightning_strike_ground_large_01" },
-							
 						},
 					},
 					{
@@ -143,6 +139,30 @@ return {
 							{ text = "curroptor_goo", value = "content/fx/particles/liquid_area/corruptor_nurgle_goo"},
 							{ text = "lightning_liquid_area", value = "content/fx/particles/liquid_area/lightning_liguid_area" },
 						},
+					},
+				},
+			},
+			{
+				setting_id = "skit_group",
+				type = "group",
+				sub_widgets = {
+					{
+						setting_id = "purgator_vfx",
+						type = "checkbox",
+						default_value = false,
+						tooltip = "purg_tt",
+					},
+					{
+						setting_id = "arc_vfx",
+						type = "checkbox",
+						default_value = true,
+						tooltip = "arc_tt",
+					},
+					{
+						setting_id = "gal_vfx",
+						type = "checkbox",
+						default_value = true,
+						tooltip = "gal_tt",
 					},
 				},
 			},
@@ -215,11 +235,32 @@ return {
 						type = "checkbox",
 						default_value = false,
 					},
+					-- {
+					-- 	setting_id = "disable_skull_totem_vfx",
+					-- 	type = "checkbox",
+					-- 	default_value = true,
+					-- },
+					{
+						setting_id = "poxwalker_vfx",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "disable_bon_death",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "disable_burster_death",
+						type = "checkbox",
+						default_value = false,
+					},
 				},
 			},
 			{
 				setting_id = "havoc_toggle_group",
 				type = "group",
+				tooltip = "havoc_tt",
 				sub_widgets = {
 					{
 						setting_id = "disable_rotten_armor_stages",
@@ -260,6 +301,17 @@ return {
 						setting_id = "disable_death_vfx",
 						type = "checkbox",
 						default_value = true,
+					},
+					{
+						setting_id = "disable_toughened_skin",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "simple_havoc_color_vfx",
+						type = "checkbox",
+						tooltip = "simple_hav_tt",
+						default_value = false,
 					},
 				},
 			},
@@ -483,41 +535,41 @@ return {
 					},
 				},
 			},
-			-- {
-			-- 	setting_id = "gasnade_indicators_group",
-			-- 	type = "group",
-			-- 	sub_widgets = {
-			-- 		{
-			-- 			setting_id = "gas_grenade_circle_enabled",
-			-- 			type = "checkbox",
-			-- 			default_value = false,
-			-- 		},
-			-- 		{
-			-- 			setting_id = "gas_grenade_circle_red",
-			-- 			type = "numeric",
-			-- 			default_value = 35,
-			-- 			range = { 0, 100 },
-			-- 		},
-			-- 		{
-			-- 			setting_id = "gas_grenade_circle_green",
-			-- 			type = "numeric",
-			-- 			default_value = 26,
-			-- 			range = { 0, 100 },
-			-- 		},
-			-- 		{
-			-- 			setting_id = "gas_grenade_circle_blue",
-			-- 			type = "numeric",
-			-- 			default_value = 10,
-			-- 			range = { 0, 100 },
-			-- 		},
-			-- 		{
-			-- 			setting_id = "gas_grenade_circle_alpha",
-			-- 			type = "numeric",
-			-- 			default_value = 40,
-			-- 			range = { 0, 100 },
-			-- 		},
-			-- 	},
-			-- },
+			{
+				setting_id = "gasnade_indicators_group",
+				type = "group",
+				sub_widgets = {
+					{
+						setting_id = "gas_grenade_circle_enabled",
+						type = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id = "gas_grenade_circle_red",
+						type = "numeric",
+						default_value = 35,
+						range = { 0, 100 },
+					},
+					{
+						setting_id = "gas_grenade_circle_green",
+						type = "numeric",
+						default_value = 26,
+						range = { 0, 100 },
+					},
+					{
+						setting_id = "gas_grenade_circle_blue",
+						type = "numeric",
+						default_value = 10,
+						range = { 0, 100 },
+					},
+					{
+						setting_id = "gas_grenade_circle_alpha",
+						type = "numeric",
+						default_value = 40,
+						range = { 0, 100 },
+					},
+				},
+			},
 			{
 				setting_id = "circle_count_group",
 				type = "group",
@@ -533,7 +585,9 @@ return {
 		},
 	},
 }
+
 -- I  wouldn't use these if I were you. 
+--content/fx/particles/environment/transit/manhole_smoke_01
 -- { text = "testvfx", value = "content/fx/particles/enemies/daemonhost/daemonhost_hand_glow" },
 -- { text = "test2vfx", value = "content/fx/particles/enemies/buff_gardens_embrace_head" },
 -- { text = "test3vfx", value = "content/fx/particles/enemies/buff_gardens_embrace_head_02" },
@@ -544,3 +598,15 @@ return {
 -- { text = "test8vfx", value = "content/fx/particles/abilities/ability_radius_aoe" },
 -- { text = "gas_grenade_gas", value = "content/fx/particles/weapons/grenades/gas_grenade_gas" },
 -- { text = "test6vfx", value = "content/fx/particles/weapons/grenades/twin_grenade_passive" },
+-- content/fx/particles/enemies/cultist_ritualist/ritual_force_minions_heresy_target_01
+-- { text = "test FX", value = "content/fx/particles/enemies/cultist_flamer/cultist_flame_thrower_hit" },
+-- { text = "test FX", value = "content/fx/particles/abilities/biomancer_soul" },
+-- content/fx/particles/environment/nurgle_ground_fog 
+-- ["content/fx/particles/interacts/skull_totem_buff"] = "disable_skull_totem_vfx",
+-- ["content/fx/particles/interacts/skull_totem_pulse"] = "disable_skull_totem_vfx",
+-- ["content/fx/particles/interacts/skull_totem_activation"] = "disable_skull_totem_vfx",
+-- ["content/fx/particles/interacts/skull_totem_auxiliary"] = "disable_skull_totem_vfx",
+-- ["content/fx/particles/destructibles/skull_totem_destroy_top"] = "disable_skull_totem_vfx",
+-- ["content/fx/particles/destructibles/skull_totem_destroy_stage"] = "disable_skull_totem_vfx",
+--content/fx/particles/environment/backdrop_smoke_billowy_large
+--content/fx/particles/environment/tank_foundry/steam_billowy_12

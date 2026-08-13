@@ -101,6 +101,7 @@ mod.build_modules = function()
     mod.engram:set_bind_manager(mod.bind_manager)
     mod.omnissiah = Omnissiah:new(mod)
     mod.weapon_manager:set_bind_manager(mod.bind_manager)
+    mod.weapon_manager:set_omnissiah(mod.omnissiah)
     mod.omnissiah:set_bind_manager(mod.bind_manager)
     mod.widget_manager:set_bind_manager(mod.bind_manager)
 end
@@ -295,9 +296,7 @@ mod:hook(CLASS.InputService, "_get", function(func, self, action_name)
             mod.bind_manager:set_input_value(action_name, out)
             mod.omnissiah:maybe_reset_last_shot(action_name, out)
             mod.bind_manager:maybe_update_primary_override(action_name, out)
-            --mod.bind_manager:update_binds()
             local omnissiahs_will = mod.omnissiah:omnissiah(action_name, out)
-            --mod.maybe_force_interrupt(action_name, out)
             if omnissiahs_will == nil then
                 return out
             elseif not mod.weapon_manager:suicidal(action_name, WEENIE_HUT_JR) then

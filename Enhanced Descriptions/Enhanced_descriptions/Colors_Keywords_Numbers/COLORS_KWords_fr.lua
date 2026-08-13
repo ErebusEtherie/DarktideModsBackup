@@ -99,7 +99,8 @@ local CONFIG = {
 		Rending = "Déchirure",
 	},
 	soulblaze_text_colour = {
-		Soulblaze = "Embrasement d'âme",
+		Soulblaze = "Flamme de l'âme",
+		Soulblaz = "FdA",
 	},
 	stagger_text_colour = {
 		Stagger = "Vacillement",

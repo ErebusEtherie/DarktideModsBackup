@@ -21,22 +21,12 @@ local U              = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils
 --========================
 -- Small helpers / guards
 --========================
-
--- RGBA (0..1) fallback to opaque white if palette entry is missing.
-local function _rgba_or_white(t)
-    if type(t) == "table" then
-        -- copy to avoid sharing the same table across widgets
-        return { t[1] or 1, t[2] or 1, t[3] or 1, t[4] or 1 }
-    end
-    return { 1, 1, 1, 1 }
-end
-
 -- ARGB-255 fallback to white if palette entry is missing.
 local function _argb_or_white255(t)
     if type(t) == "table" then
         return { t[1] or 255, t[2] or 255, t[3] or 255, t[4] or 255 }
     end
-    local white = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or { 255, 255, 255, 255 }
+    local white = mod.PALETTE_ARGB255.GENERIC_WHITE
     return { white[1], white[2], white[3], white[4] }
 end
 
@@ -83,7 +73,11 @@ local function _ensure_default_scalables(style_table)
     end
 end
 
-local W = {}
+local W                   = {}
+
+local TEAM_RING_SIZE      = 0.45
+local TEAM_RING_THICKNESS = 0.03
+local TEAM_RING_OUTLINE   = 0.02
 
 -- Creates a single world-marker widget definition that visually matches a
 -- docked team tile (ring + segments + icons + texts).
@@ -156,20 +150,19 @@ function W.build_marker_definitions(scale, scenegraph_id)
                 uvs                  = { { 0, 1 }, { 1, 0 } },
                 horizontal_alignment = "center",
                 vertical_alignment   = "center",
-                offset               = { C.TILE_SIZE / 16, -C.TILE_SIZE / 5.7, 1 },
+                offset               = { C.ARC_SIZE / 45 + 2, C.ARC_SIZE * 11 / 180 - 12, 1 },
                 size                 = { C.ARC_SIZE, C.ARC_SIZE },
-                pivot                = { C.ARC_SIZE / 2, C.ARC_SIZE },
+                pivot                = { 0, 0 },
                 angle                = 0,
-                color                = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or
-                    { 255, 255, 255, 255 },
+                color                = mod.PALETTE_ARGB255.GENERIC_WHITE,
                 material_values      = {
                     amount               = 0,
                     arc_top_bottom       = U.seg_arc_range(math.min(i, C.MAX_WOUNDS_CAP), C.MAX_WOUNDS_CAP),
                     fill_outline_opacity = { 1.3, 1.3 },
-                    outline_color        = _rgba_or_white(mod.PALETTE_RGBA1 and
-                        mod.PALETTE_RGBA1.default_toughness_color_rgba),
+                    outline_color        = mod.PALETTE_RGBA1.default_toughness_color_rgba,
                     lightning_opacity    = 0,
                     glow_on_off          = 0,
+                    SizeThicknessOutline = { TEAM_RING_SIZE, TEAM_RING_THICKNESS, TEAM_RING_OUTLINE },
                 },
             }
         })
@@ -190,20 +183,19 @@ function W.build_marker_definitions(scale, scenegraph_id)
                 uvs                  = { { 0, 1 }, { 1, 0 } },
                 horizontal_alignment = "center",
                 vertical_alignment   = "center",
-                offset               = { C.TILE_SIZE / 16, -C.TILE_SIZE / 5.7, 2 },
+                offset               = { C.ARC_SIZE / 45 + 2, C.ARC_SIZE * 11 / 180 - 12, 2 },
                 size                 = { C.ARC_SIZE, C.ARC_SIZE },
-                pivot                = { C.ARC_SIZE / 2, C.ARC_SIZE },
+                pivot                = { 0, 0 },
                 angle                = 0,
-                color                = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or
-                    { 255, 255, 255, 255 },
+                color                = mod.PALETTE_ARGB255.GENERIC_WHITE,
                 material_values      = {
                     amount               = 1,
                     arc_top_bottom       = U.seg_arc_range(i, C.MAX_WOUNDS_CAP),
                     fill_outline_opacity = { 0.7, 1.3 },
-                    outline_color        = _rgba_or_white(mod.PALETTE_RGBA1 and
-                        mod.PALETTE_RGBA1.default_corruption_color_rgba),
+                    outline_color        = mod.PALETTE_RGBA1.default_corruption_color_rgba,
                     lightning_opacity    = 0,
                     glow_on_off          = 0,
+                    SizeThicknessOutline = { TEAM_RING_SIZE, TEAM_RING_THICKNESS, TEAM_RING_OUTLINE },
                 },
             }
         })
@@ -227,8 +219,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
             text_vertical_alignment   = "center",
             size                      = { C.TILE_SIZE, C.TILE_SIZE },
             offset                    = { C.TILE_SIZE / 80, -C.TILE_SIZE / 16.7, 3 },
-            text_color                = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or
-                { 255, 255, 255, 255 },
+            text_color                = mod.PALETTE_ARGB255.GENERIC_WHITE,
         }
     })
 
@@ -247,7 +238,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
             vertical_alignment   = "center",
             size                 = { C.TILE_SIZE / 3.8, C.TILE_SIZE / 3.8 },
             offset               = { C.TILE_SIZE / 80, -C.TILE_SIZE / 16.7, 4 },
-            color                = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or { 255, 255, 255, 255 },
+            color                = mod.PALETTE_ARGB255.GENERIC_WHITE,
         }
     })
 
@@ -270,8 +261,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
             s_.vertical_alignment        = "center"
             s_.size                      = { C.TILE_SIZE, C.TILE_SIZE / 12 }
             s_.offset                    = { 0, -C.TILE_SIZE / 2.9, 5 }
-            s_.text_color                = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or
-                { 255, 255, 255, 255 }
+            s_.text_color                = mod.PALETTE_ARGB255.GENERIC_WHITE
             s_.drop_shadow               = true
             s_.font_size                 = C.TILE_SIZE / 13.5
             s_.visible                   = true
@@ -291,7 +281,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
             vertical_alignment   = "center",
             size                 = { C.THROWABLE_ICON_SIZE, C.THROWABLE_ICON_SIZE },
             offset               = { -C.TILE_SIZE / 9, -C.TILE_SIZE / 25, 6 },
-            color                = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or { 255, 255, 255, 255 },
+            color                = mod.PALETTE_ARGB255.GENERIC_WHITE,
             visible              = false,
         }
     })
@@ -308,7 +298,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
             vertical_alignment   = "center",
             size                 = { C.CRATE_ICON_SIZE, C.CRATE_ICON_SIZE },
             offset               = { C.TILE_SIZE / 7.25, -C.TILE_SIZE / 25, 7 },
-            color                = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or { 255, 255, 255, 255 },
+            color                = mod.PALETTE_ARGB255.GENERIC_WHITE,
             visible              = false,
         }
     })
@@ -325,7 +315,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
             vertical_alignment   = "center",
             size                 = { C.STIMM_ICON_SIZE, C.STIMM_ICON_SIZE },
             offset               = { C.TILE_SIZE / 7.25, -C.TILE_SIZE / 9, 8 },
-            color                = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or { 255, 255, 255, 255 },
+            color                = mod.PALETTE_ARGB255.GENERIC_WHITE,
             visible              = false,
         }
     })
@@ -345,7 +335,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
             s_.vertical_alignment        = "center"
             s_.size                      = { C.TILE_SIZE, C.TILE_SIZE / 13.5 }
             s_.offset                    = { -C.TILE_SIZE / 4, -C.TILE_SIZE / 25, 12 }
-            local ammo_col               = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_HIGH)
+            local ammo_col               = mod.PALETTE_ARGB255.AMMO_TEXT_COLOR_HIGH
             s_.text_color                = _argb_or_white255(ammo_col)
             s_.font_size                 = C.TILE_SIZE / 11
             s_.drop_shadow               = true
@@ -369,8 +359,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
             s_.vertical_alignment        = "center"
             s_.size                      = { C.TILE_SIZE, C.TILE_SIZE / 13.5 }
             s_.offset                    = { C.TILE_SIZE / 4, -C.TILE_SIZE / 25, 11 }
-            local WHITE                  = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or
-                { 255, 255, 255, 255 }
+            local WHITE                  = mod.PALETTE_ARGB255.GENERIC_WHITE
             s_.text_color                = { WHITE[1], WHITE[2], WHITE[3], WHITE[4] }
             s_.font_size                 = C.TILE_SIZE / 11
             s_.drop_shadow               = true
@@ -417,8 +406,7 @@ function W.build_marker_definitions(scale, scenegraph_id)
             s_.vertical_alignment        = "center"
             s_.size                      = { C.TILE_SIZE / 3, C.TILE_SIZE / 12 }
             s_.offset                    = { -C.TILE_SIZE / 4, -C.TILE_SIZE / 4.5, 9 }
-            s_.text_color                = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or
-                { 255, 255, 255, 255 }
+            s_.text_color                = mod.PALETTE_ARGB255.GENERIC_WHITE
             s_.font_size                 = C.TILE_SIZE / 12
             s_.drop_shadow               = true
             s_.visible                   = false
@@ -440,19 +428,19 @@ function W.build_marker_definitions(scale, scenegraph_id)
             uvs                  = { { 0, 1 }, { 1, 0 } },
             horizontal_alignment = "center",
             vertical_alignment   = "center",
-            offset               = { C.TILE_SIZE / 16, -C.TILE_SIZE / 5.7, 13 },
+            offset               = { C.ARC_SIZE / 45 + 2, C.ARC_SIZE * 11 / 180 - 12, 13 },
             size                 = { C.ARC_SIZE, C.ARC_SIZE },
-            pivot                = { C.ARC_SIZE / 2, C.ARC_SIZE },
+            pivot                = { 0, 0 },
             angle                = 0,
-            color                = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or { 255, 255, 255, 255 },
+            color                = mod.PALETTE_ARGB255.GENERIC_WHITE,
             material_values      = {
                 amount               = 1,
                 arc_top_bottom       = U.seg_arc_range(1, 1),
                 fill_outline_opacity = { 1.3, 1.3 },
-                outline_color        = _rgba_or_white(mod.PALETTE_RGBA1 and
-                    mod.PALETTE_RGBA1.dodge_color_negative_rgba),
+                outline_color        = mod.PALETTE_RGBA1.dodge_color_negative_rgba,
                 lightning_opacity    = 0,
                 glow_on_off          = 0,
+                SizeThicknessOutline = { TEAM_RING_SIZE, TEAM_RING_THICKNESS, TEAM_RING_OUTLINE },
             },
         }
     })
@@ -471,19 +459,19 @@ function W.build_marker_definitions(scale, scenegraph_id)
             uvs                  = { { 0, 1 }, { 1, 0 } },
             horizontal_alignment = "center",
             vertical_alignment   = "center",
-            offset               = { C.TILE_SIZE / 16, -C.TILE_SIZE / 5.7, 14 },
+            offset               = { C.ARC_SIZE / 45 + 2, C.ARC_SIZE * 11 / 180 - 12, 14 },
             size                 = { C.ARC_SIZE, C.ARC_SIZE },
-            pivot                = { C.ARC_SIZE / 2, C.ARC_SIZE },
+            pivot                = { 0, 0 },
             angle                = 0,
-            color                = (mod.PALETTE_ARGB255 and mod.PALETTE_ARGB255.GENERIC_WHITE) or { 255, 255, 255, 255 },
+            color                = mod.PALETTE_ARGB255.GENERIC_WHITE,
             material_values      = {
                 amount               = 0,
                 arc_top_bottom       = U.seg_arc_range(1, 1),
                 fill_outline_opacity = { 1.3, 1.3 },
-                outline_color        = _rgba_or_white(mod.PALETTE_RGBA1 and
-                    mod.PALETTE_RGBA1.dodge_color_negative_rgba),
+                outline_color        = mod.PALETTE_RGBA1.dodge_color_negative_rgba,
                 lightning_opacity    = 0,
                 glow_on_off          = 0,
+                SizeThicknessOutline = { TEAM_RING_SIZE, TEAM_RING_THICKNESS, TEAM_RING_OUTLINE },
             },
         }
     })

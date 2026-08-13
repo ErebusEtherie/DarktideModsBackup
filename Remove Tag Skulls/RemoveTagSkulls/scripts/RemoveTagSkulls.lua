@@ -1,7 +1,7 @@
 --[[
     Author: Igromanru
     Mod Name: Remove Tag Skulls
-    Version: 1.2.0
+    Version: 1.2.1
 ]]
 local mod = get_mod("RemoveTagSkulls")
 
@@ -41,9 +41,9 @@ mod:hook_require("scripts/ui/hud/elements/world_markers/templates/world_marker_t
 	end)
 end)
 
-mod:hook_require("scripts/ui/hud/elements/world_markers/templates/world_marker_template_unit_threat_adamant", function(instance)
+mod:hook_require("scripts/ui/hud/elements/world_markers/templates/world_marker_template_unit_threat_companion", function(instance)
 	mod:hook(instance, "on_enter", function(func, widget, marker, template)
-        if mod:get(SettingNames.RemoveAdamantTagSkull) then
+        if mod:get(SettingNames.RemoveCompanionTagSkull) then
             if marker and ShouldFilterDaemonhost(marker) then
                 marker.template.max_distance = 0
             end

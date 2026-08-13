@@ -50,7 +50,9 @@ local is_weakened = function(unit)
     local is_weakened = false
 
     if not breed then
-        mod:echo("Error: breed = nil")
+        if get_cached("debugging") then
+            mod:echo("Error: breed = nil")
+        end
         return is_weakened
     end
 
@@ -84,15 +86,50 @@ local is_weakened = function(unit)
 end
 --]]
 
+local unit_is_a_dying_boss = function(unit)
+    for _, dying_boss in pairs(mod.dying_bosses) do
+        if dying_boss.unit == unit then
+            return true
+        end
+    end
+    return false
+end
+
+local unit_name_from_breed_name = function(breed_name)
+    if breed_name == "chaos_daemonhost" then
+        return "daemonhost"
+    elseif breed_name == "chaos_mutator_daemonhost" then
+        return "hex_dh"
+    elseif breed_name == "cultist_captain" or breed_name == "renegade_captain" then
+        return "captain"
+    elseif breed_name == "renegade_twin_captain" or breed_name == "renegade_twin_captain_two"  then
+        return "twins"
+    else
+        return nil
+    end
+end
+
 local color_by_unit = function(unit)
     local breed = ScriptUnit.extension(unit, "unit_data_system"):breed()
     if not breed.is_boss then
         return
     end
+    --local unit_is_a_dying_boss = table.find(mod.dying_bosses, unit)
+    local is_a_dying_boss = unit_is_a_dying_boss(unit)
 	local breed_name = breed.name
-    --local boss_extension = ScriptUnit.has_extension(unit, "boss_system")
-    --local is_weakened = boss_extension and boss_extension:is_weakened()
-    if breed_name == "chaos_daemonhost" then
+    local unit_name = unit_name_from_breed_name(breed_name)
+    if unit_name
+    and get_cached("dying_color_toggle_"..unit_name)
+    and is_a_dying_boss then
+        --return {240, 255, 255, 255}
+        return {
+            255,
+            get_cached("dying_boss_color_r"),
+            get_cached("dying_boss_color_g"),
+            get_cached("dying_boss_color_b"),
+        }
+    --[[
+    elseif breed_name == "chaos_daemonhost" then
         return get_color("daemonhost")
     elseif breed_name == "chaos_mutator_daemonhost" then
         return get_color("hex_dh")
@@ -100,12 +137,116 @@ local color_by_unit = function(unit)
         return get_color("captain")
     elseif breed_name == "renegade_twin_captain" or breed_name == "renegade_twin_captain_two" then
         return get_color("twins")
+    --]]
+    elseif unit_name then
+        return get_color(unit_name)
     elseif is_weakened(unit) then
         return get_color("weakened")
     else
         return get_color("others")
     end
 end
+
+
+----------------------------------------------
+-- WIP - Tracking the death of hex daemonhosts
+
+mod.dying_bosses = {}
+local dh_death_anim_index = 22
+-- The animation index is 22 both for regular *and* hexbound daemonhosts
+
+mod.record_dying_hexdh = function(unit)
+    -- Starts tracking a dying hexdh, for a duration of timer (in seconds)
+    if get_cached("debugging") then
+        mod:echo("Recording a dying hexdh...")
+    end
+    table.insert(
+    mod.dying_bosses,
+    {
+        unit = unit,
+        timer = 10
+    })
+end
+
+mod.update = function(dt)
+    -- Decrement the time for which each currently tracked dh needs to be tracked, and forget them if they need to be
+    for k, tracked_hexdh in pairs(mod.dying_bosses) do
+        tracked_hexdh.timer = tracked_hexdh.timer - dt
+        --local unit = tracked_hexdh.unit
+        local timer = tracked_hexdh.timer
+        if timer <= 0 then
+            if get_cached("debugging") then
+                mod:echo("Timer elapsed, forgetting the hexdh. May she rest in peace.\nRemaining tracked Daemonhosts: "..tostring(#mod.dying_bosses - 1))
+            end
+            table.remove(mod.dying_bosses, k)
+        end
+    end
+end
+
+local handle_name_event = function(self, event_name)
+    --mod:echo("anim_event - Animation recorded: "..tostring(event_name).."\nAnimation index: "..tostring(Unit.animation_event(self._unit, event_name)))
+    local unit = self._unit
+    local unit_data_ext = ScriptUnit.extension(unit, "unit_data_system")
+    local breed = unit_data_ext and unit_data_ext:breed()
+    local breed_name = breed and breed.name
+    local unit_name = unit_name_from_breed_name(breed_name)
+    --if not (breed_name == "chaos_mutator_daemonhost" or breed_name == "chaos_daemonhost") then
+    if not unit_name or not get_cached("dying_color_toggle_"..unit_name) then
+        return
+    end
+    --mod:echo(tostring(type(Unit.animation_event(unit, "death_01"))))
+    if event_name == "death_01" then
+        -- This is right for DH & hex dh, would need to check for other units if I add more
+        if get_cached("debugging") then
+            mod:echo("Found a dying boss")
+        end
+        mod.record_dying_hexdh(unit)
+    elseif string.match(event_name, "death(.+)$") then
+        if get_cached("debugging") then
+            mod:echo("Found a possibly dying boss - event_name = "..tostring(event_name).."\nAnimation index: "..tostring(Unit.animation_event(unit, event_name)))
+            mod.record_dying_hexdh(unit)
+        end
+    end
+end
+
+local handle_index_event = function(unit, event_index)
+    local unit_data_ext = ScriptUnit.extension(unit, "unit_data_system")
+    local breed = unit_data_ext and unit_data_ext:breed()
+    local breed_name = breed and breed.name
+    if not (breed_name == "chaos_mutator_daemonhost" or breed_name == "chaos_daemonhost") then
+        return
+    end
+    if event_index == dh_death_anim_index then
+        if get_cached("debugging") then
+            mod:echo("Found a dying hexdh")
+        end
+        mod.record_dying_hexdh(unit)
+    end
+end
+
+mod:hook_safe(CLASS.MinionAnimationExtension, "anim_event", function(self, event_name, _)
+    return handle_name_event(self, event_name)
+end)
+
+--[[
+-- variable_float hooks should not be needed for the death anim of daemonhosts 
+mod:hook_safe(CLASS.MinionAnimationExtension, "anim_event_with_variable_float", function(self, event_name, _, _)
+    return handle_name_event(self, event_name)
+end)
+--]]
+
+mod:hook_safe(CLASS.AnimationSystem, "rpc_minion_anim_event", function(self, channel_id, unit_id, event_index)
+    local unit = Managers.state and Managers.state.unit_spawner and Managers.state.unit_spawner:unit(unit_id)
+    if unit then handle_index_event(unit, event_index) end
+end)
+
+--[[
+-- variable_float hooks should not be needed for the death anim of daemonhosts 
+mod:hook_safe(CLASS.AnimationSystem, "rpc_minion_anim_event_variable_float", function(self, channel_id, unit_id, event_index, _, _)
+    local unit = Managers.state and Managers.state.unit_spawner and Managers.state.unit_spawner:unit(unit_id)
+    if unit then handle_index_event(unit, event_index) end
+end)
+--]]
 
 
 ------------------------------

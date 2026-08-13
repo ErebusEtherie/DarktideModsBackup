@@ -107,30 +107,21 @@ local Definitions = {
             position             = { settings_x, vertical_offset + settings_y, 0 },
         },
 
-        peril_bar                      = create_node({ -offset_correction, u * 1, 1 }),
-        dodge_bar                      = create_node({ offset_correction, -u * 1, 2 }),
-        stamina_bar                    = create_node({ -offset_correction, -u * 1, 3 }),
-        charge_bar                     = create_node({ offset_correction, u * 1, 4 }),
+        peril_bar                      = create_node({ -(u * 6), -(u * 39.6), 1 }),
+        dodge_bar                      = create_node({ u * 6, -(u * 40.6), 2 }),
+        stamina_bar                    = create_node({ -(u * 6), -(u * 40.6), 3 }),
+        charge_bar                     = create_node({ u * 6, -(u * 39.6), 4 }),
 
         ability_timer                  = create_node({ offset_correction + (text_offset * 2) - (u * 5), u * 1, 5 }, size,
             "left"),
 
-        toughness_bar_corruption       = create_node(
-            { (offset_correction * outer_size_factor) - (u * 2), offset_correction, 6 }, outer_size),
-        toughness_bar_health           = create_node(
-            { (offset_correction * outer_size_factor) - (u * 1), offset_correction, 5 }, outer_size),
-        toughness_bar_damage           = create_node(
-            { (offset_correction * outer_size_factor) - (u * 1), offset_correction, 5 }, outer_size),
+        toughness_bar_corruption       = create_node({ u * 8, -(u * 61.6), 6 }, outer_size),
+        toughness_bar_health           = create_node({ u * 8, -(u * 61.6), 5 }, outer_size),
+        toughness_bar_damage           = create_node({ u * 8, -(u * 61.6), 5 }, outer_size),
 
-        grenade_bar                    = create_node(
-            { (offset_correction * inner_size_factor) - (u * 1), -(offset_correction * inner_size_factor), 7 },
-            inner_size),
-        ammo_clip_bar                  = create_node(
-            { -(offset_correction * inner_size_factor) + (u * 1), -(offset_correction * inner_size_factor) + (u * 2), 8 },
-            inner_size),
-        talent_bar                     = create_node(
-            { (offset_correction * inner_size_factor) - (u * 1), -(offset_correction * inner_size_factor) + (u * 2), 8 },
-            inner_size),
+        grenade_bar                    = create_node({ u * 5, -(u * 37.6), 7 }, inner_size),
+        ammo_clip_bar                  = create_node({ -(u * 6), -(u * 42.6), 8 }, inner_size),
+        talent_bar                     = create_node({ u * 6, -(u * 42.6), 8 }, inner_size),
 
         peril_text_display_node        = create_node(
             { -(offset_correction + text_offset + u * 105), u * 1 + offset_correction, 10 }, { u * 150, u * 30 }, "right"),
@@ -138,7 +129,7 @@ local Definitions = {
             { -(offset_correction + text_offset + u * 96), u * 14.2, 9 }, { u * 200, u * 30 }, "right",
             "top"),
         ammo_clip_text_display_node    = create_node(
-            { -(offset_correction + text_offset + u * 115), -(offset_correction * 2.5) - (u * 8), 10 },
+            { -(offset_correction + text_offset + u * 117), -(offset_correction * 2.5) - (u * 8), 10 },
             { u * 150, u * 30 },
             "right"),
 

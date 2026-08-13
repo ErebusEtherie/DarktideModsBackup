@@ -4,6 +4,8 @@ local mod = get_mod("MuteImpacts")
 -- Local References for Performance
 -- ################################
 local pairs = pairs
+local string = string
+local string_format = string.format
 
 -- ################################
 -- Localization
@@ -21,7 +23,7 @@ local localizations = {
 		en = "Mute impact SFX and such",
 	},
 	missing_audio_plugin_error = {
-		en = "Audio Plugin not detected!",
+		en = "Simple Audio and Audio Plugin not detected! You need at least one of those installed.",
 	},
 	-- -------------------------
 	-- One-off Sounds
@@ -29,6 +31,14 @@ local localizations = {
 	forcestaff_primary_fire = {
 		en = "Force Staff Primary Fire",
 	},
+	forcestaff_secondary_fire_explosion = {
+		-- en = "Force Staff Secondary Fire Explosion",
+		en = string_format("%s/%s Secondary Fire Explosion", Localize("loc_weapon_family_forcestaff_p4_m1"), Localize("loc_weapon_family_forcestaff_p1_m1")),
+		-- en = string_format("%s %s %s and %s %s %s", Localize("loc_weapon_pattern_forcestaff_p4_m1"), Localize("loc_weapon_mark_forcestaff_p4_m1"), Localize("loc_weapon_family_forcestaff_p4_m1"), Localize("loc_weapon_pattern_forcestaff_p1_m1"), Localize("loc_weapon_mark_forcestaff_p1_m1"), Localize("loc_weapon_family_forcestaff_p1_m1")),
+	},
+	-- -------------
+    -- Lasgun Shots
+	-- -------------
 	lasbeam_crack_player = {
 		en = "Lasbeam Crack (Player)",
 	},
@@ -38,6 +48,24 @@ local localizations = {
 	lasbeam_crack_enemy = {
 		en = "Lasbeam Crack (Other Scab Enemies)",
 	},
+	-- -------------
+    -- Lightning Attacks
+	-- -------------
+	lightning_attack_hit = {
+		en = "Lightning Attack Hit and Stop",
+	},
+	-- -------------
+    -- Arbites Maul Trail
+	-- -------------
+	adamant_maul_swing = {
+		en = "Arbites Shock Maul Swing Trail",
+	},
+	shock_maul_hit = {
+		en = "Shock Maul Hit",
+	},
+	-- -------------
+    -- Menus
+	-- -------------
 	penance_reward_claim = {
 		en = "Claiming Penance Rewards",
 	},
@@ -59,6 +87,9 @@ local localizations = {
 	crafting_interact_empower = {
 		en = "Shrine of the Omnissiah: Empower Item",
 	},
+	-- -------------
+    -- Cough
+	-- -------------
 	player_gas_cough = {
 		en = "Coughing from Pox Gas",
 	},
@@ -77,11 +108,14 @@ local localizations_to_reuse = {
 		no_damage = {
 			en = "No Damage",
 		},
-		res = {
-			en = "Damage Reduced",
+		shield = {
+			en = "Bulwark Shield Hit",
 		},
 		armor = {
 			en = "Armored Hit",
+		},
+		res = {
+			en = "Damage Reduced",
 		},
 		unarmor = {
 			en = "Unarmored Hit",

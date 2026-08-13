@@ -1,6 +1,24 @@
 CHANGELOG
-1.17.0 Expedition mission feed fix
--- [New] New ammo reserve option for total ammo percentage
+1.18.0 Skitarius mega update
+-- [New] Capacitance added to talent_bar and all inner ring bars given thicker outlines (feedback from MoonCannon)
+-- [New] Charge bar support for arc maul and cog sword (suggested by Bullgryn Onion)
+-- [New] Talent bar support for ogryn Back Off stacks (suggested by Wobin)
+-- [Better] Checks for ammo magazine changes while not using ranged weapon (suggested by jasonjayalap)
+-- [Better] Dodge calcs now use the simpler and more accurate game data (research by JDLS)
+-- [Better] Performance overhaul of strike team hud elements (thanks to POLIVOX)
+-- [Better] Overhauled some file structures
+-- [Fixed] Player curved bars broken in Skitarius update (reported by Simrathe, assisted by POLIVOX)
+-- [Fixed] Ring HUD elements are no longer covered by Enemies Improved (reported by MoonCannon)
+-- [Fixed] Strike team curved bars broken in Skitarius update (reported by Simrathe)
+
+1.17.2 Skitarius update fixes
+-- [Fixed] Fixed missing class icons
+
+1.17.1 Tidy settings
+-- [Better] Settings page tidy, looks good with Alf's Mod Settings Extensions
+
+1.17.0 Ammo calculations
+-- [New] New ammo reserve option for total ammo percentage (suggested by Algramic)
 -- [Better] Team ammo percentage now calculated using total ammo not just reserve
 -- [Better] Ammo wastage now calculated based on total carrying capacity
 

@@ -1,22 +1,45 @@
 -- File: RingHud/scripts/mods/RingHud/systems/utils.lua
 local mod = get_mod("RingHud"); if not mod then return {} end
 
-if mod.utils then
-    return mod.utils
-end
-
+-- NOTE: do NOT early-return the cached table (`if mod.utils then return end`).
+-- On a DMF hot-reload that returns a STALE utils and skips every function
+-- definition below, so newer helpers (player_ring_radius, arc_envelope, etc.)
+-- silently vanish and ring tuning "stops working". Instead
+-- reuse the existing table and redefine functions in place, so existing local `U`
+-- references in other modules see the refreshed helpers.
 local C                         = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/constants")
 local FixedFrame                = require("scripts/utilities/fixed_frame")
 local UISettings                = require("scripts/settings/ui/ui_settings")
+local UIFontSettings            = require("scripts/managers/ui/ui_font_settings")
 
-mod.utils                       = {}
+mod.utils                       = mod.utils or {}
 local RingHudUtils              = mod.utils
 
 -- e.g. string.format(RingHudUtils.percent_num_format, 73.2) -> "73%"
 RingHudUtils.percent_num_format = "%01.f%%"
 
 --------------------------------------------------------------------------------
--- Number helpers (shared) -- TODO check if duplicating math.lua source code
+-- Ring arc helpers
+--------------------------------------------------------------------------------
+
+-- Live arc envelope (bottom, top) for a bar from the Ring Arc sliders
+-- (arc_<bar>_pos = start, arc_<bar>_len = span). Falls back to the feature's
+-- hardcoded defaults. Read this at the top of a feature's update so the bar's
+-- angular position/length tracks the sliders live (no rebuild needed).
+function RingHudUtils.arc_envelope(bar, def_bottom, def_top)
+    local st = mod._settings
+    if st then
+        local pos = tonumber(st["arc_" .. bar .. "_pos"])
+        local len = tonumber(st["arc_" .. bar .. "_len"])
+        if pos and len and len > 0 then
+            return pos, pos + len
+        end
+    end
+    return def_bottom, def_top
+end
+
+--------------------------------------------------------------------------------
+-- Number helpers (shared)
 --------------------------------------------------------------------------------
 
 -- Round to nearest integer (ties away from zero), tolerant of nil/non-number
@@ -66,6 +89,7 @@ end
 
 -- Style text color (ARGB255).
 -- Supports optional accumulator arg: set_style_text_color(style, argb255, changed)
+-- [Performance] Mutates in place avoiding table allocation when changing color
 -- Returns: changed (bool)
 function RingHudUtils.set_style_text_color(style, argb255, changed)
     if not style then return changed or false end
@@ -73,8 +97,11 @@ function RingHudUtils.set_style_text_color(style, argb255, changed)
 
     local nc = RingHudUtils.argb255_or_white(argb255)
     local tc = style.text_color
-    if not tc or not RingHudUtils.colors_equal(tc, nc) then
-        style.text_color = table.clone(nc)
+    if not tc then
+        style.text_color = { nc[1], nc[2], nc[3], nc[4] }
+        did = true
+    elseif not RingHudUtils.colors_equal(tc, nc) then
+        tc[1], tc[2], tc[3], tc[4] = nc[1], nc[2], nc[3], nc[4]
         did = true
     end
 
@@ -83,6 +110,7 @@ end
 
 -- Style color (ARGB255).
 -- Supports optional accumulator arg: set_style_color(style, argb255, changed)
+-- [Performance] Mutates in place avoiding table allocation when changing color
 -- Returns: changed (bool)
 function RingHudUtils.set_style_color(style, argb255, changed)
     if not style then return changed or false end
@@ -90,8 +118,11 @@ function RingHudUtils.set_style_color(style, argb255, changed)
 
     local nc  = RingHudUtils.argb255_or_white(argb255)
     local c   = style.color
-    if not c or not RingHudUtils.colors_equal(c, nc) then
-        style.color = table.clone(nc)
+    if not c then
+        style.color = { nc[1], nc[2], nc[3], nc[4] }
+        did = true
+    elseif not RingHudUtils.colors_equal(c, nc) then
+        c[1], c[2], c[3], c[4] = nc[1], nc[2], nc[3], nc[4]
         did = true
     end
 
@@ -123,7 +154,7 @@ function RingHudUtils.set_style_visible(style, is_visible, changed)
 end
 
 --------------------------------------------------------------------------------
--- Buff helpers (moved from core/RingHud_state_player.lua)
+-- Buff helpers
 --------------------------------------------------------------------------------
 
 -- Safer than the common “tmpl.name or buff:template_name()” pattern, because some
@@ -444,7 +475,7 @@ function mod.get_archetype_glyph(player_or_profile, fallback_glyph)
         return fallback
     end
 
-    local map = UISettings and UISettings.archetype_font_icon_simple
+    local map = UISettings and UISettings.archetype_font_icon
     local glyph = map and map[archetype_name]
 
     if type(glyph) == "string" and glyph ~= "" then
@@ -457,25 +488,55 @@ end
 -- Convenience alias for modules using `local U = io_dofile(utils)`
 RingHudUtils.get_archetype_glyph = mod.get_archetype_glyph
 
+-- OPTIMIZATION: Cache sorted teammates list (refreshes every 500ms or on player count change)
+local _sorted_teammates_cache = {}
+local _sorted_teammates_next_t = 0
+local _sorted_teammates_count = -1
+
+-- OPTIMIZATION: Pre-allocated sort comparator (avoids closure creation per sort)
+local function _session_id_compare(a, b)
+    return (a:session_id() or "") < (b:session_id() or "")
+end
+
 function RingHudUtils.sorted_teammates()
     local pm = Managers.player
-    if not pm then return {} end
+    if not pm then return _sorted_teammates_cache end
+
+    local now = Managers.time and Managers.time:time("gameplay") or 0
+    local humans = (pm.human_players and pm:human_players()) or {}
+    local count = 0
+    for _ in pairs(humans) do count = count + 1 end
+
+    -- Fast path: keep cache if roster count is unchanged and throttle has not expired
+    if count == _sorted_teammates_count and now < _sorted_teammates_next_t then
+        -- Purge any __deleted players from cache
+        for i = #_sorted_teammates_cache, 1, -1 do
+            if _sorted_teammates_cache[i].__deleted then
+                table.remove(_sorted_teammates_cache, i)
+            end
+        end
+        return _sorted_teammates_cache
+    end
+
+    _sorted_teammates_next_t = now + 0.5
+    _sorted_teammates_count = count
 
     local local_player = pm.local_player_safe and pm:local_player_safe(1) or nil
-    local humans = (pm.human_players and pm:human_players()) or {}
-    local out = {}
+
+    -- Reuse cache table
+    for i = 1, #_sorted_teammates_cache do
+        _sorted_teammates_cache[i] = nil
+    end
 
     for _, p in pairs(humans) do
         if p ~= local_player and not p.__deleted then
-            out[#out + 1] = p
+            _sorted_teammates_cache[#_sorted_teammates_cache + 1] = p
         end
     end
 
-    table.sort(out, function(a, b)
-        return (a:session_id() or "") < (b:session_id() or "")
-    end)
+    table.sort(_sorted_teammates_cache, _session_id_compare)
 
-    return out
+    return _sorted_teammates_cache
 end
 
 --------------------------------------------------------------------------------
@@ -567,20 +628,37 @@ function RingHudUtils.apply_bias_once(widget, current_bias, applier_fn)
 end
 
 --------------------------------------------------------------------------------
--- ADS helpers (moved from core/HudElementRingHud_player.lua)
+-- ADS helpers
 --------------------------------------------------------------------------------
 
+-- OPTIMIZATION: Cache ADS state per-frame (avoids repeated ScriptUnit.has_extension + read_component)
+local _ads_cache = false
+local _ads_cache_t = -1
+
 function RingHudUtils.is_ads_now()
+    local now = Managers.time and Managers.time:time("gameplay") or 0
+    if now - _ads_cache_t < 0.017 then
+        return _ads_cache
+    end
+    _ads_cache_t = now
+
     local pm = Managers.player
     local player = pm and pm.local_player_safe and pm:local_player_safe(1) or nil
     local unit = player and not player.__deleted and player.player_unit or nil
-    if not unit then return false end
+    if not unit then
+        _ads_cache = false
+        return false
+    end
 
     local ud_ext = ScriptUnit.has_extension(unit, "unit_data_system")
-    if not ud_ext then return false end
+    if not ud_ext then
+        _ads_cache = false
+        return false
+    end
 
     local alt = ud_ext:read_component("alternate_fire")
-    return (alt and alt.is_active) or false
+    _ads_cache = (alt and alt.is_active) or false
+    return _ads_cache
 end
 
 -- Returns the effective offset-bias (0..200), preferring Scanner override, then ADS override, then default.
@@ -651,23 +729,31 @@ end
 --------------------------------------------------------------------------------
 
 -- mv.outline_color = RGBA1 (only write when changed). Returns true if changed.
+-- [Performance] Mutates in place avoiding table allocation when changing color
 function RingHudUtils.mv_set_outline(mv, rgba, changed)
     if not mv then return changed or false end
     local next_rgba = RingHudUtils.rgba_or_white(rgba)
     local curr = mv.outline_color
-    if not curr or not RingHudUtils.colors_equal(curr, next_rgba) then
-        mv.outline_color = table.clone(next_rgba)
+    if not curr then
+        mv.outline_color = { next_rgba[1], next_rgba[2], next_rgba[3], next_rgba[4] }
+        return true
+    elseif curr[1] ~= next_rgba[1] or curr[2] ~= next_rgba[2] or curr[3] ~= next_rgba[3] or curr[4] ~= next_rgba[4] then
+        curr[1], curr[2], curr[3], curr[4] = next_rgba[1], next_rgba[2], next_rgba[3], next_rgba[4]
         return true
     end
     return changed or false
 end
 
 -- mv.arc_top_bottom = {top, bottom}. Returns true if changed.
+-- [Performance] In-place mutation when table already exists
 function RingHudUtils.mv_set_arc(mv, top, bottom, changed)
     if not mv then return changed or false end
     local curr = mv.arc_top_bottom
-    if not curr or curr[1] ~= top or curr[2] ~= bottom then
+    if not curr then
         mv.arc_top_bottom = { top, bottom }
+        return true
+    elseif curr[1] ~= top or curr[2] ~= bottom then
+        curr[1], curr[2] = top, bottom
         return true
     end
     return changed or false
@@ -678,7 +764,6 @@ end
 --------------------------------------------------------------------------------
 
 -- Sums a scalar or array field (e.g. ammo reserves in 1.10+).
--- Performance: O(N) where N is array size (usually < 5). Impact is negligible.
 function RingHudUtils.sum_ammo_field(v, max_size)
     if type(v) == "number" then
         return v
@@ -723,6 +808,87 @@ function RingHudUtils.resolve_element_instance(hud, const, class_name)
     end
 
     return inst
+end
+
+--------------------------------------------------------------------------------
+-- Segment & text formatting helpers
+--------------------------------------------------------------------------------
+
+-- Computes top/bottom arcs for a segmented ring layout. Result is memoized in cache_table.
+function RingHudUtils.get_segment_arcs(cache_table, num_segments, arc_min, arc_max, gap_size)
+    if num_segments <= 0 then return nil end
+
+    local env_key = arc_min .. "," .. arc_max
+    if cache_table.env_key ~= env_key then
+        cache_table.env_key = env_key
+        for k in pairs(cache_table) do
+            if type(k) == "number" then cache_table[k] = nil end
+        end
+    end
+
+    if cache_table[num_segments] then return cache_table[num_segments] end
+
+    local arcs = {}
+    local total_arc = arc_max - arc_min
+    local num_gaps = math.max(0, num_segments - 1)
+    local visual_space = math.max(0, total_arc - (num_gaps * gap_size))
+    local seg_arc = (num_segments > 0) and (visual_space / num_segments) or 0
+    local current_bot = arc_min
+
+    for i = 1, num_segments do
+        local top = math.min(arc_max, current_bot + seg_arc)
+        if i == num_segments then top = arc_max end
+        arcs[i] = { top, current_bot }
+        current_bot = top + gap_size
+    end
+
+    cache_table[num_segments] = arcs
+    return arcs
+end
+
+function RingHudUtils.format_single_cd(cd)
+    if cd <= 1 then
+        return string.format("%.1fs", math.max(0, cd))
+    else
+        return string.format("%ds", math.ceil(cd))
+    end
+end
+
+function RingHudUtils.get_buff_font_settings()
+    return "machine_medium", true
+end
+
+function RingHudUtils.get_cd_font_settings()
+    local font_type = mod._settings and mod._settings.player_hud_font
+
+    if not font_type or font_type == "" then
+        font_type = "proxima_nova_bold"
+    end
+
+    local drop_shadow = UIFontSettings.hud_body and UIFontSettings.hud_body.drop_shadow or nil
+    return font_type, drop_shadow
+end
+
+function RingHudUtils.buff_timer_text_and_color(current, max_duration)
+    local value = current or 0
+    local max   = max_duration or 0
+
+    if value <= 0 or max <= 0 then
+        return "", nil
+    end
+
+    local clamped   = math.max(0, value)
+    local intensity = RingHudUtils.calculate_opacity(clamped, max)
+
+    local text
+    if clamped <= 1 then
+        text = string.format("%.1f", clamped)
+    else
+        text = string.format("%d", math.ceil(clamped))
+    end
+
+    local color = { intensity, intensity, 255 - intensity, 0 }
+    return text, color
 end
 
 return RingHudUtils

@@ -44,6 +44,8 @@ local trinket_slot_order = {
 	"slot_trinket_2",
 }
 
+local CosmeticsInspectView = require("scripts/ui/views/cosmetics_inspect_view/cosmetics_inspect_view")
+
 local base_item
 current_commodores_offers = {}
 
@@ -65,6 +67,8 @@ mod.grab_current_commodores_items = function(self, archetype)
 		storefront = "premium_store_skins_adamant"
 	elseif archetype == "broker" or (archetype == nil and archetype_name == "broker") then
 		storefront = "premium_store_skins_broker"
+	elseif archetype == "cryptic" or (archetype == nil and archetype_name == "cryptic") then
+		storefront = "premium_store_skins_cryptic"
 	end
 
 	local store_service = Managers.data_service.store
@@ -330,6 +334,8 @@ mod:hook_safe(CLASS.InventoryWeaponCosmeticsView, "_preview_element", function(s
 	local parent_item = self._presentation_item
 	local selected_item = self._previewed_item
 
+	dbg_p = self._previewed_item
+
 	if self._selected_tab_index == 1 then
 		if string.find(self._previewed_item.name, "trinket") then
 			self._previewed_item = base_item
@@ -409,7 +415,7 @@ mod:hook_safe(CLASS.InventoryWeaponCosmeticsView, "_preview_element", function(s
 			self._previewed_item
 			and self._previewed_item.__locked
 			and self._previewed_item.__locked == true
-			and self._previewed_item.__master_item.source == 3
+			and self._previewed_item.__master_item.source == "premium_store"
 		then
 			widgets_by_name.wishlist_button.content.visible = true
 		else
@@ -1040,6 +1046,424 @@ mod.can_item_be_equipped = function(self, selected_item)
 	return can_be_equipped
 end
 
+----------------------------------------------------------------------------------
+-- COPIED FROM PENANCES_IMPROVED -------------------------------------------------
+----------------------------------------------------------------------------------
+
+local CosmeticsInspectViewSettings = require("scripts/ui/views/cosmetics_inspect_view/cosmetics_inspect_view_settings")
+local ItemSlotSettings = require("scripts/settings/item/item_slot_settings")
+local UIWorldSpawner = require("scripts/managers/ui/ui_world_spawner")
+local WorldRenderUtils = require("scripts/utilities/world_render")
+local ANIMATION_SLOTS_MAP = {
+	slot_animation_emote_1 = true,
+	slot_animation_emote_2 = true,
+	slot_animation_emote_3 = true,
+	slot_animation_emote_4 = true,
+	slot_animation_emote_5 = true,
+	slot_animation_end_of_round = true,
+}
+
+CosmeticsInspectView._setup_background_world = function(self)
+	local profile = self._preview_profile or self._mannequin_profile
+	local archetype = profile and profile.archetype
+	local breed_name = archetype and archetype.breed or "human"
+	local breed = Breeds[breed_name]
+	local body_size = breed.body_size
+	local default_camera_event_id = string.format("event_register_%s_cosmetics_preview_default_camera", body_size)
+
+	self[default_camera_event_id] = function(instance, camera_unit)
+		if instance._context then
+			instance._context.camera_unit = camera_unit
+		end
+
+		instance._default_camera_unit = camera_unit
+
+		local viewport_name = CosmeticsInspectViewSettings.viewport_name
+		local viewport_type = CosmeticsInspectViewSettings.viewport_type
+		local viewport_layer = CosmeticsInspectViewSettings.viewport_layer
+		local shading_environment = CosmeticsInspectViewSettings.shading_environment
+
+		instance._world_spawner:create_viewport(
+			camera_unit,
+			viewport_name,
+			viewport_type,
+			viewport_layer,
+			shading_environment
+		)
+		instance:_unregister_event(default_camera_event_id)
+	end
+
+	self:_register_event(default_camera_event_id)
+
+	self._item_camera_by_slot_id = {}
+
+	for slot_name, slot in pairs(ItemSlotSettings) do
+		local is_gear = slot.slot_type == "gear"
+		local is_body = slot.slot_type == "body"
+		local is_companion_gear = slot_name == "slot_companion_gear_full"
+		local valid_player_slot = is_gear and not is_companion_gear
+
+		valid_player_slot = valid_player_slot or is_body
+
+		if valid_player_slot then
+			local item_camera_event_id =
+				string.format("event_register_%s_%s_cosmetics_preview_item_camera", body_size, slot_name)
+
+			self[item_camera_event_id] = function(instance, camera_unit)
+				instance._item_camera_by_slot_id[slot_name] = camera_unit
+
+				instance:_unregister_event(item_camera_event_id)
+			end
+
+			self:_register_event(item_camera_event_id)
+		elseif archetype and archetype.companion_breed and is_companion_gear then
+			local item_camera_event_id =
+				string.format("event_register_%s_%s_cosmetics_preview_item_camera", archetype.name, slot_name)
+
+			self[item_camera_event_id] = function(instance, camera_unit)
+				instance._item_camera_by_slot_id[slot_name] = camera_unit
+
+				instance:_unregister_event(item_camera_event_id)
+			end
+
+			self:_register_event(item_camera_event_id)
+		end
+	end
+
+	self:_register_event("event_register_cosmetics_preview_character_spawn_point")
+
+	local world_name = CosmeticsInspectViewSettings.world_name
+	local world_layer = CosmeticsInspectViewSettings.world_layer
+	local world_timer_name = CosmeticsInspectViewSettings.timer_name
+
+	self._world_spawner = UIWorldSpawner:new(world_name, world_layer, world_timer_name, self.view_name)
+
+	local level_name = CosmeticsInspectViewSettings.level_name
+
+	self._world_spawner:spawn_level(level_name)
+end
+
+CosmeticsInspectView._setup_weapon_preview = function(self, blur)
+	if not self._weapon_preview then
+		local reference_name = "weapon_preview"
+		local layer = 10
+		local context = {
+			draw_background = false,
+			ignore_blur = blur or false,
+		}
+		self._weapon_preview = self:_add_element(ViewElementInventoryWeaponPreview, reference_name, layer, context)
+
+		local allow_rotation = true
+
+		self._weapon_preview:set_force_allow_rotation(allow_rotation)
+		self._weapon_preview:center_align(0, {
+			-0.2,
+			-0.3,
+			-0.25,
+		})
+	end
+end
+
+CosmeticsInspectView._set_weapon_zoom = function(self, fraction)
+	self._weapon_zoom_fraction = fraction
+
+	self:_update_weapon_preview_viewport()
+end
+
+CosmeticsInspectView._update_weapon_preview_viewport = function(self)
+	local weapon_preview = self._weapon_preview
+
+	if weapon_preview then
+		local weapon_zoom_fraction = self._weapon_zoom_fraction or 1
+		local use_custom_zoom = true
+		local optional_node_name = "p_zoom"
+		local optional_pos
+		local min_zoom = self._min_zoom
+		local max_zoom = self._max_zoom
+
+		weapon_preview:set_weapon_zoom(
+			weapon_zoom_fraction,
+			use_custom_zoom,
+			optional_node_name,
+			optional_pos,
+			min_zoom,
+			max_zoom
+		)
+	end
+end
+
+CosmeticsInspectView._preview_item_func = function(self, item)
+	if item then
+		local item_display_name = item.display_name
+		local slots = item.slots or {}
+		local item_name = item.name
+		local gear_id = item.gear_id or item_name
+
+		if self._weapon_preview then
+			local disable_auto_spin = false
+
+			self._weapon_preview:present_item(item, disable_auto_spin, function()
+				self:_set_weapon_zoom(self._weapon_zoom_fraction)
+			end)
+		end
+
+		local visible = true
+
+		self:_set_preview_widgets_visibility(visible)
+	end
+end
+
+CosmeticsInspectView._start_preview_item = function(self)
+	local item = self._preview_item
+	self._previewed_item = item
+	self._spawn_player = true
+	self:_stop_previewing()
+
+	if self._widgets_by_name.portrait_preview_panel then
+		self._widgets_by_name.portrait_preview_panel.visible = false
+	end
+	if self._widgets_by_name.character_insignia then
+		self._widgets_by_name.character_insignia.visible = false
+	end
+
+	if item then
+		local item_display_name = item.display_name
+
+		if string.match(item_display_name, "unarmed") then
+			return
+		end
+
+		local item_name = item.name
+		local selected_slot = self._selected_slot
+		local selected_slot_name = selected_slot and selected_slot.name
+		local presentation_profile = self._presentation_profile
+		local presentation_loadout = presentation_profile.loadout
+
+		if selected_slot_name then
+			presentation_loadout[selected_slot_name] = item
+		end
+
+		local animation_slot = ANIMATION_SLOTS_MAP[selected_slot_name]
+
+		if animation_slot then
+			local context = self._context
+			local state_machine = item.state_machine
+			local companion_state_machine = item.companion_state_machine
+			local item_animation_event = item.animation_event
+			local item_face_animation_event = item.face_animation_event
+			self._parent = context.parent
+
+			self._disable_zoom = context.disable_zoom or true
+			context.state_machine = context.state_machine or state_machine
+			context.animation_event = context.animation_event or item_animation_event
+			context.face_animation_event = self._previewed_with_gear
+				and (context.face_animation_event or item_face_animation_event)
+			context.companion_state_machine = context.companion_state_machine or companion_state_machine
+			context.companion_animation_event = context.companion_animation_event or item_animation_event
+
+			if self._profile_spawner then
+				self._profile_spawner:assign_state_machine(
+					context.state_machine,
+					context.item_animation_event,
+					context.item_face_animation_event
+				)
+
+				if companion_state_machine and companion_state_machine ~= "" then
+					self._profile_spawner:assign_companion_state_machine(
+						context.companion_state_machine,
+						context.companion_animation_event
+					)
+				end
+			end
+
+			local animation_event_variable_data = self._animation_event_variable_data
+
+			if animation_event_variable_data and self._profile_spawner then
+				local index = animation_event_variable_data.index
+				local value = animation_event_variable_data.value
+
+				if self._profile_spawner then
+					self._profile_spawner:assign_animation_variable(index, value)
+				end
+			end
+
+			local companion_animation_event_variable_data = self._companion_animation_event_variable_data
+
+			if companion_animation_event_variable_data and self._profile_spawner then
+				local index = companion_animation_event_variable_data.index
+				local value = companion_animation_event_variable_data.value
+
+				if self._profile_spawner then
+					self._profile_spawner:assign_companion_animation_variable(index, value)
+				end
+			end
+
+			local prop_item_key = item.prop_item
+			local prop_item = prop_item_key and prop_item_key ~= "" and MasterItems.get_item(prop_item_key)
+
+			context.prop_item = context.prop_item or prop_item
+
+			if context.prop_item then
+				local prop_item_slot = context.prop_item.slots[1]
+
+				presentation_loadout[prop_item_slot] = context.prop_item
+
+				if self._profile_spawner then
+					self._profile_spawner:wield_slot(prop_item_slot)
+				end
+			end
+		end
+
+		self:_set_preview_widgets_visibility(true)
+
+		local property_text = ItemUtils.item_property_text(item, true)
+		local restriction_text, present_restriction_text = ItemUtils.restriction_text(item)
+
+		if not present_restriction_text then
+			restriction_text = nil
+		end
+
+		self.hide_character = false
+		if
+			Managers.ui:view_active("penance_overview_view")
+			or Managers.ui:view_active("inventory_weapon_cosmetics_view")
+		then
+			if item.item_type == "PORTRAIT_FRAME" then
+				if self._widgets_by_name.portrait_preview_panel then
+					self._preview_player = false
+					self._spawn_player = false
+					self._can_preview_with_gear = false
+					self.hide_character = true
+					self._on_enter_animation_triggered = false
+					self._previewed_with_gear = false
+
+					self:_setup_weapon_preview()
+
+					self._widgets_by_name.portrait_preview_panel.visible = true
+					local icon
+					if item.texture_resource then
+						icon = item.texture_resource
+					else
+						icon = "content/ui/textures/nameplates/portrait_frames/default"
+					end
+
+					local widget = self._widgets_by_name.portrait_preview_panel
+					local material_values = widget.style.portrait_frame.material_values
+
+					material_values.portrait_frame_texture = icon
+				end
+			elseif item.item_type == "CHARACTER_INSIGNIA" then
+				if self._widgets_by_name.character_insignia then
+					self._preview_player = false
+					self._spawn_player = false
+					self._can_preview_with_gear = false
+					self.hide_character = true
+					self._on_enter_animation_triggered = false
+					self._previewed_with_gear = false
+
+					self:_setup_weapon_preview()
+
+					local widget = self._widgets_by_name.character_insignia
+					widget.visible = true
+					local cb = callback(self, "_cb_set_player_insignia", widget)
+
+					widget.content.insignia_load_id = Managers.ui:load_item_icon(item, cb)
+				end
+			elseif item.item_type == "WEAPON_TRINKET" then
+				self._preview_player = false
+				self._spawn_player = false
+				self._can_preview_with_gear = false
+				self.hide_character = true
+				self._on_enter_animation_triggered = false
+				self._previewed_with_gear = false
+
+				self._weapon_zoom_fraction = -0.45
+				self._weapon_zoom_target = -0.45
+				self._min_zoom = -0.45
+				self._max_zoom = 4
+
+				self:_setup_weapon_preview()
+				local visual_item = ItemUtils.weapon_trinket_preview_item(item)
+				CosmeticsInspectView._preview_item_func(self, visual_item)
+			elseif item.item_type == "CHARACTER_TITLE" then
+				self._preview_player = false
+				self._spawn_player = false
+				self._can_preview_with_gear = false
+				self._on_enter_animation_triggered = false
+				self._previewed_with_gear = false
+				self.hide_character = true
+
+				self:_setup_weapon_preview()
+			elseif
+				item.item_type == "WEAPON_SKIN" and not Managers.ui:view_active("inventory_weapon_cosmetics_view")
+			then
+				self._preview_player = false
+				self._spawn_player = false
+				self._can_preview_with_gear = false
+				self.hide_character = true
+				self._on_enter_animation_triggered = false
+				self._previewed_with_gear = false
+
+				self._weapon_zoom_fraction = -0.45
+				self._weapon_zoom_target = -0.45
+				self._min_zoom = -0.45
+				self._max_zoom = 4
+
+				self:_setup_weapon_preview()
+				local visual_item = ItemUtils.weapon_skin_preview_item(item)
+				CosmeticsInspectView._preview_item_func(self, visual_item)
+			else
+				self._preview_player = true
+				self._spawn_player = true
+				self._can_preview_with_gear = true
+				self._on_enter_animation_triggered = true
+				self._previewed_with_gear = true
+				self.hide_character = false
+
+				self._weapon_zoom_fraction = -0.45
+				self._weapon_zoom_target = -0.45
+				self._min_zoom = -0.45
+				self._max_zoom = 4
+
+				self:_setup_weapon_preview(true)
+			end
+		end
+
+		local description = item.description and Localize(item.description)
+
+		self:_setup_item_description(description, restriction_text, property_text)
+		self:_setup_title(item)
+	elseif self._bundle_data then
+		local description = self._bundle_data.description or ""
+
+		self:_setup_item_description(description)
+
+		local texture_data = self._bundle_data.image
+
+		if texture_data then
+			local url = texture_data.url
+
+			self._image_url = url
+
+			Managers.url_loader:load_texture(url)
+
+			self._widgets_by_name.bundle_background.style.bundle.material_values.texture_map = texture_data.texture
+		end
+
+		local title_item_data = {
+			item_type = Localize(UISettings.item_type_localization_lookup[Utf8.upper(self._bundle_data.type)]),
+			display_name = self._bundle_data.title,
+		}
+
+		self:_setup_title(title_item_data, true)
+		self:_set_preview_widgets_visibility(true)
+	end
+end
+
+----------------------------------------------------------------------------------
+-- COPIED FROM PENANCES_IMPROVED END ---------------------------------------------
+----------------------------------------------------------------------------------
+
 local function _item_plus_overrides(item, gear, gear_id, is_preview_item)
 	local gearid = math.uuid() or gear_id
 
@@ -1207,14 +1631,15 @@ local add_definitions = function(definitions)
 		})
 	local should_add_inspect = true
 
+	local inspect_index = 0
 	for i = 1, #definitions.legend_inputs do
 		if definitions.legend_inputs[i].on_pressed_callback == "cb_on_inspect_pressed" then
-			should_add_inspect = false
+			inspect_index = i
 		end
 	end
 
 	if should_add_inspect then
-		definitions.legend_inputs[#definitions.legend_inputs + 1] = {
+		definitions.legend_inputs[inspect_index] = {
 			on_pressed_callback = "cb_on_inspect_pressed",
 			input_action = "hotkey_item_inspect",
 			display_name = "loc_VLWC_inspect",
@@ -1222,11 +1647,23 @@ local add_definitions = function(definitions)
 			visibility_function = function(parent)
 				if parent._previewed_item then
 					local previewed_item = parent._previewed_item
-					local slot_weapon_skin = previewed_item.slot_weapon_skin
-					local skin_item = slot_weapon_skin.__master_item
 
-					if skin_item then
-						return true
+					if previewed_item then
+						local item_type = previewed_item.item_type
+						local ITEM_TYPES = UISettings.ITEM_TYPES
+
+						if previewed_item.empty_item then
+							return false
+						end
+
+						if
+							item_type == ITEM_TYPES.WEAPON_MELEE
+							or item_type == ITEM_TYPES.WEAPON_RANGED
+							or item_type == ITEM_TYPES.WEAPON_SKIN
+							or item_type == ITEM_TYPES.WEAPON_TRINKET
+						then
+							return true
+						end
 					end
 				end
 
@@ -1243,75 +1680,158 @@ mod:hook_require(
 	end
 )
 
-Category_index = 1
-
 local Archetypes = require("scripts/settings/archetype/archetypes")
+local category_button = table.clone(ButtonPassTemplates.menu_panel_button)
 
+category_button[1].style = {
+	on_hover_sound = nil,
+	on_pressed_sound = nil,
+	on_released_sound = nil,
+	on_hover_sound = UISoundEvents.tab_secondary_button_hovered,
+	on_pressed_sound = UISoundEvents.tab_secondary_button_pressed,
+}
+local CATEGORY_LAYOUT = {
+	{
+		display_name = "loc_premium_store_category_title_catalogue",
+		sub_category_ids = nil,
+		template = nil,
+		template = category_button,
+		sub_category_ids = {
+			"featured",
+			"veteran",
+			"zealot",
+			"psyker",
+			"ogryn",
+		},
+	},
+	{
+		display_name = "loc_premium_store_category_title_dlc",
+		sub_category_ids = nil,
+		template = nil,
+		template = category_button,
+		sub_category_ids = {
+			"cryptic",
+			"broker",
+			"adamant",
+		},
+	},
+}
 local STORE_LAYOUT = {
 	{
 		display_name = "loc_premium_store_category_title_featured",
+		end_template = nil,
+		id = "featured",
 		storefront = "premium_store_featured",
 		telemetry_name = "featured",
 		template = nil,
 		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 	},
 	{
 		display_name = "loc_premium_store_category_skins_title_veteran",
+		end_template = nil,
+		id = "veteran",
 		storefront = "premium_store_skins_veteran",
 		telemetry_name = "veteran",
 		template = nil,
 		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 	},
 	{
 		display_name = "loc_premium_store_category_skins_title_zealot",
+		end_template = nil,
+		id = "zealot",
 		storefront = "premium_store_skins_zealot",
 		telemetry_name = "zealot",
 		template = nil,
 		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 	},
 	{
 		display_name = "loc_premium_store_category_skins_title_psyker",
+		end_template = nil,
+		id = "psyker",
 		storefront = "premium_store_skins_psyker",
 		telemetry_name = "psyker",
 		template = nil,
 		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 	},
 	{
 		display_name = "loc_premium_store_category_skins_title_ogryn",
+		end_template = nil,
+		id = "ogryn",
 		storefront = "premium_store_skins_ogryn",
 		telemetry_name = "ogryn",
 		template = nil,
 		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 	},
 	{
 		display_name = "loc_premium_store_category_skins_title_adamant",
+		end_template = nil,
+		id = "adamant",
 		require_archetype_ownership = nil,
 		storefront = "premium_store_skins_adamant",
 		telemetry_name = "adamant",
 		template = nil,
 		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 		require_archetype_ownership = Archetypes.adamant,
 	},
 	{
 		display_name = "loc_premium_store_category_skins_title_broker",
+		end_template = nil,
+		id = "broker",
 		require_archetype_ownership = nil,
 		storefront = "premium_store_skins_broker",
 		telemetry_name = "broker",
 		template = nil,
-		template = ButtonPassTemplates.terminal_tab_menu_button,
+		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 		require_archetype_ownership = Archetypes.broker,
 	},
+	{
+		display_name = "loc_premium_store_category_skins_title_cryptic",
+		end_template = nil,
+		id = "cryptic",
+		require_archetype_ownership = nil,
+		storefront = "premium_store_skins_cryptic",
+		telemetry_name = "cryptic",
+		template = nil,
+		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
+		require_archetype_ownership = Archetypes.cryptic,
+	},
 }
+local STORE_LAYOUT_BY_ID = {}
+
+for i = 1, #STORE_LAYOUT do
+	local store_layout = STORE_LAYOUT[i]
+
+	store_layout.index = i
+	STORE_LAYOUT_BY_ID[store_layout.id] = store_layout
+end
+
+for i = 1, #CATEGORY_LAYOUT do
+	local category_layout = CATEGORY_LAYOUT[i]
+
+	for ii = 1, #category_layout.sub_category_ids do
+		local sub_category_id = category_layout.sub_category_ids[ii]
+
+		STORE_LAYOUT_BY_ID[sub_category_id].category_index = i
+		STORE_LAYOUT_BY_ID[sub_category_id].index_in_category = ii
+	end
+end
 
 local opened_store = false
 
-StoreView._on_page_index_selected = function(self, page_index)
-	local category_index = self._selected_category_index
+Category_index = 1
+
+StoreView._on_page_index_selected = function(self, page_index, select_element)
+	local category_index = self._selected_sub_category_index
 	local category_layout = STORE_LAYOUT[category_index]
 	local category_name = category_layout.telemetry_name
-
-	self:_set_telemetry_name(category_name, page_index)
-
 	local category_pages_layout_data = self._category_pages_layout_data
 
 	if not category_pages_layout_data then
@@ -1323,6 +1843,27 @@ StoreView._on_page_index_selected = function(self, page_index)
 	if not page_layout then
 		return
 	end
+
+	-- Item search: find the purchase offer and navigate/select
+	if not select_element and Selected_purchase_offer and not opened_store then
+		opened_store = true
+		for i = 1, #category_pages_layout_data do
+			local page_elements = category_pages_layout_data[i].elements
+			for j = 1, #page_elements do
+				local page_element = page_elements[j]
+				if page_element.offer and page_element.offer.offerId == Selected_purchase_offer.offerId then
+					if i == page_index then
+						select_element = page_element
+					else
+						self:_on_page_index_selected(i, page_element)
+						return
+					end
+				end
+			end
+		end
+	end
+
+	self:_set_telemetry_name(category_name, page_index)
 
 	local previous_page_index = self._selected_page_index
 
@@ -1372,29 +1913,25 @@ StoreView._on_page_index_selected = function(self, page_index)
 			promise = Promise.resolved()
 		end
 
-		promise:next(callback(self, "_show_grid_entries", page_index, previous_page_index), function()
-			return
-		end)
-	end)
-
-	if Selected_purchase_offer and not opened_store then
-		opened_store = true
-		for i = 1, #self._category_pages_layout_data do
-			local page_elements = self._category_pages_layout_data[i].elements
-			for j = 1, #page_elements do
-				local page_element = page_elements[j]
-				if page_element.offer and page_element.offer.offerId == Selected_purchase_offer.offerId then
-					self:_on_page_index_selected(i)
-					self:_set_selected_grid_index(page_element.index)
-					StoreView.cb_on_grid_entry_left_pressed(self, nil, page_element)
+		promise
+			:next(callback(self, "_show_grid_entries", page_index, previous_page_index), function()
+				return
+			end)
+			:next(function()
+				if select_element then
+					self:_set_selected_grid_index(select_element.index)
+					StoreView.cb_on_grid_entry_left_pressed(self, nil, select_element)
 				end
-			end
-		end
-	end
+			end)
+	end)
 end
 
 StoreView.on_exit = function(self)
 	self:_clear_telemetry_name()
+
+	if not self._options_voice_fx then
+		Wwise.set_state("options_voice_fx", "off")
+	end
 
 	if self._world_spawner then
 		self._world_spawner:release_listener()
@@ -1421,8 +1958,18 @@ StoreView.on_exit = function(self)
 		self._wallet_promise:cancel()
 	end
 
+	if self._dlc_promise and self._dlc_promise:is_pending() then
+		self._dlc_promise:cancel()
+
+		self._dlc_promise = nil
+	end
+
 	self:_destroy_offscreen_gui()
+	self:_destroy_current_grid()
 	self:_unload_url_textures()
+
+	self._store_elements = nil
+
 	StoreView.super.on_exit(self)
 
 	if self._hub_interaction then
@@ -1441,19 +1988,19 @@ StoreView._initialize_opening_page = function(self)
 	local store_category_index = 1
 
 	-- Go to selected item's category
-	if Selected_purchase_offer then
+	if Selected_purchase_offer and Selected_purchase_offer.offerId and Category_index then
 		store_category_index = Category_index
 	end
 
 	local path = {
-		category_index = store_category_index,
+		sub_category_index = store_category_index,
 		page_index = 1,
 	}
 
 	if self._context.target_storefront then
 		for i = 1, #STORE_LAYOUT do
 			if STORE_LAYOUT[i].storefront == self._context.target_storefront then
-				path.category_index = i
+				path.sub_category_index = i
 			end
 		end
 	end
@@ -1546,25 +2093,6 @@ InventoryWeaponCosmeticsView._prepare_layout_data = function(self)
 					local visual_item = is_empty and item
 						or generate_visual_item_function(item, self._selected_item, item_type)
 					local real_item = not is_empty and item or nil
-
-					-- set rarity of item based on source...
-					--[[if item.__master_item and item.__master_item.source then
-						local new_rarity = -1
-						if item.__master_item.source == 1 then
-							new_rarity = 3
-						elseif item.__master_item.source == 2 then
-							new_rarity = 4
-						elseif item.__master_item.source == 3 then
-							new_rarity = 5
-						elseif is_empty then
-							new_rarity = -1
-						else
-							new_rarity = 2
-						end
-
-						visual_item.rarity = new_rarity
-						real_item.__master_item.rarity = new_rarity
-					end]]
 
 					layout_count = layout_count + 1
 					layout[layout_count] = {
@@ -1792,6 +2320,18 @@ InventoryWeaponCosmeticsView._prepare_layout_data = function(self)
 	self._weapon_cosmetic_layouts_by_slot = layout_by_slot
 end
 
+mod.is_unobtainable = function(item)
+	if not item then
+		return false
+	end
+
+	if item.source == "none" then
+		return true
+	end
+
+	return false
+end
+
 -- Override fetch inventory items to include commodore's items...
 InventoryWeaponCosmeticsView._fetch_inventory_items = function(self)
 	local local_player_id = 1
@@ -1862,13 +2402,15 @@ InventoryWeaponCosmeticsView._fetch_inventory_items = function(self)
 					-- Find if item is in store.
 					local purchase_offer = mod.get_item_in_current_commodores(self, gear_id, item.name)
 					-- if the source isn't "commodores vestures" yet the item is available in store - set the correct source...
-					if purchase_offer and item.source ~= 3 then
-						item.source = 3
+					if purchase_offer and item.source ~= "premium_store" then
+						item.source = "premium_store"
 					end
 
 					-- Filter out unknown sources
-					if item.source == nil or item.source < 1 then
-						continue = false
+					if not mod:get("show_unobtainable") then
+						if mod.is_unobtainable(item) then
+							continue = false
+						end
 					end
 
 					-- find if item is on wishlist
@@ -1880,17 +2422,6 @@ InventoryWeaponCosmeticsView._fetch_inventory_items = function(self)
 							item_on_wishlist = true
 						end
 					end
-
-					-- set rarity of item based on source...
-					--[[if item.source == 1 then
-						item.rarity = 3
-					elseif item.source == 2 then
-						item.rarity = 4
-					elseif item.source == 3 then
-						item.rarity = 5
-					else
-						item.rarity = 2
-					end]]
 
 					if continue then
 						table.insert(custom_items[selected_item_slot], {
@@ -2235,59 +2766,67 @@ mod:hook_require("scripts/ui/views/inventory_weapon_cosmetics_view/inventory_wea
 			previewed_item = self._previewed_item.slot_weapon_skin.__master_item
 		end
 
+		local item_type = previewed_item.item_type
+		local is_weapon = item_type == "WEAPON_MELEE" or item_type == "WEAPON_RANGED"
+
+		if is_weapon or item_type == "GADGET" then
+			view_name = "inventory_weapon_details_view"
+		end
+
+		local is_weapon_skin = item_type == "WEAPON_SKIN"
+		local visual_item = is_weapon_skin and Items.weapon_skin_preview_item(previewed_item, true) or previewed_item
+		local real_profile = self:_player():profile()
+		local player_profile = real_profile and table.clone_instance(real_profile)
+		local player_archetype = player_profile and player_profile.archetype
+		local correct_archetype = visual_item.archetypes == nil
+			or #visual_item.archetypes == 0
+			or player_archetype ~= nil and table.array_contains(visual_item.archetypes, player_archetype.name)
+		local correct_breed = visual_item.breeds == nil
+			or #visual_item.breeds == 0
+			or player_archetype ~= nil and table.array_contains(visual_item.breeds, player_archetype.breed)
+		local is_item_supported_on_played_character = correct_archetype and correct_breed
+		local preferred_gender = player_profile and player_profile.gender
+
+		player_profile = is_item_supported_on_played_character and player_profile
+			or Items.create_mannequin_profile_by_item(visual_item, preferred_gender)
+
 		local context
 
-		if previewed_item then
-			local item_type = previewed_item.item_type
-			local is_weapon = item_type == "WEAPON_MELEE" or item_type == "WEAPON_RANGED"
+		if is_weapon_skin then
+			local slots = visual_item.slots
+			local slot_name = slots[1]
 
-			if is_weapon or item_type == "GADGET" then
-				view_name = "inventory_weapon_details_view"
-			end
+			player_profile.loadout[slot_name] = visual_item
 
-			local player = self:_player()
-			local player_profile = player:profile()
-			local include_skin_item_texts = true
-			local item = item_type == "WEAPON_SKIN"
-					and ItemUtils.weapon_skin_preview_item(previewed_item, include_skin_item_texts)
-				or previewed_item
-			local is_item_supported_on_played_character = false
-			local item_archetypes = item.archetypes
-
-			if item_archetypes and not table.is_empty(item_archetypes) then
-				is_item_supported_on_played_character =
-					table.array_contains(item_archetypes, player_profile.archetype.name)
-			else
-				is_item_supported_on_played_character = true
-			end
-
-			local profile = is_item_supported_on_played_character and table.clone_instance(player_profile)
-				or ItemUtils.create_mannequin_profile_by_item(item)
+			local archetype = player_profile.archetype
+			local breed_name = archetype.breed
+			local inventory_state_machine = archetype.inventory_state_machine
+			local animation_event = visual_item.inventory_animation_event or "inventory_idle_default"
 
 			context = {
-				use_store_appearance = true,
-				profile = profile,
+				animation_event = nil,
+				disable_zoom = true,
+				preview_item = nil,
+				preview_with_gear = nil,
+				profile = nil,
+				state_machine = nil,
+				wield_slot = nil,
+				profile = player_profile,
+				state_machine = inventory_state_machine,
+				animation_event = animation_event,
+				wield_slot = slot_name,
 				preview_with_gear = is_item_supported_on_played_character,
-				preview_item = item,
+				preview_item = visual_item,
 			}
-
-			if item_type == "WEAPON_SKIN" then
-				local slots = item.slots
-				local slot_name = slots[1]
-
-				profile.loadout[slot_name] = item
-
-				local archetype = profile.archetype
-				local breed_name = archetype.breed
-				local breed = Breeds[breed_name]
-				local state_machine = breed.inventory_state_machine
-				local animation_event = item.inventory_animation_event or "inventory_idle_default"
-
-				context.disable_zoom = true
-				context.state_machine = state_machine
-				context.animation_event = animation_event
-				context.wield_slot = slot_name
-			end
+		else
+			context = {
+				preview_item = nil,
+				preview_with_gear = nil,
+				profile = nil,
+				profile = player_profile,
+				preview_with_gear = is_item_supported_on_played_character,
+				preview_item = previewed_item,
+			}
 		end
 
 		if context and not Managers.ui:view_active(view_name) then
@@ -2323,6 +2862,8 @@ mod:hook_require("scripts/ui/views/inventory_weapon_cosmetics_view/inventory_wea
 				Category_index = 6
 			elseif archetype_name == "broker" then
 				Category_index = 7
+			elseif archetype_name == "cryptic" then
+				Category_index = 8
 			end
 
 			if CCVI then
@@ -2370,6 +2911,8 @@ mod:hook_require("scripts/ui/views/inventory_weapon_cosmetics_view/inventory_wea
 			storefront = "premium_store_skins_adamant"
 		elseif archetype == "broker" or (archetype == nil and archetype_name == "broker") then
 			storefront = "premium_store_skins_broker"
+		elseif archetype == "cryptic" or (archetype == nil and archetype_name == "cryptic") then
+			storefront = "premium_store_skins_cryptic"
 		end
 
 		local store_service = Managers.data_service.store

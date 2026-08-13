@@ -9,7 +9,7 @@ local mod = get_mod("improved_character_menu")
 -- ============================================================
 
 -- Track the mod version for display in the settings description
-mod.version = "1.0.4"
+mod.version = "1.0.6"
 mod:info("Improved Character Menu is installed, using version: " .. tostring(mod.version))
 
 -- Color palette used throughout the settings menu text.
@@ -44,7 +44,12 @@ mod.localisation = {
             .. colours.subtitle
             .. ")}Disclaimer: {#color("
             .. colours.text
-            .. ")}Made with OpenCode{#reset()}",
+            .. ")}Made with OpenCode{#reset()}"
+            .. "\n{#color("
+            .. colours.subtitle
+            .. ")}Language Model: {#color("
+            .. colours.text
+            .. ")}DeepSeek V4 Pro{#reset()}",
     },
     -- Mod name variants: active display name, plain text, and colored fancy version.
     mod_name = {
@@ -155,6 +160,9 @@ mod.localisation = {
     },
     grid_settings = {
         en = "{#color(" .. colours.title .. ")}Grid Settings{#reset()}",
+    },
+    news_feed = {
+        en = "{#color(" .. colours.title .. ")}News Feed{#reset()}",
     },
     metal_decorations = {
         en = "{#color(" .. colours.title .. ")}Metal Decorations{#reset()}",

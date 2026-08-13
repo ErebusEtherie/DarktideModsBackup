@@ -8,6 +8,5 @@ return {
 			mod_localization = "Favourite Child/scripts/mods/Favourite Child/Favourite Child_localization",
 		})
 	end,
-	version = "1.2.0",
 	packages = {},
 }

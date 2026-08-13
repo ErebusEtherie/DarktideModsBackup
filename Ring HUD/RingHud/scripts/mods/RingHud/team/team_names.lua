@@ -102,7 +102,7 @@ end
 
 local function _archetype_glyph(profile)
     local arch = profile and profile.archetype and profile.archetype.name
-    local map  = UISettings.archetype_font_icon_simple
+    local map  = UISettings.archetype_font_icon
     if arch and map and map[arch] then
         return map[arch]
     end

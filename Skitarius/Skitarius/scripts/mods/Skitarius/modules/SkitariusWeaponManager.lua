@@ -7,12 +7,19 @@ local string_find = string.find
 local TRAIT_MAP = {
     thrust = "windup_increases_power_child",
     slow_and_steady = "toughness_on_hit_based_on_charge_time_visual_stack_count",
-    crunch = "ogryn_windup_increases_power_parent"
+    crunch = "ogryn_windup_increases_power_parent",
+    mechsword = "windup_increases_special_power_default_child"
 }
 local MAX_MAP = {
     thrust = 3,
     slow_and_steady = 3,
-    crunch = 4
+    crunch = 4,
+    mechsword = 4
+}
+
+-- Weapons which should use normal heavy modifiers during special and NOT special modifiers
+local inverse_special = {
+    powersword_p3_m1 = true
 }
 
 local DEFAULT_WALK_SPEED = 4.0
@@ -106,6 +113,10 @@ end
 
 SkitariusWeaponManager.set_bind_manager = function(self, binds)
     self.binds = binds
+end
+
+SkitariusWeaponManager.set_omnissiah = function(self, omnissiah)
+    self.omnissiah = omnissiah
 end
 
 --  ╦ ╦╔═╗╔═╗╔═╗╔═╗╔╗╔  ╔╦╗╔═╗╔╦╗╔═╗
@@ -277,8 +288,9 @@ SkitariusWeaponManager.is_charged_melee = function(self, running_action, compone
     local weapon_name = self:weapon_name()
     local t = Managers.time:time("gameplay")
     local allowed_chain_actions = action_settings.allowed_chain_actions or {}
-    local chain_action = allowed_chain_actions.heavy_attack or allowed_chain_actions.special_action_heavy
+    local chain_action = allowed_chain_actions.heavy_attack or allowed_chain_actions.special_action_heavy or allowed_chain_actions.heavy_attack_special
     local chain_action_name = chain_action and chain_action.action_name
+    local current_action_name = component.current_action_name
     if chain_action then
         local start_t = component.start_t
         local current_action_t = t - start_t
@@ -292,7 +304,7 @@ SkitariusWeaponManager.is_charged_melee = function(self, running_action, compone
         if running_action_state_requirement and (not running_action_state or not running_action_state_requirement[running_action_state]) then
             chain_validated = false
         end
-
+        
         local cmd = engram:current_command()
         if (cmd == "sprint_heavy_attack" or cmd == "special_heavy_attack" or cmd == "special_heavy_execute") and (self:is_sprinting() or self:is_sliding()) then
             if chain_validated then
@@ -300,16 +312,22 @@ SkitariusWeaponManager.is_charged_melee = function(self, running_action, compone
             end
         end
 
+
         local insufficient_stacks = false
         local required_buff = engram:heavy_buff()
         local required_buff_stacks = engram:heavy_buff_stacks()
         local required_buff_special = engram:heavy_buff_special()
         local required_buff_special_stacks = engram:heavy_buff_special_stacks()
         local is_special = component.special_active_at_start
-        if is_special then
+        if is_special and not inverse_special[weapon_name] then
             -- If the action is special and special stacks are set, use them instead of the heavy stacks
             required_buff_stacks = required_buff_special_stacks
         end
+        -- Skip buff check for mechsword if not special
+        if inverse_special[weapon_name] and not is_special then
+            required_buff = "none"
+        end
+        
         -- Heavy attack buff handling
         if required_buff and required_buff ~= "none" then
             if not required_buff_special or (required_buff_special and is_special) then
@@ -319,6 +337,7 @@ SkitariusWeaponManager.is_charged_melee = function(self, running_action, compone
                 if required_buff == "thrust" then
                     search_string = string.sub(weapon_name, 1, -3) .. search_string
                 end
+                --mod:echo(search_string)
                 if self:has_trait_or_talent(search_string) then
                     -- stacking_buff for crunch is different from the actual buff needed for stack lookup
                     if required_buff == "crunch" then
@@ -327,7 +346,7 @@ SkitariusWeaponManager.is_charged_melee = function(self, running_action, compone
                     -- Compare current stacks to the required stacks
                     local current_stacks = self:fetch_stacks(search_string)
                     -- Handle thrust being offset by 1 internally
-                    if required_buff == "thrust" then
+                    if required_buff == "thrust" or required_buff == "mechsword" then
                         current_stacks = current_stacks - 1
                         if current_stacks < 0 then
                             current_stacks = 0
@@ -339,10 +358,12 @@ SkitariusWeaponManager.is_charged_melee = function(self, running_action, compone
                 end
             end
         end
+        
 
         local action_is_validated = chain_validated and not insufficient_stacks
         return action_is_validated
     end
+
     return false
 end
 
@@ -445,14 +466,69 @@ SkitariusWeaponManager.in_cooldown = function(self)
             local weapon_template = wielded_weapon and wielded_weapon.weapon_template
             local weapon_template_name = weapon_template and weapon_template.name
             local special_class = weapon_template and weapon_template.weapon_special_class
+            local special_active = inventory_slot_component and inventory_slot_component.special_active
 
-            -- Dual Shivs: treat special as unavailable when remaining charges are below SPECIAL_BUFF_STACK
-            if weapon_template_name and string.find(weapon_template_name, "^dual_shivs_p1") and special_charges then
+            -- Dual Shivs/Mechanicus Power Sword/Arc Maul: treat special as unavailable when remaining charges are below SPECIAL_BUFF_STACK
+            local special_charge_weapons = {
+                dual_shivs_p1_m1 = true,
+                dual_shivs_p1_m2 = true,
+                powersword_p3_m1 = true,
+                powermaul_p3_m1 = true,
+                forcesword_2h_p1_m1 = true,
+                forcesword_2h_p1_m2 = true,
+            }
+            local special_charge_maximums = {
+                dual_shivs_p1_m1 = 3,
+                dual_shivs_p1_m2 = 3,
+                powersword_p3_m1 = 6,
+                powermaul_p3_m1 = 8,
+                forcesword_2h_p1_m1 = 2,
+                forcesword_2h_p1_m2 = 2,
+            }
+            if weapon_template_name and special_charge_weapons[weapon_template_name] and special_charges then
+                
                 local reserve = 0
                 local engram = self.engram
                 if engram then
                     reserve = engram:get_setting("SPECIAL_BUFF_STACKS") or 0
                 end
+                local max = special_charge_maximums[weapon_template_name] or 0
+                if reserve > max then
+                    reserve = max
+                end
+                --mod:echo("Reserve: %s, Special Charges: %s", reserve, special_charges)
+                -- Arc Maul has 40 max charges, uses 5 per attack, so 8 reserve "charges"
+                if weapon_template_name == "powermaul_p3_m1" then
+                    reserve = reserve * 5
+                end
+                -- Force Greatswords have 20 max charges, split into two groups of 10
+                if weapon_template_name == "forcesword_2h_p1_m1" or weapon_template_name == "forcesword_2h_p1_m2" then
+                    reserve = reserve * 10
+                    -- special logic since this uses a blend of riot shield and normal charges
+                    return special_charges < reserve
+                end
+                -- Mechanicus Power Sword edge-cases
+                if weapon_template_name == "powersword_p3_m1" and special_active then
+                    local current_action_time = self.omnissiah.current_action_time or 0
+                    local current_command = engram:current_command()
+                    if current_command == "special_heavy_execute" then
+                        if self.omnissiah.current_action == "heavy_attack" then
+                            return special_charges < reserve
+                        end
+                        return false
+                    end
+                    if current_command == "special_start_attack" then
+                        if self.omnissiah.sweep == "after_damage_window" and current_action_time <= 0.5 then
+                            return special_charges < reserve
+                        end
+                        -- jank detection of post-final-charge state
+                        if current_action_time > 0.5 then
+                            return true
+                        end
+                        return special_charges < reserve
+                    end
+                end
+
                 if special_charges < reserve then
                     return true
                 end
@@ -505,6 +581,7 @@ SkitariusWeaponManager.special_active = function(self)
             local wielded_weapon = weapons and weapons[wielded_slot]
             local inventory_slot_component = wielded_weapon and wielded_weapon.inventory_slot_component
             local is_special = inventory_slot_component and inventory_slot_component.special_active
+
             if is_special then
                 return true
             end
@@ -731,26 +808,30 @@ SkitariusWeaponManager.suicidal = function(self, input, weenie_hut_jr)
 end
 
 -- Any of these interruptions halt active sequences IF "Halt on Interrupt" is enabled
+local interruption_map = {
+    interruption_sprint      = { sprinting = true },
+    interruption_action_one  = { attacking = true },
+    interruption_action_two  = { blocking = true },
+    interruption_action_both = { blocking = true, attacking = true },
+    interruption_all         = { sprinting = true, blocking = true, attacking = true }
+}
+
 SkitariusWeaponManager.interruption = function(self)
     local halt_on_interrupt = self.mod.settings.halt_on_interrupt
     if not halt_on_interrupt then return false end
     local interruption_type = self.mod.settings.halt_on_interrupt_types
     local sprinting = self:is_sprinting() -- Sprinting
-    local blocking = self.binds:input_value("action_two_hold") and
-        self.binds:waiting_toggles()      -- Manual blocking/aiming/charging
-    local attacking = self.binds:input_value("action_one_hold") and
-        self.binds:waiting_toggles()      -- Manual attacking outside of primary override sequence
+    local blocking = self.binds:input_value("action_two_hold") and self.binds:waiting_toggles()      -- Manual blocking/aiming/charging
+    local attacking = self.binds:input_value("action_one_hold") and self.binds:waiting_toggles()      -- Manual attacking outside of primary override sequence
     -- Double-check to ensure it doesn't mess with intended actions (primarily ranged weaponry)
-    if (attacking) and self:is_aiming() or self:is_charging() then
+    local aim_or_charge = self:is_aiming() or self:is_charging()
+    if attacking and aim_or_charge then
         attacking = false
     end
-    local interruption_map = {
-        interruption_sprint      = { sprinting = true },
-        interruption_action_one  = { attacking = true },
-        interruption_action_two  = { blocking = true },
-        interruption_action_both = { blocking = true, attacking = true },
-        interruption_all         = { sprinting = true, blocking = true, attacking = true }
-    }
+    if blocking and aim_or_charge then
+        blocking = false
+    end
+    
     local interruption_config = interruption_map[interruption_type]
     if not interruption_config then
         return false -- Settings error failsafe

@@ -8,9 +8,13 @@ return {
             mod_localization = "ScannerSuccessSound/scripts/mods/ScannerSuccessSound/ScannerSuccessSound_localization",
         })
     end,
-    packages = {},
+    
 	load_after = {
 		 "DarktideLocalServer",
 		 "Audio",
+         "SimpleAudio",
 	},
+    version = "1.1.0",
+
+    packages = {},
 }

@@ -7,22 +7,6 @@ local localizations = {
 		ja = "ソート済みModメニュー",
     	ko = "정렬된 모드 메뉴",
 	},
-	SortModMenu = {
-		en = "Sorted Mod Menu",
-		es = "Menú de Mods Ordenado",
-		ru = "Отсортированное меню модов",
-		["zh-cn"] = "排序模组菜单",
-		ja = "ソート済みModメニュー",
-		ko = "정렬된 모드 메뉴",
-	},
-	["Sorted Mod Menu"] = {
-		en = "Sorted Mod Menu",
-		es = "Menú de Mods Ordenado",
-		ru = "Отсортированное меню модов",
-		["zh-cn"] = "排序模组菜单",
-		ja = "ソート済みModメニュー",
-		ko = "정렬된 모드 메뉴",
-	},
 	mod_description = {
 		en = "Sort the Mod Options menu. Pin mods to the top of the list, or hide them. Close and open the menu to see changes",
 		es = "Ordena el menú de opciones de mods en el orden que prefieras. Cierra y abre el menú para ver los cambios",
@@ -30,7 +14,6 @@ local localizations = {
 		["zh-cn"] = "按您喜欢的顺序对模组选项菜单进行排序。关闭并重新打开菜单以查看更改",
 		ja = "Modオプションメニューをお好みの順序に並び替えます。変更を確認するにはメニューを一度閉じてから再度開いてください",
 		ko = "모드 옵션 메뉴를 원하는 순서대로 정렬합니다. 변경 사항을 확인하려면 메뉴를 닫았다가 다시 열어주세요",
-		ko = "검색 바 활성화",
 	},
 	searchbox_enabled = {
 		en = "Enable Search Bar",
@@ -155,23 +138,13 @@ local localizations = {
 }
 
 for i = 0, 9 do
-	local tooltip = "Pin #" .. (i + 1) .. " (lower number = higher priority)"
-	localizations[tooltip] = {
-		en = tooltip, 
+	localizations["pin_" .. i .. "_description"] = {
+		en = "Pin #" .. (i + 1) .. " (lower number = higher priority)", 
 		es = "Pin #" .. (i + 1) .. " (número más bajo = mayor prioridad)",
 		ru = "Pin #" .. (i + 1) .. " (меньшее число = выше приоритет)",
 		["zh-cn"] = "置顶 #" .. (i + 1) .. "（数字越小，优先级越高）",
 		ja = "ピン #" .. (i + 1) .. "（数字が小さいほど優先度が高い）",
 		ko = "고정 #" .. (i + 1) .. " (숫자가 낮을수록 우선순위가 높음)",
-	}
-end
-
-local dmf = get_mod("DMF")
-
-for mod_name, mod in pairs(dmf.mods) do
-	local displayed = mod:get_readable_name() or mod:localize("mod_name") or "error"
-    localizations[displayed] = {
-		en = tostring(displayed)
 	}
 end
 
@@ -183,6 +156,25 @@ for i = 0, 9 do
 		["zh-cn"] = "置顶模组 " .. (i + 1),
 		ja = "ピン留めMod " .. (i + 1),
 		ko = "고정된 모드 " .. (i + 1),
+	}
+end
+
+for i = 0, 9 do
+	localizations["hidden_" .. i] = {
+		en = "Hidden Mod " .. (i + 1),
+		es = "Mod Oculto " .. (i + 1),
+		ru = "Скрытый мод " .. (i + 1),
+		["zh-cn"] = "隐藏模组 " .. (i + 1),
+		ja = "非表示Mod " .. (i + 1),
+		ko = "숨긴 모드 " .. (i + 1),
+	}
+	localizations["hidden_" .. i .. "_description"] = {
+		en = "This mod will not be visible in the mod list",
+		es = "Este mod no será visible en la lista de mods",
+		ru = "Этот мод не будет отображаться в списке модов",
+		["zh-cn"] = "该模组不会显示在模组列表中",
+		ja = "このModはModリストに表示されません",
+		ko = "이 모드는 모드 목록에 표시되지 않습니다",
 	}
 end
 

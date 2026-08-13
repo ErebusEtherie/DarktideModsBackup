@@ -16,6 +16,7 @@ local CONFIG = {
 	burn_text_colour = {
 		Burn =			"Burn",
 		Burning =		"Burning",
+		Flamer =		"Flamer",
 		Heat =			"Heat",
 		Overheat =		"Overheat",
 	},
@@ -71,6 +72,8 @@ local CONFIG = {
 		Combat_Stimm =	"Combat Stimm",
 	},
 	electrocuted_text_colour = {
+		Arc =			"Arc",
+		Arcs =			"Arcs",
 		Electrocute =	"Electrocute",
 		Electrocuted =	"Electrocuted",
 		Electrocutes =	"Electrocutes",
@@ -82,6 +85,7 @@ local CONFIG = {
 		Finesse_dmg =	"Finesse Damage",
 	},
 	health_text_colour = {
+		HEALTH =		"HEALTH",
 		Health =		"Health",
 		Wound =			"Wound",
 		Wounds =		"Wounds",
@@ -116,6 +120,7 @@ local CONFIG = {
 		Staggers =		"Staggers",
 		Stun =			"Stun",
 		Stunned =		"Stunned",
+		Stunning =		"Stunning",
 		Stuns =			"Stuns",
 	},
 	stamina_text_colour = {
@@ -161,11 +166,15 @@ local CONFIG = {
 			Feel_no_pain =	"Feel No Pain",
 
 				Desperado =		"Desperado",			-- Hive Scum
+				Overload =		"Overload",				-- Skitarii
+				overloading =	"overloading",			-- Skitarii
 		},
 		luckyb_text_colour = {
 			Lucky_bullet =	"Lucky Bullet",
 
 				Tghnss_gold =	"Toughness",			-- Zealot
+				Tghnss_Gold =	"Golden Toughness",		-- Zealot
+				Servoskull =	"Servo-Skull",			-- Skitarii
 		},
 		trample_text_colour = {
 			Trample =		"Trample",
@@ -181,14 +190,15 @@ local CONFIG = {
 			Fury =			"Fury",
 
 				Rampage =		"Rampage!",				-- Hive Scum
+				Charge =		"Charge",				-- Skitarii
+				Charges =		"Charges",				-- Skitarii
 		},
 		momentum_text_colour = {
 			Momentum =		"Momentum",
 
-			Taunt =			"Taunt",				-- Ogryn
-			Taunted =		"Taunted",				-- Ogryn
-			Taunting =		"Taunting",				-- Ogryn
-
+				Taunt =			"Taunt",				-- Ogryn
+				Taunted =		"Taunted",				-- Ogryn
+				Taunting =		"Taunting",				-- Ogryn
 				Adren =			"Adrenaline",			-- Hive Scum
 				AdrenFr =		"Adrenaline Frenzy",	-- Hive Scum
 		},
@@ -208,20 +218,21 @@ local CONFIG = {
 			Focus =			"Focus",
 
 				Shout =			"Shout",				-- Hive Scum
+				Capacitance =	"Capacitance",			-- Skitarii
 		},
 		focust_text_colour = {
 			Focus_Target =	"Focus Target",
 
 				Markedenemy =	"Marked Enemy",			-- Psyker
-
 				VultsMark =		"Vulture's Mark",		-- Hive Scum
+				ElectrDisch =	"Electric Discharge",	-- Skitarii
 		},
 		meleespec_text_colour = {
 			Meleespec =		"Melee Specialist",
 
 				Meleejust =		"Melee Justice",		-- Arbites
-
 				Exhausted =		"Exhausted",			-- Hive Scum
+				Chordclaw =		"Chordclaw",			-- Skitarii
 		},
 		rangedspec_text_colour = {
 			Rangedspec =	"Ranged Specialist",
@@ -242,6 +253,8 @@ local CONFIG = {
 			Chem_Tox =		"Chem Toxin",
 
 				Med_Stimm =		"Med Stimm",
+
+				AdMedSyringe =	"Adapted Medicae Syringes",	-- Skitarii
 		},
 
 -- TALENTS
@@ -353,6 +366,10 @@ local CONFIG = {
 		StimmSupply =		"Stimm Supply",
 		VulturesMark =		"Vulture's Mark",
 		Viscosity =			"Viscosity",
+-- SKITARII
+		Arcgren =			"Arc Grenade",
+		VoltaicExpander =	"Voltaic Expander",
+		PowerOverload =		"Power Overload",
 
 -- PENANCES
 		Base_tut_p =		"Basic Training",

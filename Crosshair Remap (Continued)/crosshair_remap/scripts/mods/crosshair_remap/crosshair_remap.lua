@@ -137,6 +137,15 @@ local weapon_class_filter = {
 	needlepistol_class = {
 		keywords = { "needlepistol" },
 	},
+	arc_rifle_class = {
+		keywords = { "arc_rifle" },
+	},
+	galvanic_rifle_class = {
+		keywords = { "galvanic_rifle" },
+	},
+	phosphor_pistol_class = {
+		keywords = { "phosphor_pistol" },
+	},
 }
 local class_name_filter = {}
 local class_name_prefix_filter = {}
@@ -275,7 +284,25 @@ local altfire_action_kinds = {
 	flamer_gas = true,
 }
 
-mod:hook_origin("HudElementCrosshair", "_get_current_crosshair_type", function (self)
+local function get_dynamic_crosshair_type(crosshair_settings, player_extensions, unit_data_extension)
+	if not crosshair_settings or not crosshair_settings.crosshair_type_func then
+		return nil
+	end
+
+	local inventory_component = unit_data_extension:read_component("inventory")
+	local wielded_slot = inventory_component.wielded_slot
+	local slot_settings = slot_configuration[wielded_slot]
+
+	if not slot_settings or slot_settings.slot_type ~= "weapon" then
+		return nil
+	end
+
+	local condition_func_params = player_extensions.weapon:condition_func_params(wielded_slot)
+
+	return crosshair_settings.crosshair_type_func(condition_func_params)
+end
+
+mod:hook_origin("HudElementCrosshair", "_get_current_crosshair_type", function (self, crosshair_settings)
 	if is_in_hub() then
 		return "none"
 	end
@@ -312,9 +339,15 @@ mod:hook_origin("HudElementCrosshair", "_get_current_crosshair_type", function (
 					return mod.settings["psyker_throwing_knives_class"]
 				elseif weapon_template_name == "missile_launcher" then
 					return mod.settings["missile_launcher_class"]
+				elseif weapon_template_name == "cryptic_servo_skull_order_point" then
+					return mod.settings["cryptic_servo_skull_class"]
 				end
 
 				if WeaponTemplate.is_melee(weapon_template) then
+					if get_dynamic_crosshair_type(crosshair_settings, player_extensions, unit_data_extension) == "dot_special" then
+						return mod.settings["melee_special_class"]
+					end
+
 					return mod.settings["melee_class"]
 				end
 

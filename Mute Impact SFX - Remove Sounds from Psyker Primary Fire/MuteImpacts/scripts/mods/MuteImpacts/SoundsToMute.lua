@@ -14,11 +14,19 @@ local mod = get_mod("MuteImpacts")
 -- ----------------------------------------------------
 local sounds_to_toggle = {
 	-- --------------------------
-    -- Force Staff left click
+    -- Force Staff 
 	-- --------------------------
+    -- left click
 	{
         internal_id = "forcestaff_primary_fire",
         sound_event = "wwise/events/weapon/play_explosion_force_sml",
+    },
+    -- Bowling balls p4
+    --  catches itself and husk
+	{
+        internal_id = "forcestaff_secondary_fire_explosion",
+        sound_event = "wwise/events/weapon/play_explosion_force_med*",
+        do_not_disable_by_default = true,
     },
 	-- --------------------------
     -- Lasbeam Crack
@@ -34,6 +42,29 @@ local sounds_to_toggle = {
     {
         internal_id = "lasbeam_crack_enemy",
         sound_event = "wwise/events/weapon/play_weapon_lasgun_crack_beam_nearby_husk",
+    },
+	-- --------------------------
+    -- Lightning Sounds
+	-- --------------------------
+    {
+        -- "play" and "stop"
+        internal_id = "lightning_attack_hit",
+        sound_event = "wwise/events/weapon/*_psyker_chain_lightning_hit",
+        do_not_disable_by_default = true,
+    },
+	-- --------------------------
+    -- Shock Maul Swings
+	-- --------------------------
+    {
+        -- Includes the "_heavy" event too
+        internal_id = "adamant_maul_swing",
+        sound_event = "wwise/events/weapon/play_shockmaul_1h_p2_swing*",
+    },
+    {
+        -- Includes the "_heavy" event too
+        internal_id = "shock_maul_hit",
+        sound_event = "wwise/events/weapon/play_powermaul_1h_hit",
+        do_not_disable_by_default = true,
     },
 	-- --------------------------
     -- NPC UI Sounds
@@ -93,6 +124,14 @@ local sounds_to_toggle = {
         sound_event = "wwise/events/weapon/play_hit_indicator_melee_super_armor_no_damage",
     },
     {
+        internal_id = "melee_hits_res_blunt",
+        sound_event = "wwise/events/weapon/melee_hits_blunt_reduced_damage", -- for some reason these have no play_
+    },
+    {
+        internal_id = "melee_hits_shield_blunt",
+        sound_event = "wwise/events/weapon/melee_hits_blunt_shield", -- for some reason these have no play_
+    },
+    {
         internal_id = "melee_hits_no_damage_blunt",
         sound_event = "wwise/events/weapon/melee_hits_blunt_no_damage", -- for some reason these have no play_
     },
@@ -105,8 +144,9 @@ local sounds_to_toggle = {
         sound_event = "wwise/events/weapon/play_melee_hits_axe_armor",
     },
     {
+        -- accounting for play_ and no play
         internal_id = "melee_hits_armor_blunt",
-        sound_event = "wwise/events/weapon/play_melee_hits_blunt_armor",
+        sound_event = "wwise/events/weapon/*melee_hits_blunt_armor",
     },
     {
         internal_id = "melee_hits_armor_sword",
@@ -137,6 +177,11 @@ local sounds_to_toggle = {
     {
         internal_id = "melee_hits_heavy_axe",
         sound_event = "wwise/events/weapon/play_melee_hits_axe_heavy",
+        do_not_disable_by_default = true,
+    },
+    {
+        internal_id = "melee_hits_heavy_blunt",
+        sound_event = "wwise/events/weapon/*melee_hits_blunt_heavy",
         do_not_disable_by_default = true,
     },
 	-- --------------------------
@@ -188,7 +233,7 @@ mod.sounds_to_toggle = sounds_to_toggle
 --  When order doesn't matter
 --  When you just need the key value pair
 -- ----------------------------------------------------
-local sound_lookup_copy = {}
+local sound_lookup_copy = Script.new_map( #sounds_to_toggle )
 for _, sound_table in ipairs(sounds_to_toggle) do
     sound_lookup_copy[sound_table.internal_id] = sound_table.sound_event
 end

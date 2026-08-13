@@ -392,10 +392,10 @@ local custom_ui_colors_preset = {
     character_slot_2_style_id_13_hover_color = "white",
     character_slot_2_style_id_13_hover_alpha = 255,
 
-    -- Character Slot 3: Gold
-    character_slot_3_background_color = "gold",
+    -- Character Slot 3: Coral
+    character_slot_3_background_color = "coral",
     character_slot_3_background_alpha = 255,
-    character_slot_3_background_gradient_hover_color = "gold",
+    character_slot_3_background_gradient_hover_color = "coral",
     character_slot_3_background_gradient_hover_alpha = 255,
     character_slot_3_background_gradient_selected_color = "black",
     character_slot_3_background_gradient_selected_alpha = 255,
@@ -419,13 +419,13 @@ local custom_ui_colors_preset = {
     character_slot_3_contracts_text_default_alpha = 255,
     character_slot_3_contracts_text_hover_color = "white",
     character_slot_3_contracts_text_hover_alpha = 255,
-    character_slot_3_corner_hover_color = "gold",
+    character_slot_3_corner_hover_color = "coral",
     character_slot_3_corner_hover_alpha = 255,
-    character_slot_3_corner_selected_color = "gold",
+    character_slot_3_corner_selected_color = "coral",
     character_slot_3_corner_selected_alpha = 255,
-    character_slot_3_frame_hover_color = "gold",
+    character_slot_3_frame_hover_color = "coral",
     character_slot_3_frame_hover_alpha = 255,
-    character_slot_3_frame_selected_color = "gold",
+    character_slot_3_frame_selected_color = "coral",
     character_slot_3_frame_selected_alpha = 255,
     character_slot_3_style_id_7_color = "white",
     character_slot_3_style_id_7_alpha = 0,
@@ -436,10 +436,10 @@ local custom_ui_colors_preset = {
     character_slot_3_style_id_13_hover_color = "white",
     character_slot_3_style_id_13_hover_alpha = 255,
 
-    -- Character Slot 4: Red
-    character_slot_4_background_color = "red",
+    -- Character Slot 4: Gold
+    character_slot_4_background_color = "gold",
     character_slot_4_background_alpha = 255,
-    character_slot_4_background_gradient_hover_color = "red",
+    character_slot_4_background_gradient_hover_color = "gold",
     character_slot_4_background_gradient_hover_alpha = 255,
     character_slot_4_background_gradient_selected_color = "black",
     character_slot_4_background_gradient_selected_alpha = 255,
@@ -463,13 +463,13 @@ local custom_ui_colors_preset = {
     character_slot_4_contracts_text_default_alpha = 255,
     character_slot_4_contracts_text_hover_color = "white",
     character_slot_4_contracts_text_hover_alpha = 255,
-    character_slot_4_corner_hover_color = "red",
+    character_slot_4_corner_hover_color = "gold",
     character_slot_4_corner_hover_alpha = 255,
-    character_slot_4_corner_selected_color = "red",
+    character_slot_4_corner_selected_color = "gold",
     character_slot_4_corner_selected_alpha = 255,
-    character_slot_4_frame_hover_color = "red",
+    character_slot_4_frame_hover_color = "gold",
     character_slot_4_frame_hover_alpha = 255,
-    character_slot_4_frame_selected_color = "red",
+    character_slot_4_frame_selected_color = "gold",
     character_slot_4_frame_selected_alpha = 255,
     character_slot_4_style_id_7_color = "white",
     character_slot_4_style_id_7_alpha = 0,
@@ -480,10 +480,10 @@ local custom_ui_colors_preset = {
     character_slot_4_style_id_13_hover_color = "white",
     character_slot_4_style_id_13_hover_alpha = 255,
 
-    -- Character Slot 5: Blue
-    character_slot_5_background_color = "blue",
+    -- Character Slot 5: Red
+    character_slot_5_background_color = "red",
     character_slot_5_background_alpha = 255,
-    character_slot_5_background_gradient_hover_color = "blue",
+    character_slot_5_background_gradient_hover_color = "red",
     character_slot_5_background_gradient_hover_alpha = 255,
     character_slot_5_background_gradient_selected_color = "black",
     character_slot_5_background_gradient_selected_alpha = 255,
@@ -507,13 +507,13 @@ local custom_ui_colors_preset = {
     character_slot_5_contracts_text_default_alpha = 255,
     character_slot_5_contracts_text_hover_color = "white",
     character_slot_5_contracts_text_hover_alpha = 255,
-    character_slot_5_corner_hover_color = "blue",
+    character_slot_5_corner_hover_color = "red",
     character_slot_5_corner_hover_alpha = 255,
-    character_slot_5_corner_selected_color = "blue",
+    character_slot_5_corner_selected_color = "red",
     character_slot_5_corner_selected_alpha = 255,
-    character_slot_5_frame_hover_color = "blue",
+    character_slot_5_frame_hover_color = "red",
     character_slot_5_frame_hover_alpha = 255,
-    character_slot_5_frame_selected_color = "blue",
+    character_slot_5_frame_selected_color = "red",
     character_slot_5_frame_selected_alpha = 255,
     character_slot_5_style_id_7_color = "white",
     character_slot_5_style_id_7_alpha = 0,
@@ -524,10 +524,10 @@ local custom_ui_colors_preset = {
     character_slot_5_style_id_13_hover_color = "white",
     character_slot_5_style_id_13_hover_alpha = 255,
 
-    -- Character Slot 6: Online Green
-    character_slot_6_background_color = "online_green",
+    -- Character Slot 6: Blue
+    character_slot_6_background_color = "blue",
     character_slot_6_background_alpha = 255,
-    character_slot_6_background_gradient_hover_color = "online_green",
+    character_slot_6_background_gradient_hover_color = "blue",
     character_slot_6_background_gradient_hover_alpha = 255,
     character_slot_6_background_gradient_selected_color = "black",
     character_slot_6_background_gradient_selected_alpha = 255,
@@ -551,13 +551,13 @@ local custom_ui_colors_preset = {
     character_slot_6_contracts_text_default_alpha = 255,
     character_slot_6_contracts_text_hover_color = "white",
     character_slot_6_contracts_text_hover_alpha = 255,
-    character_slot_6_corner_hover_color = "online_green",
+    character_slot_6_corner_hover_color = "blue",
     character_slot_6_corner_hover_alpha = 255,
-    character_slot_6_corner_selected_color = "online_green",
+    character_slot_6_corner_selected_color = "blue",
     character_slot_6_corner_selected_alpha = 255,
-    character_slot_6_frame_hover_color = "online_green",
+    character_slot_6_frame_hover_color = "blue",
     character_slot_6_frame_hover_alpha = 255,
-    character_slot_6_frame_selected_color = "online_green",
+    character_slot_6_frame_selected_color = "blue",
     character_slot_6_frame_selected_alpha = 255,
     character_slot_6_style_id_7_color = "white",
     character_slot_6_style_id_7_alpha = 0,
@@ -568,10 +568,10 @@ local custom_ui_colors_preset = {
     character_slot_6_style_id_13_hover_color = "white",
     character_slot_6_style_id_13_hover_alpha = 255,
 
-    -- Character Slot 7: Coral
-    character_slot_7_background_color = "coral",
+    -- Character Slot 7: Online Green
+    character_slot_7_background_color = "online_green",
     character_slot_7_background_alpha = 255,
-    character_slot_7_background_gradient_hover_color = "coral",
+    character_slot_7_background_gradient_hover_color = "online_green",
     character_slot_7_background_gradient_hover_alpha = 255,
     character_slot_7_background_gradient_selected_color = "black",
     character_slot_7_background_gradient_selected_alpha = 255,
@@ -595,13 +595,13 @@ local custom_ui_colors_preset = {
     character_slot_7_contracts_text_default_alpha = 255,
     character_slot_7_contracts_text_hover_color = "white",
     character_slot_7_contracts_text_hover_alpha = 255,
-    character_slot_7_corner_hover_color = "coral",
+    character_slot_7_corner_hover_color = "online_green",
     character_slot_7_corner_hover_alpha = 255,
-    character_slot_7_corner_selected_color = "coral",
+    character_slot_7_corner_selected_color = "online_green",
     character_slot_7_corner_selected_alpha = 255,
-    character_slot_7_frame_hover_color = "coral",
+    character_slot_7_frame_hover_color = "online_green",
     character_slot_7_frame_hover_alpha = 255,
-    character_slot_7_frame_selected_color = "coral",
+    character_slot_7_frame_selected_color = "online_green",
     character_slot_7_frame_selected_alpha = 255,
     character_slot_7_style_id_7_color = "white",
     character_slot_7_style_id_7_alpha = 0,
@@ -2006,11 +2006,43 @@ local NEWS_SLIDE_SETTING_IDS = {
     body_number = "countdown_timer_offset_y",
 }
 
+local NEWS_MIN_GAP = 20
+
+-- Clamps and enforces ordering of title/body/timer Y offsets so they never overlap.
+-- Title always sits above Body with at least NEWS_MIN_GAP px gap.
+-- Countdown Timer is forced above Title by at least NEWS_MIN_GAP px.
+local function enforce_news_y_offsets()
+    local title_y = mod:get("title_text_offset_y") or 140
+    local body_y = mod:get("body_text_offset_y") or 160
+    local timer_y = mod:get("countdown_timer_offset_y") or 120
+
+    title_y = math.max(15, math.min(160, title_y))
+    body_y = math.max(15, math.min(160, body_y))
+    timer_y = math.max(15, math.min(160, timer_y))
+
+    if body_y < title_y + NEWS_MIN_GAP then
+        body_y = math.min(160, title_y + NEWS_MIN_GAP)
+        mod:set("body_text_offset_y", body_y)
+    end
+    if title_y > body_y - NEWS_MIN_GAP then
+        title_y = math.max(15, body_y - NEWS_MIN_GAP)
+        mod:set("title_text_offset_y", title_y)
+    end
+
+    if timer_y > title_y - NEWS_MIN_GAP then
+        timer_y = math.max(15, title_y - NEWS_MIN_GAP)
+        mod:set("countdown_timer_offset_y", timer_y)
+    end
+
+    return title_y, body_y, timer_y
+end
+
 -- Hook: Applies slider-based Y offsets to news slide text elements.
 -- Hooks ViewElementBase._draw_widgets (called by ViewElementNewsSlide.super._draw_widgets)
 -- to set our offsets RIGHT BEFORE UIWidget.draw() reads them.
 -- This prevents the original ViewElementNewsSlide._draw_widgets from overwriting them.
 -- All three elements (timer, body text, title) use independent slider values.
+-- Enforces minimum spacing between title and body text to prevent overlap.
 mod:hook("ViewElementBase", "_draw_widgets", function(func, self, dt, t, input_service, ui_renderer, render_settings)
     if not self._widgets_by_name or not self._widgets_by_name.news_button then
         return func(self, dt, t, input_service, ui_renderer, render_settings)
@@ -2022,16 +2054,55 @@ mod:hook("ViewElementBase", "_draw_widgets", function(func, self, dt, t, input_s
         return func(self, dt, t, input_service, ui_renderer, render_settings)
     end
 
+    local title_y, body_y, timer_y = enforce_news_y_offsets()
+
+    -- Dynamically cap body text to never extend past the user's chosen Body Text Offset.
+    -- Estimates rendered text height from string length and font metrics and pushes
+    -- the body offset up if the text would render below the body_text_offset_y boundary.
+    local body_style = style.body_text
+    if body_style and news_btn.content and news_btn.content.body_text and news_btn.content.body_text ~= "" then
+        local body_content = news_btn.content.body_text
+        local font_size = body_style.font_size or 19
+        local container_w = body_style.size and body_style.size[1] or 408
+        local avg_char_w = font_size * 0.55
+        local chars_per_line = math.max(1, math.floor(container_w / avg_char_w))
+        local raw_length = #body_content
+        local lines = 1
+        for _ in body_content:gmatch("\n") do lines = lines + 1 end
+        lines = math.max(lines, math.ceil(raw_length / chars_per_line))
+        local line_height = font_size
+        local text_height = lines * line_height
+        local viewport_h = 210
+        local widget_size_y = body_style.size and body_style.size[2] or 198
+        local widget_top = (viewport_h - widget_size_y) / 2
+        local text_start_y = widget_top + body_y
+        local text_end_y = text_start_y + text_height
+        local max_text_end = body_y
+        if text_end_y > max_text_end then
+            local overflow = text_end_y - max_text_end
+            body_y = body_y - overflow
+            if body_y < title_y + NEWS_MIN_GAP then
+                body_y = title_y + NEWS_MIN_GAP
+            end
+            body_y = math.max(15, body_y)
+        end
+    end
+
     for game_name, defaults in pairs(NEWS_SLIDE_DEFAULTS) do
         local element = style[game_name]
         if element then
             for key, value in pairs(defaults) do
                 element[key] = value
             end
-            local setting_id = NEWS_SLIDE_SETTING_IDS[game_name]
-            local offset_y = mod:get(setting_id) or 88
-            offset_y = math.max(15, math.min(175, offset_y))
-            if element.offset then
+            local offset_y
+            if game_name == "title" then
+                offset_y = title_y
+            elseif game_name == "body_text" then
+                offset_y = body_y
+            elseif game_name == "body_number" then
+                offset_y = timer_y
+            end
+            if element.offset and offset_y then
                 element.offset[2] = offset_y
             end
         end
@@ -2201,6 +2272,10 @@ mod.on_setting_changed = function(setting_id)
         else
             restore_custom_ui_colors_originals()
         end
+    end
+    -- Enforce minimum gap between title, body text, and countdown timer Y offsets.
+    if setting_id == "title_text_offset_y" or setting_id == "body_text_offset_y" or setting_id == "countdown_timer_offset_y" then
+        enforce_news_y_offsets()
     end
     refresh_all()
 end

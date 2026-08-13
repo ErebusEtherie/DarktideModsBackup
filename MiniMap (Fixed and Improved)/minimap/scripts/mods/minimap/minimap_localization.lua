@@ -9,6 +9,27 @@ local loc = {
         ["zh-cn"] = "在抬头显示界面上显示小地图。",
         ru = "Minimap - Добавляет миникарту на ваш интерфейс.",
     },
+    tab_general = {
+        en = "General",
+        ["zh-cn"] = "通用设置",
+    },
+    tab_icons = {
+        en = "Icons & Markers",
+        ["zh-cn"] = "图标与标记",
+    },
+    tab_enemy_radar = {
+        en = "Enemy Radar",
+        ["zh-cn"] = "敌人雷达", 
+    },
+    tab_strike_map = {
+        en = "Strike Map",
+        ["zh-cn"] = "打击地图",
+    },
+    class_icon_settings = {
+        en = "Class Icon Settings",
+        ["zh-cn"] = "职业图标设置",
+        ru = "Настройки значков классов",
+    },
     display_class_icon = {
         en = "Display Class Icon",
         ["zh-cn"] = "显示职业图标",
@@ -153,6 +174,10 @@ local loc = {
         en = "Hide bots",
         ["zh-cn"] = "隐藏机器人队友",
     },
+    teammate_facing_arrows = {
+        en = "Teammate Facing Arrows",
+        ["zh-cn"] = "队友朝向指示箭头",
+    },
     dog_icon_style = {
         en = "Dog Icon Style",
         ["zh-cn"] = "猎犬图标样式",
@@ -189,10 +214,6 @@ local loc = {
         en = "Show When Dead",
         ["zh-cn"] = "死亡时显示",
     },
-    minimap_background_color_preset = {
-        en = "Background Color Preset",
-        ["zh-cn"] = "背景颜色预设",
-    },
     minimap_background_color_r = {
         en = "Background Color - Red",
         ["zh-cn"] = "背景颜色 - 红",
@@ -221,6 +242,7 @@ local loc = {
         en = "Scan Range (meters)",
         ["zh-cn"] = "扫描范围（米）",
     },
+
     enemy_radar_priority_mode = {
         en = "Priority Mode",
         ["zh-cn"] = "优先级模式",
@@ -233,6 +255,26 @@ local loc = {
         en = "Distance (3D)",
         ["zh-cn"] = "距离（3D）",
     },
+    enemy_clustering = {
+        en = "Enemy Grouping (Clustering)",
+        ["zh-cn"] = "敌人分组（聚类）",
+    },
+    enemy_clustering_enabled = {
+        en = "Enable Enemy Grouping",
+        ["zh-cn"] = "启用敌人分组",
+    },
+    enemy_clustering_radius = {
+        en = "Grouping Radius (meters)",
+        ["zh-cn"] = "分组半径（米）",
+    },
+    enemy_clustering_threshold = {
+        en = "Minimum Group Size",
+        ["zh-cn"] = "最小分组大小",
+    },
+    enemy_clustering_show_type = {
+        en = "Show Enemy Type Text",
+        ["zh-cn"] = "显示敌人类型文本",
+    },
     enemy_radar_filters = {
         en = "Filter by Breed",
         ["zh-cn"] = "按类别筛选",
@@ -241,37 +283,65 @@ local loc = {
         en = "Limit per Category",
         ["zh-cn"] = "每类别数量上限",
     },
-    enemy_radar_filter_elite = {
-        en = "Elite",
-        ["zh-cn"] = "精英",
+    enemy_radar_filter_disabler = {
+        en = "Disablers (Hound/Mutant/Netter)",
+        ["zh-cn"] = "控制专家（猎犬/变种人/）",
+    },
+    enemy_radar_filter_sniper = {
+        en = "Snipers",
+        ["zh-cn"] = "狙击手",
     },
     enemy_radar_filter_special = {
-        en = "Special",
-        ["zh-cn"] = "特殊",
+        en = "Other Specials",
+        ["zh-cn"] = "其余专家",
+    },
+    enemy_radar_filter_shield = {
+        en = "Shields (Vanguards)",
+        ["zh-cn"] = "盾兵（先锋）",
+    },
+    enemy_radar_filter_ranged_elite = {
+        en = "Ranged Elites",
+        ["zh-cn"] = "远程精英",
+    },
+    enemy_radar_filter_melee_elite = {
+        en = "Melee Elites",
+        ["zh-cn"] = "近战精英",
     },
     enemy_radar_filter_boss = {
-        en = "Boss",
-        ["zh-cn"] = "头目",
+        en = "Boss/Monstrosity",
+        ["zh-cn"] = "首领/怪兽",
     },
     enemy_radar_filter_horde = {
         en = "Horde",
         ["zh-cn"] = "尸潮",
     },
-    enemy_radar_filter_fodder = {
-        en = "Fodder",
-        ["zh-cn"] = "杂兵",
-    },
     enemy_radar_filter_roamer = {
         en = "Roamer",
         ["zh-cn"] = "游荡者",
     },
-    enemy_radar_limit_elite = {
-        en = "Elite Limit",
-        ["zh-cn"] = "精英上限",
+    enemy_radar_limit_disabler = {
+        en = "Disabler Limit",
+        ["zh-cn"] = "控制专家上限",
+    },
+    enemy_radar_limit_sniper = {
+        en = "Sniper Limit",
+        ["zh-cn"] = "狙击手上限",
     },
     enemy_radar_limit_special = {
-        en = "Special Limit",
-        ["zh-cn"] = "特殊上限",
+        en = "Other Specials Limit",
+        ["zh-cn"] = "其余专家上限",
+    },
+    enemy_radar_limit_shield = {
+        en = "Shield Limit",
+        ["zh-cn"] = "盾兵上限",
+    },
+    enemy_radar_limit_ranged_elite = {
+        en = "Ranged Elite Limit",
+        ["zh-cn"] = "远程精英上限",
+    },
+    enemy_radar_limit_melee_elite = {
+        en = "Melee Elite Limit",
+        ["zh-cn"] = "近战精英上限",
     },
     enemy_radar_limit_boss = {
         en = "Boss Limit",
@@ -280,10 +350,6 @@ local loc = {
     enemy_radar_limit_horde = {
         en = "Horde Limit",
         ["zh-cn"] = "尸潮上限",
-    },
-    enemy_radar_limit_fodder = {
-        en = "Fodder Limit",
-        ["zh-cn"] = "杂兵上限",
     },
     enemy_radar_limit_roamer = {
         en = "Roamer Limit",
@@ -300,10 +366,6 @@ local loc = {
     enemy_radar_melee_range = {
         en = "Melee Range (meters)",
         ["zh-cn"] = "近战范围（米）",
-    },
-    enemy_radar_melee_ring_color_preset = {
-        en = "Ring Color Preset",
-        ["zh-cn"] = "圆环颜色预设",
     },
     enemy_radar_melee_ring_color_r = {
         en = "Ring Color - Red",
@@ -337,14 +399,45 @@ local loc = {
         en = "Generic Category Colors",
         ["zh-cn"] = "通用类别颜色",
     },
-    -- Specific Special Enemies
+    enemy_name_filters = {
+        en = "Enemy Name Filters",
+        ["zh-cn"] = "敌人名称筛选",
+    },
+    enemy_name_filter_only_pinged = {
+        en = "Only Show Names If Pinged",
+        ["zh-cn"] = "仅在标记时显示名称",
+    },
+    enemy_name_filter_boss = {
+        en = "Show Boss Names",
+        ["zh-cn"] = "显示头目名称",
+    },
+    enemy_name_filter_disabler = {
+        en = "Show Disabler Names",
+        ["zh-cn"] = "显示控制者名称",
+    },
+    enemy_name_filter_sniper = {
+        en = "Show Sniper Names",
+        ["zh-cn"] = "显示狙击手名称",
+    },
+    enemy_name_filter_special = {
+        en = "Show Special Names",
+        ["zh-cn"] = "显示特殊敌人名称",
+    },
+    enemy_name_filter_shield = {
+        en = "Show Shield Names",
+        ["zh-cn"] = "显示盾卫名称",
+    },
+    enemy_name_filter_ranged_elite = {
+        en = "Show Ranged Elite Names",
+        ["zh-cn"] = "显示远程精英名称",
+    },
+    enemy_name_filter_melee_elite = {
+        en = "Show Melee Elite Names",
+        ["zh-cn"] = "显示近战精英名称",
+    },
     color_chaos_hound = {
         en = "Pox Hound",
         ["zh-cn"] = "瘟疫猎犬",
-    },
-    color_chaos_hound_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
     },
     color_chaos_hound_r = {
         en = "Red",
@@ -362,10 +455,6 @@ local loc = {
         en = "Trapper",
         ["zh-cn"] = "捕兽者",
     },
-    color_renegade_netgunner_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
-    },
     color_renegade_netgunner_r = {
         en = "Red",
         ["zh-cn"] = "红",
@@ -381,10 +470,6 @@ local loc = {
     color_renegade_sniper = {
         en = "Sniper",
         ["zh-cn"] = "血痂狙击手",
-    },
-    color_renegade_sniper_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
     },
     color_renegade_sniper_r = {
         en = "Red",
@@ -402,10 +487,6 @@ local loc = {
         en = "Flamers (All)",
         ["zh-cn"] = "喷火兵（全部）",
     },
-    color_flamer_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
-    },
     color_flamer_r = {
         en = "Red",
         ["zh-cn"] = "红",
@@ -421,10 +502,6 @@ local loc = {
     color_grenadier = {
         en = "Grenadiers (All)",
         ["zh-cn"] = "掷弹兵（全部）",
-    },
-    color_grenadier_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
     },
     color_grenadier_r = {
         en = "Red",
@@ -442,10 +519,6 @@ local loc = {
         en = "Pox Bomber",
         ["zh-cn"] = "瘟疫自爆人",
     },
-    color_chaos_poxwalker_bomber_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
-    },
     color_chaos_poxwalker_bomber_r = {
         en = "Red",
         ["zh-cn"] = "红",
@@ -458,14 +531,9 @@ local loc = {
         en = "Blue",
         ["zh-cn"] = "蓝",
     },
-    -- Specific Elite Enemies
     color_executor = {
         en = "Executors (All)",
         ["zh-cn"] = "血痂重锤兵与粉碎者（全部）",
-    },
-    color_executor_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
     },
     color_executor_r = {
         en = "Red",
@@ -483,10 +551,6 @@ local loc = {
         en = "Ragers (All)",
         ["zh-cn"] = "狂战士（全部）",
     },
-    color_berzerker_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
-    },
     color_berzerker_r = {
         en = "Red",
         ["zh-cn"] = "红",
@@ -502,10 +566,6 @@ local loc = {
     color_renegade_plasma_gunner = {
         en = "Plasma Gunner",
         ["zh-cn"] = "血痂等离子炮手",
-    },
-    color_renegade_plasma_gunner_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
     },
     color_renegade_plasma_gunner_r = {
         en = "Red",
@@ -523,10 +583,6 @@ local loc = {
         en = "Ogryn Bulwark",
         ["zh-cn"] = "盾卫",
     },
-    color_chaos_ogryn_bulwark_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
-    },
     color_chaos_ogryn_bulwark_r = {
         en = "Red",
         ["zh-cn"] = "红",
@@ -539,14 +595,9 @@ local loc = {
         en = "Blue",
         ["zh-cn"] = "蓝",
     },
-    -- Generic Categories
     color_special = {
         en = "Generic Special",
         ["zh-cn"] = "通用特殊",
-    },
-    color_special_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
     },
     color_special_r = {
         en = "Red",
@@ -560,93 +611,105 @@ local loc = {
         en = "Blue",
         ["zh-cn"] = "蓝",
     },
-    color_elite_ranged = {
-        en = "Elite Ranged",
+    color_boss = {
+        en = "Boss / Monstrosity",
+        ["zh-cn"] = "首领/怪物",
+    },
+    color_boss_r = {
+        en = "Red",
+        ["zh-cn"] = "红",
+    },
+    color_boss_g = {
+        en = "Green",
+        ["zh-cn"] = "绿",
+    },
+    color_boss_b = {
+        en = "Blue",
+        ["zh-cn"] = "蓝",
+    },
+    color_disabler = {
+        en = "Disabler",
+        ["zh-cn"] = "控制专家",
+    },
+    color_disabler_r = {
+        en = "Red",
+        ["zh-cn"] = "红",
+    },
+    color_disabler_g = {
+        en = "Green",
+        ["zh-cn"] = "绿",
+    },
+    color_disabler_b = {
+        en = "Blue",
+        ["zh-cn"] = "蓝",
+    },
+    color_sniper = {
+        en = "Sniper",
+        ["zh-cn"] = "狙击手",
+    },
+    color_sniper_r = {
+        en = "Red",
+        ["zh-cn"] = "红",
+    },
+    color_sniper_g = {
+        en = "Green",
+        ["zh-cn"] = "绿",
+    },
+    color_sniper_b = {
+        en = "Blue",
+        ["zh-cn"] = "蓝",
+    },
+    color_shield = {
+        en = "Shield",
+        ["zh-cn"] = "盾兵",
+    },
+    color_shield_r = {
+        en = "Red",
+        ["zh-cn"] = "红",
+    },
+    color_shield_g = {
+        en = "Green",
+        ["zh-cn"] = "绿",
+    },
+    color_shield_b = {
+        en = "Blue",
+        ["zh-cn"] = "蓝",
+    },
+    color_ranged_elite = {
+        en = "Ranged Elite",
         ["zh-cn"] = "远程精英",
     },
-    color_elite_ranged_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
-    },
-    color_elite_ranged_r = {
+    color_ranged_elite_r = {
         en = "Red",
         ["zh-cn"] = "红",
     },
-    color_elite_ranged_g = {
+    color_ranged_elite_g = {
         en = "Green",
         ["zh-cn"] = "绿",
     },
-    color_elite_ranged_b = {
+    color_ranged_elite_b = {
         en = "Blue",
         ["zh-cn"] = "蓝",
     },
-    color_elite_melee = {
-        en = "Elite Melee",
+    color_melee_elite = {
+        en = "Melee Elite",
         ["zh-cn"] = "近战精英",
     },
-    color_elite_melee_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
-    },
-    color_elite_melee_r = {
+    color_melee_elite_r = {
         en = "Red",
         ["zh-cn"] = "红",
     },
-    color_elite_melee_g = {
+    color_melee_elite_g = {
         en = "Green",
         ["zh-cn"] = "绿",
     },
-    color_elite_melee_b = {
-        en = "Blue",
-        ["zh-cn"] = "蓝",
-    },
-    color_monster = {
-        en = "Monster",
-        ["zh-cn"] = "怪物",
-    },
-    color_monster_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
-    },
-    color_monster_r = {
-        en = "Red",
-        ["zh-cn"] = "红",
-    },
-    color_monster_g = {
-        en = "Green",
-        ["zh-cn"] = "绿",
-    },
-    color_monster_b = {
-        en = "Blue",
-        ["zh-cn"] = "蓝",
-    },
-    color_captain = {
-        en = "Captain",
-        ["zh-cn"] = "队长",
-    },
-    color_captain_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
-    },
-    color_captain_r = {
-        en = "Red",
-        ["zh-cn"] = "红",
-    },
-    color_captain_g = {
-        en = "Green",
-        ["zh-cn"] = "绿",
-    },
-    color_captain_b = {
+    color_melee_elite_b = {
         en = "Blue",
         ["zh-cn"] = "蓝",
     },
     color_horde = {
         en = "Horde",
         ["zh-cn"] = "尸潮",
-    },
-    color_horde_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
     },
     color_horde_r = {
         en = "Red",
@@ -664,10 +727,6 @@ local loc = {
         en = "Roamer",
         ["zh-cn"] = "游荡者",
     },
-    color_roamer_preset = {
-        en = "Color Preset",
-        ["zh-cn"] = "颜色预设",
-    },
     color_roamer_r = {
         en = "Red",
         ["zh-cn"] = "红",
@@ -679,22 +738,6 @@ local loc = {
     color_roamer_b = {
         en = "Blue",
         ["zh-cn"] = "蓝",
-    },
-    enemy_radar_vertical_distance = {
-        en = "Vertical Distance Transparency",
-        ["zh-cn"] = "垂直距离透明度",
-    },
-    enemy_radar_vertical_distance_enabled = {
-        en = "Enable Vertical Distance Transparency",
-        ["zh-cn"] = "启用垂直距离透明度",
-    },
-    enemy_radar_vertical_distance_threshold = {
-        en = "Vertical Distance Threshold (meters)",
-        ["zh-cn"] = "垂直距离阈值（米）",
-    },
-    enemy_radar_vertical_distance_transparency = {
-        en = "Transparency Alpha (0-255)",
-        ["zh-cn"] = "透明度Alpha值（0-255）",
     },
     distance_markers = {
         en = "Distance Markers",
@@ -728,9 +771,185 @@ local loc = {
         en = "Only Show Distance When Out of Range",
         ["zh-cn"] = "仅当超出范围时显示距离",
     },
+
+    enemy_radar_vertical_distance = {
+        en = "Vertical Distance Transparency",
+        ["zh-cn"] = "高低差透明度衰减",
+    },
+    enemy_radar_vertical_distance_enabled = {
+        en = "Enable Vertical Distance Transparency",
+        ["zh-cn"] = "开启高低差透明度衰减",
+    },
+    enemy_radar_vertical_distance_threshold = {
+        en = "Vertical Distance Threshold (meters)",
+        ["zh-cn"] = "高低差判定阈值（米）",
+    },
+    enemy_radar_vertical_distance_transparency = {
+        en = "Transparency Alpha (0-255)",
+        ["zh-cn"] = "衰减后透明度数值(0-255)",
+    },
+    distance_marker_vertical_symbols = {
+        en = "Show Vertical Symbols (↑/↓)",
+        ["zh-cn"] = "显示高低指示箭头(↑/↓)",
+    },
+    distance_marker_vertical_distance = {
+        en = "Vertical Distance Symbols",
+        ["zh-cn"] = "高低差箭头标记",
+    },
+    distance_marker_vertical_threshold = {
+        en = "Vertical Distance Threshold (meters)",
+        ["zh-cn"] = "箭头显示高低差阈值（米）",
+    },
+    distance_marker_vertical_transparency = {
+        en = "Vertical Distance Transparency (0-255)",
+        ["zh-cn"] = "高低箭头透明度(0-255)",
+    },
+    distance_marker_vertical_arrow_color_r = {
+        en = "Arrow Color (Red)",
+        ["zh-cn"] = "箭头（红）",
+    },
+    distance_marker_vertical_arrow_color_g = {
+        en = "Arrow Color (Green)",
+        ["zh-cn"] = "箭头（绿）",
+    },
+    distance_marker_vertical_arrow_color_b = {
+        en = "Arrow Color (Blue)",
+        ["zh-cn"] = "箭头（蓝）",
+    },
+    distance_marker_vertical_arrow_color = {
+        en = "Vertical Arrow ARGB Color",
+        ["zh-cn"] = "高低箭头ARGB色彩",
+    },
+    distance_marker_vertical_arrow_size = {
+        en = "Vertical Arrow Size",
+        ["zh-cn"] = "高低箭头尺寸",
+    },
+    distance_marker_vertical_arrow_opacity = {
+        en = "Arrow Color (Alpha / Opacity)",
+        ["zh-cn"] = "箭头整体透明度",
+    },
+    display_names = {
+        en = "Display Names",
+        ["zh-cn"] = "显示名称",
+    },
+    display_name_players = {
+        en = "Show Player Names",
+        ["zh-cn"] = "显示玩家名称",
+    },
+    display_name_companions = {
+        en = "Show Dog/Companion Names",
+        ["zh-cn"] = "显示猎犬/同伴名称",
+    },
+    strike_map_dimensions = {
+        en = "Strike Map Dimensions",
+        ["zh-cn"] = "打击地图尺寸",
+    },
+    strike_map_height = {
+        en = "Height",
+        ["zh-cn"] = "高度",
+    },
+    strike_map_half_height = {
+        en = "Half Height",
+        ["zh-cn"] = "半高",
+    },
+    strike_map_depth = {
+        en = "Depth / Z-Offset",
+        ["zh-cn"] = "深度/Z轴偏移",
+    },
+    strike_map_lines = {
+        en = "Line Thicknesses",
+        ["zh-cn"] = "线宽",
+    },
+    strike_map_line_thickness_contours = {
+        en = "Contours (Walls & Ledges)",
+        ["zh-cn"] = "轮廓线（墙壁与边缘）",
+    },
+    strike_map_line_thickness_stairs = {
+        en = "Stairs (Stair Ticks)",
+        ["zh-cn"] = "楼梯（楼梯刻度）",
+    },
+    strike_map_line_thickness_slopes = {
+        en = "Slopes (Incline Ink)",
+        ["zh-cn"] = "斜坡（斜坡墨迹）",
+    },
+    strike_map_floors = {
+        en = "Floor Colors & Opacities",
+        ["zh-cn"] = "楼层颜色和不透明度",
+    },
+strike_map_floor_above = {
+    en = "Floor Above",
+    ["zh-cn"] = "上一层",
+},
+color_strike_map_floor_above = {
+    en = "Color (Above)",
+    ["zh-cn"] = "上层楼层颜色",
+},
+color_strike_map_floor_above_r = {
+    en = "Red",
+    ["zh-cn"] = "红",
+},
+color_strike_map_floor_above_g = {
+    en = "Green",
+    ["zh-cn"] = "绿",
+},
+color_strike_map_floor_above_b = {
+    en = "Blue",
+    ["zh-cn"] = "蓝",
+},
+color_strike_map_floor_above_opacity = {
+    en = "Opacity (Above)",
+    ["zh-cn"] = "上层楼层透明度",
+},
+strike_map_floor_current = {
+    en = "Current Floor",
+    ["zh-cn"] = "当前层",
+},
+color_strike_map_floor_current = {
+    en = "Color (Current)",
+    ["zh-cn"] = "当前层颜色",
+},
+color_strike_map_floor_current_r = {
+    en = "Red",
+    ["zh-cn"] = "红",
+},
+color_strike_map_floor_current_g = {
+    en = "Green",
+    ["zh-cn"] = "绿",
+},
+color_strike_map_floor_current_b = {
+    en = "Blue",
+    ["zh-cn"] = "蓝",
+},
+color_strike_map_floor_current_opacity = {
+    en = "Opacity (Current)",
+    ["zh-cn"] = "当前层透明度",
+},
+strike_map_floor_below = {
+    en = "Floor Below",
+    ["zh-cn"] = "下一层",
+},
+color_strike_map_floor_below = {
+    en = "Color (Below)",
+    ["zh-cn"] = "下层楼层颜色",
+},
+color_strike_map_floor_below_r = {
+    en = "Red",
+    ["zh-cn"] = "红",
+},
+color_strike_map_floor_below_g = {
+    en = "Green",
+    ["zh-cn"] = "绿",
+},
+color_strike_map_floor_below_b = {
+    en = "Blue",
+    ["zh-cn"] = "蓝",
+},
+color_strike_map_floor_below_opacity = {
+    en = "Opacity (Below)",
+    ["zh-cn"] = "下层楼层透明度",
+},
 }
 
--- Auto-generate colored localization for all color names from Color.list
 for _, color_name in ipairs(Color.list) do
     local c = Color[color_name](255, true)
     local text = string.format("{#color(%s,%s,%s)}%s{#reset()}", c[2], c[3], c[4], string.gsub(color_name, "_", " "))
@@ -739,38 +958,6 @@ for _, color_name in ipairs(Color.list) do
     else
         loc[color_name].en = text
     end
-end
-
--- Default option for presets
-if not loc.default then
-    loc.default = { en = "Default" }
-end
-
--- Colored default options for each enemy color
-local color_defaults = {
-    color_chaos_hound = { 255, 0, 200 },
-    color_renegade_netgunner = { 200, 0, 255 },
-    color_renegade_sniper = { 255, 0, 150 },
-    color_flamer = { 255, 80, 0 },
-    color_grenadier = { 180, 255, 0 },
-    color_chaos_poxwalker_bomber = { 220, 255, 0 },
-    color_executor = { 150, 0, 200 },
-    color_berzerker = { 220, 0, 0 },
-    color_renegade_plasma_gunner = { 0, 220, 255 },
-    color_chaos_ogryn_bulwark = { 255, 200, 0 },
-    color_special = { 255, 0, 255 },
-    color_elite_ranged = { 255, 100, 0 },
-    color_elite_melee = { 255, 165, 0 },
-    color_monster = { 255, 0, 0 },
-    color_captain = { 128, 0, 128 },
-    color_horde = { 150, 150, 150 },
-    color_roamer = { 180, 180, 180 },
-}
-
-for color_name, rgb in pairs(color_defaults) do
-    local default_key = "default_" .. color_name
-    local text = string.format("{#color(%s,%s,%s)}Default{#reset()}", rgb[1], rgb[2], rgb[3])
-    loc[default_key] = { en = text }
 end
 
 return loc

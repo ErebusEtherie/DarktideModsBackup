@@ -1,5 +1,4 @@
 -- (S)imple (M)od (O)bject (G)arbage Cleaner by xxbellatrix
--- SMOG.mod
 return {
 run = function()
 fassert(rawget(_G, "new_mod"), "`SMOG` encountered an error loading the Darktide Mod Framework.")

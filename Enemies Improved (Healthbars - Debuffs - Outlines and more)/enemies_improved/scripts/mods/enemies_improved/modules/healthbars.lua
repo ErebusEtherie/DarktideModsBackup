@@ -9,11 +9,8 @@ local Managers = Managers
 mod.enemy_healthbars = mod.enemy_healthbars or {}
 mod.marked_dead = mod.marked_dead or {}
 
-local function _on_healthbar_created(marker_id, entry, unit)
-	entry.healthbar = mod.get_marker_by_id(marker_id)
-	mod.enemy_healthbars[unit] = marker_id
-	entry._healthbar_created = true
-	entry._healthbar_pending = nil
+local function _on_ei_marker_created(marker_id, entry, unit)
+	mod._on_ei_marker_created(marker_id, entry, unit)
 end
 
 -----------------------------------------------------------------------
@@ -25,9 +22,9 @@ mod.update_enemy_healthbars = function(entry, t)
 	local fs = mod.frame_settings
 
 	-- Safety: clear stuck pending state after short time
-	if entry._healthbar_pending and entry._healthbar_pending_t then
-		if t - entry._healthbar_pending_t > 2 then
-			entry._healthbar_pending = nil
+	if entry._ei_marker_pending and entry._ei_marker_pending_t then
+		if t - entry._ei_marker_pending_t > 2 then
+			entry._ei_marker_pending = nil
 		end
 	end
 
@@ -35,35 +32,46 @@ mod.update_enemy_healthbars = function(entry, t)
 		return
 	end
 
-	if entry.is_horde and (not fs.horde_enable and not fs.horde_clusters_enable) then
+	if fs.healthbar_only_in_meatgrinder then
+		local current_level = Managers.state.mission and Managers.state.mission:mission()
+		if not (current_level and current_level.game_mode_name and current_level.game_mode_name == "shooting_range") then
+			return
+		end
+	end
+
+	-- Horde filter: block unless horde enabled, clusters enabled, an individual or group override is on, or debuffed
+	local breed_name = entry.breed_name
+	local individual_enabled = breed_name and fs.breed_healthbar_enabled and fs.breed_healthbar_enabled[breed_name]
+	local individual_force = breed_name and fs.breed_healthbar_force and fs.breed_healthbar_force[breed_name]
+	local group_enabled = fs.breed_type_healthbar_enabled and fs.breed_type_healthbar_enabled["horde"]
+	local unit = entry.unit
+	local debuffed_override = fs.hb_show_when_debuffed and mod.unit_has_active_debuff(unit)
+
+	if
+		entry.is_horde
+		and (not fs.horde_enable and not fs.horde_clusters_enable)
+		and not individual_enabled
+		and not individual_force
+		and not group_enabled
+		and not debuffed_override
+	then
 		return
 	end
 
-	local unit = entry.unit
-
-	-- Handle cluster invalidation
+	-- Handle cluster invalidation: non-rep horde units should not have a healthbar,
+	-- but the world marker must stay alive so overhead markers and debuffs still work.
 	if mod.frame_settings.horde_clusters_enable and entry.is_horde then
 		local cluster = mod.get_horde_cluster_for_unit(unit)
 
-		-- If this unit HAD a healthbar but is no longer a valid cluster rep then remove it
-		if entry._healthbar_created then
+		if entry._ei_marker_created then
 			if not cluster or cluster.rep_unit ~= unit then
-				local marker_id = mod.enemy_healthbars[unit]
-
-				if marker_id then
-					Managers.event:trigger("remove_world_marker", marker_id)
-					mod.enemy_healthbars[unit] = nil
-				end
-
-				entry._healthbar_created = false
-				entry._healthbar_pending = nil
-
+				mod.enemy_healthbars[unit] = nil
 				return
 			end
 		end
 	end
 
-	if entry._healthbar_created or entry._healthbar_pending then
+	if entry._ei_marker_created or entry._ei_marker_pending then
 		return
 	end
 
@@ -98,11 +106,11 @@ mod.update_enemy_healthbars = function(entry, t)
 		return
 	end
 
-	entry._healthbar_pending = true
-	entry._healthbar_pending_t = t
+	entry._ei_marker_pending = true
+	entry._ei_marker_pending_t = t
 
-	Managers_event:trigger("add_world_marker_unit", "enemy_healthbar", unit, function(marker_id)
-		_on_healthbar_created(marker_id, entry, unit)
+	Managers_event:trigger("add_world_marker_unit", "enemies_improved", unit, function(marker_id)
+		_on_ei_marker_created(marker_id, entry, unit)
 
 		-- Mark cluster as having a healthbar
 		if mod.frame_settings.horde_clusters_enable and entry.is_horde then

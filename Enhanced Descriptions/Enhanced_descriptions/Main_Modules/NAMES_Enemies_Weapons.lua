@@ -3,10 +3,10 @@
 
 local mod = get_mod("Enhanced_descriptions")
 
--- USING CACHED UTILITIES - ИСПОЛЬЗУЕМ КЭШИРОВАННЫЕ УТИЛИТЫ
+-- Using cached utilities - Используем кэшированные утилиты
 local Utils = mod.get_utils()
 
--- IMPORTING ALL NECESSARY FUNCTIONS AND CONSTANTS - ИМПОРТ ВСЕХ НУЖНЫХ ФУНКЦИЙ И КОНСТАНТ
+-- Importing all necessary functions and constants - Импорт всех нужных функций и констант
 local create_template = Utils.create_template
 local loc_text = Utils.loc_text
 local CKWord = Utils.CKWord
@@ -35,6 +35,20 @@ local names_enemies_weapons_templates = {
 			-- es = "",
 		-- },
 
+--[+ ++WEAPONS++ +]--
+	--[+ MELEE - БЛИЖНИЙ БОЙ -  +]--
+	--[+ RANGED - ДАЛЬНИЙ БОЙ -  +]--
+		--[+ Dual Stub Pistols +]--	29.05.2026
+		["loc_weapon_mark_dual_stubpistols_p1_m1"] = {
+			en = "Mk VIII", -- MkVIII -> Mk VIII
+		},
+		--[+ Needle Pistols +]--	29.05.2026
+		["loc_weapon_mark_needlepistol_p1_m1"] = {
+			en = "Mk VI", -- MkVI -> Mk VI
+		},
+		["loc_weapon_mark_needlepistol_p1_m2"] = {
+			en = "Mk II", -- MkII -> Mk II
+		},
 
 
 }

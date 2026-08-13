@@ -107,6 +107,7 @@ local CONFIG = {
 	},
 	soulblaze_text_colour = {
 		Soulblaze =		"Llama del alma",
+		Soulblaz =		"LdA",
 	},
 	stagger_text_colour = {
 		Stagger =		"Tambaleo",

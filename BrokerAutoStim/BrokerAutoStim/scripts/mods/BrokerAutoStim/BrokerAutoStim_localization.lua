@@ -183,6 +183,14 @@
 			en = "Cancel injection attempt when performing interactions (minigames, long-press interactions, etc.)",
 			["zh-cn"] = "进行交互时（小游戏、长按交互等)。",
 		},
+		cancel_on_auspex = {
+			en = "Cancel Injection While Using Auspex",
+			["zh-cn"] = "使用鸟卜仪时取消注射",
+		},
+		cancel_on_auspex_description = {
+			en = "Cancel injection attempt when the Auspex scanner is active or being deployed.",
+			["zh-cn"] = "在使用鸟卜仪扫描时取消注射尝试。",
+		},
 		cancel_during_ability = {
 			en = "Cancel Injection During Combat Ability",
 			["zh-cn"] = "战斗技能激活时取消注射",
@@ -322,5 +330,9 @@
 		hud_icon_size_description = {
 			en = "Size of the HUD icon in pixels.",
 			["zh-cn"] = "HUD图标的像素大小。",
+		},
+		tab_general = {
+			en = "General Settings",
+			["zh-cn"] = "常规设置",
 		},
 	}

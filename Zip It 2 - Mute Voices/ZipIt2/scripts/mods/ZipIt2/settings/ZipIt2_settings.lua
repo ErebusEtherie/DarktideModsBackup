@@ -12,6 +12,9 @@ mod._zipit2_settings = mod._zipit2_settings or {
     hub_radio_mode = "default",
     player_nonverbal_sounds_enabled = true,
     ping_sound_mode = "all",
+    companion_servo_skull_sound_mode = "none",
+    mute_companion_servo_skull_empowered_sounds = false,
+    mute_companion_servo_skull_charged_shooting_sounds = false,
     briefing_mute_mode = "rejoin_only",
     other_players_com_wheel_throttle_seconds = 0,
     selected_wheel_option = "thanks",
@@ -101,6 +104,22 @@ local function _sanitize_ping_sound_mode(value)
     end
 
     return "all"
+end
+
+local function _sanitize_companion_servo_skull_sound_mode(value)
+    if value == "none" or value == "empowered" or value == "charged_shooting" or value == "both" then
+        return value
+    end
+
+    return "none"
+end
+
+local function _cache_companion_servo_skull_sound_mode(value)
+    value = _sanitize_companion_servo_skull_sound_mode(value)
+
+    S.companion_servo_skull_sound_mode = value
+    S.mute_companion_servo_skull_empowered_sounds = value == "empowered" or value == "both"
+    S.mute_companion_servo_skull_charged_shooting_sounds = value == "charged_shooting" or value == "both"
 end
 
 local function _sanitize_other_players_com_wheel_throttle_seconds(value)
@@ -198,6 +217,7 @@ local function _apply_global_voice_preset(value)
     local player_value = enable_all and "all" or "muted"
     local player_nonverbal_sounds_value = enable_all
     local ping_sound_value = enable_all and "all" or "muted"
+    local companion_servo_skull_sound_value = enable_all and "none" or "both"
     local briefing_value = enable_all and "off" or "both"
     local major_briefing_value = enable_all
     local major_chatter_value = enable_all and "none" or "both"
@@ -215,6 +235,7 @@ local function _apply_global_voice_preset(value)
 
     mod:set("player_nonverbal_sounds_enabled", player_nonverbal_sounds_value, true)
     mod:set("ping_sound_mode", ping_sound_value, true)
+    mod:set("companion_servo_skull_sound_mode", companion_servo_skull_sound_value, true)
     mod:set("briefing_mute_mode", briefing_value, true)
     mod:set("mute_bots", mute_bots_value, true)
 
@@ -264,6 +285,7 @@ local function _cache_all_settings_once()
     S.hub_radio_mode = _sanitize_hub_radio_mode(mod:get("hub_radio_mode"))
     S.player_nonverbal_sounds_enabled = mod:get("player_nonverbal_sounds_enabled") ~= false
     S.ping_sound_mode = _sanitize_ping_sound_mode(mod:get("ping_sound_mode"))
+    _cache_companion_servo_skull_sound_mode(mod:get("companion_servo_skull_sound_mode"))
     S.other_players_com_wheel_throttle_seconds = _sanitize_other_players_com_wheel_throttle_seconds(
         mod:get("other_players_com_wheel_throttle_seconds")
     )
@@ -386,6 +408,16 @@ function mod.on_setting_changed(setting_id)
 
     if setting_id == "ping_sound_mode" then
         S.ping_sound_mode = _sanitize_ping_sound_mode(mod:get(setting_id))
+
+        if not mod._zipit2_applying_global_voice_preset then
+            _set_global_voice_preset("custom")
+        end
+
+        return
+    end
+
+    if setting_id == "companion_servo_skull_sound_mode" then
+        _cache_companion_servo_skull_sound_mode(mod:get(setting_id))
 
         if not mod._zipit2_applying_global_voice_preset then
             _set_global_voice_preset("custom")

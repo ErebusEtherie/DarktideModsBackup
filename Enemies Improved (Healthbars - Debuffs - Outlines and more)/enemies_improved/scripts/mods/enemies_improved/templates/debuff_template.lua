@@ -47,16 +47,16 @@ end
 
 local active_pool = {}
 
+if mod.DEBUG then
+	mod.mem_profile.track("debuff.active_pool", active_pool)
+end
+
 template.size = size
 template.name = "enemy_debuff"
 
---if fs.debuff_show_on_body then
---	template.unit_node = "root_point"
---	template.position_offset = { 0, 0, 0 }
---else
 template.unit_node = "root_point"
 template.position_offset = { 0, 0, fs.hb_y_offset }
---end
+
 
 template.max_visible_rows = max_visible_rows_setting
 
@@ -137,7 +137,7 @@ template.create_widget_defintion = function(template, scenegraph_id)
 			style_id = icon_id .. "_shadow",
 			value_id = icon_id,
 			visibility_function = function(content, style)
-				return content[icon_id] ~= nil and fs.debuff_icons
+				return content.dbf_built and content[icon_id] ~= nil and fs.debuff_icons
 			end,
 		}
 
@@ -178,7 +178,7 @@ template.create_widget_defintion = function(template, scenegraph_id)
 			style_id = icon_id,
 			value_id = icon_id,
 			visibility_function = function(content, style)
-				return content[icon_id] ~= nil and fs.debuff_icons
+				return content.dbf_built and content[icon_id] ~= nil and fs.debuff_icons
 			end,
 		}
 
@@ -210,7 +210,7 @@ template.create_widget_defintion = function(template, scenegraph_id)
 			value_id = stack_text_id,
 			visibility_function = function(content, style)
 				local v = content[stack_text_id]
-				return v ~= nil and v ~= ""
+				return content.dbf_built and v ~= nil and v ~= ""
 			end,
 		}
 
@@ -230,8 +230,8 @@ template.create_widget_defintion = function(template, scenegraph_id)
 				8,
 			},
 			font_type = mod.font_type,
-			font_size = 16 * fs.text_scale,
-			default_font_size = 16 * fs.text_scale,
+			font_size = fs.debuff_stacks_font_size * fs.text_scale,
+			default_font_size = fs.debuff_stacks_font_size * fs.text_scale,
 
 			text_color = fs.secondary_colour or { 220, 220, 220, 220 },
 			size = { bar_width * 0.5 * fs.text_scale, 20 },
@@ -256,7 +256,7 @@ template.create_widget_defintion = function(template, scenegraph_id)
 					return false
 				end
 				local v = content[name_text_id]
-				return v ~= nil and v ~= ""
+				return content.dbf_built and v ~= nil and v ~= ""
 			end,
 		}
 
@@ -277,8 +277,8 @@ template.create_widget_defintion = function(template, scenegraph_id)
 			},
 
 			font_type = mod.font_type,
-			font_size = 16 * fs.text_scale,
-			default_font_size = 16 * fs.text_scale,
+			font_size = fs.debuff_names_font_size * fs.text_scale,
+			default_font_size = fs.debuff_names_font_size * fs.text_scale,
 
 			text_color = fs.main_colour or { 220, 220, 220, 220 },
 			size = { (name_x * 2) * fs.text_scale, 22 },
@@ -305,13 +305,8 @@ end
 template.on_enter = function(widget, marker, template)
 	local fs = mod.frame_settings
 
-	--if fs.debuff_show_on_body then
-	--	template.position_offset = { 0, 0, 0 }
-	--else
 	template.position_offset = { 0, 0, fs.hb_y_offset }
-	--end
 
-	marker.draw = false
 
 	local content = widget.content
 	local style = widget.style
@@ -319,6 +314,8 @@ template.on_enter = function(widget, marker, template)
 	local unit_data_extension = ScriptUnit_extension(unit, "unit_data_system")
 	local breed = unit_data_extension and unit_data_extension:breed()
 	local buff_extension = ScriptUnit_extension(unit, "buff_system")
+	content.dbf_built = false
+	content.draw_dbf  = false
 
 	hb_size_width = fs.hb_size_width
 	hb_size_height = fs.hb_size_height
@@ -360,14 +357,21 @@ template.on_enter = function(widget, marker, template)
 	content.keywords = buff_extension and buff_extension:keywords()
 end
 
+-- debug function to monitor the actual amount of buffs applied to enemies (So it can be checked against my calculations)
+--[[mod:hook_safe(CLASS.Buff, "_calculate_stat_buffs", function(self, current_stat_buffs, stat_buffs, conditional)
+	if not stat_buffs then
+		return
+	end
+	dbg_a = current_stat_buffs
+end)]]
+
 -- Calculate the stack buff percentage (Clamped to nearest 10 if close enough due to rounding)
 local function calc_stack_buff_percentage(val, stacks, stat_name)
 	local stat_buff_type = stat_buff_types[stat_name]
 	local perc = 0
 
 	if stat_buff_type == "multiplicative_multiplier" then
-		val = val - 1
-		perc = (val * stacks) * 100
+		perc = (val ^ stacks - 1) * 100
 	elseif stat_buff_type == "additive_multiplier" then
 		perc = (val * stacks) * 100
 	end
@@ -378,6 +382,77 @@ local function calc_stack_buff_percentage(val, stacks, stat_name)
 	end
 
 	return math_floor(perc * 10 + 0.5) * 0.1
+end
+
+-- Pick a single representative percentage from a stat_buffs table.
+-- Only stats typed as additive/multiplicative multipliers produce a non-zero percentage
+-- (value/max_value stats are ignored), so plain stack debuffs fall back to stack counts.
+local function best_stat_buff_percentage(stat_buffs, stacks)
+	local best = nil
+	for stat_name, val in next, stat_buffs do
+		if stat_name and val then
+			local perc = calc_stack_buff_percentage(val, stacks, stat_name)
+			if perc ~= 0 then
+				if not best or math.abs(perc) > math.abs(best) then
+					best = perc
+				end
+			end
+		end
+	end
+	return best
+end
+
+-- Collect the raw stat contributions of one source entry.
+-- additive_multiplier accumulates (val * stacks), multiplicative_multiplier multiplies (val ^ stacks).
+local function collect_source_contributions(entry)
+	local contributions = {}
+	if entry.stat_buffs then
+		for stat_name, val in pairs(entry.stat_buffs) do
+			if stat_name and val then
+				local stat_buff_type = stat_buff_types[stat_name]
+				local effective_stacks = math.min(entry.stacks or 1, entry.max_stacks or math.huge)
+				if stat_buff_type == "multiplicative_multiplier" then
+					contributions[stat_name] = (contributions[stat_name] or 1) * (val ^ effective_stacks)
+				elseif stat_buff_type == "additive_multiplier" then
+					contributions[stat_name] = (contributions[stat_name] or 0) + val * effective_stacks
+				end
+			end
+		end
+	end
+	if entry.conditional_stat_buffs then
+		for stat_name, val in pairs(entry.conditional_stat_buffs) do
+			if stat_name and val then
+				local stat_buff_type = stat_buff_types[stat_name]
+				local effective_stacks = math.min(entry.stacks or 1, entry.max_stacks or math.huge)
+				if stat_buff_type == "multiplicative_multiplier" then
+					contributions[stat_name] = (contributions[stat_name] or 1) * (val ^ effective_stacks)
+				elseif stat_buff_type == "additive_multiplier" then
+					contributions[stat_name] = (contributions[stat_name] or 0) + val * effective_stacks
+				end
+			end
+		end
+	end
+	return contributions
+end
+
+-- Merge one source's stat contribution into an aggregate table.
+-- Parallel stats within a single source count once (representative with the largest magnitude,
+-- e.g. phosphor_burn's vs_melee/vs_ranged hit mass); the same stat across sources accumulates.
+local function merge_source_contributions(aggregate, entry)
+	local contributions = collect_source_contributions(entry)
+	local rep_stat, rep_value
+	for stat_name, value in pairs(contributions) do
+		if not rep_stat or math.abs(value) > math.abs(rep_value) then
+			rep_stat, rep_value = stat_name, value
+		end
+	end
+	if rep_stat and rep_value then
+		if stat_buff_types[rep_stat] == "multiplicative_multiplier" then
+			aggregate[rep_stat] = (aggregate[rep_stat] or 1) * rep_value
+		else
+			aggregate[rep_stat] = (aggregate[rep_stat] or 0) + rep_value
+		end
+	end
 end
 
 -----------------------------------------------------------------------
@@ -413,21 +488,19 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 	local need_sort = false
 	local fs = mod.frame_settings
 
+	content.draw_dbf  = true
+	content.dbf_built = false
+	
 	if not unit then
-		marker.draw = false
-		marker.alpha_multiplier = 0
-		widget.alpha_multiplier = 0
-		marker.remove = true
+		content.dbf_built  = false
 		return
 	end
 
 	local is_alive = mod.detect_alive(unit)
 
 	if not is_alive then
-		marker.draw = false
-		marker.alpha_multiplier = 0
-		widget.alpha_multiplier = 0
-		marker.remove = true
+		content.dead = true
+		content.dbf_built = false
 		return
 	end
 
@@ -436,9 +509,7 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 		fs.debuff_horde_enable == false
 		and (content.breed_tags and (content.breed_tags.horde or content.breed_tags.roamer))
 	then
-		marker.draw = false
-		marker.alpha_multiplier = 0
-		widget.alpha_multiplier = 0
+		content.dbf_built  = false
 		return
 	end
 
@@ -466,8 +537,26 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 	-------------------------------------------------------------------
 	local unit_data_extension = content.unit_data_extension
 	local breed = content.breed
-	local debuffs = content.debuffs
-	local keywords = content.keywords
+	local debuffs = content.debuffs or {}
+	local keywords = content.keywords or {}
+	--dbg_b =content
+	
+	local entry = mod.enemy_cache[unit]
+
+	-- Per-individual debuff toggle (explicit disable overrides type)
+	local breed_name = entry and entry.breed_name
+	local breed_type = entry and entry.breed_type
+
+	if breed_name and fs.breed_debuff_toggle and fs.breed_debuff_toggle[breed_name] and fs.breed_debuff_toggle[breed_name] == false then
+		content.dbf_built  = false
+		return
+	end
+
+	-- Per-type debuff toggle
+	if breed_type and fs.breed_type_debuff_enabled[breed_type] == false then
+		content.dbf_built  = false
+		return
+	end
 
 	-- Gather active debuffs that we care about
 	widget._active = widget._active or {}
@@ -479,8 +568,54 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 		active[i] = nil
 	end
 
-	
+	-- get from keywords
+	if keywords then
+		for keyword, _ in pairs(keywords) do
+			local name = keyword
+			
+			-- DOT STUFF
+			if mod.debuffs[name] and mod.debuffs[name].type == "dot" and fs.debuff_keyword_enable then
+				local stacks = 1
 
+				active_count = active_count + 1
+				local entry = active_pool[#active_pool]
+				if entry then
+					active_pool[#active_pool] = nil
+				else
+					entry = {}
+				end
+
+				entry.name = name
+				entry.stacks = stacks
+				entry.max_stacks = 1
+				entry.type = "dot"
+
+				active[active_count] = entry
+			end
+
+			-- UTILITY STUFF
+			if mod.debuffs[name] and mod.debuffs[name].type == "utility" and fs.debuff_keyword_enable then
+				local stacks = 1
+
+				active_count = active_count + 1
+				local entry = active_pool[#active_pool]
+				if entry then
+					active_pool[#active_pool] = nil
+				else
+					entry = {}
+				end
+
+				entry.name = name
+				entry.stacks = stacks
+				entry.max_stacks = 1
+				entry.type = "utility"
+
+				active[active_count] = entry
+			end
+		end
+	end
+
+	-- Get from debuffs
 	for i = 1, #debuffs do
 		local buff = debuffs[i]
 		local name = buff:template_name()
@@ -504,12 +639,15 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 				active[active_count] = entry
 			end
 
+			local real_max = buff.max_stacks and buff:max_stacks() or template.max_stacks
+
 			entry.name = name
 			entry.stacks = stacks
-			entry.max_stacks = template.max_stacks
+			entry.max_stacks = real_max
 			entry.stat_buffs = stat_buffs
 			entry.conditional_stat_buffs = conditional_stat_buffs
 			entry.type = "dot"
+
 		end
 
 		-- UTILITY STUFF
@@ -528,122 +666,81 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 				active[active_count] = entry
 			end
 
-			-- FIX THIS STAT'S MAX BUFFS BEING SET TO 8 WHEN ITS ACTUALLY 1... (pickaxe pull)
-			if name == "increase_damage_taken" then
-				template.max_stacks = 1
-			end
+			local real_max = buff.max_stacks and buff:max_stacks() or template.max_stacks
 
 			entry.name = name
 			entry.stacks = stacks
-			entry.max_stacks = template.max_stacks
+			entry.max_stacks = real_max
 			entry.stat_buffs = stat_buffs
 			entry.conditional_stat_buffs = conditional_stat_buffs
 			entry.type = "utility"
+
 		end
 	end
-
-	for i = active_count + 1, #active do
-		active_pool[#active_pool + 1] = active[i]
-		active[i] = nil
-	end
-
-	-- get from keywords
-	if keywords and #keywords > 0 then
-		for i = 1, #keywords do
-			local keyword = keywords[i]
-			local name = keyword
-
-			-- DOT STUFF
-			if mod.debuffs[name] and mod.debuffs[name].type == "dot" and fs.debuff_dot_enable then
-				local stacks = 1
-
-				active_count = active_count + 1
-				local entry = active_pool[#active_pool]
-				if entry then
-					active_pool[#active_pool] = nil
-				else
-					entry = {}
-				end
-
-				entry.name = name
-				entry.stacks = stacks
-				entry.type = "dot"
-
-				active[active_count] = entry
-			end
-
-			-- UTILITY STUFF
-			if mod.debuffs[name] and mod.debuffs[name].type == "utility" and fs.debuff_utility_enable then
-				local stacks = 1
-
-				active_count = active_count + 1
-				local entry = active_pool[#active_pool]
-				if entry then
-					active_pool[#active_pool] = nil
-				else
-					entry = {}
-				end
-
-				entry.name = name
-				entry.stacks = stacks
-				entry.type = "utility"
-
-				active[active_count] = entry
-			end
-		end
-	end
-
+	
 	-- CUSTOM STAGGER DEBUFF
 	local enemyentry = mod.enemy_cache[unit]
-
+	
 	if enemyentry and fs.debuff_stagger_enable then
 		if enemyentry.staggered then
-			active_count = active_count + 1
-			local entry = active[active_count]
-			if not entry then
-				entry = active_pool[#active_pool]
-				if entry then
-					active_pool[#active_pool] = nil
-				else
-					entry = {}
-				end
-				active[active_count] = entry
-			end
-
 			local now = mod.get_time()
-
-			local stagger_time_rounded = math.floor((enemyentry.stagger_timer - now) * 10) / 10
-			if stagger_time_rounded <= 0 then
-				stagger_time_rounded = 0.00
-			end
-
-			-- set the stack timer to the amount of time the enemy is staggered if available...
-			entry.name = "staggered"
-			entry.stacks = 1
-			entry.duration = stagger_time_rounded
-			entry.max_stacks = 1
-			entry.stat_buffs = {}
-			entry.conditional_stat_buffs = {}
-			entry.type = "utility"
 
 			if enemyentry.stagger_timer and now >= enemyentry.stagger_timer then
 				enemyentry.staggered = false
 				enemyentry.stagger_type = nil
 				enemyentry.stagger_duration = 0
 				enemyentry.stagger_timer = 0
+
+				if widget._active_lookup then
+					if widget._active_lookup["staggered"] then
+						widget._active_lookup["staggered"] = false
+					end
+				end
+
+				if widget._state then
+					if widget._state["staggered"] then
+						--widget._state["staggered"] = nil
+					end
+				end
+			else
+				active_count = active_count + 1
+				local entry = active[active_count]
+				if not entry then
+					entry = active_pool[#active_pool]
+					if entry then
+						active_pool[#active_pool] = nil
+					else
+						entry = {}
+					end
+					active[active_count] = entry
+				end
+
+
+				local stagger_time_rounded = math.floor((enemyentry.stagger_timer - now) * 10) / 10
+				if stagger_time_rounded <= 0 then
+					stagger_time_rounded = 0.00
+				end
+
+				-- set the stack timer to the amount of time the enemy is staggered if available...
+				entry.name = "staggered"
+				entry.stacks = 1
+				entry.duration = stagger_time_rounded
+				entry.max_stacks = 1
+				entry.stat_buffs = {}
+				entry.conditional_stat_buffs = {}
+				entry.type = "utility"
 			end
 		end
 	end
 
 	-- dont draw or do calculations if there are no debuffs applied..
 	if #active < 1 then
-		marker.draw = false
-		marker.alpha_multiplier = 0
-		widget.alpha_multiplier = 0
+		content.dbf_built  = false
 		return
 	end
 
 	for i = active_count + 1, #active do
+		active_pool[#active_pool + 1] = active[i]
 		active[i] = nil
 	end
 
@@ -672,7 +769,7 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 			local entry = active[i]
 			local name = entry.name
 			local max_stacks = entry.max_stacks
-			local icon = mod.debuffs and mod.debuff_styles[mod.debuffs[name].group].icon
+			local icon = mod.debuffs and mod.debuffs[name] and mod.debuffs[name].group and mod.debuff_styles[mod.debuffs[name].group] and mod.debuff_styles[mod.debuffs[name].group].icon or nil
 			local debuff_type = entry.type
 
 			icon = icon or name
@@ -695,8 +792,24 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 				end
 
 				existing.duration = duration
-				existing.stat_buffs = existing.stat_buffs or entry.stat_buffs
-				existing.conditional_stat_buffs = existing.conditional_stat_buffs or entry.conditional_stat_buffs
+
+				-- merge stat_buffs from all sources (do not overwrite)
+				if entry.stat_buffs then
+					existing.stat_buffs = existing.stat_buffs or {}
+					for stat_name, val in pairs(entry.stat_buffs) do
+						existing.stat_buffs[stat_name] = val
+					end
+				end
+				if entry.conditional_stat_buffs then
+					existing.conditional_stat_buffs = existing.conditional_stat_buffs or {}
+					for stat_name, val in pairs(entry.conditional_stat_buffs) do
+						existing.conditional_stat_buffs[stat_name] = val
+					end
+				end
+
+				-- accumulate actual stat contributions (capped per source) for correct combined percentage
+				existing._stat_contributions = existing._stat_contributions or {}
+				merge_source_contributions(existing._stat_contributions, entry)
 			else
 				combined_count = combined_count + 1
 
@@ -705,11 +818,14 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 					stacks = entry.stacks,
 					max_stacks = entry.max_stacks,
 					duration = entry.duration,
-					stat_buffs = entry.stat_buffs,
-					conditional_stat_buffs = entry.conditional_stat_buffs,
+					stat_buffs = entry.stat_buffs and table.clone(entry.stat_buffs) or nil,
+					conditional_stat_buffs = entry.conditional_stat_buffs and table.clone(entry.conditional_stat_buffs) or nil,
 					combined = true,
 					type = debuff_type,
 				}
+
+				new_entry._stat_contributions = {}
+				merge_source_contributions(new_entry._stat_contributions, entry)
 
 				combined[combined_count] = new_entry
 
@@ -761,6 +877,45 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 	end
 
 	-------------------------------------------------------------------
+	-- Pre-compute body center screen offset for debuff_show_on_body
+	-- Uses Camera.world_to_screen to get the true perspective-projected
+	-- delta between head and body center, then pre-divides by marker.scale
+	-- to compensate for the downstream scale multiplication on offsets.
+	-------------------------------------------------------------------
+	local show_on_body = fs.debuff_show_on_body or 
+	(breed_name and fs.breed_debuff_show_on_body_override and fs.breed_debuff_show_on_body_override[breed_name]) or 
+	(breed_type and fs.breed_type_debuff_show_on_body_override and fs.breed_type_debuff_show_on_body_override[breed_type]) or
+	false
+
+	local debuff_y_offset =  fs.debuff_y_offset
+
+	local _body_screen_offset_y = nil
+	if show_on_body then
+		local camera = parent._parent and parent._parent:player_camera()
+		local breed = content.breed
+		local head_pos = marker.world_position and marker.world_position:unbox()
+		if camera and breed and breed.base_height and head_pos and unit then
+			local root_pos = Unit.world_position(unit, 1)
+			if root_pos then
+				local body_center = Vector3(root_pos.x, root_pos.y, root_pos.z + (breed.base_height * 0.8))
+				local head_screen = Camera.world_to_screen(camera, head_pos)
+				local body_screen = Camera.world_to_screen(camera, body_center)
+				if head_screen and body_screen and marker.scale and marker.scale > 0.001 then
+					_body_screen_offset_y = (body_screen.y - head_screen.y) / marker.scale
+				end
+			end
+		end
+
+		-- smoothing
+		if _body_screen_offset_y then
+			if widget._smoothed_body_offset_y then
+				_body_screen_offset_y = widget._smoothed_body_offset_y + (_body_screen_offset_y - widget._smoothed_body_offset_y) * math.min(dt * 100, 1)
+			end
+			widget._smoothed_body_offset_y = _body_screen_offset_y
+		end
+	end
+
+	-------------------------------------------------------------------
 	-- UPDATE STATE (KEYED BY DEBUFF NAME)
 	-------------------------------------------------------------------
 	for index = 1, active_count do
@@ -768,64 +923,64 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 		local name = debuff.name
 		local stacks = debuff.stacks
 		local duration = debuff.duration
-		local y_base = 0
+		local y_base = 1
 
-		if fs.debuff_show_on_body then
-			y_base = 0
-		end
+		if show_on_body then
+			-- Pin debuffs to body center using camera-projected screen delta
+			if _body_screen_offset_y then
+				y_base = _body_screen_offset_y
+			else
+				-- Fallback: approximate body center offset
+				y_base = -(content.breed and content.breed.base_height or 1) * 20 * fs.text_scale
+			end
 
-		if split_debuff_types then
-			if debuff.type == "dot" then
-				if fs.debuff_show_on_body then
-					y_base = (-hb_size_height - 8 * fs.debuff_gap_padding_scale)
-						+ (calculate_icon_size()) * fs.text_scale
-				elseif fs.healthbar_enable and fs.hb_text_top_left_01 == "nothing" then
-					y_base = (-hb_size_height - 16) * fs.text_scale
-					--y_base = y_base * fs.debuff_y_offset
-				elseif fs.markers_enable and not fs.healthbar_enable then
-					y_base = (-hb_size_height - (15 * fs.marker_size)) * fs.text_scale
-					--y_base = y_base * fs.debuff_y_offset
-				else
-					y_base = (-hb_size_height - 34) * fs.text_scale
-					--y_base = y_base * fs.debuff_y_offset
-				end
-			elseif debuff.type == "utility" then
-				if fs.debuff_show_on_body then
-					y_base = (hb_size_height + 8 * fs.debuff_gap_padding_scale)
-						+ (calculate_icon_size()) * fs.text_scale
-				elseif
-					fs.healthbar_enable
-					and fs.hb_text_bottom_left_02 == "nothing"
-					and fs.hb_text_bottom_left_01 == "nothing"
-				then
-					y_base = (hb_size_height + 16) * fs.text_scale
-					--y_base = y_base * fs.debuff_y_offset
-				elseif
-					fs.healthbar_enable
-					and fs.hb_text_bottom_left_02 == "nothing"
-					and fs.hb_text_bottom_left_01 ~= "nothing"
-				then
-					y_base = (hb_size_height + 40) * fs.text_scale
-					--y_base = y_base * fs.debuff_y_offset
-				elseif fs.markers_enable and not fs.healthbar_enable then
-					y_base = (hb_size_height + (15 * fs.marker_size)) * fs.text_scale
-					--y_base = y_base * fs.debuff_y_offset
-				else
-					y_base = (hb_size_height + 60) * fs.text_scale
-					--y_base = y_base * fs.debuff_y_offset
+			if split_debuff_types then
+				if debuff.type == "dot" then
+					y_base = y_base
+				elseif debuff.type == "utility" then
+					if fs.debuff_horizontal then
+						y_base = y_base + (calculate_icon_size() * fs.text_scale)
+					else
+						y_base = y_base + (calculate_icon_size() * 2 * fs.text_scale)
+					end
 				end
 			end
 		else
-			if (fs.healthbar_enable and fs.hb_text_top_left_01 == "nothing") or fs.debuff_show_on_body then
-				y_base = (-hb_size_height - 16) * fs.text_scale
-				--y_base = y_base * fs.debuff_y_offset
-			elseif fs.markers_enable and not fs.healthbar_enable then
-				y_base = (-hb_size_height - (15 * fs.marker_size)) * fs.text_scale
-				--y_base = y_base * fs.debuff_y_offset
+			if split_debuff_types then
+				if debuff.type == "dot" then
+					if fs.healthbar_enable and fs.hb_text_top_left_01 == "nothing" then
+						y_base = (-hb_size_height - 16) * fs.text_scale
+					elseif fs.healthbar_enable then
+						y_base = (-hb_size_height - 40) * fs.text_scale
+					else
+						y_base = y_base * fs.text_scale
+					end
+				elseif debuff.type == "utility" then
+					if
+						fs.healthbar_enable
+						and fs.hb_text_bottom_left_02 == "nothing"
+						and fs.hb_text_bottom_left_01 == "nothing"
+					then
+						y_base = (hb_size_height + 16) * fs.text_scale
+					elseif
+						fs.healthbar_enable
+						and fs.hb_text_bottom_left_02 == "nothing"
+						and fs.hb_text_bottom_left_01 ~= "nothing"
+					then
+						y_base = (hb_size_height + 40) * fs.text_scale
+					else
+						y_base = (calculate_icon_size() * 2) * fs.text_scale
+					end
+				end
 			else
-				y_base = (-hb_size_height - 34) * fs.text_scale
-				--y_base = y_base * fs.debuff_y_offset
+				if (fs.healthbar_enable and fs.hb_text_top_left_01 == "nothing") then
+					y_base = (-hb_size_height - 16) * fs.text_scale
+				else
+					y_base = (-hb_size_height - 34) * fs.text_scale
+				end
 			end
+
+			y_base = y_base * debuff_y_offset
 		end
 
 		local state = state_table[name]
@@ -891,7 +1046,7 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 	end
 
 	-- Fade out removed debuffs
-	for name, state in next, state_table do
+	for name, state in pairs(state_table) do
 		if not active_lookup[name] then
 			local alpha = state.alpha - dt * 255 * fade_speed
 			if alpha <= 0 then
@@ -899,24 +1054,6 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 			else
 				state.alpha = alpha
 			end
-		end
-	end
-
-	-------------------------------------------------------------------
-	-- Height / healthbar position logic
-	-------------------------------------------------------------------
-	if content.breed and is_alive then
-		local root_position = Unit.world_position(unit, 1)
-		if not fs.debuff_show_on_body then
-			root_position.z = root_position.z + content.breed.base_height + 0.5
-		else
-			root_position.z = root_position.z + (content.breed.base_height * 0.5 * fs.debuff_y_offset)
-		end
-
-		if not marker.world_position then
-			marker.world_position = Vector3Box(root_position)
-		else
-			marker.world_position:store(root_position)
 		end
 	end
 
@@ -975,9 +1112,13 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 					if debuff.type == "dot" then
 						base_y_fixed = state.y - (calculate_icon_size() * fs.text_scale)
 					elseif debuff.type == "utility" then
-						base_y_fixed = state.y + (calculate_icon_size() * 1.1 * fs.text_scale)
-						if fs.hb_damage_number_type == "readable" and mod.num_damage_numbers and mod.num_damage_numbers > 0 then
-							base_y_fixed = base_y_fixed + 16 * fs.debuff_y_offset
+						if show_on_body then
+							base_y_fixed = state.y + 1.1 * fs.text_scale
+						else
+							base_y_fixed = state.y + (calculate_icon_size() * 1.1 * fs.text_scale)
+							if fs.hb_damage_number_type == "readable" and mod.num_damage_numbers and mod.num_damage_numbers > 0 then
+								base_y_fixed = base_y_fixed + 16 * debuff_y_offset
+							end
 						end
 					end
 				end				
@@ -985,38 +1126,38 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 				-- ICON SHADOW
 				local o = icon_shadow_style.offset
 				o[1] = icon_x + col_offset_x + base_offset + 1
-				o[2] = base_y_fixed * fs.debuff_y_offset + 1
+				o[2] = base_y_fixed * debuff_y_offset + 1
 
 				local o = icon_shadow_style.default_offset
 				o[1] = icon_x + col_offset_x + base_offset + 1
-				o[2] = base_y_fixed * fs.debuff_y_offset + 1
+				o[2] = base_y_fixed * debuff_y_offset + 1
 
 				-- ICON
 				local o = icon_style.offset
 				o[1] = icon_x + col_offset_x + base_offset
-				o[2] = base_y_fixed * fs.debuff_y_offset
+				o[2] = base_y_fixed * debuff_y_offset
 
 				local o = icon_style.default_offset
 				o[1] = icon_x + col_offset_x + base_offset
-				o[2] = base_y_fixed * fs.debuff_y_offset
+				o[2] = base_y_fixed * debuff_y_offset
 
 				-- STACK
 				if fs.debuff_stack_on_icon then
 					local o = stack_text_style.offset
 					o[1] = stack_x + col_offset_x + base_offset - (calculate_icon_size()) 
-					o[2] = base_y_fixed * fs.debuff_y_offset + (calculate_icon_size() / 1.5) 
+					o[2] = base_y_fixed * debuff_y_offset + (calculate_icon_size() / 1.5) 
 
 					local o = stack_text_style.default_offset
 					o[1] = stack_x + col_offset_x + base_offset - (calculate_icon_size()) 
-					o[2] = base_y_fixed	* fs.debuff_y_offset + (calculate_icon_size() / 1.5) 
+					o[2] = base_y_fixed	* debuff_y_offset + (calculate_icon_size() / 1.5) 
 				else
 					local o = stack_text_style.offset
 					o[1] = stack_x + col_offset_x + base_offset
-					o[2] = base_y_fixed * fs.debuff_y_offset
+					o[2] = base_y_fixed * debuff_y_offset
 
 					local o = stack_text_style.default_offset
 					o[1] = stack_x + col_offset_x + base_offset
-					o[2] = base_y_fixed * fs.debuff_y_offset
+					o[2] = base_y_fixed * debuff_y_offset
 				end
 
 				-- FORCE NO NAME
@@ -1067,7 +1208,7 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 						local row_offset_y = state.y + ((row_i - 1) * row_step)
 
 						if fs.hb_damage_number_type == "readable" and mod.num_damage_numbers and mod.num_damage_numbers > 0 then
-							row_offset_y = state.y + 16 * fs.debuff_y_offset + ((row_i - 1) * row_step)
+							row_offset_y = state.y + 16 * debuff_y_offset + ((row_i - 1) * row_step)
 						end
 
 						local o = icon_shadow_style.offset
@@ -1097,6 +1238,7 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 							o[1] = stack_x + base_offset
 							o[2] = row_offset_y
 						end
+
 						local o = name_text_style.offset
 						o[1] = name_x + base_offset
 						o[2] = row_offset_y
@@ -1152,26 +1294,37 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 			end
 
 			if state then
-				content[icon_id] = mod.debuffs and mod.debuff_styles[mod.debuffs[name].group].icon
+				content[icon_id] = mod.debuffs and mod.debuffs[name] and mod.debuffs[name].group and mod.debuff_styles[mod.debuffs[name].group] and mod.debuff_styles[mod.debuffs[name].group].icon
 					or "content/ui/materials/icons/generic/danger"
 
 				-- Add percentage text
 				local stack_buff_percentage = ""
 
-				if stat_buffs then
-					for stat_name, val in next, stat_buffs do
-						if stat_name and val then
-							local loc = mod:localize(stat_name)
-							stack_buff_percentage = calc_stack_buff_percentage(val, stacks, stat_name)
+				if debuff.combined and debuff._stat_contributions then
+					local total_perc = 0
+					for stat_name, contrib in pairs(debuff._stat_contributions) do
+						if stat_name and contrib then
+							local stat_buff_type = stat_buff_types[stat_name]
+							local raw = 0
+							if stat_buff_type == "multiplicative_multiplier" then
+								raw = (contrib - 1) * 100
+							elseif stat_buff_type == "additive_multiplier" then
+								raw = contrib * 100
+							end
+							local nearest = math_floor((raw + 5) / 10) * 10
+							if math.abs(raw - nearest) <= 1 then
+								raw = nearest
+							end
+							total_perc = total_perc + math_floor(raw * 10 + 0.5) * 0.1
 						end
 					end
+					if total_perc ~= 0 then
+						stack_buff_percentage = total_perc
+					end
+				elseif stat_buffs then
+					stack_buff_percentage = best_stat_buff_percentage(stat_buffs, stacks) or ""
 				elseif conditional_stat_buffs then
-					for stat_name, val in next, conditional_stat_buffs do
-						if stat_name and val then
-							local loc = mod:localize(stat_name)
-							stack_buff_percentage = calc_stack_buff_percentage(val, stacks, stat_name)
-						end
-					end
+					stack_buff_percentage = best_stat_buff_percentage(conditional_stat_buffs, stacks) or ""
 				end
 
 				-- Update stack text
@@ -1201,13 +1354,13 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 						local loc = ""
 
 						if fs.debuffs_abrv then
-							loc = mod:localize(name .. "_abrv") or ""
+							loc = mod.custom_localize(name .. "_abrv")
 						else
-							loc = mod:localize(name) or ""
+							loc = mod.custom_localize(name)
 						end
 
 						if loc == "" or loc == nil or string.starts(tostring(loc), "<") then
-							loc = mod:localize(name)
+							loc = mod.custom_localize(name)
 						end
 
 						if debuff.combined then
@@ -1224,7 +1377,7 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 				end
 
 				-- colour mutation
-				local colour = (mod.debuffs and mod.debuff_styles[mod.debuffs[name].group].colour)
+				local colour = (mod.debuffs and mod.debuffs[name] and mod.debuffs[name].group and mod.debuff_styles[mod.debuffs[name].group] and mod.debuff_styles[mod.debuffs[name].group].colour)
 					or { 255, 255, 255, 255 }
 
 				icon_style.color[2] = colour[2] or 255
@@ -1232,9 +1385,9 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 				icon_style.color[4] = colour[4] or 255
 
 				-- Staggered colour should follow the stagger colour specifically
-				if fs.debuff_stagger_enable and mod.debuffs[name].group == "stagger" then
-					icon_style.color[2] = fs.outline_stagger_colour[2] or 255
-					icon_style.color[3] = fs.outline_stagger_colour[3] or 255
+				if fs.debuff_stagger_enable and mod.debuffs[name] and mod.debuffs[name].group == "stagger" then
+					icon_style.color[2] = fs.outline_stagger_colour[2] or 100
+					icon_style.color[3] = fs.outline_stagger_colour[3] or 200
 					icon_style.color[4] = fs.outline_stagger_colour[4] or 255
 				end
 
@@ -1252,27 +1405,20 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 					stack_text_style.text_color[4] = fs.secondary_colour[4] or 255
 				end
 
-				content.line_of_sight_progress = line_of_sight_progress
-				widget.alpha_multiplier = line_of_sight_progress or 1
-				marker.alpha_multiplier = line_of_sight_progress or 1
-
 				if #widget._active > 0 then
-					marker.draw = true
+					content.draw_dbf  = true
 				else
-					marker.draw = false
-					marker.alpha_multiplier = 0
-					widget.alpha_multiplier = 0
+					content.draw_dbf  = false
 				end
 
 				if not marker.is_inside_frustum then
-					marker.draw = false
-					marker.alpha_multiplier = 0
-					widget.alpha_multiplier = 0
+					content.draw_dbf  = false
 				end
 
 				-- apply scaling
-				if marker.draw then
+				if content.draw_dbf  then
 					local scale = marker.scale
+					content.dbf_built = true
 
 					icon_style.size[1] = icon_style.default_size[1] * scale
 					icon_style.size[2] = icon_style.default_size[2] * scale
@@ -1310,6 +1456,8 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 
 					name_text_style.offset[1] = math.floor(name_text_style.default_offset[1] * scale)
 					name_text_style.offset[2] = math.floor(name_text_style.default_offset[2] * scale)
+				else
+					content.dbf_built = false
 				end
 			end
 		else

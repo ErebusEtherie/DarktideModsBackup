@@ -48,6 +48,8 @@ return function(env)
         luggable_data_reliquary = { 255, 192, 160, 0 },
         pickup_large_ammunition_crate = { 255, 240, 210, 80 },
         luggable_promethium_barrel = { 255, 255, 110, 0 },
+        hazard_explosive_barrel = { 255, 205, 156, 77 },
+        hazard_fire_barrel = { 255, 255, 110, 0 },
         pocketable_anti_rad_stimm = DEFAULT_COLOR_ARRAY_WHITE,
         pocketable_airstrike = { 255, 95, 125, 70 },
         pocketable_artillery_strike = { 255, 95, 125, 70 },
@@ -67,6 +69,7 @@ return function(env)
         dark_rites_servo_skull = { 255, 150, 190, 60 },
         pocketable_corrupted_auspex_scanner = { 255, 255, 120, 0 },
         pickup_saints = { 255, 192, 160, 0 },
+        pickup_leftover = { 255, 150, 190, 60 },
         pickup_stolen_rations = { 255, 150, 190, 60 },
     }
 
@@ -83,6 +86,7 @@ return function(env)
     mod._dark_rites_marker_scan_cache_valid = false
     mod._dark_rites_marker_scan_allowed = true
     mod._dark_rites_marker_cached_circumstance_name = nil
+    mod._dark_rites_marker_cached_mission_name = nil
     mod._screen_highlight_targets = {}
     mod._unclustered_radar_targets = {}
     mod._highlight_source_radar_targets = {}
@@ -131,6 +135,8 @@ return function(env)
         enemy_captain = "show_captains",
         enemy_karnak_twin = "show_karnak_twins",
         player_teammate = "show_players",
+        player_companion_dog = "show_cyber_mastiff",
+        player_companion_servo_skull = "show_servo_skulls",
         location_attention = "show_player_tags",
         location_ping = "show_player_tags",
         location_threat = "show_player_tags",
@@ -148,11 +154,15 @@ return function(env)
         luggable_data_reliquary = "show_data_reliquaries",
         pickup_large_ammunition_crate = "show_large_ammunition_crate",
         luggable_promethium_barrel = "show_promethium_barrel",
+        hazard_explosive_barrel = "show_explosive_barrels",
+        hazard_fire_barrel = "show_fire_barrels",
         pocketable_anti_rad_stimm = "show_anti_rad_stimm",
         pocketable_ammo_crate = "show_pocketable_ammo_crate",
         pocketable_breach_charge = "show_pocketable_breach_charge",
         pocketable_corrupted_auspex_scanner = "show_pocketable_corrupted_auspex_scanner",
         pocketable_expedition_loot_crate = "show_pocketable_expedition_loot_crate",
+        pickup_saints = "show_saints",
+        pickup_leftover = "show_leftover",
         pocketable_airstrike = "show_pocketable_airstrike",
         pocketable_artillery_strike = "show_pocketable_artillery_strike",
         pocketable_big_grenade = "show_pocketable_big_grenade",
@@ -199,6 +209,16 @@ return function(env)
         show_expedition_loot_converter = "icon_only",
     }
 
+    local ICON_DISTANCE_MARKER_DISPLAY_MODE_KIND_TO_SETTING = {
+        hazard_explosive_barrel = "show_explosive_barrels",
+        hazard_fire_barrel = "show_fire_barrels",
+    }
+
+    local ICON_DISTANCE_MARKER_DISPLAY_MODE_DEFAULT_BY_SETTING = {
+        show_explosive_barrels = "icon_only",
+        show_fire_barrels = "icon_only",
+    }
+
     EXPEDITION_OBJECTIVE_ICON_DEFAULTS = {
         expedition_loot_converter = "content/ui/materials/hud/interactions/icons/expeditions",
         expedition_objective_transition = "content/ui/materials/backgrounds/scanner/scanner_map_exit",
@@ -222,6 +242,15 @@ return function(env)
         pocketable_landmine_fire = "show_pocketable_landmine_fire",
         pocketable_landmine_shock = "show_pocketable_landmine_shock",
         pocketable_void_shield = "show_pocketable_void_shield",
+        pickup_tainted_skull = "show_tainted_skull",
+        pickup_saints = "show_saints",
+        pickup_leftover = "show_leftover",
+    }
+
+    local ARTWORK_MODE_DEFAULT_BY_SETTING = {
+        show_tainted_skull = "artwork",
+        show_saints = "artwork",
+        show_leftover = "artwork",
     }
 
     local MARKER_SCALE_GROUP_BY_KIND = {
@@ -276,9 +305,13 @@ return function(env)
         medicae_station = "environment_group",
         luggable_socket = "environment_group",
         pickup_heretic_idol = "environment_group",
+        hazard_explosive_barrel = "environment_group",
+        hazard_fire_barrel = "environment_group",
         pickup_ammo_cache_deployable = "deployables_group",
         medical_crate_deployable = "deployables_group",
         player_teammate = "players_group",
+        player_companion_dog = "player_companions_group",
+        player_companion_servo_skull = "player_companions_group",
         location_attention = "players_group",
         location_ping = "players_group",
         location_threat = "players_group",
@@ -287,6 +320,7 @@ return function(env)
         dark_rites_servo_skull = "event_group",
         pocketable_corrupted_auspex_scanner = "event_group",
         pickup_saints = "event_group",
+        pickup_leftover = "event_group",
         pickup_stolen_rations = "event_group",
         pickup_unknown = "debug_group",
     }
@@ -303,6 +337,7 @@ return function(env)
         deployables_group = "deployables_icon_scale",
         enemies_group = "enemies_icon_scale",
         players_group = "players_icon_scale",
+        player_companions_group = "player_companions_icon_scale",
         event_group = "event_icon_scale",
         debug_group = "debug_icon_scale",
     }
@@ -374,6 +409,7 @@ return function(env)
     }
     local PLAYER_SMART_TAG_SELECTION_PRIORITY = 300
     local PLAYER_SMART_TAG_RENDER_LAYER = 3
+    local PLAYER_TEAMMATE_RENDER_LAYER = 1
     local EVENT_MARKER_SELECTION_PRIORITY = 600
     local EVENT_MARKER_RENDER_LAYER = 7
     local EXPEDITION_PLAYER_DROP_SELECTION_PRIORITY = 650
@@ -637,8 +673,8 @@ return function(env)
             "show_enemy_cultist_assault",
             {
                 icon_size = 7,
-                background_size = 24,
-                bracket_size = 11,
+                background_size = 28,
+                bracket_size = 12,
             }
         ),
         cultist_shocktrooper = _enemy_radar_def(
@@ -661,8 +697,8 @@ return function(env)
             "show_enemy_renegade_assault",
             {
                 icon_size = 7,
-                background_size = 24,
-                bracket_size = 11,
+                background_size = 28,
+                bracket_size = 12,
             }
         ),
         renegade_rifleman = _enemy_radar_def(
@@ -673,8 +709,8 @@ return function(env)
             "show_enemy_renegade_rifleman",
             {
                 icon_size = 7,
-                background_size = 24,
-                bracket_size = 11,
+                background_size = 28,
+                bracket_size = 12,
             }
         ),
         renegade_shocktrooper = _enemy_radar_def(
@@ -884,7 +920,7 @@ return function(env)
             {
                 icon_size = 8,
                 background_size = 16,
-                bracket_size = 9,
+                bracket_size = 8,
             }
         ),
         renegade_melee = _enemy_radar_def(
@@ -896,7 +932,31 @@ return function(env)
             {
                 icon_size = 8,
                 background_size = 16,
-                bracket_size = 9,
+                bracket_size = 8,
+            }
+        ),
+        cultist_vanguard = _enemy_radar_def(
+            "common",
+            "content/ui/materials/icons/presets/preset_04",
+            ENEMY_RADAR_DEFAULT_DREG_COLOR,
+            ENEMY_RADAR_DEFAULT_COLOR,
+            "show_enemy_cultist_vanguard",
+            {
+                icon_size = 10,
+                background_size = 32,
+                bracket_size = 14,
+            }
+        ),
+        renegade_vanguard = _enemy_radar_def(
+            "common",
+            "content/ui/materials/icons/presets/preset_04",
+            ENEMY_RADAR_DEFAULT_SCAB_COLOR,
+            ENEMY_RADAR_DEFAULT_COLOR,
+            "show_enemy_renegade_vanguard",
+            {
+                icon_size = 10,
+                background_size = 32,
+                bracket_size = 14,
             }
         ),
         chaos_armored_infected = _enemy_radar_def(
@@ -948,6 +1008,9 @@ return function(env)
         "show_pocketable_landmine_fire",
         "show_pocketable_landmine_shock",
         "show_pocketable_void_shield",
+        "show_tainted_skull",
+        "show_saints",
+        "show_leftover",
     }
 
     EXPEDITION_MARKER_DISPLAY_MODE_SETTING_IDS = {
@@ -985,6 +1048,7 @@ return function(env)
         expeditions_specific_group = "nearby_highlight_distance_text_expeditions_specific",
         martyr_s_skull_group = "nearby_highlight_distance_text_martyr_s_skull",
         environment_group = "nearby_highlight_distance_text_environment",
+        deployables_group = "nearby_highlight_distance_text_deployables",
         event_group = "nearby_highlight_distance_text_event",
     }
 
@@ -1034,6 +1098,9 @@ return function(env)
         medical_crate_deployable = "medical_crate_deployable",
         skulls_01_pickup = "pickup_tainted_skull",
         communications_hack_device = "pocketable_corrupted_auspex_scanner",
+        live_event_leftover_01_pickup_small = "pickup_leftover",
+        live_event_leftover_01_pickup_medium = "pickup_leftover",
+        live_event_leftover_01_pickup_large = "pickup_leftover",
         stolen_rations_01_pickup_small = "pickup_stolen_rations",
         stolen_rations_01_pickup_medium = "pickup_stolen_rations",
     }
@@ -1052,7 +1119,11 @@ return function(env)
         consumable = true,
     }
 
-    local function _normalize_marker_display_mode(value)
+    local function _normalize_marker_display_mode(value, default_value)
+        if value == nil then
+            return default_value or "artwork"
+        end
+
         if value == false or value == "off" then
             return "off"
         end
@@ -1061,12 +1132,20 @@ return function(env)
             return "icon"
         end
 
+        if value == true then
+            return default_value or "artwork"
+        end
+
         return "artwork"
     end
 
     local function _normalize_expedition_marker_display_mode(value, default_value)
         if value == "icon_only" or value == "icon_distance" or value == "off" then
             return value
+        end
+
+        if value == "icon" then
+            return "icon_only"
         end
 
         if value == false then
@@ -1238,6 +1317,10 @@ return function(env)
             return EVENT_MARKER_RENDER_LAYER
         end
 
+        if kind == "player_teammate" then
+            return PLAYER_TEAMMATE_RENDER_LAYER
+        end
+
         if kind == "material_expeditions_loot_player_drop" then
             return EXPEDITION_PLAYER_DROP_RENDER_LAYER
         end
@@ -1268,7 +1351,19 @@ return function(env)
             return nil
         end
 
-        return _normalize_marker_display_mode(mod:get(setting_id))
+        return _normalize_marker_display_mode(mod:get(setting_id), ARTWORK_MODE_DEFAULT_BY_SETTING[setting_id])
+    end
+
+    function mod:get_icon_distance_marker_display_mode(kind)
+        local setting_id = ICON_DISTANCE_MARKER_DISPLAY_MODE_KIND_TO_SETTING[kind]
+        if not setting_id then
+            return nil
+        end
+
+        return _normalize_expedition_marker_display_mode(
+            mod:get(setting_id),
+            ICON_DISTANCE_MARKER_DISPLAY_MODE_DEFAULT_BY_SETTING[setting_id]
+        )
     end
 
     function mod:get_expedition_marker_display_mode(kind)
@@ -1292,7 +1387,7 @@ return function(env)
             local value = mod_get(mod, setting_id)
 
             if value == true then
-                mod_set(mod, setting_id, "artwork")
+                mod_set(mod, setting_id, ARTWORK_MODE_DEFAULT_BY_SETTING[setting_id] or "artwork")
             elseif value == false then
                 mod_set(mod, setting_id, "off")
             end
@@ -1324,6 +1419,8 @@ return function(env)
                 setting_ids = {
                     "show_enemy_cultist_melee",
                     "show_enemy_renegade_melee",
+                    "show_enemy_cultist_vanguard",
+                    "show_enemy_renegade_vanguard",
                 },
             },
             {
@@ -1419,13 +1516,15 @@ return function(env)
         load_package("packages/ui/views/player_character_options_view/player_character_options_view")
         load_package("packages/ui/views/talent_builder_view/talent_builder_view")
         load_package("packages/ui/views/live_events_view/live_events_view")
+        load_package("packages/content/live_events/saints/live_event_saints_ui_assets")
+        load_package("packages/content/live_events/skulls/live_event_skulls_ui_assets")
         load_package("packages/ui/views/group_finder_view/group_finder_view")
         load_package("packages/ui/views/mission_board_view/mission_board_view")
         load_package("packages/ui/views/scanner_display_view/scanner_display_view")
         load_package("packages/ui/material_sets/circumstances")
         load_package("packages/ui/views/crafting_view/crafting_view")
         load_package("packages/ui/views/penance_overview_view/penance_overview_view")
-        load_package("packages/ui/views/expedition_play_view/expedition_play_view")
+        load_package("packages/ui/views/expedition_view/expedition_view")
 
         if debug_mode then
             mod:info("Packages loaded")

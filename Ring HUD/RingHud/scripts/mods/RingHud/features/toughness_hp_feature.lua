@@ -14,15 +14,11 @@ local THV                = mod.toughness_hp_visibility or
 local ToughnessHpFeature = {}
 
 local EPS                = 0.001
+local TOUGH_ARC_MIN      = -0.150
+local TOUGH_ARC_MAX      = 0.160
+local TOUGH_TOTAL        = TOUGH_ARC_MAX - TOUGH_ARC_MIN
 
--- =========================
--- Toughness ring envelope
--- =========================
-local TOUGH_ARC_MIN      = -0.19
-local TOUGH_ARC_MAX      = 0.19
-local TOUGH_TOTAL        = (TOUGH_ARC_MAX - TOUGH_ARC_MIN)
-
-local _shared_ctx_pool   = {
+local _shared_ctx_pool = {
     hp_fraction         = 0,
     corruption_fraction = 0,
     toughness_fraction  = 0,
@@ -121,6 +117,61 @@ local function _hide_all_segments(cor_s, hp_s, dmg_s, cor_e, hp_e, dmg_e, cor_w,
 end
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- Layout Application
+-- ─────────────────────────────────────────────────────────────────────────────
+function ToughnessHpFeature.apply_layout(widgets, ctx)
+    if not widgets then return end
+    local apply_shake_offset = U.apply_shake_to_style_offset
+
+    -- Corruption
+    local tcor = widgets.toughness_bar_corruption
+    if tcor and tcor.style and tcor.style.corruption_segment then
+        local changed = false
+        if apply_shake_offset(tcor.style.corruption_segment, 0, 0, 0, ctx.apply_shake, ctx.dx, ctx.dy, 0, ctx.bias_1_5) then
+            changed = true
+        end
+        if tcor.style.corruption_segment_edge and apply_shake_offset(tcor.style.corruption_segment_edge, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, 0, ctx.bias_1_5) then
+            changed = true
+        end
+        if changed then tcor.dirty = true end
+    end
+
+    -- Health
+    local thp = widgets.toughness_bar_health
+    if thp and thp.style and thp.style.health_segment then
+        local changed = false
+        if apply_shake_offset(thp.style.health_segment, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, 0, ctx.bias_1_5) then
+            changed = true
+        end
+        if thp.style.health_segment_edge and apply_shake_offset(thp.style.health_segment_edge, 0, 0, 2, ctx.apply_shake, ctx.dx, ctx.dy, 0, ctx.bias_1_5) then
+            changed = true
+        end
+        if changed then thp.dirty = true end
+    end
+
+    -- Damage
+    local tdm = widgets.toughness_bar_damage
+    if tdm and tdm.style and tdm.style.damage_segment then
+        local changed = false
+        if apply_shake_offset(tdm.style.damage_segment, 0, 0, 2, ctx.apply_shake, ctx.dx, ctx.dy, 0, ctx.bias_1_5) then
+            changed = true
+        end
+        if tdm.style.damage_segment_edge and apply_shake_offset(tdm.style.damage_segment_edge, 0, 0, 3, ctx.apply_shake, ctx.dx, ctx.dy, 0, ctx.bias_1_5) then
+            changed = true
+        end
+        if changed then tdm.dirty = true end
+    end
+
+    -- Health Text
+    local ht = widgets.health_text_display_widget
+    if ht and ht.style and ht.style.health_text_style then
+        if apply_shake_offset(ht.style.health_text_style, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, 0, ctx.bias_1_5 + ctx.text_bias_px) then
+            ht.dirty = true
+        end
+    end
+end
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Three-layer ring (HP, damage, corruption) — presentation only
 -- ─────────────────────────────────────────────────────────────────────────────
 function ToughnessHpFeature.update(hud_element, widgets, hud_state, _hotkey_override_unused)
@@ -178,12 +229,12 @@ function ToughnessHpFeature.update(hud_element, widgets, hud_state, _hotkey_over
     end
 
     -- ── Presentation logic ────────────────────────────────────────────────────
-    local changed        = false
+    local changed                      = false
 
-    local display_tough  = math.clamp(ctx.toughness_fraction or 0, 0, 1)
-    local health_frac    = math.clamp(ctx.hp_fraction or 0, 0, 1)
-    local corrupt_frac   = math.clamp(ctx.corruption_fraction or 0, 0, 1)
-    local has_overshield = ctx.has_overshield == true
+    local display_tough                = math.clamp(ctx.toughness_fraction or 0, 0, 1)
+    local health_frac                  = math.clamp(ctx.hp_fraction or 0, 0, 1)
+    local corrupt_frac                 = math.clamp(ctx.corruption_fraction or 0, 0, 1)
+    local has_overshield               = ctx.has_overshield == true
 
     if mod._settings.toughness_bar_dropdown == "toughness_bar_always" then
         health_frac = 1.0
@@ -404,6 +455,7 @@ function ToughnessHpFeature.add_widgets(dst, _, params, palettes)
                     arc_top_bottom       = arc_tb,
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color        = table.clone(outline_rgba),
+                    SizeThicknessOutline = { 0.53, 0.035, 0.024 },
                 },
             },
         }

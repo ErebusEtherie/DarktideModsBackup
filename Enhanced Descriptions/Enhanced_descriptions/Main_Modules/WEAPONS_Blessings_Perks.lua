@@ -2,10 +2,10 @@
 
 local mod = get_mod("Enhanced_descriptions")
 
--- USING CACHED UTILITIES - ИСПОЛЬЗУЕМ КЭШИРОВАННЫЕ УТИЛИТЫ
+-- Using cached utilities - Используем кэшированные утилиты
 local Utils = mod.get_utils()
 
--- IMPORTING ALL NECESSARY FUNCTIONS AND CONSTANTS - ИМПОРТ ВСЕХ НУЖНЫХ ФУНКЦИЙ И КОНСТАНТ
+-- Importing all necessary functions and constants - Импорт всех нужных функций и констант
 local create_template = Utils.create_template
 local loc_text = Utils.loc_text
 local CKWord = Utils.CKWord
@@ -18,22 +18,6 @@ local Dot_green = Utils.DOT_GREEN or "•"
 
 -- Main localization data - Основные данные локализации
 local weapon_localizations = {
-	-- TEMPLATE
-		-- ["loc_code"] = {
-			-- en = "",
-			-- ru = "",
-			-- fr = "",
-			-- ["zh-tw"] = "",
-			-- ["zh-cn"] = "",
-			-- de = "",
-			-- it = "",
-			-- ja = "",
-			-- ko = "",
-			-- pl = "",
-			-- ["pt-br"] = "",
-			-- es = "",
-		-- },
-
 --[+ ++WEAPON - PERKS - 武器专长++ +]--
 	--[+ MELEE - 近戰武器 - 近战武器 +]--
 		--[+ +DAMAGE VS FLAK +]--	20.04.2026
@@ -48,7 +32,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").." vs フラック装甲の敵",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").." vs 플랙 아머 적",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." vs Wrogowie w zbroi przeciwodłamkowej",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." vs Inimigos com Armadura Flak",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." em inimigos com armadura à prova de balas",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." vs Enemigos con Armadura Flak",
 		},
 		--[+ +DAMAGE VS MANIACS +]--	20.04.2026
@@ -63,7 +47,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").." vs マニアック",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").." vs 광신자",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." vs Maniacy",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." vs Maníacos",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." em maníacos",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." vs Maníacos",
 		},
 		--[+ +DAMAGE VS INFESTED +]--	20.04.2026
@@ -78,7 +62,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").." vs 感染敵",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").." vs 감염된 적",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." vs Zainfekowani Wrogowie",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." vs Inimigos Infestados",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." em inimigos infestados",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." vs Enemigos Infestados",
 		},
 		--[+ +DAMAGE VS UNYIELDING +]--	20.04.2026
@@ -93,7 +77,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").." vs 不屈の敵",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").." vs 굴하지 않는 적",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." vs Nieugięci Wrogowie",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." vs Inimigos Inabaláveis",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." em inimigos inabaláveis",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." vs Enemigos Inquebrantables",
 		},
 		--[+ +DAMAGE VS CARAPACE +]--	20.04.2026
@@ -108,7 +92,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").." vs カラペース装甲の敵",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").." vs 카라페이스 적",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." vs Wrogowie w zbroi karapaksowej",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." vs Inimigos com Armadura Carapaça",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." em inimigos blindados com carapaça",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." vs Enemigos con Armadura Caparazón",
 		},
 		--[+ +DAMAGE VS UNARMOURED +]--	20.04.2026
@@ -123,7 +107,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").." vs 無防備な敵",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").." vs 무장하지 않은 적",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." vs Nieopancerzeni Wrogowie",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." vs Inimigos Desarmados",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." em inimigos sem armaduras",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." vs Enemigos Sin Armadura",
 		},
 		--[+ +CRIT CHANCE +]--	20.04.2026
@@ -138,7 +122,7 @@ local weapon_localizations = {
 			ja = CNumb("{crit_chance:%s}", "crit_var_rgb").." 近接"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja"),
 			ko = CNumb("{crit_chance:%s}", "crit_var_rgb").." 근접 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko"),
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." w Walce Wręcz",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." em Corpo a Corpo",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." em corpo a corpo",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." en Cuerpo a Cuerpo",
 		},
 		--[+ +CRIT DAMAGE +]--	20.04.2026
@@ -153,7 +137,7 @@ local weapon_localizations = {
 			ja = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." 近接"..CKWord("クリティカルストライクダメージ", "Crt_strk_dmg_rgb_ja"),
 			ko = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." 근접 "..CKWord("크리티컬 스트라이크 피해", "Crt_strk_dmg_rgb_ko"),
 			pl = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." "..CKWord("Obrażenia krytycznego ataku", "Crt_strk_dmg_rgb_pl").." w Walce Wręcz",
-			["pt-br"] = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." "..CKWord("Dano de golpe crítico", "Crt_strk_dmg_rgb_pt_br").." em Corpo a Corpo",
+			["pt-br"] = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." de "..CKWord("dano de golpe crítico", "Crt_strk_dmg_rgb_pt_br").." em corpo a corpo",
 			es = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." "..CKWord("Daño de golpe crítico", "Crt_strk_dmg_rgb_es").." en Cuerpo a Cuerpo",
 		},
 		--[+ +DAMAGE VS GROANERS AND POXWALKERS +]--	20.04.2026
@@ -168,7 +152,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." 近接"..CKWord("ダメージ", "Damage_rgb_ja").." vs グローナーとポックスウォーカー",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." 근접 "..CKWord("피해", "Damage_rgb_ko").." vs 신음병사와 역병 걸음이",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." w Walce Wręcz vs Stękańców i Zarazowców",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." em Corpo a Corpo vs Gemidos e Pestilentos",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." corpo a corpo em gemedores e pestilentos",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." en Cuerpo a Cuerpo vs Gemidores y Pestilentes",
 		},
 		--[+ +DAMAGE VS ELITES +]--	20.04.2026
@@ -183,7 +167,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." 近接"..CKWord("ダメージ", "Damage_rgb_ja").." vs エリート",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." 근접 "..CKWord("피해", "Damage_rgb_ko").." vs 엘리트",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." w Walce Wręcz vs Elity",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." em Corpo a Corpo vs Élites",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." corpo a corpo em elites",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." en Cuerpo a Cuerpo vs Élites",
 		},
 		--[+ +DAMAGE VS SPECIALISTS +]--	20.04.2026
@@ -198,7 +182,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." 近接"..CKWord("ダメージ", "Damage_rgb_ja").." vs スペシャリスト",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." 근접 "..CKWord("피해", "Damage_rgb_ko").." vs 전문가",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." w Walce Wręcz vs Specjaliści",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." em Corpo a Corpo vs Especialistas",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." corpo a corpo em especialistas",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." en Cuerpo a Cuerpo vs Especialistas",
 		},
 		--[+ +STAMINA +]--	20.04.2026
@@ -213,7 +197,7 @@ local weapon_localizations = {
 			ja = CNumb("{stamina:%s}", "stam_var_rgb").." "..CKWord("スタミナ", "Stamina_rgb_ja"),
 			ko = CNumb("{stamina:%s}", "stam_var_rgb").." "..CKWord("스태미나", "Stamina_rgb_ko"),
 			pl = CNumb("{stamina:%s}", "stam_var_rgb").." "..CKWord("Wytrzymałość", "Stamina_rgb_pl"),
-			["pt-br"] = CNumb("{stamina:%s}", "stam_var_rgb").." "..CKWord("Vigor", "Stamina_rgb_pt_br"),
+			["pt-br"] = CNumb("{stamina:%s}", "stam_var_rgb").." de "..CKWord("vigor", "Stamina_rgb_pt_br"),
 			es = CNumb("{stamina:%s}", "stam_var_rgb").." "..CKWord("Aguante", "Stamina_rgb_es"),
 		},
 		--[+ +WEAKSPOT DAMAGE +]--	20.04.2026
@@ -228,7 +212,7 @@ local weapon_localizations = {
 			ja = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." 近接"..CKWord("弱点ダメージ", "Weakspot_dmg_rgb_ja"),
 			ko = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." 근접 "..CKWord("약점 피해", "Weakspot_dmg_rgb_ko"),
 			pl = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("Obrażenia w słaby punkt", "Weakspot_dmg_rgb_pl").." w Walce Wręcz",
-			["pt-br"] = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("Dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." em Corpo a Corpo",
+			["pt-br"] = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." de "..CKWord("dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." em corpo a corpo",
 			es = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("Daño en punto débil", "Weakspot_dmg_rgb_es").." en Cuerpo a Cuerpo",
 		},
 		--[+ +BLOCK EFFICIENCY +]--	20.04.2026
@@ -243,7 +227,7 @@ local weapon_localizations = {
 			ja = CNumb("{reduced_block_cost:%s}", "rbc_rgb").." ブロック効率",
 			ko = CNumb("{reduced_block_cost:%s}", "rbc_rgb").." 블록 효율",
 			pl = CNumb("{reduced_block_cost:%s}", "rbc_rgb").." Skuteczność Blokowania",
-			["pt-br"] = CNumb("{reduced_block_cost:%s}", "rbc_rgb").." Eficiência de Bloqueio",
+			["pt-br"] = CNumb("{reduced_block_cost:%s}", "rbc_rgb").." de eficiência em bloqueio",
 			es = CNumb("{reduced_block_cost:%s}", "rbc_rgb").." Eficiencia de Bloqueo",
 		},
 		--[+ -COST FOR SPRINTING +]--	20.04.2026
@@ -258,7 +242,7 @@ local weapon_localizations = {
 			ja = CNumb("{sprinting_cost_multiplier:%s}", "bcm_rgb").." "..CKWord("スタミナ", "Stamina_rgb_ja").."消費削減（スプリント時）",
 			ko = CNumb("{sprinting_cost_multiplier:%s}", "bcm_rgb").." "..CKWord("스태미나", "Stamina_rgb_ko").." 소모 감소（전력 질주）",
 			pl = CNumb("{sprinting_cost_multiplier:%s}", "bcm_rgb").." Redukcja Kosztu "..CKWord("Wytrzymałości", "Stamina_rgb_pl").." dla Szybkiego Biegu",
-			["pt-br"] = CNumb("{sprinting_cost_multiplier:%s}", "bcm_rgb").." Redução de Custo de "..CKWord("Vigor", "Stamina_rgb_pt_br").." para Corrida",
+			["pt-br"] = CNumb("{sprinting_cost_multiplier:%s}", "bcm_rgb").." de redução do custo de "..CKWord("vigor", "Stamina_rgb_pt_br").." para corrida",
 			es = CNumb("{sprinting_cost_multiplier:%s}", "bcm_rgb").." Reducción de Coste de "..CKWord("Aguante", "Stamina_rgb_es").." para Esprintar",
 		},
 
@@ -275,7 +259,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").." vs フラック装甲の敵",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").." vs 플랙 아머 적",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." vs Wrogowie w zbroi przeciwodłamkowej",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." vs Inimigos com Armadura Flak",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." em inimigos com armadura à prova de balas",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." vs Enemigos con Armadura Flak",
 		},
 		--[+ +DAMAGE VS MANIACS +]--	20.04.2026
@@ -290,7 +274,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").." vs マニアック",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").." vs 광신자",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." vs Maniacy",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." vs Maníacos",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." em maníacos",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." vs Maníacos",
 		},
 		--[+ +DAMAGE VS INFESTED +]--	20.04.2026
@@ -305,7 +289,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").." vs 感染敵",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").." vs 감염된 적",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." vs Zainfekowani Wrogowie",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." vs Inimigos Infestados",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." em inimigos infestados",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." vs Enemigos Infestados",
 		},
 		--[+ +DAMAGE VS UNYIELDING +]--	20.04.2026
@@ -320,7 +304,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").." vs 不屈の敵",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").." vs 굴하지 않는 적",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." vs Nieugięci Wrogowie",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." vs Inimigos Inabaláveis",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." em inimigos inabaláveis",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." vs Enemigos Inquebrantables",
 		},
 		--[+ +DAMAGE VS CARAPACE +]--	20.04.2026
@@ -335,7 +319,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").." vs カラペース装甲の敵",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").." vs 카라페이스 적",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." vs Wrogowie w zbroi karapaksowej",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." vs Inimigos com Armadura Carapaça",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." em inimigos blindados com carapaça",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." vs Enemigos con Armadura Caparazón",
 		},
 		--[+ +DAMAGE VS UNARMOURED +]--	20.04.2026
@@ -350,7 +334,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").." vs 無防備な敵",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").." vs 무장하지 않은 적",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." vs Nieopancerzeni Wrogowie",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." vs Inimigos Desarmados",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." em inimigos sem armaduras",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." vs Enemigos Sin Armadura",
 		},
 		--[+ +CRIT CHANCE +]--	20.04.2026
@@ -365,7 +349,7 @@ local weapon_localizations = {
 			ja = CNumb("{crit_chance:%s}", "crit_var_rgb").." 遠隔"..CKWord("クリティカルストライク発生率", "Crt_chnc_r_rgb_ja"),
 			ko = CNumb("{crit_chance:%s}", "crit_var_rgb").." 원거리 "..CKWord("크리티컬 스트라이크 확률", "Crt_chnc_r_rgb_ko"),
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyczny atak", "Crt_chnc_r_rgb_pl").." na Dystans",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de golpe crítico", "Crt_chnc_r_rgb_pt_br").." à Distância",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de golpe crítico", "Crt_chnc_r_rgb_pt_br").." à distância",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de golpe crítico", "Crt_chnc_r_rgb_es").." a Distancia",
 		},
 		--[+ +CRIT DAMAGE +]--	20.04.2026
@@ -380,7 +364,7 @@ local weapon_localizations = {
 			ja = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." 遠隔"..CKWord("クリティカルストライクダメージ", "Crt_strk_dmg_rgb_ja"),
 			ko = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." 원거리 "..CKWord("크리티컬 스트라이크 피해", "Crt_strk_dmg_rgb_ko"),
 			pl = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." "..CKWord("Obrażenia krytycznego ataku", "Crt_strk_dmg_rgb_pl").." na Dystans",
-			["pt-br"] = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." "..CKWord("Dano de golpe crítico", "Crt_strk_dmg_rgb_pt_br").." à Distância",
+			["pt-br"] = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." de "..CKWord("dano de golpe crítico", "Crt_strk_dmg_rgb_pt_br").." à distância",
 			es = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." "..CKWord("Daño de golpe crítico", "Crt_strk_dmg_rgb_es").." a Distancia",
 		},
 		--[+ +DAMAGE VS ELITES +]--	20.04.2026
@@ -395,7 +379,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." 遠隔"..CKWord("ダメージ", "Damage_rgb_ja").." vs エリート",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." 원거리 "..CKWord("피해", "Damage_rgb_ko").." vs 엘리트",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." na Dystans vs Elity",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." à Distância vs Élites",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." corpo a corpo em elites",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." a Distancia vs Élites",
 		},
 		--[+ +DAMAGE VS GROANERS AND POXWALKERS +]--	20.04.2026
@@ -410,7 +394,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." 遠隔"..CKWord("ダメージ", "Damage_rgb_ja").." vs グローナーとポックスウォーカー",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." 원거리 "..CKWord("피해", "Damage_rgb_ko").." vs 신음병사와 역병 걸음이",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." na Dystans vs Stękańców i Zarazowców",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." à Distância vs Gemidos e Pestilentos",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." corpo a corpo em gemedores e pestilentos",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." a Distancia vs Gemidores y Pestilentes",
 		},
 		--[+ +DAMAGE VS SPECIALISTS +]--	20.04.2026
@@ -425,7 +409,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." 遠隔"..CKWord("ダメージ", "Damage_rgb_ja").." vs スペシャリスト",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." 원거리 "..CKWord("피해", "Damage_rgb_ko").." vs 전문가",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażenia", "Damage_rgb_pl").." na Dystans vs Specjaliści",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." à Distância vs Especialistas",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." corpo a corpo em especialistas",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." a Distancia vs Especialistas",
 		},
 		--[+ +STAMINA +]--	20.04.2026
@@ -440,7 +424,7 @@ local weapon_localizations = {
 			ja = CNumb("{stamina:%s}", "stam_var_rgb").." "..CKWord("スタミナ", "Stamina_rgb_ja").."（武器使用時）",
 			ko = CNumb("{stamina:%s}", "stam_var_rgb").." "..CKWord("스태미나", "Stamina_rgb_ko").."（무기 사용 시）",
 			pl = CNumb("{stamina:%s}", "stam_var_rgb").." "..CKWord("Wytrzymałość", "Stamina_rgb_pl").." przy Aktywnej Broni",
-			["pt-br"] = CNumb("{stamina:%s}", "stam_var_rgb").." "..CKWord("Vigor", "Stamina_rgb_pt_br").." com Arma Ativa",
+			["pt-br"] = CNumb("{stamina:%s}", "stam_var_rgb").." de "..CKWord("vigor", "Stamina_rgb_pt_br").." com arma ativa",
 			es = CNumb("{stamina:%s}", "stam_var_rgb").." "..CKWord("Aguante", "Stamina_rgb_es").." con Arma Activa",
 		},
 		--[+ +WEAKSPOT DAMAGE +]--	20.04.2026
@@ -455,7 +439,7 @@ local weapon_localizations = {
 			ja = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." 遠隔"..CKWord("弱点ダメージ", "Weakspot_dmg_rgb_ja"),
 			ko = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." 원거리 "..CKWord("약점 피해", "Weakspot_dmg_rgb_ko"),
 			pl = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("Obrażenia w słaby punkt", "Weakspot_dmg_rgb_pl").." na Dystans",
-			["pt-br"] = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("Dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." à Distância",
+			["pt-br"] = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." de "..CKWord("dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." à distância",
 			es = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("Daño en punto débil", "Weakspot_dmg_rgb_es").." a Distancia",
 		},
 		--[+ +RELOAD SPEED +]--	20.04.2026
@@ -470,40 +454,40 @@ local weapon_localizations = {
 			ja = CNumb("{reload_speed:%s}", "reload_var_rgb").." リロード速度",
 			ko = CNumb("{reload_speed:%s}", "reload_var_rgb").." 재장전 속도",
 			pl = CNumb("{reload_speed:%s}", "reload_var_rgb").." Prędkość Przeładowania",
-			["pt-br"] = CNumb("{reload_speed:%s}", "reload_var_rgb").." Velocidade de Recarga",
+			["pt-br"] = CNumb("{reload_speed:%s}", "reload_var_rgb").." de velocidade de recarga",
 			es = CNumb("{reload_speed:%s}", "reload_var_rgb").." Velocidad de Recarga",
 		},
 
 
 --[+ ++WEAPON BLESSINGS - БЛАГОСЛОВЕНИЯ ОРУЖИЯ - 武器祝福++ +]--
 	--[+ MELEE - БЛИЖНИЙ БОЙ - 近戰 +]--
-		--[+ OPPORTUNIST +]-- ruof Приспособленец	20.04.2026
+		--[+ OPPORTUNIST +]-- ruof Приспособленец	09.06.2026
 		--Rending vs Staggered (per tier)
 		-- Battle Maul and Shield, Chainaxes, Crowbar, Crusher, Eviscerators, Latrine Shovels, Power Maul, Shock Mauls, Shock Mauls and Shield -- 10% | 15% | 20% | 25%
-		["loc_trait_bespoke_armor_penetration_against_staggered_desc"] = { -- rending: +25%, +colors, +note
-			en = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Rending", "Rending_rgb").." vs "..CKWord("Staggered", "Staggered_rgb").." Enemies.\n"
+		["loc_trait_bespoke_melee_rending_vs_staggered_desc"] = { -- rending: +25%, +colors, +note
+			en = CNumb("{rending:%s}", "rending_var_rgb").." Melee "..CKWord("Rending", "Rending_rgb").." vs "..CKWord("Staggered", "Staggered_rgb").." Enemies.\n"
 				..CNote("Rend_note"),
-			ru = CNumb("{rending:%s}", "rending_var_rgb").." к "..CKWord("пробиванию", "probivaniu_rgb_ru").." брони "..CKWord("ошеломлённых", "oshelomlennyh_rgb_ru").." врагов.\n"
+			ru = CNumb("{rending:%s}", "rending_var_rgb").." к "..CKWord("пробиванию", "probivaniu_rgb_ru").." брони "..CKWord("ошеломлённых", "oshelomlennyh_rgb_ru").." врагов в ближнем бою.\n"
 				..CNote("Rend_note"), -- Оппортунист
-			fr = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Déchirure", "Rending_rgb_fr").." vs les Ennemis "..CKWord("Étourdies", "Staggered_rgb_fr")..".\n"
+			fr = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Déchirure", "Rending_rgb_fr").." de mêlée contre les ennemis "..CKWord("Étourdies", "Staggered_rgb_fr")..".\n"
 				..CNote("Rend_note"),
-			["zh-tw"] = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("撕裂", "Rending_rgb_tw").." vs "..CKWord("硬直中", "Staggered_rgb_tw").." 的敵人。\n"
+			["zh-tw"] = CNumb("{rending:%s}", "rending_var_rgb").." 近戰"..CKWord("撕裂", "Rending_rgb_tw").." vs "..CKWord("硬直中", "Staggered_rgb_tw").." 的敵人。\n"
 				..CNote("Rend_note"),
-			["zh-cn"] = "对抗"..CKWord("踉跄", "Staggered_rgb_zh_cn").."敌人时 "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("撕裂", "Rending_rgb_zh_cn").."。\n"
+			["zh-cn"] = "对抗"..CKWord("踉跄", "Staggered_rgb_zh_cn").."敌人时，"..CNumb("{rending:%s}", "rending_var_rgb").." 近战"..CKWord("撕裂", "Rending_rgb_zh_cn").."。\n"
 				..CNote("Rend_note"),
-			de = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Durchschlag", "Rending_rgb_de").." vs "..CKWord("Getaumelt", "Staggered_rgb_de").." Gegner.\n"
+			de = CNumb("{rending:%s}", "rending_var_rgb").." Nahkampf-"..CKWord("Durchschlag", "Rending_rgb_de").." vs "..CKWord("Getaumelt", "Staggered_rgb_de").." Gegner.\n"
 				..CNote("Rend_note"),
-			es = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Penetración", "Rending_rgb_es").." contra Enemigos "..CKWord("Tambaleantes", "Staggered_rgb_es")..".\n"
+			es = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Penetración", "Rending_rgb_es").." cuerpo a cuerpo contra enemigos "..CKWord("Tambaleantes", "Staggered_rgb_es")..".\n"
 				..CNote("Rend_note"),
-			it = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Penetrazione", "Rending_rgb_it").." contro Nemici "..CKWord("Barcollanti", "Staggered_rgb_it")..".\n"
+			it = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Penetrazione", "Rending_rgb_it").." corpo a corpo contro nemici "..CKWord("Barcollanti", "Staggered_rgb_it")..".\n"
 				..CNote("Rend_note"),
-			ja = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("貫通", "Rending_rgb_ja").." vs "..CKWord("スタッガー状態", "Staggered_rgb_ja").." の敵。\n"
+			ja = CNumb("{rending:%s}", "rending_var_rgb").." 近接"..CKWord("貫通", "Rending_rgb_ja").." vs "..CKWord("スタッガー状態", "Staggered_rgb_ja").." の敵。\n"
 				..CNote("Rend_note"),
-			ko = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("관통", "Rending_rgb_ko").." vs "..CKWord("스태거 상태", "Staggered_rgb_ko").." 적.\n"
+			ko = CNumb("{rending:%s}", "rending_var_rgb").." 근접 "..CKWord("관통", "Rending_rgb_ko").." vs "..CKWord("스태거 상태", "Staggered_rgb_ko").." 적.\n"
 				..CNote("Rend_note"),
-			pl = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Rozrywanie", "Rending_rgb_pl").." przeciwko "..CKWord("Oślepionym", "Staggered_rgb_pl").." wrogom.\n"
+			pl = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Rozrywanie", "Rending_rgb_pl").." w walce wręcz przeciwko "..CKWord("Oślepionym", "Staggered_rgb_pl").." wrogom.\n"
 				..CNote("Rend_note"),
-			["pt-br"] = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Penetração", "Rending_rgb_pt_br").." contra Inimigos "..CKWord("Cambaleantes", "Staggered_rgb_pt_br")..".\n"
+			["pt-br"] = CNumb("{rending:%s}", "rending_var_rgb").." de "..CKWord("penetração", "Rending_rgb_pt_br").." contra cada inimigo "..CKWord("desequilibrado", "Staggered_rgb_pt_br").." em combate corpo a corpo.\n"
 				..CNote("Rend_note"),
 		},
 		--[+ BLOODLETTER +]-- ruof Кровопускание	20.04.2026
@@ -526,7 +510,7 @@ local weapon_localizations = {
 			ja = "特殊攻撃により "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタックの"..CKWord("出血", "Bleed_rgb_ja").."。持続時間 "..CNumb("1.5", "n_1_5_rgb").."秒。 "..CNumb("0.5", "n_0_5_rgb").."秒ごとにダメージ。\n"..CPhrs("Refr_dur_stappl")..CPhrs("Cant_appl_thr_shlds"),
 			ko = "특수 공격 시 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩의 "..CKWord("출혈", "Bleed_rgb_ko").."를 부여합니다. "..CNumb("1.5", "n_1_5_rgb").."초 동안 지속되며 "..CNumb("0.5", "n_0_5_rgb").."초마다 피해를 줍니다.\n"..CPhrs("Refr_dur_stappl")..CPhrs("Cant_appl_thr_shlds"),
 			pl = CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CKWord("Krwawienie", "Bleed_rgb_pl").." od Ataków Specjalnych. Trwa "..CNumb("1.5", "n_1_5_rgb").." sekundy. Obrażenia co "..CNumb("0.5", "n_0_5_rgb").." sekundy.\n"..CPhrs("Refr_dur_stappl")..CPhrs("Cant_appl_thr_shlds"),
-			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("Sangramento", "Bleed_rgb_pt_br").." de Ataques Especiais. Dura "..CNumb("1.5", "n_1_5_rgb").." segundos. Dano a cada "..CNumb("0.5", "n_0_5_rgb").." segundos.\n"..CPhrs("Refr_dur_stappl")..CPhrs("Cant_appl_thr_shlds"),
+			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("sangramento", "Bleed_rgb_pt_br").." de ataques especiais. Dura "..CNumb("1.5", "n_1_5_rgb").." segundos. Dano a cada "..CNumb("0.5", "n_0_5_rgb").." segundo.\n"..CPhrs("Refr_dur_stappl")..CPhrs("Cant_appl_thr_shlds"),
 			es = CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CKWord("Sangrado", "Bleed_rgb_es").." de Ataques Especiales. Dura "..CNumb("1.5", "n_1_5_rgb").." segundos. Daño cada "..CNumb("0.5", "n_0_5_rgb").." segundos.\n"..CPhrs("Refr_dur_stappl")..CPhrs("Cant_appl_thr_shlds"),
 		},
 		--[+ BLOODTHIRSTY +]-- ruof Жажда крови	20.04.2026
@@ -543,7 +527,7 @@ local weapon_localizations = {
 			ja = "特殊攻撃キル後、次の近接攻撃の"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。",
 			ko = "특수 공격으로 적 처치 시 다음 근접 공격의 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." dla następnego Ataku w Walce Wręcz po Zabójstwie Atakiem Specjalnym.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." no seu próximo Ataque Corpo a Corpo após um Abate com Ataque Especial.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." no seu próximo ataque corpo a corpo após um abate com ataque especial.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." en tu siguiente Ataque Cuerpo a Cuerpo tras una Muerte con Ataque Especial.",
 		},
 		--[+ HEADTAKER +]-- ruof Головорез	20.04.2026
@@ -563,7 +547,7 @@ local weapon_localizations = {
 			ja = "ヒット時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回までスタック。\n"..CPhrs("Gen_mult_stacks_n_refr")..CNote("Pwr_note"),
 			ko = "적중 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩됩니다.\n"..CPhrs("Gen_mult_stacks_n_refr")..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siła", "Strength_rgb_pl").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek. przy Trafieniu. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.\n"..CPhrs("Gen_mult_stacks_n_refr")..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao Acertar. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.\n"..CPhrs("Gen_mult_stacks_n_refr")..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao acertar. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.\n"..CPhrs("Gen_mult_stacks_n_refr")..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al Golpear. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.\n"..CPhrs("Gen_mult_stacks_n_refr")..CNote("Pwr_note"),
 		},
 		--[+ SLAUGHTERER +]-- ruof Душегуб	20.04.2026
@@ -583,7 +567,7 @@ local weapon_localizations = {
 			ja = "キル時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回までスタック。\n"..CPhrs("Gen_mult_stacks_n_refr")..CNote("Pwr_note"),
 			ko = "처치 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩됩니다.\n"..CPhrs("Gen_mult_stacks_n_refr")..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siła", "Strength_rgb_pl").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek. przy Zabójstwie. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.\n"..CPhrs("Gen_mult_stacks_n_refr")..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao Matar. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.\n"..CPhrs("Gen_mult_stacks_n_refr")..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao matar. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.\n"..CPhrs("Gen_mult_stacks_n_refr")..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al Matar. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.\n"..CPhrs("Gen_mult_stacks_n_refr")..CNote("Pwr_note"),
 		},
 		--[+ REV IT UP +]-- ruof Бодрость	20.04.2026
@@ -600,7 +584,7 @@ local weapon_localizations = {
 			ja = "武器特殊起動時、"..CNumb("{time:%s}", "time_var_rgb").."秒間、移動速度が "..CNumb("{movement_speed:%s}", "movspd_var_rgb").." 増加。",
 			ko = "무기 특수 기능 발동 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 이동 속도가 "..CNumb("{movement_speed:%s}", "movspd_var_rgb").." 증가합니다.",
 			pl = CNumb("{movement_speed:%s}", "movspd_var_rgb").." Prędkości Ruchu na "..CNumb("{time:%s}", "time_var_rgb").." sek. po Aktywacji Specjalnej Broni.",
-			["pt-br"] = CNumb("{movement_speed:%s}", "movspd_var_rgb").." de Velocidade de Movimento por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao Ativar Ação Especial da Arma.",
+			["pt-br"] = CNumb("{movement_speed:%s}", "movspd_var_rgb").." de velocidade de movimento por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao ativar ação especial da arma.",
 			es = CNumb("{movement_speed:%s}", "movspd_var_rgb").." Velocidad de Movimiento durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al Activar el Ataque Especial del Arma.",
 		},
 		--[+ THRUST +]-- ruof Выпад	20.04.2026
@@ -619,7 +603,7 @@ local weapon_localizations = {
 			ja = "ヘビーアタックのチャージ時間に応じて、最大 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("威力", "Strength_rgb_ja").." を獲得。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。\n"..CNote("Pwr_note"),
 			ko = "강공격 차지 시간에 따라 최대 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("위력", "Strength_rgb_ko").." 증가. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩됩니다.\n"..CNote("Pwr_note"),
 			pl = "Do "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." w zależności od czasu ładowania ciężkich ataków. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.\n"..CNote("Pwr_note"),
-			["pt-br"] = "Até "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." baseado no tempo de carga dos seus ataques pesados. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.\n"..CNote("Pwr_note"),
+			["pt-br"] = "Até "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." baseado no tempo de carga dos seus ataques pesados. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.\n"..CNote("Pwr_note"),
 			es = "Hasta "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." basada en el tiempo de carga de tus ataques pesados. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.\n"..CNote("Pwr_note"),
 		},
 		--[+ THUNDEROUS +]-- ruof Словно раскаты грома	20.04.2026
@@ -638,7 +622,7 @@ local weapon_localizations = {
 			ja = "ヒット時、敵に "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("脆弱", "Brittleness_rgb_ja").."を "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック付与。持続時間 "..CNumb("{time:%s}", "time_var_rgb").."秒。最大 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." スタック、最大 "..CNumb("40%", "pc_40_rgb").."。"..CNote("Brtl_note"),
 			ko = "적중 시 적에게 "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("취약", "Brittleness_rgb_ko").."을 "..CNumb("{stacks:%s}", "stacks_var_rgb").."중첩 부여합니다. "..CNumb("{time:%s}", "time_var_rgb").."초 동안 지속. 최대 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").."중첩, 최대 "..CNumb("40%", "pc_40_rgb").." 증가."..CNote("Brtl_note"),
 			pl = "Nakłada "..CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Kruchości", "Brittleness_rgb_pl").." na trafionego wroga. Trwa "..CNumb("{time:%s}", "time_var_rgb").." sek. Maks. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." ładunków, do "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
-			["pt-br"] = "Aplica "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Fragilidade", "Brittleness_rgb_pt_br").." ao inimigo atingido. Dura "..CNumb("{time:%s}", "time_var_rgb").." segundos. Máx. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos, até "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
+			["pt-br"] = "Aplica "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("fragilidade", "Brittleness_rgb_pt_br").." ao inimigo atingido. Dura "..CNumb("{time:%s}", "time_var_rgb").." segundos. Máximo "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos, até "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
 			es = "Aplica "..CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Fragilidad", "Brittleness_rgb_es").." al enemigo golpeado. Dura "..CNumb("{time:%s}", "time_var_rgb").." segundos. Máx. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acumulaciones, hasta "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
 		},
 		--[+ WRATH +]-- ruof Гнев	20.04.2026
@@ -660,7 +644,7 @@ local weapon_localizations = {
 			ja = "ヒット時、"..CNumb("3.5", "n_3_5_rgb").."秒間"..CKWord("薙ぎ払い", "Cleave_rgb_ja").."が "..CNumb("{cleave:%s}", "cleave_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回までスタック。",
 			ko = "적중 시 "..CNumb("3.5", "n_3_5_rgb").."초 동안 "..CKWord("베어넘기기", "Cleave_rgb_ko").."가 "..CNumb("{cleave:%s}", "cleave_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩됩니다.",
 			pl = CNumb("{cleave:%s}", "cleave_var_rgb").." "..CKWord("Przebicie", "Cleave_rgb_pl").." przy Trafieniu na "..CNumb("3.5", "n_3_5_rgb").." sek. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{cleave:%s}", "cleave_var_rgb").." "..CKWord("Corte Profundo", "Cleave_rgb_pt_br").." ao Acertar por "..CNumb("3.5", "n_3_5_rgb").." segundos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{cleave:%s}", "cleave_var_rgb").." de "..CKWord("fender", "Cleave_rgb_pt_br").." ao acertar por "..CNumb("3.5", "n_3_5_rgb").." segundos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{cleave:%s}", "cleave_var_rgb").." "..CKWord("Hendidura", "Cleave_rgb_es").." al Golpear durante "..CNumb("3.5", "n_3_5_rgb").." segundos. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 	--[+ SHRED +]-- ruof Расстрел	20.04.2026
@@ -680,7 +664,7 @@ local weapon_localizations = {
 			ja = "連鎖ヒット時、"..CNumb("3.5", "n_3_5_rgb").."秒間"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。",
 			ko = "연속 적중 시 "..CNumb("3.5", "n_3_5_rgb").."초 동안 근접 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." przy Kolejnym Trafieniu na "..CNumb("3.5", "n_3_5_rgb").." sek. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." em Acertos Consecutivos por "..CNumb("3.5", "n_3_5_rgb").." seg. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." em acertos consecutivos por "..CNumb("3.5", "n_3_5_rgb").." segundos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." en Golpes Encadenados durante "..CNumb("3.5", "n_3_5_rgb").." seg. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ SAVAGE SWEEP +]-- ruof Дикость	20.04.2026
@@ -699,7 +683,7 @@ local weapon_localizations = {
 			ja = "一度の攻撃で "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." 体以上の敵にヒットすると、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("薙ぎ払い", "Cleave_rgb_ja").."が "..CNumb("{cleave:%s}", "cleave_var_rgb").." 増加。",
 			ko = "한 번의 공격으로 최소 "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").."명의 적을 적중시키면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("베어넘기기", "Cleave_rgb_ko").."가 "..CNumb("{cleave:%s}", "cleave_var_rgb").." 증가합니다.",
 			pl = CNumb("{cleave:%s}", "cleave_var_rgb").." "..CKWord("Przebicie", "Cleave_rgb_pl").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek. po trafieniu co najmniej "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." wrogów jednym atakiem.",
-			["pt-br"] = CNumb("{cleave:%s}", "cleave_var_rgb").." "..CKWord("Corte Profundo", "Cleave_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao atingir pelo menos "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." inimigos com um ataque.",
+			["pt-br"] = CNumb("{cleave:%s}", "cleave_var_rgb").." de "..CKWord("fender", "Cleave_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao atingir pelo menos "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." inimigos com um ataque.",
 			es = CNumb("{cleave:%s}", "cleave_var_rgb").." "..CKWord("Hendidura", "Cleave_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al golpear al menos a "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." enemigos con un ataque.",
 		},
 		--[+ RAMPAGE +]-- ruof Буйство	20.04.2026
@@ -718,7 +702,7 @@ local weapon_localizations = {
 			ja = "一度の攻撃で "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." 体以上の敵にヒットすると、"..CNumb("{time:%s}", "time_var_rgb").."秒間、近接"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{damage:%s}", "dmg_var_rgb").." 増加。"..CNote("Pwr_note"),
 			ko = "한 번의 공격으로 최소 "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").."명의 적을 적중시키면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 근접 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{damage:%s}", "dmg_var_rgb").." 증가합니다."..CNote("Pwr_note"),
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." do ataków w Walce Wręcz na "..CNumb("{time:%s}", "time_var_rgb").." sek. po trafieniu co najmniej "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." wrogów jednym atakiem."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." para ataques Corpo a Corpo por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao atingir pelo menos "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." inimigos com um ataque."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." para ataques corpo a corpo por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao atingir pelo menos "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." inimigos com um ataque."..CNote("Pwr_note"),
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." para ataques Cuerpo a Cuerpo durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al golpear al menos a "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." enemigos con un ataque."..CNote("Pwr_note"),
 		},
 		--[+ DEVASTATING STRIKE +]-- ruof Сокрушительный удар	20.04.2026
@@ -737,7 +721,7 @@ local weapon_localizations = {
 			ja = CKWord("クリティカルヒット", "Crit_hit_rgb_ja").."時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("薙ぎ払い", "Cleave_rgb_ja").."が "..CNumb("{hit_mass:%s}", "hitmass_var_rgb").." 増加。",
 			ko = CKWord("크리티컬 적중", "Crit_hit_rgb_ko").." 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("베어넘기기", "Cleave_rgb_ko").."가 "..CNumb("{hit_mass:%s}", "hitmass_var_rgb").." 증가합니다.",
 			pl = CNumb("{hit_mass:%s}", "hitmass_var_rgb").." "..CKWord("Przebicie", "Cleave_rgb_pl").." na "..CNumb("{time:%s}", "time_var_rgb").." sek. przy "..CKWord("Krytycznym Trafieniu", "Crit_hit_rgb_pl")..".",
-			["pt-br"] = CNumb("{hit_mass:%s}", "hitmass_var_rgb").." "..CKWord("Corte Profundo", "Cleave_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao causar um "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{hit_mass:%s}", "hitmass_var_rgb").." de "..CKWord("fender", "Cleave_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao causar um "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br")..".",
 			es = CNumb("{hit_mass:%s}", "hitmass_var_rgb").." "..CKWord("Hendidura", "Cleave_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al asestar un "..CKWord("Golpe Crítico", "Crit_hit_rgb_es")..".",
 		},
 		--[+ DECIMATOR +]-- ruof Дециматор	20.04.2026
@@ -757,7 +741,7 @@ local weapon_localizations = {
 			ja = "連続して "..CNumb("2", "n_2_rgb").." 回以上攻撃を命中させると、"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。"..CNote("Pwr_note"),
 			ko = "연속 공격이 "..CNumb("2", "n_2_rgb").."회 이상 적중하면 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." przy ciągłych atakach powyżej "..CNumb("2", "n_2_rgb").." trafień. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." ao encadear mais de "..CNumb("2", "n_2_rgb").." ataques. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." ao encadear mais de "..CNumb("2", "n_2_rgb").." ataques. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." al encadenar más de "..CNumb("2", "n_2_rgb").." ataques. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces."..CNote("Pwr_note"),
 		},
 		--[+ BRUTAL MOMENTUM +]-- ruof Суровый моментум	20.04.2026
@@ -774,7 +758,7 @@ local weapon_localizations = {
 			ja = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("弱点ダメージ", "Weakspot_dmg_rgb_ja").."。 "..CKWord("弱点キル", "Weakspot_k_dmg_rgb_ja").."時、非オグリンの敵 "..CNumb("3", "n_3_rgb").." 体分の "..CKWord("ヒットマス", "Hit_mass_rgb_ja").." を無視。",
 			ko = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("약점 피해", "Weakspot_dmg_rgb_ko")..". "..CKWord("약점 처치", "Weakspot_k_dmg_rgb_ko").." 시 오그린이 아닌 적 "..CNumb("3", "n_3_rgb").."명의 "..CKWord("충돌 질량", "Hit_mass_rgb_ko").."을 무시합니다.",
 			pl = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("Obrażeń w słaby punkt", "Weakspot_dmg_rgb_pl")..". Zabójstwa w "..CKWord("Słaby Punkt", "Weakspot_rgb_pl").." ignorują "..CKWord("Masę Trafienia", "Hit_mass_rgb_pl").." "..CNumb("3", "n_3_rgb").." wrogów nie-ogrynów.",
-			["pt-br"] = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("Dano em ponto fraco", "Weakspot_dmg_rgb_pt_br")..". Abates em "..CKWord("Ponto Fraco", "Weakspot_rgb_pt_br").." ignoram a "..CKWord("Massa de Impacto", "Hit_mass_rgb_pt_br").." de "..CNumb("3", "n_3_rgb").." inimigos.",
+			["pt-br"] = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." de "..CKWord("dano em ponto fraco", "Weakspot_dmg_rgb_pt_br")..". Abates em "..CKWord("ponto fraco", "Weakspot_rgb_pt_br").." ignoram a "..CKWord("massa de impacto", "Hit_mass_rgb_pt_br").." de "..CNumb("3", "n_3_rgb").." inimigos.",
 			es = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("Daño en punto débil", "Weakspot_dmg_rgb_es")..". Las muertes en "..CKWord("Punto Débil", "Weakspot_rgb_es").." ignoran la "..CKWord("Masa de Golpe", "Hit_mass_rgb_es").." de "..CNumb("3", "n_3_rgb").." enemigos no ogretes.",
 		},
 		--[+ DEATHBLOW +]-- ruof Смертельный удар	20.04.2026
@@ -791,7 +775,7 @@ local weapon_localizations = {
 			ja = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("弱点ダメージ", "Weakspot_dmg_rgb_ja").."。 "..CKWord("弱点キル", "Weakspot_k_dmg_rgb_ja").."時、非オグリンの敵 "..CNumb("3", "n_3_rgb").." 体分の "..CKWord("ヒットマス", "Hit_mass_rgb_ja").." を無視。",
 			ko = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("약점 피해", "Weakspot_dmg_rgb_ko")..". "..CKWord("약점 처치", "Weakspot_k_dmg_rgb_ko").." 시 오그린이 아닌 적 "..CNumb("3", "n_3_rgb").."명의 "..CKWord("충돌 질량", "Hit_mass_rgb_ko").."을 무시합니다.",
 			pl = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("Obrażeń w słaby punkt", "Weakspot_dmg_rgb_pl")..". Zabójstwa w "..CKWord("Słaby Punkt", "Weakspot_rgb_pl").." ignorują "..CKWord("Masę Trafienia", "Hit_mass_rgb_pl").." "..CNumb("3", "n_3_rgb").." wrogów nie-ogrynów.",
-			["pt-br"] = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("Dano em ponto fraco", "Weakspot_dmg_rgb_pt_br")..". Abates em "..CKWord("Ponto Fraco", "Weakspot_rgb_pt_br").." ignoram a "..CKWord("Massa de Impacto", "Hit_mass_rgb_pt_br").." de "..CNumb("3", "n_3_rgb").." inimigos.",
+			["pt-br"] = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." de "..CKWord("dano em ponto fraco", "Weakspot_dmg_rgb_pt_br")..". Abates em "..CKWord("ponto fraco", "Weakspot_rgb_pt_br").." ignoram a "..CKWord("massa de impacto", "Hit_mass_rgb_pt_br").." de "..CNumb("3", "n_3_rgb").." inimigos.",
 			es = CNumb("{weakspot_damage:%s}", "wkspdmg_var_rgb").." "..CKWord("Daño en punto débil", "Weakspot_dmg_rgb_es")..". Las muertes en "..CKWord("Punto Débil", "Weakspot_rgb_es").." ignoran la "..CKWord("Masa de Golpe", "Hit_mass_rgb_es").." de "..CNumb("3", "n_3_rgb").." enemigos no ogretes.",
 		},
 		--[+ LIMBSPLITTER +]-- ruof Расщепитель	20.04.2026
@@ -810,7 +794,7 @@ local weapon_localizations = {
 			ja = CNumb("{cooldown:%s}", "cd_var_rgb").." 秒ごとに、最初の攻撃の"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。"..CNote("Pwr_note"),
 			ko = CNumb("{cooldown:%s}", "cd_var_rgb").."초마다 첫 공격의 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." dla Pierwszego Ataku co "..CNumb("{cooldown:%s}", "cd_var_rgb").." sek."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." no seu Primeiro Ataque a cada "..CNumb("{cooldown:%s}", "cd_var_rgb").." segundos."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." no seu primeiro ataque a cada "..CNumb("{cooldown:%s}", "cd_var_rgb").." segundos."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." en tu Primer Ataque cada "..CNumb("{cooldown:%s}", "cd_var_rgb").." segundos."..CNote("Pwr_note"),
 		},
 		--[+ ALL OR NOTHING +]-- ruof Все или ничего	20.04.2026
@@ -831,7 +815,7 @@ local weapon_localizations = {
 			ja = "失った"..CKWord("スタミナ", "Stamina_rgb_ja").."に応じて、最大 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("威力", "Strength_rgb_ja").." を獲得。スタミナ "..CNumb("20%", "pc_20_rgb").." ごとに "..CNumb("1", "n_1_rgb").." スタック。最大 "..CNumb("5", "n_5_rgb").." スタック。 "..CNote("Pwr_note"),
 			ko = "소모된 "..CKWord("스태미나", "Stamina_rgb_ko").."에 따라 최대 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("위력", "Strength_rgb_ko").."을 얻습니다. 스태미나 "..CNumb("20%", "pc_20_rgb").." 소모마다 "..CNumb("1", "n_1_rgb").."중첩. 최대 "..CNumb("5", "n_5_rgb").."중첩. "..CNote("Pwr_note"),
 			pl = "Otrzymujesz do "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." w zależności od utraconej "..CKWord("Wytrzymałości", "Stamina_rgb_pl")..". Każde "..CNumb("20%", "pc_20_rgb").." utraconej wytrzymałości daje "..CNumb("1", "n_1_rgb").." ładunek. Maks. "..CNumb("5", "n_5_rgb").." ładunków. "..CNote("Pwr_note"),
-			["pt-br"] = "Ganhe até "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." baseado no "..CKWord("Vigor", "Stamina_rgb_pt_br").." perdido. Cada "..CNumb("20%", "pc_20_rgb").." de vigor perdido concede "..CNumb("1", "n_1_rgb").." acúmulo. Até "..CNumb("5", "n_5_rgb").." acúmulos. "..CNote("Pwr_note"),
+			["pt-br"] = "Ganhe até "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." baseado no "..CKWord("vigor", "Stamina_rgb_pt_br").." perdido. Cada "..CNumb("20%", "pc_20_rgb").." de vigor perdido concede "..CNumb("1", "n_1_rgb").." acúmulo. Até "..CNumb("5", "n_5_rgb").." acúmulos. "..CNote("Pwr_note"),
 			es = "Obtienes hasta "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." según el "..CKWord("Aguante", "Stamina_rgb_es").." perdido. Cada "..CNumb("20%", "pc_20_rgb").." de aguante perdido otorga "..CNumb("1", "n_1_rgb").." acumulación. Hasta "..CNumb("5", "n_5_rgb").." acumulaciones. "..CNote("Pwr_note"),
 		},
 		--[+ DECAPITATOR +]-- ruof Палач	20.04.2026
@@ -851,7 +835,7 @@ local weapon_localizations = {
 			ja = "敵を一撃で倒すと、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("技巧", "Finesse_rgb_ja").."が "..CNumb("{finesse:%s}", "fin_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。"..CNote("Fns_note"),
 			ko = "적을 일격에 처치하면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("기교", "Finesse_rgb_ko").."가 "..CNumb("{finesse:%s}", "fin_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩."..CNote("Fns_note"),
 			pl = CNumb("{finesse:%s}", "fin_var_rgb").." "..CKWord("Finezyjności", "Finesse_rgb_pl").." na "..CNumb("{time:%s}", "time_var_rgb").." sek. po Zabiciu Jednym Ciosem. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy."..CNote("Fns_note"),
-			["pt-br"] = CNumb("{finesse:%s}", "fin_var_rgb").." "..CKWord("Destreza", "Finesse_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao Matar com Um Golpe. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Fns_note"),
+			["pt-br"] = CNumb("{finesse:%s}", "fin_var_rgb").." de "..CKWord("finesse", "Finesse_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao matar com um golpe. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Fns_note"),
 			es = CNumb("{finesse:%s}", "fin_var_rgb").." "..CKWord("Destreza", "Finesse_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al Matar de un Golpe. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces."..CNote("Fns_note"),
 		},
 		--[+ AGILE +]-- ruof Ловкий	20.04.2026
@@ -868,7 +852,7 @@ local weapon_localizations = {
 			ja = "近接"..CKWord("弱点ダメージ", "Weakspot_dmg_rgb_ja").."が "..CNumb("{melee_weakspot_damage}", "mel_weapsp_dmg_var_rgb").." 増加。 "..CKWord("弱点ヒット", "Weakspothit_rgb_ja").."時、回避回数がリセットされる。",
 			ko = "근접 "..CKWord("약점 피해", "Weakspot_dmg_rgb_ko").."가 "..CNumb("{melee_weakspot_damage}", "mel_weapsp_dmg_var_rgb").." 증가합니다. "..CKWord("약점 적중", "Weakspothit_rgb_ko").." 시 회피 효율이 초기화됩니다.",
 			pl = CNumb("{melee_weakspot_damage}", "mel_weapsp_dmg_var_rgb").." "..CKWord("Obrażeń w słaby punkt", "Weakspot_dmg_rgb_pl").." w Walce Wręcz. Odświeża Efektywność Uników przy "..CKWord("Trafieniu w Słaby Punkt", "Weakspothit_rgb_pl")..".",
-			["pt-br"] = CNumb("{melee_weakspot_damage}", "mel_weapsp_dmg_var_rgb").." "..CKWord("Dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." Corpo a Corpo. A Eficiência de Esquiva é restaurada ao "..CKWord("Acertar um Ponto Fraco", "Weakspothit_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{melee_weakspot_damage}", "mel_weapsp_dmg_var_rgb").." de "..CKWord("dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." corpo a corpo. A eficiência de esquiva é restaurada ao "..CKWord("acerto em ponto fraco", "Weakspothit_rgb_pt_br")..".",
 			es = CNumb("{melee_weakspot_damage}", "mel_weapsp_dmg_var_rgb").." "..CKWord("Daño en punto débil", "Weakspot_dmg_rgb_es").." Cuerpo a Cuerpo. La Eficiencia de Esquiva se restablece al "..CKWord("Golpear un Punto Débil", "Weakspothit_rgb_es")..".",
 		},
 		--[+ SLAUGHTER SPREE +]-- ruof Убойная сила	20.04.2026
@@ -885,7 +869,7 @@ local weapon_localizations = {
 			ja = CKWord("弱点", "Weakspot_rgb_ja")..""..CKWord("クリティカルキル", "Crit_k_rgb_ja").."後、"..CNumb("5", "n_5_rgb").."秒以内の次の近接攻撃の"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。",
 			ko = CKWord("약점", "Weakspot_rgb_ko").." "..CKWord("크리티컬 처치", "Crit_k_rgb_ko").." 후 "..CNumb("5", "n_5_rgb").."초 이내의 다음 근접 공격의 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." dla następnego ataku w Walce Wręcz w ciągu "..CNumb("5", "n_5_rgb").." sek. po Zabójstwie "..CKWord("Krytycznym", "Crit_rgb_pl").." w "..CKWord("Słaby Punkt", "Weak_spot_rgb_pl")..".",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." no próximo ataque Corpo a Corpo em "..CNumb("5", "n_5_rgb").." segundos após um Abate com "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br").." em "..CKWord("Ponto Fraco", "Weak_spot_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." no próximo ataque corpo a corpo em "..CNumb("5", "n_5_rgb").." segundos após um abate com "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br").." em "..CKWord("ponto fraco", "Weak_spot_rgb_pt_br")..".",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." para el siguiente ataque Cuerpo a Cuerpo durante "..CNumb("5", "n_5_rgb").." seg. tras una Muerte con "..CKWord("Golpe Crítico", "Crit_hit_rgb_es").." en "..CKWord("Punto Débil", "Weak_spot_rgb_es")..".",
 		},
 		--[+ RELENTLESS STRIKES +]-- ruof Безжалостность	20.04.2026
@@ -905,7 +889,7 @@ local weapon_localizations = {
 			ja = "同じ敵に連続でヒットさせると、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。"..CNote("Pwr_note"),
 			ko = "동일한 적에게 재차 적중시키면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek. przy trafieniu Tego Samego Wroga. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao acertar o Mesmo Inimigo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao acertar o mesmo inimigo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al golpear al Mismo Enemigo. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces."..CNote("Pwr_note"),
 		},
 		--[+ FLESH TEARER +]-- ruof Раздиратель плоти	20.04.2026
@@ -925,7 +909,7 @@ local weapon_localizations = {
 			ja = CKWord("クリティカルヒット", "Crit_hit_rgb_ja").."時、敵に "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタックの"..CKWord("出血", "Bleed_rgb_ja").."を付与。最大 "..CNumb("16", "n_16_rgb").." スタック。",
 			ko = CKWord("크리티컬 적중", "Crit_hit_rgb_ko").." 시 적에게 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩의 "..CKWord("출혈", "Bleed_rgb_ko").."을 부여합니다. 최대 "..CNumb("16", "n_16_rgb").." 중첩.",
 			pl = CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CKWord("Krwawienia", "Bleed_rgb_pl").." przy "..CKWord("Krytycznym Trafieniu", "Crit_hit_rgb_pl")..". Maks. "..CNumb("16", "n_16_rgb").." ładunków.",
-			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("Sangramento", "Bleed_rgb_pt_br").." ao causar um "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br")..". Máximo de "..CNumb("16", "n_16_rgb").." acúmulos.",
+			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("sangramento", "Bleed_rgb_pt_br").." ao causar um "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br")..". Máximo de "..CNumb("16", "n_16_rgb").." acúmulos.",
 			es = CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CKWord("Sangrado", "Bleed_rgb_es").." al asestar un "..CKWord("Golpe Crítico", "Crit_hit_rgb_es")..". Máximo "..CNumb("16", "n_16_rgb").." acumulaciones.",
 		},
 		--[+ LACERATE +]-- ruof Терзание	20.04.2026
@@ -945,7 +929,7 @@ local weapon_localizations = {
 			ja = "非"..CKWord("弱点ヒット", "Weakspothits_rgb_ja").."時に、敵に "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタックの"..CKWord("出血", "Bleed_rgb_ja").."を付与。最大 "..CNumb("16", "n_16_rgb").." スタック。",
 			ko = "비"..CKWord("약점 적중", "Weakspothits_rgb_ko").." 시 적에게 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩의 "..CKWord("출혈", "Bleed_rgb_ko").."을 부여합니다. 최대 "..CNumb("16", "n_16_rgb").." 중첩.",
 			pl = CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CKWord("Krwawienia", "Bleed_rgb_pl").." przy Trafieniu nie w "..CKWord("Słaby Punkt", "Weakspothits_rgb_pl")..". Maks. "..CNumb("16", "n_16_rgb").." ładunków.",
-			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("Sangramento", "Bleed_rgb_pt_br").." em Acertos que não são em "..CKWord("Pontos Fracos", "Weakspothits_rgb_pt_br")..". Máximo de "..CNumb("16", "n_16_rgb").." acúmulos.",
+			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulo(s) de "..CKWord("sangramento", "Bleed_rgb_pt_br").." em acertos. Não conta "..CKWord("acertos em pontos fracos", "Weakspothits_rgb_pt_br")..". Máximo de "..CNumb("16", "n_16_rgb").." acúmulos.",
 			es = CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CKWord("Sangrado", "Bleed_rgb_es").." al Golpear fuera de "..CKWord("Puntos Débiles", "Weakspothits_rgb_es")..". Máximo "..CNumb("16", "n_16_rgb").." acumulaciones.",
 		},
 		--[+ EXECUTOR +]-- ruof Экзекутор	20.04.2026
@@ -966,7 +950,7 @@ local weapon_localizations = {
 			ja = "連続"..CKWord("弱点ヒット", "Weakspothit_rgb_ja").."時、"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。 "..CNote("Pwr_note"),
 			ko = "연속 "..CKWord("약점 적중", "Weakspothit_rgb_ko").." 시 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩. "..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." przy Wielokrotnym "..CKWord("Trafieniu w Słaby Punkt", "Weakspothit_rgb_pl")..". Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy. "..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." em "..CKWord("Acertos em Ponto Fraco", "Weakspothit_rgb_pt_br").." Consecutivos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. "..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." a cada "..CKWord("acerto em ponto fraco", "Weakspothit_rgb_pt_br").." consecutivo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. "..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." en "..CKWord("Golpes a Punto Débil", "Weakspothit_rgb_es").." Repetidos. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces. "..CNote("Pwr_note"),
 		},
 		--[+ RIPOSTE +]-- ruof Ответный удар	20.04.2026
@@ -985,7 +969,7 @@ local weapon_localizations = {
 			ja = "回避成功時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。",
 			ko = "회피 성공 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 근접 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek. po Udanej Uniku.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos após uma Esquiva bem-sucedida.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos após uma esquiva bem-sucedida.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos tras una Esquiva exitosa.",
 		},
 		--[+ PRECOGNITION +]-- ruof Познание	20.04.2026
@@ -1005,7 +989,7 @@ local weapon_localizations = {
 			ja = "回避成功時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("技巧ダメージ", "Finesse_dmg_rgb_ja").."が "..CNumb("{damage:%s}", "dmg_var_rgb").." 増加。"..CNote("Fns_note"),
 			ko = "회피 성공 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 근접 "..CKWord("기교 피해", "Finesse_dmg_rgb_ko").."가 "..CNumb("{damage:%s}", "dmg_var_rgb").." 증가합니다."..CNote("Fns_note"),
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażeń Finezyjnych", "Finesse_dmg_rgb_pl").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek. po Udanej Uniku."..CNote("Fns_note"),
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano de Destreza", "Finesse_dmg_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos após uma Esquiva bem-sucedida."..CNote("Fns_note"),
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano de finesse", "Finesse_dmg_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos após uma esquiva bem-sucedida."..CNote("Fns_note"),
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño de Destreza", "Finesse_dmg_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos tras una Esquiva exitosa."..CNote("Fns_note"),
 		},
 		--[+ HAYMAKER +]-- ruof Коса	20.04.2026
@@ -1023,7 +1007,7 @@ local weapon_localizations = {
 			ja = "連続ヘビーヒット時、人型サイズの敵を即死させる確率が "..CNumb("{proc_chance:%s}", "procch_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。即死時は他の効果が発動しない。",
 			ko = "연속 강공격 시 인간형 적을 즉사시킬 확률이 "..CNumb("{proc_chance:%s}", "procch_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩. 즉사 시 다른 효과가 발동하지 않습니다.",
 			pl = CNumb("{proc_chance:%s}", "procch_var_rgb").." szansy na Natychmiastowe Zabicie wrogów rozmiaru człowieka przy Kolejnych Ciężkich Trafieniach. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy. Inne efekty nie aktywują się przy natychmiastowym zabójstwie.",
-			["pt-br"] = CNumb("{proc_chance:%s}", "procch_var_rgb").." de chance de Matar Instantaneamente inimigos de tamanho humano em Acertos Pesados Consecutivos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. Outros gatilhos não são ativados em mortes instantâneas.",
+			["pt-br"] = CNumb("{proc_chance:%s}", "procch_var_rgb").." de chance de matar instantaneamente inimigos de tamanho humano em acertos pesados consecutivos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. Outros efeitos não serão ativados em mortes instantâneas.",
 			es = CNumb("{proc_chance:%s}", "procch_var_rgb").." de probabilidad de Matar Instantáneamente a enemigos de tamaño humano con Golpes Pesados Encadenados. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces. Otros efectos no se activan en muertes instantáneas.",
 		},
 		--[+ SMACKDOWN +]-- ruof Смятение	20.04.2026
@@ -1042,7 +1026,7 @@ local weapon_localizations = {
 			ja = "特殊アクションヒットで"..CKWord("スタッガー状態", "Staggered_rgb_ja").."の敵を攻撃すると、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。",
 			ko = "특수 공격으로 "..CKWord("스태거 상태", "Staggered_rgb_ko").."의 적을 적중시키면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 근접 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek. po trafieniu "..CKWord("Oślepionego", "Staggered_rgb_pl").." wroga Atakiem Specjalnym.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao acertar um inimigo "..CKWord("Cambaleante", "Staggered_rgb_pt_br").." com um Ataque Especial.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao acertar um inimigo "..CKWord("desequilibrado", "Staggered_rgb_pt_br").." com um ataque especial.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al golpear a un enemigo "..CKWord("Tambaleante", "Staggered_rgb_es").." con un Ataque Especial.",
 		},
 		--[+ MERCY KILLER +]-- ruof Милосердие	20.04.2026
@@ -1059,7 +1043,7 @@ local weapon_localizations = {
 			ja = CKWord("出血", "Bleed_rgb_ja").."状態の敵への"..CKWord("弱点ダメージ", "Weakspot_dmg_rgb_ja").."が "..CNumb("{damage:%s}", "dmg_var_rgb").." 増加。",
 			ko = CKWord("출혈", "Bleed_rgb_ko").." 중첩이 있는 적에게 "..CKWord("약점 피해", "Weakspot_dmg_rgb_ko").."가 "..CNumb("{damage:%s}", "dmg_var_rgb").." 증가합니다.",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażeń w słaby punkt", "Weakspot_dmg_rgb_pl").." przeciwko wrogom z ładunkami "..CKWord("Krwawienia", "Bleed_rgb_pl")..".",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." contra inimigos com acúmulos de "..CKWord("Sangramento", "Bleed_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." contra inimigos com acúmulos de "..CKWord("sangramento", "Bleed_rgb_pt_br")..".",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño en punto débil", "Weakspot_dmg_rgb_es").." contra enemigos con acumulaciones de "..CKWord("Sangrado", "Bleed_rgb_es")..".",
 		},
 		--[+ RUTHLESS BACKSTAB +]-- ruof Беспощадный удар в спину	20.04.2026
@@ -1079,7 +1063,7 @@ local weapon_localizations = {
 			ja = "背後からの攻撃時、"..CKWord("貫通", "Rending_rgb_ja").."が "..CNumb("{rending:%s}", "rending_var_rgb").." 増加。"..CNote("Rend_note"),
 			ko = "후방 공격 시 "..CKWord("관통", "Rending_rgb_ko").."이 "..CNumb("{rending:%s}", "rending_var_rgb").." 증가합니다."..CNote("Rend_note"),
 			pl = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Rozrywanie", "Rending_rgb_pl").." przy Trafieniu w Plecy."..CNote("Rend_note"),
-			["pt-br"] = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Penetração", "Rending_rgb_pt_br").." em Acertos pelas Costas."..CNote("Rend_note"),
+			["pt-br"] = CNumb("{rending:%s}", "rending_var_rgb").." de "..CKWord("penetração", "Rending_rgb_pt_br").." em acertos pelas costas."..CNote("Rend_note"),
 			es = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Penetración", "Rending_rgb_es").." al Golpear por la Espalda."..CNote("Rend_note"),
 		},
 		--[+ UNCANNY STRIKE +]-- ruof Жуткий удар	21.05.2026
@@ -1117,7 +1101,7 @@ local weapon_localizations = {
 			pl = CNumb("+", "n_plus_rgb")..CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Kruchości", "Brittleness_rgb_pl").." na "..CNumb("{time:%s}", "time_var_rgb").." sek. przy "..CKWord("Trafieniu w Słaby Punkt", "Weakspothit_rgb_pl")..". Do "..CNumb("40%", "pc_40_rgb").." przy "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." ładunkach. "
 				..CPhrs("Can_be_refr")
 				..CNote("Brtl_note"),
-			["pt-br"] = CNumb("+", "n_plus_rgb")..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Fragilidade", "Brittleness_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao "..CKWord("Acertar um Ponto Fraco", "Weakspothit_rgb_pt_br")..". Até "..CNumb("40%", "pc_40_rgb").." com "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos. "
+			["pt-br"] = CNumb("+", "n_plus_rgb")..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("fragilidade", "Brittleness_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao "..CKWord("acerto em ponto fraco", "Weakspothit_rgb_pt_br")..". Até "..CNumb("40%", "pc_40_rgb").." com "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos. "
 				..CPhrs("Can_be_refr")
 				..CNote("Brtl_note"),
 			es = CNumb("+", "n_plus_rgb")..CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Fragilidad", "Brittleness_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al "..CKWord("Golpear un Punto Débil", "Weakspothit_rgb_es")..". Hasta "..CNumb("40%", "pc_40_rgb").." con "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acumulaciones. "
@@ -1140,7 +1124,7 @@ local weapon_localizations = {
 			ja = "連続ヒット時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("衝撃", "Impact_rgb_ja").."が "..CNumb("{impact:%s}", "impact_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。",
 			ko = "연속 적중 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("충격", "Impact_rgb_ko").."이 "..CNumb("{impact:%s}", "impact_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩.",
 			pl = CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("Impet", "Impact_rgb_pl").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek. przy Wielokrotnym Trafieniu. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("Impacto", "Impact_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos em Acertos Repetidos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{impact:%s}", "impact_var_rgb").." de "..CKWord("impacto", "Impact_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos em acertos repetidos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("Impacto", "Impact_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al Golpear Repetidamente. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ VICIOUS SLICE +]-- ruof Жестокая нарезка	20.04.2026
@@ -1160,7 +1144,7 @@ local weapon_localizations = {
 			ja = "同じ攻撃で既に命中した敵の数に応じて、対象への"..CKWord("衝撃", "Impact_rgb_ja").."が "..CNumb("{impact:%s}", "impact_var_rgb").." 増加。最大 "..CNumb("5", "n_5_rgb").." 回スタック。",
 			ko = "동일한 공격에 이미 적중한 적 한 명당 대상에게 "..CKWord("충격", "Impact_rgb_ko").."이 "..CNumb("{impact:%s}", "impact_var_rgb").." 증가합니다. 최대 "..CNumb("5", "n_5_rgb").." 중첩.",
 			pl = CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("Impetu", "Impact_rgb_pl").." na Cel za każdego wroga już trafionego tym samym atakiem. Maks. "..CNumb("5", "n_5_rgb").." ładunków.",
-			["pt-br"] = CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("Impacto", "Impact_rgb_pt_br").." no Alvo para cada inimigo já atingido pelo mesmo ataque. Até "..CNumb("5", "n_5_rgb").." acúmulos.",
+			["pt-br"] = CNumb("{impact:%s}", "impact_var_rgb").." de "..CKWord("impacto", "Impact_rgb_pt_br").." ao alvo, segue para cada inimigo que será atingido pelo mesmo ataque. Até "..CNumb("5", "n_5_rgb").." acúmulos.",
 			es = CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("Impacto", "Impact_rgb_es").." al Objetivo por cada enemigo ya golpeado por el mismo ataque. Hasta "..CNumb("5", "n_5_rgb").." acumulaciones.",
 		},
 		--[+ HAMMERBLOW +]-- ruof Удар молотом	20.04.2026
@@ -1179,7 +1163,7 @@ local weapon_localizations = {
 			ja = "ヒット時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("衝撃", "Impact_rgb_ja").."が "..CNumb("{impact:%s}", "impact_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。一撃で複数スタック獲得可能。",
 			ko = "적중 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("충격", "Impact_rgb_ko").."이 "..CNumb("{impact:%s}", "impact_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩. 한 번의 공격으로 여러 중첩을 얻을 수 있습니다.",
 			pl = CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("Impetu", "Impact_rgb_pl").." na "..CNumb("{time:%s}", "time_var_rgb").." sek. przy Trafieniu. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy. Może generować wiele ładunków na uderzenie.",
-			["pt-br"] = CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("Impacto", "Impact_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao Acertar. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. Pode gerar múltiplos acúmulos por golpe.",
+			["pt-br"] = CNumb("{impact:%s}", "impact_var_rgb").." de "..CKWord("impacto", "Impact_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao acertar. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. Pode gerar múltiplos acúmulos por golpe.",
 			es = CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("Impacto", "Impact_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al Golpear. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces. Puede generar múltiples acumulaciones por golpe.",
 		},
 		--[+ SKULLCRUSHER +]-- ruof Череподробитель	20.04.2026
@@ -1198,7 +1182,7 @@ local weapon_localizations = {
 			ja = "対象が既に"..CKWord("スタッガー状態", "Staggered_rgb_ja").."の場合、"..CNumb("{stacks:%s}", "stacks_var_rgb").." スタックの "..CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").."を付与。最大 "..CNumb("8", "n_8_rgb").." スタック。持続 "..CNumb("{time:%s}", "time_var_rgb").."秒。",
 			ko = "대상이 이미 "..CKWord("스태거 상태", "Staggered_rgb_ko").."인 경우 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩의 "..CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").."를 부여합니다. 최대 "..CNumb("8", "n_8_rgb").." 중첩. "..CNumb("{time:%s}", "time_var_rgb").."초 지속.",
 			pl = "Cel otrzymuje "..CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażeń", "Damage_rgb_pl")..", jeśli już "..CKWord("Oślepiony", "Staggered_rgb_pl")..". Maks. "..CNumb("8", "n_8_rgb").." ładunków. Trwa "..CNumb("{time:%s}", "time_var_rgb").." sek.",
-			["pt-br"] = "O alvo recebe "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." se já estiver "..CKWord("Cambaleante", "Staggered_rgb_pt_br")..". Máx. "..CNumb("8", "n_8_rgb").." acúmulos. Dura "..CNumb("{time:%s}", "time_var_rgb").." seg.",
+			["pt-br"] = "O alvo recebe "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulo(s) de "..CNumb("{damage:%s}", "dmg_var_rgb").." em "..CKWord("dano", "Damage_rgb_pt_br").." se já estiver "..CKWord("desequilibrado", "Staggered_rgb_pt_br")..". Máximo de "..CNumb("8", "n_8_rgb").." acúmulos. Dura "..CNumb("{time:%s}", "time_var_rgb").." segundos.",
 			es = "El objetivo recibe "..CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." si ya está "..CKWord("Tambaleante", "Staggered_rgb_es")..". Máx. "..CNumb("8", "n_8_rgb").." acumulaciones. Dura "..CNumb("{time:%s}", "time_var_rgb").." seg.",
 		},
 		--[+ THUNDERSTRIKE +]-- ruof Гроза	20.04.2026
@@ -1217,7 +1201,7 @@ local weapon_localizations = {
 			ja = "対象が既に"..CKWord("スタッガー状態", "Staggered_rgb_ja").."の場合、"..CNumb("{stacks:%s}", "stacks_var_rgb").." スタックの "..CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("衝撃", "Impact_rgb_ja").."を付与。最大 "..CNumb("8", "n_8_rgb").." スタック。持続 "..CNumb("{time:%s}", "time_var_rgb").."秒。",
 			ko = "대상이 이미 "..CKWord("스태거 상태", "Staggered_rgb_ko").."인 경우 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩의 "..CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("충격", "Impact_rgb_ko").."을 부여합니다. 최대 "..CNumb("8", "n_8_rgb").." 중첩. "..CNumb("{time:%s}", "time_var_rgb").."초 지속.",
 			pl = "Cel otrzymuje "..CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("Impetu", "Impact_rgb_pl")..", jeśli już "..CKWord("Oślepiony", "Staggered_rgb_pl")..". Maks. "..CNumb("8", "n_8_rgb").." ładunków. Trwa "..CNumb("{time:%s}", "time_var_rgb").." sek.",
-			["pt-br"] = "O alvo recebe "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("Impacto", "Impact_rgb_pt_br").." se já estiver "..CKWord("Cambaleante", "Staggered_rgb_pt_br")..". Máx. "..CNumb("8", "n_8_rgb").." acúmulos. Dura "..CNumb("{time:%s}", "time_var_rgb").." seg.",
+			["pt-br"] = "O alvo recebe "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulo(s) de "..CNumb("{impact:%s}", "impact_var_rgb").." em "..CKWord("impacto", "Impact_rgb_pt_br").." se já estiver "..CKWord("desequilibrado", "Staggered_rgb_pt_br")..". Máximo de "..CNumb("8", "n_8_rgb").." acúmulos. Dura "..CNumb("{time:%s}", "time_var_rgb").." segundos.",
 			es = "El objetivo recibe "..CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CNumb("{impact:%s}", "impact_var_rgb").." "..CKWord("Impacto", "Impact_rgb_es").." si ya está "..CKWord("Tambaleante", "Staggered_rgb_es")..". Máx. "..CNumb("8", "n_8_rgb").." acumulaciones. Dura "..CNumb("{time:%s}", "time_var_rgb").." seg.",
 		},
 		--[+ CHAINED DEATHBLOW +]-- ruof Цепочка смертельных ударов	20.04.2026
@@ -1236,7 +1220,7 @@ local weapon_localizations = {
 			ja = CKWord("弱点キル", "Weakspot_k_dmg_rgb_ja").."時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。{#color(255, 35, 5)}(バグ：全ティアで+10%){#reset()}",
 			ko = CKWord("약점 처치", "Weakspot_k_dmg_rgb_ko").." 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다. {#color(255, 35, 5)}(버그: 모든 단계에서 +10%){#reset()}",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek. po Zabójstwie w "..CKWord("Słaby Punkt", "Weakspot_rgb_pl")..". {#color(255, 35, 5)}(Błąd: +10% niezależnie od poziomu){#reset()}",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao Matar com "..CKWord("Ponto Fraco", "Weakspot_rgb_pt_br")..". {#color(255, 35, 5)}(bug: +10% independente do nível){#reset()}",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao matar em "..CKWord("ponto fraco", "Weakspot_rgb_pt_br")..". {#color(255, 35, 5)}(bug: +10% independente do nível){#reset()}",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al Matar en "..CKWord("Punto Débil", "Weakspot_rgb_es")..". {#color(255, 35, 5)}(bug: +10% sin importar el nivel){#reset()}",
 		},
 		--[+ PERFECT STRIKE +]-- ruof Безупречный удар	20.04.2026
@@ -1254,28 +1238,28 @@ local weapon_localizations = {
 			ja = "近接"..CKWord("クリティカルヒット", "Crit_hit_rgb_ja").."ダメージが "..CNumb("{crit_damage:%s}", "critdmg_var_rgb").." 増加。クリティカルヒットは装甲による"..CKWord("ヒットマス", "Hit_mass_rgb_ja").."ボーナスを無視。",
 			ko = "근접 "..CKWord("크리티컬 적중", "Crit_hit_rgb_ko").." 피해가 "..CNumb("{crit_damage:%s}", "critdmg_var_rgb").." 증가합니다. 크리티컬 적중은 방어구의 "..CKWord("충돌 질량", "Hit_mass_rgb_ko").." 보너스를 무시합니다.",
 			pl = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." "..CKWord("Obrażenia krytycznego ataku", "Crt_strk_dmg_rgb_pl").." w Walce Wręcz. "..CKWord("Krytyczne Trafienia", "Crit_hits_rgb_pl").." ignorują premię do "..CKWord("Masy Trafienia", "Hit_mass_rgb_pl").." z pancerza.",
-			["pt-br"] = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." "..CKWord("Dano de golpe crítico", "Crt_strk_dmg_rgb_pt_br").." Corpo a Corpo. "..CKWord("Acertos Críticos", "Crit_hits_rgb_pt_br").." ignoram o bônus de "..CKWord("Massa de Impacto", "Hit_mass_rgb_pt_br").." da armadura.",
+			["pt-br"] = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." de "..CKWord("dano de golpe crítico", "Crt_strk_dmg_rgb_pt_br").." corpo a corpo. "..CKWord("acertos críticos", "Crit_hits_rgb_pt_br").." ignoram o bônus de "..CKWord("massa de impacto", "Hit_mass_rgb_pt_br").." da armadura.",
 			es = CNumb("{crit_damage:%s}", "critdmg_var_rgb").." "..CKWord("Daño de golpe crítico", "Crt_strk_dmg_rgb_es").." Cuerpo a Cuerpo. Los "..CKWord("Golpes Críticos", "Crit_hits_rgb_es").." ignoran el bono de "..CKWord("Masa de Golpe", "Hit_mass_rgb_es").." de la armadura.",
 		},
-		--[+ BLADED MOMENTUM +]-- ruof Моментум лезвия	07.04.2026
+		--[+ BLADED MOMENTUM +]-- ruof Моментум лезвия	09.06.2026
 		-- Rending per stack (per tier)
 		-- Heavy Swords -- 5% & 2.5s | 6% & 3s | 7% & 3.5s | 8% & 4s (up to +32%)
-		["loc_trait_bespoke_stacking_rending_on_cleave_desc"] = { -- rending: +8%, time: 4, stacks: 4, +colors, +note
-			en = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Rending", "Rending_rgb").." for "..CNumb("{time:%s}", "time_var_rgb").." seconds when hitting "..CNumb("2", "n_2_rgb").." or more enemies with a melee attack. Stacks "..CNumb("{stacks:%s}", "stacks_var_rgb").." times. "
+		["loc_trait_bespoke_stacking_melee_rending_on_cleave_desc"] = { -- rending: +8%, time: 4, stacks: 4, +colors, +note
+			en = CNumb("{rending:%s}", "rending_var_rgb").." Melee "..CKWord("Rending", "Rending_rgb").." for "..CNumb("{time:%s}", "time_var_rgb").." seconds when hitting "..CNumb("2", "n_2_rgb").." or more enemies with a Melee attack. Stacks "..CNumb("{stacks:%s}", "stacks_var_rgb").." times. "
 				..CPhrs("Can_be_refr")..CNote("Rend_note"),
-			ru = CNumb("{rending:%s}", "rending_var_rgb").." к "..CKWord("пробиванию", "probivaniu_rgb_ru").." брони на "..CNumb("{time:%s}", "time_var_rgb").." секунды при ударе по "..CNumb("2", "n_2_rgb").." или более врагам за раз. Суммируется "..CNumb("{stacks:%s}", "stacks_var_rgb").." раз.\n"
+			ru = CNumb("{rending:%s}", "rending_var_rgb").." к "..CKWord("пробиванию", "probivaniu_rgb_ru").." брони в ближнем бою на "..CNumb("{time:%s}", "time_var_rgb").." секунды при ударе по "..CNumb("2", "n_2_rgb").." или более врагам за раз. Суммируется "..CNumb("{stacks:%s}", "stacks_var_rgb").." раз.\n"
 				..CPhrs("Can_be_refr").."\n"
 				..CNote("Rend_note"), -- Инерция клинка
-			fr = CNumb("{rending:%s}", "rending_var_rgb").." de "..CKWord("Déchirure", "Rending_rgb_fr").." pendant "..CNumb("{time:%s}", "time_var_rgb").." secondes lors d'un coup en mélée multiple. Se cumule "..CNumb("{stacks:%s}", "stacks_var_rgb").." fois."..CNote("Rend_note"),
-			["zh-tw"] = "在一次攻擊命中多名敵人 "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("撕裂", "Rending_rgb_tw").." ，\n持續 "..CNumb("{time:%s}", "time_var_rgb").." 秒，上限 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 層。" .. CNote("Rend_note"),
-			["zh-cn"] = "命中多名敌人时"..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("撕裂", "Rending_rgb_zh_cn").."，\n持续 "..CNumb("{time:%s}", "time_var_rgb").." 秒。最多叠加 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 层。"..CNote("Rend_note"),
-			de = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Durchschlag", "Rending_rgb_de").." für "..CNumb("{time:%s}", "time_var_rgb").." Sekunden, wenn mit einem Nahkampfangriff mindestens "..CNumb("2", "n_2_rgb").." Gegner getroffen werden. Stapelt "..CNumb("{stacks:%s}", "stacks_var_rgb").." Mal."..CNote("Rend_note"),
-			it = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Penetrazione", "Rending_rgb_it").." per "..CNumb("{time:%s}", "time_var_rgb").." secondi colpendo almeno "..CNumb("2", "n_2_rgb").." nemici con un attacco in Corpo a Corpo. Cumulabile "..CNumb("{stacks:%s}", "stacks_var_rgb").." volte."..CNote("Rend_note"),
-			ja = "一度の攻撃で "..CNumb("2", "n_2_rgb").." 体以上の敵に命中すると、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("貫通", "Rending_rgb_ja").."が "..CNumb("{rending:%s}", "rending_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。"..CNote("Rend_note"),
-			ko = "한 번의 공격으로 "..CNumb("2", "n_2_rgb").."명 이상의 적을 적중시키면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("관통", "Rending_rgb_ko").."이 "..CNumb("{rending:%s}", "rending_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩."..CNote("Rend_note"),
-			pl = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Rozrywanie", "Rending_rgb_pl").." na "..CNumb("{time:%s}", "time_var_rgb").." sek. przy trafieniu co najmniej "..CNumb("2", "n_2_rgb").." wrogów jednym atakiem. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy."..CNote("Rend_note"),
-			["pt-br"] = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Penetração", "Rending_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao atingir "..CNumb("2", "n_2_rgb").." ou mais inimigos com um ataque Corpo a Corpo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Rend_note"),
-			es = CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Penetración", "Rending_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al golpear a "..CNumb("2", "n_2_rgb").." o más enemigos con un ataque Cuerpo a Cuerpo. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces."..CNote("Rend_note"),
+			fr = CNumb("{rending:%s}", "rending_var_rgb").." de mêlée "..CKWord("Déchirure", "Rending_rgb_fr").." pendant "..CNumb("{time:%s}", "time_var_rgb").." secondes lors d'un coup en mélée multiple. Se cumule "..CNumb("{stacks:%s}", "stacks_var_rgb").." fois. "..CNote("Rend_note"),
+			["zh-tw"] = "在一次攻擊命中多名敵人 "..CNumb("{rending:%s}", "rending_var_rgb").."近戰"..CKWord("撕裂", "Rending_rgb_tw").." ，\n持續 "..CNumb("{time:%s}", "time_var_rgb").." 秒，上限 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 層。 " .. CNote("Rend_note"),
+			["zh-cn"] = "命中多名敌人时"..CNumb("{rending:%s}", "rending_var_rgb").."近战"..CKWord("撕裂", "Rending_rgb_zh_cn").."，\n持续 "..CNumb("{time:%s}", "time_var_rgb").." 秒。最多叠加 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 层。 "..CNote("Rend_note"),
+			de = CNumb("{rending:%s}", "rending_var_rgb").." Nahkampf "..CKWord("Durchschlag", "Rending_rgb_de").." für "..CNumb("{time:%s}", "time_var_rgb").." Sekunden, wenn mit einem Nahkampfangriff mindestens "..CNumb("2", "n_2_rgb").." Gegner getroffen werden. Stapelt "..CNumb("{stacks:%s}", "stacks_var_rgb").." Mal. "..CNote("Rend_note"),
+			it = CNumb("{rending:%s}", "rending_var_rgb").." corpo a corpo "..CKWord("Penetrazione", "Rending_rgb_it").." per "..CNumb("{time:%s}", "time_var_rgb").." secondi colpendo almeno "..CNumb("2", "n_2_rgb").." nemici con un attacco in Corpo a Corpo. Cumulabile "..CNumb("{stacks:%s}", "stacks_var_rgb").." volte. "..CNote("Rend_note"),
+			ja = "一度の攻撃で "..CNumb("2", "n_2_rgb").." 体以上の敵に命中すると、"..CNumb("{time:%s}", "time_var_rgb").."秒間".."近接"..CKWord("貫通", "Rending_rgb_ja").."が "..CNumb("{rending:%s}", "rending_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。 "..CNote("Rend_note"),
+			ko = "한 번의 공격으로 "..CNumb("2", "n_2_rgb").."명 이상의 적을 적중시키면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 ".."근접"..CKWord("관통", "Rending_rgb_ko").."이 "..CNumb("{rending:%s}", "rending_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩. "..CNote("Rend_note"),
+			pl = CNumb("{rending:%s}", "rending_var_rgb").." w walce wręcz "..CKWord("Rozrywanie", "Rending_rgb_pl").." na "..CNumb("{time:%s}", "time_var_rgb").." sek. przy trafieniu co najmniej "..CNumb("2", "n_2_rgb").." wrogów jednym atakiem. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy. "..CNote("Rend_note"),
+			["pt-br"] = CNumb("{rending:%s}", "rending_var_rgb").." corpo a corpo "..CKWord("Penetração", "Rending_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao atingir "..CNumb("2", "n_2_rgb").." ou mais inimigos com um ataque Corpo a Corpo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. "..CNote("Rend_note"),
+			es = CNumb("{rending:%s}", "rending_var_rgb").." cuerpo a cuerpo "..CKWord("Penetración", "Rending_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al golpear a "..CNumb("2", "n_2_rgb").." o más enemigos con un ataque Cuerpo a Cuerpo. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces. "..CNote("Rend_note"),
 		},
 		--[+ DEFLECTOR +]-- ruof Отражатель	07.04.2026
 		-- Block Cost Reduction (per tier)
@@ -1291,7 +1275,7 @@ local weapon_localizations = {
 			ja = "この武器は近接攻撃と遠隔攻撃の両方をブロック可能。さらにブロックコストが "..CNumb("{block_cost:%s}", "block_var_rgb").." 減少。",
 			ko = "이 무기는 근접 및 원거리 공격을 모두 막을 수 있습니다. 또한 블록 소모가 "..CNumb("{block_cost:%s}", "block_var_rgb").." 감소합니다.",
 			pl = "Ta broń blokuje zarówno ataki w Walce Wręcz, jak i Dystansowe. Dodatkowo, koszt blokowania zmniejsza się o "..CNumb("{block_cost:%s}", "block_var_rgb")..".",
-			["pt-br"] = "Esta arma Bloqueia ataques Corpo a Corpo e à Distância. Além disso, o custo de bloqueio é reduzido em "..CNumb("{block_cost:%s}", "block_var_rgb")..".",
+			["pt-br"] = "Esta arma Bloqueia ataques corpo a corpo e à distância. Além disso, o custo de bloqueio é reduzido em "..CNumb("{block_cost:%s}", "block_var_rgb")..".",
 			es = "Esta arma Bloquea tanto ataques Cuerpo a Cuerpo como a Distancia. Además, el coste de bloqueo se reduce un "..CNumb("{block_cost:%s}", "block_var_rgb")..".",
 		},
 		--[+ MOMENTUM +]-- ruof Моментум	07.04.2026
@@ -1311,7 +1295,7 @@ local weapon_localizations = {
 			ja = "一度の攻撃で "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." 体以上の敵にヒットすると、"..CKWord("タフネス", "Toughness_rgb_ja").."が "..CNumb("{toughness:%s}", "tghns_var_rgb").." 回復。",
 			ko = "한 번의 공격으로 최소 "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").."명의 적을 적중시키면 "..CKWord("강인함", "Toughness_rgb_ko").."이 "..CNumb("{toughness:%s}", "tghns_var_rgb").." 회복됩니다.",
 			pl = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Wytrzymałości", "Toughness_rgb_pl").." przy trafieniu co najmniej "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." wrogów jednym atakiem.",
-			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Resistência", "Toughness_rgb_pt_br").." restaurada ao atingir pelo menos "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." inimigos com um ataque.",
+			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." de "..CKWord("resistência", "Toughness_rgb_pt_br").." restaurada ao atingir pelo menos "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." inimigos com um ataque.",
 			es = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Aguante", "Toughness_rgb_es").." restaurada al golpear al menos a "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." enemigos con un ataque.",
 		},
 		--[+ MURDEROUS TRANQUILITY +]-- ruof Убийственное спокойствие	07.04.2026
@@ -1331,7 +1315,7 @@ local weapon_localizations = {
 			ja = "一度の攻撃で "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." 体以上の敵に命中すると、"..CKWord("ペリル", "Peril_rgb_ja").."が "..CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." 解消される。",
 			ko = "한 번의 공격으로 최소 "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").."명의 적을 적중시키면 "..CKWord("위험도", "Peril_rgb_ko").."가 "..CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." 감소합니다.",
 			pl = "Trafienie co najmniej "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." wrogów jednym atakiem rozprasza "..CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." "..CKWord("Zagrożenia", "Peril_rgb_pl")..".",
-			["pt-br"] = "Atingir pelo menos "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." inimigos com um ataque aplaca "..CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." "..CKWord("Perigo", "Peril_rgb_pt_br")..".",
+			["pt-br"] = "Atingir pelo menos "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." inimigos com um ataque subjuga "..CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." de "..CKWord("perigo", "Peril_rgb_pt_br")..".",
 			es = "Golpear al menos a "..CNumb("{multiple_hit:%s}", "mult_hit_var_rgb").." enemigos con un ataque aplaca "..CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." "..CKWord("Peligro", "Peril_rgb_es")..".",
 		},
 		--[+ BLAZING SPIRIT -- !!! MELEE !!! ruof Пламенный дух	07.04.2026
@@ -1353,7 +1337,7 @@ local weapon_localizations = {
 			ja = CKWord("クリティカルヒット", "Crit_hit_rgb_ja").."時、敵に "..CNumb("+", "n_plus_rgb")..CNumb("{stacks:%s}", "stacks_var_rgb").." スタックの"..CKWord("ソウルブレイズ", "Soulblaze_rgb_ja").."を付与。最大 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." スタック。",
 			ko = CKWord("크리티컬 적중", "Crit_hit_rgb_ko").." 시 적에게 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩의 "..CKWord("영혼의 불꽃", "Soulblaze_rgb_ko").."을 부여합니다. 최대 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." 중첩.",
 			pl = "Wróg otrzymuje "..CNumb("+", "n_plus_rgb")..""..CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CKWord("Pożogi Duszy", "Soulblaze_rgb_pl").." przy "..CKWord("Krytycznym Trafieniu", "Crit_hit_rgb_pl")..". Maks. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." ładunków.",
-			["pt-br"] = "O inimigo ganha "..CNumb("+", "n_plus_rgb")..""..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("Labareda d'Alma", "Soulblaze_rgb_pt_br").." ao sofrer um "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br")..". Máx. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos.",
+			["pt-br"] = "O inimigo ganha "..CNumb("+", "n_plus_rgb")..""..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulo(s) de "..CKWord("chama da alma", "Soulblaze_rgb_pt_br").." ao sofrer um "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br")..". Máximo de "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos.",
 			es = "El enemigo obtiene "..CNumb("+", "n_plus_rgb")..""..CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CKWord("Fuego de Alma", "Soulblaze_rgb_es").." al recibir un "..CKWord("Golpe Crítico", "Crit_hit_rgb_es")..". Máx. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acumulaciones.",
 		},
 		--[+ UNSTABLE POWER +]-- ruof Нестабильная мощь	07.04.2026
@@ -1372,7 +1356,7 @@ local weapon_localizations = {
 			ja = CKWord("ペリル", "Peril_rgb_ja").."量に応じて、最大 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("威力", "Strength_rgb_ja").." を獲得。最大 "..CNumb("4", "n_4_rgb").." 回スタック。"..CNote("Pwr_note"),
 			ko = CKWord("위험도", "Peril_rgb_ko").."에 따라 최대 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("위력", "Strength_rgb_ko").."을 얻습니다. 최대 "..CNumb("4", "n_4_rgb").."회 중첩."..CNote("Pwr_note"),
 			pl = "Do "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." w zależności od poziomu "..CKWord("Zagrożenia", "Peril_rgb_pl")..". Kumuluje się "..CNumb("4", "n_4_rgb").." razy."..CNote("Pwr_note"),
-			["pt-br"] = "Até "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br")..", baseado no nível de "..CKWord("Perigo", "Peril_rgb_pt_br")..". Acumula "..CNumb("4", "n_4_rgb").." vezes."..CNote("Pwr_note"),
+			["pt-br"] = "Até "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br")..", baseado no nível de "..CKWord("perigo", "Peril_rgb_pt_br")..". Acumula "..CNumb("4", "n_4_rgb").." vezes."..CNote("Pwr_note"),
 			es = "Hasta "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es")..", según el nivel de "..CKWord("Peligro", "Peril_rgb_es")..". Se acumula "..CNumb("4", "n_4_rgb").." veces."..CNote("Pwr_note"),
 		},
 		--[+ WARP SLICE +]-- ruof Варп-удар
@@ -1389,7 +1373,7 @@ local weapon_localizations = {
 			ja = "発動時、必ず"..CKWord("クリティカルストライク", "Crit_strike_rgb_ja").."になる。クールダウン "..CNumb("{cooldown:%s}", "cd_var_rgb").."秒。",
 			ko = "발동 시 "..CKWord("크리티컬 스트라이크", "Crit_strike_rgb_ko").."가 확정됩니다. 재사용 대기시간 "..CNumb("{cooldown:%s}", "cd_var_rgb").."초.",
 			pl = "Gwarantowany "..CKWord("Krytyczny Atak", "Crit_strike_rgb_pl").." po aktywacji. Czas odnowienia "..CNumb("{cooldown:%s}", "cd_var_rgb").." sek.",
-			["pt-br"] = CKWord("Golpe Crítico", "Crit_strike_rgb_pt_br").." Garantido ao Ativar. Tempo de recarga "..CNumb("{cooldown:%s}", "cd_var_rgb").." segundos.",
+			["pt-br"] = CKWord("golpe crítico", "Crit_strike_rgb_pt_br").." garantido ao ativar. Tempo de recarga de "..CNumb("{cooldown:%s}", "cd_var_rgb").." segundos.",
 			es = CKWord("Golpe Crítico", "Crit_strike_rgb_es").." Garantizado al Activar. Tiempo de recarga "..CNumb("{cooldown:%s}", "cd_var_rgb").." segundos.",
 		},
 		--[+ EXORCIST +]-- ruof Экзорцист
@@ -1408,7 +1392,7 @@ local weapon_localizations = {
 			ja = "連続"..CKWord("弱点ヒット", "Weakspothit_rgb_ja").."時、"..CKWord("ペリル", "Peril_rgb_ja").."が "..CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." 解消。",
 			ko = "연속 "..CKWord("약점 적중", "Weakspothit_rgb_ko").." 시 "..CKWord("위험도", "Peril_rgb_ko").."가 "..CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." 감소합니다.",
 			pl = CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." "..CKWord("Zagrożenia", "Peril_rgb_pl").." rozpraszane przy Wielokrotnym "..CKWord("Trafieniu w Słaby Punkt", "Weakspothit_rgb_pl")..".",
-			["pt-br"] = CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." "..CKWord("Perigo", "Peril_rgb_pt_br").." é aplacado em "..CKWord("Acertos em Ponto Fraco", "Weakspothit_rgb_pt_br").." Repetidos.",
+			["pt-br"] = CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." do "..CKWord("perigo", "Peril_rgb_pt_br").." é subjugado em caso de "..CKWord("acerto em ponto fraco", "Weakspothit_rgb_pt_br").." repetido.",
 			es = CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." "..CKWord("Peligro", "Peril_rgb_es").." se aplaca en "..CKWord("Golpes a Punto Débil", "Weakspothit_rgb_es").." Repetidos.",
 		},
 		--[+ SUPERIORITY +]-- ruof Превосходство	20.04.2026
@@ -1427,7 +1411,7 @@ local weapon_localizations = {
 			ja = "エリートキル時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。スタックは個別に消失。"..CNote("Pwr_note"),
 			ko = "엘리트 처치 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩. 중첩은 하나씩 사라집니다."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." na "..CNumb("{time:%s}", "time_var_rgb").." sek. po Zabiciu Elity. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy. Ładunki zanikają pojedynczo."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao Matar um Elite. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. Acúmulos decaem individualmente."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao matar um elite. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. Acúmulos decaem individualmente."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al Matar a un Élite. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces. Las acumulaciones decaen individualmente."..CNote("Pwr_note"),
 		},
 		--[+ LIGHTNING REFLEXES +]-- ruof Молниеносные рефлексы
@@ -1445,7 +1429,7 @@ local weapon_localizations = {
 			ja = "パーフェクトブロックで攻撃者を"..CKWord("スタン", "Stuns_rgb_ja").."させ、"..CNumb("{duration:%s}", "dur_var_rgb").."秒間、近接"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。クールダウン "..CNumb("{cooldown_duration:%s}", "cd_dur_var_rgb").."秒。"..CNote("Pwr_note"),
 			ko = "완벽한 블록 시 공격자를 "..CKWord("기절", "Stuns_rgb_ko").."시키고 "..CNumb("{duration:%s}", "dur_var_rgb").."초 동안 근접 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 재사용 대기시간 "..CNumb("{cooldown_duration:%s}", "cd_dur_var_rgb").."초."..CNote("Pwr_note"),
 			pl = "Perfekcyjny Blok "..CKWord("Ogłusza", "Stuns_rgb_pl").." atakującego i zapewnia "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." w Walce Wręcz na "..CNumb("{duration:%s}", "dur_var_rgb").." sek. Odnowienie "..CNumb("{cooldown_duration:%s}", "cd_dur_var_rgb").." sek."..CNote("Pwr_note"),
-			["pt-br"] = "Bloqueios Perfeitos "..CKWord("Atordoam", "Stuns_rgb_pt_br").." o atacante e concedem "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." Corpo a Corpo por "..CNumb("{duration:%s}", "dur_var_rgb").." seg. Tempo de recarga "..CNumb("{cooldown_duration:%s}", "cd_dur_var_rgb").." seg."..CNote("Pwr_note"),
+			["pt-br"] = "Bloqueios Perfeitos "..CKWord("atordoam", "Stuns_rgb_pt_br").." o atacante e concedem "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." corpo a corpo por "..CNumb("{duration:%s}", "dur_var_rgb").." segundos. Tempo de recarga de "..CNumb("{cooldown_duration:%s}", "cd_dur_var_rgb").." segundos."..CNote("Pwr_note"),
 			es = "Bloqueos Perfectos "..CKWord("Aturden", "Stuns_rgb_es").." al atacante y otorgan "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." Cuerpo a Cuerpo durante "..CNumb("{duration:%s}", "dur_var_rgb").." seg. Tiempo de recarga "..CNumb("{cooldown_duration:%s}", "cd_dur_var_rgb").." seg."..CNote("Pwr_note"),
 		},
 		--[+ HIGH VOLTAGE +]-- ruof Высокое напряжение
@@ -1462,7 +1446,7 @@ local weapon_localizations = {
 			ja = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("ダメージ", "Damage_rgb_ja").." vs "..CKWord("感電状態", "Electrocuted_rgb_ja").."の敵。",
 			ko = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("피해", "Damage_rgb_ko").." vs "..CKWord("감전된", "Electrocuted_rgb_ko").." 적.",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażeń", "Damage_rgb_pl").." przeciwko "..CKWord("Porażonym", "Electrocuted_rgb_pl").." wrogom.",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." contra inimigos "..CKWord("Eletrocutados", "Electrocuted_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." contra inimigos "..CKWord("eletrocutados", "Electrocuted_rgb_pt_br")..".",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." contra enemigos "..CKWord("Electrocutados", "Electrocuted_rgb_es")..".",
 		},
 		--[+ FALTER +]-- ruof Дрожь
@@ -1481,7 +1465,7 @@ local weapon_localizations = {
 			ja = CKWord("弱点ヒット", "Weakspothit_rgb_ja").."時、敵への"..CKWord("スタッガー", "Stagger_rgb_ja").."効果が "..CNumb("{stagger:%s}", "stgr_var_rgb").." 増加。さらに遠隔"..CKWord("スタッガー", "Stagger_rgb_ja").."効果が "..CNumb("{ranged_stagger:%s}", "stgrrang_var_rgb").." 増加。",
 			ko = CKWord("약점 적중", "Weakspothit_rgb_ko").." 시 적에게 주는 "..CKWord("스태거", "Stagger_rgb_ko").." 효과가 "..CNumb("{stagger:%s}", "stgr_var_rgb").." 증가합니다. 또한 원거리 "..CKWord("스태거", "Stagger_rgb_ko").." 효과가 "..CNumb("{ranged_stagger:%s}", "stgrrang_var_rgb").." 증가합니다.",
 			pl = "Zwiększa "..CKWord("Oszołomienie", "Stagger_rgb_pl").." wrogów o "..CNumb("{stagger:%s}", "stgr_var_rgb").." przy "..CKWord("Trafieniu w Słaby Punkt", "Weakspothit_rgb_pl")..". Dodatkowo, siła "..CKWord("Oszołomienia", "Stagger_rgb_pl").." na dystans wzrasta o "..CNumb("{ranged_stagger:%s}", "stgrrang_var_rgb")..".",
-			["pt-br"] = "Aumenta o "..CKWord("Cambaleio", "Stagger_rgb_pt_br").." dos inimigos em "..CNumb("{stagger:%s}", "stgr_var_rgb").." ao "..CKWord("Acertar um Ponto Fraco", "Weakspothit_rgb_pt_br")..". Também aumenta o "..CKWord("Cambaleio", "Stagger_rgb_pt_br").." à distância em "..CNumb("{ranged_stagger:%s}", "stgrrang_var_rgb")..".",
+			["pt-br"] = "Aumenta o "..CKWord("desequilibrio", "Stagger_rgb_pt_br").." dos inimigos em "..CNumb("{stagger:%s}", "stgr_var_rgb").." ao "..CKWord("acerto em ponto fraco", "Weakspothit_rgb_pt_br")..". Também aumenta o "..CKWord("desequilibrio", "Stagger_rgb_pt_br").." à distância em "..CNumb("{ranged_stagger:%s}", "stgrrang_var_rgb")..".",
 			es = "Aumenta el "..CKWord("Tambaleo", "Stagger_rgb_es").." de los enemigos en "..CNumb("{stagger:%s}", "stgr_var_rgb").." al "..CKWord("Golpear un Punto Débil", "Weakspothit_rgb_es")..". También aumenta la potencia de "..CKWord("Tambaleo", "Stagger_rgb_es").." a distancia en "..CNumb("{ranged_stagger:%s}", "stgrrang_var_rgb")..".",
 		},
 		--[+ OVERWHELMING FORCE +]-- ruof Подавляющая сила
@@ -1500,7 +1484,7 @@ local weapon_localizations = {
 			ja = "敵を"..CKWord("スタッガー", "Staggering_rgb_ja").."させると、"..CNumb("{chance:%s}", "chnc_var_rgb").." の確率で"..CKWord("感電", "Electrocute_rgb_ja").."させる。クールダウン "..CNumb("{cooldown:%s}", "cd_var_rgb").."秒。",
 			ko = "적을 "..CKWord("스태거", "Staggering_rgb_ko").."시키면 "..CNumb("{chance:%s}", "chnc_var_rgb").." 확률로 적을 "..CKWord("감전", "Electrocute_rgb_ko").."시킵니다. 재사용 대기시간 "..CNumb("{cooldown:%s}", "cd_var_rgb").."초.",
 			pl = "Wprawienie wroga w "..CKWord("Oszołomienie", "Staggering_rgb_pl").." daje "..CNumb("{chance:%s}", "chnc_var_rgb").." szansy na jego "..CKWord("Porażenie", "Electrocute_rgb_pl")..". Czas odnowienia "..CNumb("{cooldown:%s}", "cd_var_rgb").." sek.",
-			["pt-br"] = "Fazer um inimigo "..CKWord("Cambalear", "Staggering_rgb_pt_br").." tem "..CNumb("{chance:%s}", "chnc_var_rgb").." de chance de "..CKWord("Eletrocutá-lo", "Electrocute_rgb_pt_br")..". Tempo de recarga "..CNumb("{cooldown:%s}", "cd_var_rgb").." seg.",
+			["pt-br"] = "Fazer um inimigo "..CKWord("desequilibrar", "Staggering_rgb_pt_br").." tem "..CNumb("{chance:%s}", "chnc_var_rgb").." de chance de o "..CKWord("eletrocutar", "Electrocute_rgb_pt_br")..". Tempo de recarga de "..CNumb("{cooldown:%s}", "cd_var_rgb").." segundos.",
 			es = "Hacer "..CKWord("Tambalear", "Staggering_rgb_es").." a un enemigo tiene un "..CNumb("{chance:%s}", "chnc_var_rgb").." de probabilidad de "..CKWord("Electrocutarlo", "Electrocute_rgb_es")..". Tiempo de recarga "..CNumb("{cooldown:%s}", "cd_var_rgb").." seg.",
 		},
 		--[+ COUNTERATTACK +]-- ruof Контратака
@@ -1519,7 +1503,7 @@ local weapon_localizations = {
 			ja = "パーフェクトブロック時、"..CNumb("{duration:%s}", "dur_var_rgb").."秒間、攻撃速度が "..CNumb("{attack_speed:%s}", "attack_spd_var_rgb").." 増加。"..CNumb("{interval:%s}", "interval_var_rgb").."秒に一度のみ発動可能。",
 			ko = "완벽한 블록 시 "..CNumb("{duration:%s}", "dur_var_rgb").."초 동안 공격 속도가 "..CNumb("{attack_speed:%s}", "attack_spd_var_rgb").." 증가합니다. "..CNumb("{interval:%s}", "interval_var_rgb").."초에 한 번만 발동합니다.",
 			pl = CNumb("{attack_speed:%s}", "attack_spd_var_rgb").." Szybkości Ataku na "..CNumb("{duration:%s}", "dur_var_rgb").." sek. po Perfekcyjnym Bloku. Może wystąpić raz na "..CNumb("{interval:%s}", "interval_var_rgb").." sek.",
-			["pt-br"] = CNumb("{attack_speed:%s}", "attack_spd_var_rgb").." de Velocidade de Ataque por "..CNumb("{duration:%s}", "dur_var_rgb").." seg. ao realizar um Bloqueio Perfeito. Só pode ocorrer uma vez a cada "..CNumb("{interval:%s}", "interval_var_rgb").." seg.",
+			["pt-br"] = CNumb("{attack_speed:%s}", "attack_spd_var_rgb").." de velocidade de ataque por "..CNumb("{duration:%s}", "dur_var_rgb").." segundos ao realizar um bloqueio perfeito. Só pode ocorrer uma vez a cada "..CNumb("{interval:%s}", "interval_var_rgb").." segundos.",
 			es = CNumb("{attack_speed:%s}", "attack_spd_var_rgb").." Velocidad de Ataque durante "..CNumb("{duration:%s}", "dur_var_rgb").." seg. al realizar un Bloqueo Perfecto. Solo puede ocurrir una vez cada "..CNumb("{interval:%s}", "interval_var_rgb").." seg.",
 		},
 		--[+ CRANIAL GROUNDING +]-- ruof Черепное заземление	21.05.2026
@@ -1538,7 +1522,7 @@ local weapon_localizations = {
 			ja = "連続"..CKWord("弱点ヒット", "Weakspothits_rgb_ja").."時、"..CNumb("{duration:%s}", "dur_var_rgb").."秒間"..CKWord("ヒート", "Heat_rgb_ja").."蓄積が "..CNumb("{buildup_amount:%s}", "buildup_var_rgb").." 減少し、"..CKWord("フィネスダメージ", "Finesse_dmg_rgb_ja").."が "..CNumb("{damage:%s}", "dmg_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。",
 			ko = "연속 "..CKWord("약점 적중", "Weakspothits_rgb_ko").." 시 "..CNumb("{duration:%s}", "dur_var_rgb").."초 동안 "..CKWord("열기", "Heat_rgb_ko").." 축적이 "..CNumb("{buildup_amount:%s}", "buildup_var_rgb").." 감소하고 "..CKWord("섬세함 피해", "Finesse_dmg_rgb_ko").."가 "..CNumb("{damage:%s}", "dmg_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩.",
 			pl = "Zmniejsza generowanie "..CKWord("Ciepła", "Heat_rgb_pl").." o "..CNumb("{buildup_amount:%s}", "buildup_var_rgb").." i zwiększa "..CKWord("Obrażenia od finezji", "Finesse_dmg_rgb_pl").." o "..CNumb("{damage:%s}", "dmg_var_rgb").." na "..CNumb("{duration:%s}", "dur_var_rgb").." sek. przy Wielokrotnych "..CKWord("Trafieniach w Słaby Punkt", "Weakspothits_rgb_pl")..". Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = "Reduz o acúmulo de "..CKWord("Calor", "Heat_rgb_pt_br").." em "..CNumb("{buildup_amount:%s}", "buildup_var_rgb").." e aumenta o "..CKWord("Dano de fineza", "Finesse_dmg_rgb_pt_br").." em "..CNumb("{damage:%s}", "dmg_var_rgb").." por "..CNumb("{duration:%s}", "dur_var_rgb").." segundos em "..CKWord("Acertos em Ponto Fraco", "Weakspothits_rgb_pt_br").." consecutivos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = "Reduz o acúmulo de "..CKWord("calor", "Heat_rgb_pt_br").." em "..CNumb("{buildup_amount:%s}", "buildup_var_rgb").." e aumenta o "..CKWord("dano de finesse", "Finesse_dmg_rgb_pt_br").." em "..CNumb("{damage:%s}", "dmg_var_rgb").." por "..CNumb("{duration:%s}", "dur_var_rgb").." segundos em "..CKWord("acertos em pontos fracos", "Weakspothits_rgb_pt_br").." consecutivos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = "Reduce la acumulación de "..CKWord("Calor", "Heat_rgb_es").." en "..CNumb("{buildup_amount:%s}", "buildup_var_rgb").." y aumenta el "..CKWord("Daño de fineza", "Finesse_dmg_rgb_es").." en "..CNumb("{damage:%s}", "dmg_var_rgb").." durante "..CNumb("{duration:%s}", "dur_var_rgb").." segundos al "..CKWord("Golpear Puntos Débiles", "Weakspothits_rgb_es").." repetidamente. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 			-- !!! Removed "+". Fix in the Enhanced_Descriptions.lua file !!! --
@@ -1556,7 +1540,7 @@ local weapon_localizations = {
 			ja = "ロックアウト状態になると、周囲に爆発を起こし、"..CKWord("ヒート", "Heat_rgb_ja").."が即座に "..CNumb("{overheat_reduction:%s}", "overheat_red_var_rgb").." 減少する。",
 			ko = "과열 잠금 상태에 돌입하면 주변에 폭발을 일으키고 "..CKWord("열기", "Heat_rgb_ko").."가 즉시 "..CNumb("{overheat_reduction:%s}", "overheat_red_var_rgb").." 감소합니다.",
 			pl = "Po wejściu w stan Zablokowania, wywołujesz Eksplozję wokół siebie i natychmiast redukujesz "..CKWord("Ciepło", "Heat_rgb_pl").." o "..CNumb("{overheat_reduction:%s}", "overheat_red_var_rgb")..".",
-			["pt-br"] = "Ao entrar em estado de Travamento, você causa uma Explosão ao redor e reduz imediatamente o "..CKWord("Calor", "Heat_rgb_pt_br").." em "..CNumb("{overheat_reduction:%s}", "overheat_red_var_rgb")..".",
+			["pt-br"] = "Ao entrar em estado de superaquecimento, você causa uma explosão ao seu redor e reduz imediatamente o "..CKWord("calor", "Heat_rgb_pt_br").." em "..CNumb("{overheat_reduction:%s}", "overheat_red_var_rgb")..".",
 			es = "Al entrar en estado de Bloqueo, causas una Explosión a tu alrededor y reduces inmediatamente el "..CKWord("Calor", "Heat_rgb_es").." en "..CNumb("{overheat_reduction:%s}", "overheat_red_var_rgb")..".",
 		},
 		--[+ ENERGY LEAKAGE +]-- ruof Утечка энергии
@@ -1575,7 +1559,7 @@ local weapon_localizations = {
 			ja = CKWord("ヒート", "Heat_rgb_ja").."量に応じて、最大 "..CNumb("{amount}", "amount_var_rgb").." "..CKWord("威力", "Strength_rgb_ja").." を獲得。"..CNote("Pwr_note"),
 			ko = CKWord("열기", "Heat_rgb_ko").."에 따라 최대 "..CNumb("{amount}", "amount_var_rgb").." "..CKWord("위력", "Strength_rgb_ko").."을 얻습니다."..CNote("Pwr_note"),
 			pl = "Zwiększa "..CKWord("Siłę", "Strength_rgb_pl").." nawet do "..CNumb("{amount}", "amount_var_rgb")..", w zależności od poziomu "..CKWord("Ciepła", "Heat_rgb_pl").."."..CNote("Pwr_note"),
-			["pt-br"] = "Aumenta a "..CKWord("Potência", "Strength_rgb_pt_br").." em até "..CNumb("{amount}", "amount_var_rgb")..", baseado no nível de "..CKWord("Calor", "Heat_rgb_pt_br").."."..CNote("Pwr_note"),
+			["pt-br"] = "Aumenta a "..CKWord("força", "Strength_rgb_pt_br").." em até "..CNumb("{amount}", "amount_var_rgb")..", baseado no nível de "..CKWord("calor", "Heat_rgb_pt_br").."."..CNote("Pwr_note"),
 			es = "Aumenta la "..CKWord("Potencia", "Strength_rgb_es").." hasta "..CNumb("{amount}", "amount_var_rgb")..", según el nivel de "..CKWord("Calor", "Heat_rgb_es").."."..CNote("Pwr_note"),
 		},
 		--[+ HEATSINK +]-- ruof Теплоотвод
@@ -1594,7 +1578,7 @@ local weapon_localizations = {
 			ja = CKWord("弱点キル", "Weakspot_k_dmg_rgb_ja").."か"..CKWord("クリティカルキル", "Crit_k_rgb_ja").."時、"..CNumb("{time:%s}", "time_var_rgb").."秒間で"..CKWord("ヒート", "Heat_rgb_ja").."が "..CNumb("{amount}", "amount_var_rgb").." 減少。",
 			ko = CKWord("약점 처치", "Weakspot_k_dmg_rgb_ko").." 또는 "..CKWord("크리티컬 처치", "Crit_k_rgb_ko").." 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("열기", "Heat_rgb_ko").."가 "..CNumb("{amount}", "amount_var_rgb").." 감소합니다.",
 			pl = "Zabójstwa w "..CKWord("Słaby Punkt", "Weakspot_rgb_pl").." lub "..CKWord("Krytyczne", "Crit_hits_rgb_pl").." redukują "..CKWord("Ciepło", "Heat_rgb_pl").." o "..CNumb("{amount}", "amount_var_rgb").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek.",
-			["pt-br"] = "Abates em "..CKWord("Ponto Fraco", "Weakspot_rgb_pt_br").." ou "..CKWord("Críticos", "Crit_hits_rgb_pt_br").." reduzem o "..CKWord("Calor", "Heat_rgb_pt_br").." em "..CNumb("{amount}", "amount_var_rgb").." por "..CNumb("{time:%s}", "time_var_rgb").." seg.",
+			["pt-br"] = "Abates em "..CKWord("ponto fraco", "Weakspot_rgb_pt_br").." ou "..CKWord("acertos críticos", "Crit_hits_rgb_pt_br").." reduzem o "..CKWord("calor", "Heat_rgb_pt_br").." em "..CNumb("{amount}", "amount_var_rgb").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos.",
 			es = "Las muertes en "..CKWord("Punto Débil", "Weakspot_rgb_es").." o "..CKWord("Críticas", "Crit_hits_rgb_es").." reducen el "..CKWord("Calor", "Heat_rgb_es").." en "..CNumb("{amount}", "amount_var_rgb").." durante "..CNumb("{time:%s}", "time_var_rgb").." seg.",
 		},
 		--[+ SYPHON +]-- ruof Сифон
@@ -1613,7 +1597,7 @@ local weapon_localizations = {
 			ja = "武器特殊アクション発動中に、一度の攻撃で "..CNumb("3", "n_3_rgb").." 体以上の敵に命中すると、"..CKWord("タフネス", "Toughness_rgb_ja").."が "..CNumb("{toughness:%s}", "tghns_var_rgb").." 回復。",
 			ko = "무기 특수 기능이 활성화된 동안 한 번의 공격으로 최소 "..CNumb("3", "n_3_rgb").."명의 적을 적중시키면 "..CKWord("강인함", "Toughness_rgb_ko").."이 "..CNumb("{toughness:%s}", "tghns_var_rgb").." 회복됩니다.",
 			pl = "Trafienie co najmniej "..CNumb("3", "n_3_rgb").." wrogów jednym atakiem, gdy aktywny jest Specjalny Tryb Broni, przywraca "..CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Wytrzymałości", "Toughness_rgb_pl")..".",
-			["pt-br"] = "Atingir pelo menos "..CNumb("3", "n_3_rgb").." inimigos com um ataque enquanto o Ataque Especial da arma está ativo restaura "..CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Resistência", "Toughness_rgb_pt_br")..".",
+			["pt-br"] = "Atingir pelo menos "..CNumb("3", "n_3_rgb").." inimigos com um golpe enquanto o ataque especial da arma está ativado irá restaurar "..CNumb("{toughness:%s}", "tghns_var_rgb").." de "..CKWord("resistência", "Toughness_rgb_pt_br")..".",
 			es = "Golpear al menos a "..CNumb("3", "n_3_rgb").." enemigos con un ataque mientras el Ataque Especial del arma está activo restaura "..CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Aguante", "Toughness_rgb_es")..".",
 		},
 		--[+ ENERGY TRANSFER +]-- ruof Передача энергии	20.04.2026
@@ -1630,7 +1614,7 @@ local weapon_localizations = {
 			ja = "パーフェクトブロック時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("ヒート", "Heat_rgb_ja").."蓄積が "..CNumb("{heat_reduction:%s}", "heat_red_var_rgb").." 減少し、"..CKWord("ヒート", "Heat_rgb_ja").."消散が "..CNumb("{heat_dissipation:%s}", "heat_diss_var_rgb").." 増加。"..CNumb("{interval:%s}", "interval_var_rgb").."秒に一度のみ発動可能。",
 			ko = "완벽한 블록 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("열기", "Heat_rgb_ko").." 축적이 "..CNumb("{heat_reduction:%s}", "heat_red_var_rgb").." 감소하고 "..CKWord("열기", "Heat_rgb_ko").." 소산이 "..CNumb("{heat_dissipation:%s}", "heat_diss_var_rgb").." 증가합니다. "..CNumb("{interval:%s}", "interval_var_rgb").."초에 한 번만 발동합니다.",
 			pl = "Zmniejsza generowanie "..CKWord("Ciepła", "Heat_rgb_pl").." o "..CNumb("{heat_reduction:%s}", "heat_red_var_rgb").." i zwiększa rozpraszanie "..CKWord("Ciepła", "Heat_rgb_pl").." o "..CNumb("{heat_dissipation:%s}", "heat_diss_var_rgb").." na "..CNumb("{time:%s}", "time_var_rgb").." sek. przy Perfekcyjnym Bloku. Może wystąpić raz na "..CNumb("{interval:%s}", "interval_var_rgb").." sek.",
-			["pt-br"] = "Reduz o acúmulo de "..CKWord("Calor", "Heat_rgb_pt_br").." em "..CNumb("{heat_reduction:%s}", "heat_red_var_rgb").." e aumenta a dissipação de "..CKWord("Calor", "Heat_rgb_pt_br").." em "..CNumb("{heat_dissipation:%s}", "heat_diss_var_rgb").." por "..CNumb("{time:%s}", "time_var_rgb").." seg. ao realizar um Bloqueio Perfeito. Só pode ocorrer uma vez a cada "..CNumb("{interval:%s}", "interval_var_rgb").." seg.",
+			["pt-br"] = "Reduz o acúmulo de "..CKWord("calor", "Heat_rgb_pt_br").." em "..CNumb("{heat_reduction:%s}", "heat_red_var_rgb").." e aumenta a dissipação de "..CKWord("calor", "Heat_rgb_pt_br").." em "..CNumb("{heat_dissipation:%s}", "heat_diss_var_rgb").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao realizar um bloqueio perfeito. Só pode ocorrer uma vez a cada "..CNumb("{interval:%s}", "interval_var_rgb").." segundos.",
 			es = "Reduce la acumulación de "..CKWord("Calor", "Heat_rgb_es").." en "..CNumb("{heat_reduction:%s}", "heat_red_var_rgb").." y aumenta la disipación de "..CKWord("Calor", "Heat_rgb_es").." en "..CNumb("{heat_dissipation:%s}", "heat_diss_var_rgb").." durante "..CNumb("{time:%s}", "time_var_rgb").." seg. al realizar un Bloqueo Perfecto. Solo puede ocurrir una vez cada "..CNumb("{interval:%s}", "interval_var_rgb").." seg.",
 		},
 		--[+ SHOCK & AWE / SHOCK AND AWE +]-- ruof Шок и трепет
@@ -1649,7 +1633,7 @@ local weapon_localizations = {
 			ja = "キル時、"..CNumb("{time:%s}", "time_var_rgb").."秒間、敵の"..CKWord("ヒットマス", "Hit_mass_rgb_ja").."が "..CNumb("{hit_mass:%s}", "hitmass_var_rgb").." 減少。",
 			ko = "처치 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 적의 "..CKWord("충돌 질량", "Hit_mass_rgb_ko").."이 "..CNumb("{hit_mass:%s}", "hitmass_var_rgb").." 감소합니다.",
 			pl = CNumb("{hit_mass:%s}", "hitmass_var_rgb").." "..CKWord("Masy Trafienia", "Hit_mass_rgb_pl").." wroga na "..CNumb("{time:%s}", "time_var_rgb").." sek. po Zabójstwie.",
-			["pt-br"] = CNumb("{hit_mass:%s}", "hitmass_var_rgb").." "..CKWord("Massa de Impacto", "Hit_mass_rgb_pt_br").." inimiga por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao Matar.",
+			["pt-br"] = CNumb("{hit_mass:%s}", "hitmass_var_rgb").." de "..CKWord("massa de impacto", "Hit_mass_rgb_pt_br").." inimigo por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao matar.",
 			es = CNumb("{hit_mass:%s}", "hitmass_var_rgb").." "..CKWord("Masa de Golpe", "Hit_mass_rgb_es").." enemiga durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al Matar.",
 		},
 		--[+ TAKE A SWING +]-- ruof Замах
@@ -1669,7 +1653,7 @@ local weapon_localizations = {
 			ja = "敵を押した後、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("弱点ダメージ", "Weakspot_dmg_rgb_ja").."が "..CNumb("{damage:%s}", "dmg_var_rgb").." 増加。",
 			ko = "적을 밀쳐낸 후 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("약점 피해", "Weakspot_dmg_rgb_ko").."가 "..CNumb("{damage:%s}", "dmg_var_rgb").." 증가합니다.",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażeń w słaby punkt", "Weakspot_dmg_rgb_pl").." na "..CNumb("{time:%s}", "time_var_rgb").." sek. po Odepchnięciu Wrogów.",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao Empurrar Inimigos.",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao empurrar inimigos.",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño en punto débil", "Weakspot_dmg_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al Empujar Enemigos.",
 		},
 		--[+ SUPERCHARGE +]-- ruof Суперзаряд	20.04.2026
@@ -1690,7 +1674,7 @@ local weapon_localizations = {
 			ja = "エネルギー攻撃ヒット時、敵に "..CNumb("{rend:%s}", "rend_var_rgb").." スタックの"..CKWord("脆弱", "Brittleness_rgb_ja").."を付与。"..CNote("Brtl_note"),
 			ko = "에너지 충전 공격 적중 시 적에게 "..CNumb("{rend:%s}", "rend_var_rgb").." 중첩의 "..CKWord("취약", "Brittleness_rgb_ko").."을 부여합니다."..CNote("Brtl_note"),
 			pl = CNumb("{rend:%s}", "rend_var_rgb").." ładunków "..CKWord("Kruchości", "Brittleness_rgb_pl").." przy Naładowanym Energetycznie Trafieniu."..CNote("Brtl_note"),
-			["pt-br"] = CNumb("{rend:%s}", "rend_var_rgb").." acúmulos de "..CKWord("Fragilidade", "Brittleness_rgb_pt_br").." ao Acertar com Ataque Energizado."..CNote("Brtl_note"),
+			["pt-br"] = CNumb("{rend:%s}", "rend_var_rgb").." acúmulo(s) de "..CKWord("fragilidade", "Brittleness_rgb_pt_br").." ao acertar com ataque energizado."..CNote("Brtl_note"),
 			es = CNumb("{rend:%s}", "rend_var_rgb").." acumulaciones de "..CKWord("Fragilidad", "Brittleness_rgb_es").." al Golpear con Ataque Energizado."..CNote("Brtl_note"),
 		},
 		--[+ POWER CYCLER +]-- ruof Цикл силы
@@ -1710,7 +1694,7 @@ local weapon_localizations = {
 			ja = "エネルギー攻撃ヒット時、"..CKWord("衝撃", "Impact_rgb_ja").."が "..CNumb("{stagger:%s}", "stgr_var_rgb").." 増加し、連続エネルギー攻撃回数が "..CNumb("{extra_hits:%s}", "extrahits_var_rgb").." 回増加。",
 			ko = "에너지 충전 공격 적중 시 "..CKWord("충격", "Impact_rgb_ko").."이 "..CNumb("{stagger:%s}", "stgr_var_rgb").." 증가하고, 추가 에너지 충전 공격 횟수가 "..CNumb("{extra_hits:%s}", "extrahits_var_rgb").."회 증가합니다.",
 			pl = CNumb("{extra_hits:%s}", "extrahits_var_rgb").." Dodatkowych Energetycznych Trafień w Serii i "..CNumb("{stagger:%s}", "stgr_var_rgb").." "..CKWord("Impetu", "Impact_rgb_pl").." przy Energetycznych Trafieniach.",
-			["pt-br"] = CNumb("{extra_hits:%s}", "extrahits_var_rgb").." Acertos Energizados Adicionais em Corrente e "..CNumb("{stagger:%s}", "stgr_var_rgb").." "..CKWord("Impacto", "Impact_rgb_pt_br").." em Acertos Energizados.",
+			["pt-br"] = CNumb("{extra_hits:%s}", "extrahits_var_rgb").." acertos energizados adicionais em cadeia e "..CNumb("{stagger:%s}", "stgr_var_rgb").." de "..CKWord("impacto", "Impact_rgb_pt_br").." em acertos energizados.",
 			es = CNumb("{extra_hits:%s}", "extrahits_var_rgb").." Golpes Energizados Extra en Cadena y "..CNumb("{stagger:%s}", "stgr_var_rgb").." "..CKWord("Impacto", "Impact_rgb_es").." en Golpes Energizados.",
 		},
 		--[+ SUNDER +]-- ruof Сандер
@@ -1731,7 +1715,7 @@ local weapon_localizations = {
 			ja = "エネルギー攻撃時、近接ヘビーアタックの"..CKWord("ダメージ", "Damage_rgb_ja").."が "..CNumb("{heavy_damage:%s}", "dmghvy_var_rgb").." 増加し、"..CKWord("薙ぎ払い", "Cleave_rgb_ja").."が強化される。",
 			ko = "에너지 충전 공격 시 근접 강공격 "..CKWord("피해", "Damage_rgb_ko").."가 "..CNumb("{heavy_damage:%s}", "dmghvy_var_rgb").." 증가하고 "..CKWord("베어넘기기", "Cleave_rgb_ko").."가 강화됩니다.",
 			pl = "Przy Energetycznych Atakach: Zwiększa "..CKWord("Przebicie", "Cleave_rgb_pl").." i "..CKWord("Obrażenia", "Damage_rgb_pl").." Ciężkich Ataków w Walce Wręcz o "..CNumb("{heavy_damage:%s}", "dmghvy_var_rgb")..".",
-			["pt-br"] = "Em Ataques Energizados: Aumenta o "..CKWord("Corte Profundo", "Cleave_rgb_pt_br").." e o "..CKWord("Dano", "Damage_rgb_pt_br").." de Ataques Pesados Corpo a Corpo em "..CNumb("{heavy_damage:%s}", "dmghvy_var_rgb")..".",
+			["pt-br"] = "Em ataques energizados: aumenta o "..CKWord("fender", "Cleave_rgb_pt_br").." e o "..CKWord("dano", "Damage_rgb_pt_br").." de ataques pesados corpo a corpo em "..CNumb("{heavy_damage:%s}", "dmghvy_var_rgb")..".",
 			es = "En Ataques Energizados: Aumenta la "..CKWord("Hendidura", "Cleave_rgb_es").." y el "..CKWord("Daño", "Damage_rgb_es").." de Ataques Pesados Cuerpo a Cuerpo un "..CNumb("{heavy_damage:%s}", "dmghvy_var_rgb")..".",
 		},
 		--[+ SUCKER PUNCH +]-- ruof Удар исподтишка
@@ -1751,7 +1735,7 @@ local weapon_localizations = {
 			ja = "特殊アクションヒット時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。",
 			ko = "특수 공격 적중 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 근접 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek. po Trafieniu Atakiem Specjalnym.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao Acertar um Ataque Especial.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao acertar um ataque especial.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al Golpear con un Ataque Especial.",
 		},
 		--[+ CONFIDENT STRIKE +]-- ruof Уверенный удар
@@ -1770,7 +1754,7 @@ local weapon_localizations = {
 			ja = "連鎖ヒット時、"..CKWord("タフネス", "Toughness_rgb_ja").."が "..CNumb("{toughness:%s}", "tghns_var_rgb").." 回復。",
 			ko = "연속 적중 시 "..CKWord("강인함", "Toughness_rgb_ko").."이 "..CNumb("{toughness:%s}", "tghns_var_rgb").." 회복됩니다.",
 			pl = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Wytrzymałości", "Toughness_rgb_pl").." przy Kolejnym Trafieniu.",
-			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Resistência", "Toughness_rgb_pt_br").." em Acertos Consecutivos.",
+			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." de "..CKWord("resistência", "Toughness_rgb_pt_br").." em acertos consecutivos.",
 			es = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Aguante", "Toughness_rgb_es").." en Golpes Encadenados.",
 		},
 		--[+ NO GUTS, NO GLORY +]-- ruof Нет смелости — нет славы
@@ -1788,7 +1772,7 @@ local weapon_localizations = {
 			ja = "エリートへの特殊アクションヒット時、"..CNumb("{time:%s}", "time_var_rgb").."秒間、毎秒"..CKWord("タフネス", "Toughness_rgb_ja").."が "..CNumb("{toughness:%s}", "tghns_var_rgb").." 回復。",
 			ko = "엘리트에게 특수 공격 적중 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 초당 "..CKWord("강인함", "Toughness_rgb_ko").."이 "..CNumb("{toughness:%s}", "tghns_var_rgb").." 회복됩니다.",
 			pl = CNumb("{toughness:%s}", "tghns_var_rgb").." Regeneracji "..CKWord("Wytrzymałości", "Toughness_rgb_pl").." na sekundę przez "..CNumb("{time:%s}", "time_var_rgb").." sek. po Trafieniu Elitarnego Wroga Atakiem Specjalnym.",
-			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." de Regeneração de "..CKWord("Resistência", "Toughness_rgb_pt_br").." por segundo durante "..CNumb("{time:%s}", "time_var_rgb").." seg. ao Acertar um Elite com um Ataque Especial.",
+			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." de regeneração de "..CKWord("resistência", "Toughness_rgb_pt_br").." por segundo durante "..CNumb("{time:%s}", "time_var_rgb").." segundos ao acertar um elite com um ataque especial.",
 			es = CNumb("{toughness:%s}", "tghns_var_rgb").." de Regeneración de "..CKWord("Aguante", "Toughness_rgb_es").." por segundo durante "..CNumb("{time:%s}", "time_var_rgb").." seg. al Golpear a un Élite con un Ataque Especial.",
 		},
 		--[+ BASH +]-- ruof Удар
@@ -1808,7 +1792,7 @@ local weapon_localizations = {
 			ja = "敵を押した後、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。",
 			ko = "적을 밀쳐낸 후 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 근접 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek. po Odepchnięciu Wrogów.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao Empurrar Inimigos.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao empurrar inimigos.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al Empujar Enemigos.",
 		},
 		--[+ TENDERISER +]-- ruof Молот мясника
@@ -1827,7 +1811,7 @@ local weapon_localizations = {
 			ja = "武器特殊攻撃が命中すると、次の近接攻撃 "..CNumb("3", "n_3_rgb").." 回の"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power:%s}", "pwr_var_rgb").." 増加。"..CNote("Pwr_note"),
 			ko = "특수 공격 적중 시 이후 "..CNumb("3", "n_3_rgb").."회의 근접 공격 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power:%s}", "pwr_var_rgb").." 증가합니다."..CNote("Pwr_note"),
 			pl = CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." dla następnych "..CNumb("3", "n_3_rgb").." ataków w Walce Wręcz po trafieniu Specjalnym Atakiem Broni."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." para seus próximos "..CNumb("3", "n_3_rgb").." ataques Corpo a Corpo após acertar um Ataque Especial da arma."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power:%s}", "pwr_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." para seus próximos "..CNumb("3", "n_3_rgb").." ataques corpo a corpo após acertar um ataque especial da arma."..CNote("Pwr_note"),
 			es = CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." para tus siguientes "..CNumb("3", "n_3_rgb").." ataques Cuerpo a Cuerpo tras asestar un Ataque Especial del arma."..CNote("Pwr_note"),
 		},
 		--[+ UNSTOPPABLE FORCE +]-- ruof Неудержимая сила	20.04.2026
@@ -1844,7 +1828,7 @@ local weapon_localizations = {
 			ja = "完全チャージのヘビーアタックの"..CKWord("ダメージ", "Damage_rgb_ja").."が "..CNumb("{damage:%s}", "dmg_var_rgb").." 増加し、敵の"..CKWord("ヒットマス", "Hit_mass_rgb_ja").."を無視。",
 			ko = "완전 충전된 강공격의 "..CKWord("피해", "Damage_rgb_ko").."가 "..CNumb("{damage:%s}", "dmg_var_rgb").." 증가하고 적의 "..CKWord("충돌 질량", "Hit_mass_rgb_ko").."을 무시합니다.",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażeń", "Damage_rgb_pl").." dla W Pełni Naładowanych Ciężkich Ataków, które ignorują również "..CKWord("Masę Trafienia", "Hit_mass_rgb_pl").." wroga.",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." para Ataques Pesados Totalmente Carregados. Eles também ignoram a "..CKWord("Massa de Impacto", "Hit_mass_rgb_pt_br").." inimiga.",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." para ataques pesados totalmente carregados. Eles também ignoram a "..CKWord("massa de impacto", "Hit_mass_rgb_pt_br").." inimiga.",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." para Ataques Pesados Completamente Cargados. También ignoran la "..CKWord("Masa de Golpe", "Hit_mass_rgb_es").." enemiga.",
 		},
 		--[+ TORMENT +]-- ruof Истязание
@@ -1863,7 +1847,7 @@ local weapon_localizations = {
 			ja = "武器特殊攻撃ヒット時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。"..CNote("Pwr_note"),
 			ko = "특수 공격 적중 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." na "..CNumb("{time:%s}", "time_var_rgb").." sek. po Trafieniu Specjalnym Atakiem Broni."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao Acertar um Ataque Especial da arma."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao acertar um ataque especial da arma."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al asestar un Ataque Especial del arma."..CNote("Pwr_note"),
 		},
 		--[+ SLOW AND STEADY +]-- ruof Медленный и упорный
@@ -1881,7 +1865,7 @@ local weapon_localizations = {
 			ja = "ヘビーアタックのチャージ時間に応じて、敵にヒット時に最大 "..CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("タフネス", "Toughness_rgb_ja").." 回復。",
 			ko = "강공격 차지 시간에 따라 적 적중 시 최대 "..CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("강인함", "Toughness_rgb_ko").." 회복됩니다.",
 			pl = "Odzyskaj do "..CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Wytrzymałości", "Toughness_rgb_pl").." przy trafieniu wroga ciężkim atakiem, w zależności od czasu ładowania.",
-			["pt-br"] = "Recupere até "..CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Resistência", "Toughness_rgb_pt_br").." ao atingir um inimigo com um ataque pesado, baseado no tempo de carga.",
+			["pt-br"] = "Recupere até "..CNumb("{toughness:%s}", "tghns_var_rgb").." de "..CKWord("resistência", "Toughness_rgb_pt_br").." ao atingir um inimigo com um ataque pesado, baseado no tempo de recarga.",
 			es = "Recupera hasta "..CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Aguante", "Toughness_rgb_es").." al golpear a un enemigo con un ataque pesado, según el tiempo de carga.",
 		},
 		--[+ POWER SURGE +]-- ruof Скачок напряжения	20.04.2026
@@ -1898,7 +1882,7 @@ local weapon_localizations = {
 			ja = "特殊攻撃の爆発半径が "..CNumb("{explosion_radius:%s}", "explosion_rad_var_rgb").." 増加。装甲敵への特殊攻撃は追加の衝撃波を発生させる。",
 			ko = "특수 공격의 폭발 반경이 "..CNumb("{explosion_radius:%s}", "explosion_rad_var_rgb").." 증가합니다. 장갑 적에 대한 특수 공격은 추가 충격파를 발생시킵니다.",
 			pl = "Zwiększa promień wybuchu Ataków Specjalnych o "..CNumb("{explosion_radius:%s}", "explosion_rad_var_rgb")..". Ataki Specjalne na Opancerzonych Wrogów wywołują dodatkową Falę Uderzeniową.",
-			["pt-br"] = "Aumenta o Raio da Explosão dos Ataques Especiais em "..CNumb("{explosion_radius:%s}", "explosion_rad_var_rgb")..". Ataques Especiais em inimigos com Armadura causam uma Onda de Choque adicional.",
+			["pt-br"] = "Aumenta o raio da explosão dos ataques especiais em "..CNumb("{explosion_radius:%s}", "explosion_rad_var_rgb")..". Ataques especiais em inimigos com armadura causam uma onda de choque adicional.",
 			es = "Aumenta el Radio de Explosión de los Ataques Especiales un "..CNumb("{explosion_radius:%s}", "explosion_rad_var_rgb")..". Los Ataques Especiales sobre Enemigos Blindados provocan una Onda de Choque adicional.",
 		},
 		--[+ LAST GUARD +]-- ruof Последний страж
@@ -1915,7 +1899,7 @@ local weapon_localizations = {
 			ja = "ブロックコスト "..CNumb("{block_cost:%s}", "block_var_rgb").." 。攻撃をブロックして"..CKWord("スタミナ", "Stamina_rgb_ja").."が "..CNumb("0", "n_0_rgb").." になると、"..CNumb("5", "n_5_rgb").." メートル以内の敵をノックバック。クールダウン "..CNumb("{cooldown:%s}", "cd_var_rgb").." 秒。",
 			ko = "블록 소모 "..CNumb("{block_cost:%s}", "block_var_rgb").." . 공격을 블록하여 "..CKWord("스태미나", "Stamina_rgb_ko").."가 "..CNumb("0", "n_0_rgb").."이 되면 "..CNumb("5", "n_5_rgb").." 미터 내의 적을 밀쳐냅니다. 재사용 대기시간 "..CNumb("{cooldown:%s}", "cd_var_rgb").." 초.",
 			pl = CNumb("{block_cost:%s}", "block_var_rgb").." Kosztu Bloku. Gdy "..CKWord("Wytrzymałość", "Stamina_rgb_pl").." podczas blokowania ataków osiągnie "..CNumb("0", "n_0_rgb")..", odpycha wrogów w promieniu "..CNumb("5", "n_5_rgb").." metrów. Odnowienie "..CNumb("{cooldown:%s}", "cd_var_rgb").." sek.",
-			["pt-br"] = CNumb("{block_cost:%s}", "block_var_rgb").." Custo de Bloqueio. Quando o "..CKWord("Vigor", "Stamina_rgb_pt_br").." chega a "..CNumb("0", "n_0_rgb").." ao Bloquear um ataque, empurra inimigos em um raio de "..CNumb("5", "n_5_rgb").." metros. Tempo de recarga "..CNumb("{cooldown:%s}", "cd_var_rgb").." seg.",
+			["pt-br"] = CNumb("{block_cost:%s}", "block_var_rgb").."do custo de bloqueio. Quando o "..CKWord("vigor", "Stamina_rgb_pt_br").." chega a "..CNumb("0", "n_0_rgb").." ao bloquear um ataque, empurra inimigos em um raio de "..CNumb("5", "n_5_rgb").." metros. Tempo de recarga de"..CNumb("{cooldown:%s}", "cd_var_rgb").." segundos.",
 			es = CNumb("{block_cost:%s}", "block_var_rgb").." Coste de Bloqueo. Cuando el "..CKWord("Aguante", "Stamina_rgb_es").." llega a "..CNumb("0", "n_0_rgb").." al Bloquear un ataque, empuja a los enemigos en un radio de "..CNumb("5", "n_5_rgb").." metros. Tiempo de recarga "..CNumb("{cooldown:%s}", "cd_var_rgb").." seg.",
 		},
 		--[+ OFFENSIVE DEFENCE +]-- ruof Активная оборона
@@ -1932,7 +1916,7 @@ local weapon_localizations = {
 			ja = "ブロック時に"..CKWord("スタミナ", "Stamina_rgb_ja").."を "..CNumb("1", "n_1_rgb").." 消費するごとにスタックを獲得。次の近接攻撃でスタックを "..CNumb("1", "n_1_rgb").." 消費し、"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power:%s}", "pwr_var_rgb").." 増加。効果時間 "..CNumb("{duration:%s}", "dur_var_rgb").."秒。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。"..CNote("Pwr_note"),
 			ko = "블록 시 "..CKWord("스태미나", "Stamina_rgb_ko").."를 "..CNumb("1", "n_1_rgb").." 소모할 때마다 중첩을 얻습니다. 다음 근접 공격 시 중첩을 "..CNumb("1", "n_1_rgb").." 소모하고 근접 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power:%s}", "pwr_var_rgb").." 증가합니다. 지속 시간 "..CNumb("{duration:%s}", "dur_var_rgb").."초. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩."..CNote("Pwr_note"),
 			pl = "Za każdy punkt "..CKWord("Wytrzymałości", "Stamina_rgb_pl").." zużyty na Blokowanie zyskujesz ładunek. Twój następny atak w Walce Wręcz zużywa ładunek i zyskuje "..CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." za ładunek. Trwa "..CNumb("{duration:%s}", "dur_var_rgb").." sek. Maks. "..CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków."..CNote("Pwr_note"),
-			["pt-br"] = "Para cada ponto de "..CKWord("Vigor", "Stamina_rgb_pt_br").." gasto Bloqueando, você ganha um acúmulo. Seu próximo ataque Corpo a Corpo consome um acúmulo e ganha "..CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." por acúmulo. Dura "..CNumb("{duration:%s}", "dur_var_rgb").." seg. Máx. "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos."..CNote("Pwr_note"),
+			["pt-br"] = "Para cada ponto de "..CKWord("vigor", "Stamina_rgb_pt_br").." gasto bloqueando, você ganha um acúmulo. Seu próximo ataque corpo a corpo consome um acúmulo e ganha "..CNumb("{power:%s}", "pwr_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." por acúmulo. Dura "..CNumb("{duration:%s}", "dur_var_rgb").." segundos. Máximo de "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos."..CNote("Pwr_note"),
 			es = "Por cada punto de "..CKWord("Aguante", "Stamina_rgb_es").." gastado Bloqueando, ganas una acumulación. Tu siguiente ataque Cuerpo a Cuerpo consume una acumulación y gana un "..CNumb("{power:%s}", "pwr_var_rgb").." de "..CKWord("Potencia", "Strength_rgb_es").." por acumulación. Dura "..CNumb("{duration:%s}", "dur_var_rgb").." seg. Máx. "..CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones."..CNote("Pwr_note"),
 		},
 		--[+ CAN OPENER +]-- MELEE! ruof Открывашка	27.03.2026
@@ -1951,7 +1935,7 @@ local weapon_localizations = {
 			ja = "特殊攻撃を命中させると、敵に "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("脆弱", "Brittleness_rgb_ja").."を "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック付与。持続 "..CNumb("{time:%s}", "time_var_rgb").."秒。最大 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." スタック、合計 "..CNumb("40%", "pc_40_rgb").."。"..CNote("Brtl_note"),
 			ko = "특수 공격 적중 시 적에게 "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("취약", "Brittleness_rgb_ko").."을 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩 부여합니다. "..CNumb("{time:%s}", "time_var_rgb").."초 지속. 최대 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." 중첩, 최대 "..CNumb("40%", "pc_40_rgb").." 증가."..CNote("Brtl_note"),
 			pl = "Trafienie wroga Atakiem Specjalnym nakłada "..CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Kruchości", "Brittleness_rgb_pl")..". Trwa "..CNumb("{time:%s}", "time_var_rgb").." sek. Maks. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." ładunków, łącznie do "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
-			["pt-br"] = "Acertar um inimigo com o ataque especial aplica "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Fragilidade", "Brittleness_rgb_pt_br")..". Dura "..CNumb("{time:%s}", "time_var_rgb").." seg. Máx. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos, até "..CNumb("40%", "pc_40_rgb").." no total."..CNote("Brtl_note"),
+			["pt-br"] = "Acertar um inimigo com o ataque especial aplica "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{rending:%s}", "rending_var_rgb").." de "..CKWord("fragilidade", "Brittleness_rgb_pt_br")..". Dura "..CNumb("{time:%s}", "time_var_rgb").." segundos. Máximo de "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos, até "..CNumb("40%", "pc_40_rgb").." no total."..CNote("Brtl_note"),
 			es = "Golpear a un enemigo con el ataque especial aplica "..CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Fragilidad", "Brittleness_rgb_es")..". Dura "..CNumb("{time:%s}", "time_var_rgb").." seg. Máx. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acumulaciones, hasta un "..CNumb("40%", "pc_40_rgb").." en total."..CNote("Brtl_note"),
 		},
 		--[+ REFINED LETHALITY +]-- ruof Отточеная смертоносность	20.04.2026
@@ -1968,7 +1952,7 @@ local weapon_localizations = {
 			ja = CKWord("ケムトキシン", "Chem_Tox_rgb_ja").."状態の敵への"..CKWord("弱点ダメージ", "Weakspot_dmg_rgb_ja").."が "..CNumb("{damage:%s}", "dmg_var_rgb").." 増加。",
 			ko = CKWord("화학 독소", "Chem_Tox_rgb_ko").."에 영향을 받는 적에게 "..CKWord("약점 피해", "Weakspot_dmg_rgb_ko").."가 "..CNumb("{damage:%s}", "dmg_var_rgb").." 증가합니다.",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażeń w słaby punkt", "Weakspot_dmg_rgb_pl").." przeciwko wrogom pod wpływem "..CKWord("Chem-Toksyny", "Chem_Tox_rgb_pl")..".",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." contra inimigos afetados por "..CKWord("Quimiotoxina", "Chem_Tox_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." contra inimigos afetados por "..CKWord("quimiotoxina", "Chem_Tox_rgb_pt_br")..".",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño en punto débil", "Weakspot_dmg_rgb_es").." contra enemigos afectados por "..CKWord("Quimio-Toxina", "Chem_Tox_rgb_es")..".",
 		},
 
@@ -1988,7 +1972,7 @@ local weapon_localizations = {
 			ja = "敵の背後から射撃すると、"..CKWord("ダメージ", "Damage_rgb_ja").."が "..CNumb("{damage:%s}", "dmg_var_rgb").." 増加。",
 			ko = "적의 후방에서 사격 시 "..CKWord("피해", "Damage_rgb_ko").."가 "..CNumb("{damage:%s}", "dmg_var_rgb").." 증가합니다.",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażeń", "Damage_rgb_pl").." przy strzelaniu wrogom w plecy.",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." ao atirar em inimigos pelas costas.",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." ao atirar em inimigos pelas costas.",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." al disparar a enemigos por la espalda.",
 		},
 		--[+ DUMDUM +]-- ruof Дамдам
@@ -2007,7 +1991,7 @@ local weapon_localizations = {
 			ja = "連続ヒット時、"..CNumb("12.5", "n_12_5_rgb").."メートル以内の敵への"..CKWord("ダメージ", "Damage_rgb_ja").."が "..CNumb("{damage:%s}", "dmg_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。",
 			ko = "연속 적중 시 "..CNumb("12.5", "n_12_5_rgb").."미터 이내의 적에게 "..CKWord("피해", "Damage_rgb_ko").."가 "..CNumb("{damage:%s}", "dmg_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩.",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażeń", "Damage_rgb_pl").." do wrogów w odległości do "..CNumb("12.5", "n_12_5_rgb").." metrów przy Wielokrotnym Trafieniu. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." a inimigos a até "..CNumb("12.5", "n_12_5_rgb").." metros em Acertos Repetidos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." a inimigos a até "..CNumb("12.5", "n_12_5_rgb").." metros em acertos repetidos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." a enemigos en un radio de "..CNumb("12.5", "n_12_5_rgb").." metros al Golpear Repetidamente. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ HIT & RUN / HIT AND RUN +]-- ruof Бей и беги	20.04.2026
@@ -2026,7 +2010,7 @@ local weapon_localizations = {
 			ja = CNumb("12.5", "n_12_5_rgb").."メートル以内の敵をキルすると、"..CNumb("{time:%s}", "time_var_rgb").."秒間、遠隔攻撃を回避。",
 			ko = CNumb("12.5", "n_12_5_rgb").."미터 이내의 적을 처치하면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 원거리 공격을 회피합니다.",
 			pl = "Odporność na ataki dystansowe przez "..CNumb("{time:%s}", "time_var_rgb").." sek. po zabiciu wroga w odległości do "..CNumb("12.5", "n_12_5_rgb").." metrów.",
-			["pt-br"] = "Imunidade a ataques à distância por "..CNumb("{time:%s}", "time_var_rgb").." seg. após matar um inimigo a até "..CNumb("12.5", "n_12_5_rgb").." metros.",
+			["pt-br"] = "Imunidade a ataques à distância por "..CNumb("{time:%s}", "time_var_rgb").." segundos após matar um inimigo a até "..CNumb("12.5", "n_12_5_rgb").." metros.",
 			es = "Inmunidad a ataques a distancia durante "..CNumb("{time:%s}", "time_var_rgb").." seg. tras matar a un enemigo a "..CNumb("12.5", "n_12_5_rgb").." metros o menos.",
 		},
 		--[+ SUSTAINED FIRE +]-- ruof Непрерывный огонь	20.04.2026
@@ -2043,7 +2027,7 @@ local weapon_localizations = {
 			ja = "斉射の "..CNumb("2", "n_2_rgb").."発目、"..CNumb("3", "n_3_rgb").."発目、"..CNumb("4", "n_4_rgb").."発目の"..CKWord("ダメージ", "Damage_rgb_ja").."が "..CNumb("{damage:%s}", "dmg_var_rgb").." 増加。",
 			ko = "일제 사격의 "..CNumb("2", "n_2_rgb").."번째, "..CNumb("3", "n_3_rgb").."번째, "..CNumb("4", "n_4_rgb").."번째 사격의 "..CKWord("피해", "Damage_rgb_ko").."가 "..CNumb("{damage:%s}", "dmg_var_rgb").." 증가합니다.",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażeń", "Damage_rgb_pl").." przy drugim, trzecim i czwartym strzale w Salwie.",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." no segundo, terceiro e quarto disparos de uma Salva.",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." no segundo, terceiro e quarto disparos de uma salva.",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." en el segundo, tercer y cuarto disparo de una Salva.",
 		},
 		--[+ PUNISHING SALVO +]-- ruof Карательный залп
@@ -2060,7 +2044,7 @@ local weapon_localizations = {
 			ja = "斉射の "..CNumb("2", "n_2_rgb").."発目、"..CNumb("3", "n_3_rgb").."発目、"..CNumb("4", "n_4_rgb").."発目の"..CKWord("弱点ダメージ", "Weakspot_dmg_rgb_ja").."が "..CNumb("{damage:%s}", "dmg_var_rgb").." 増加。",
 			ko = "일제 사격의 "..CNumb("2", "n_2_rgb").."번째, "..CNumb("3", "n_3_rgb").."번째, "..CNumb("4", "n_4_rgb").."번째 사격의 "..CKWord("약점 피해", "Weakspot_dmg_rgb_ko").."가 "..CNumb("{damage:%s}", "dmg_var_rgb").." 증가합니다.",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażeń w słaby punkt", "Weakspot_dmg_rgb_pl").." przy drugim, trzecim i czwartym strzale w Salwie.",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." no segundo, terceiro e quarto disparos de uma Salva.",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano em ponto fraco", "Weakspot_dmg_rgb_pt_br").." no segundo, terceiro e quarto disparos de uma salva.",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño en punto débil", "Weakspot_dmg_rgb_es").." en el segundo, tercer y cuarto disparo de una Salva.",
 		},
 		--[+ FIRE FRENZY +]-- ruof Огненное неистовство
@@ -2079,7 +2063,7 @@ local weapon_localizations = {
 			ja = CNumb("12.5", "n_12_5_rgb").."メートル以内の敵をキルすると、"..CNumb("{time:%s}", "time_var_rgb").."秒間、同範囲内の敵への"..CKWord("ダメージ", "Damage_rgb_ja").."が "..CNumb("{close_damage:%s}", "dmgcls_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。",
 			ko = CNumb("12.5", "n_12_5_rgb").."미터 이내의 적을 처치하면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("피해", "Damage_rgb_ko").."가 "..CNumb("{close_damage:%s}", "dmgcls_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩.",
 			pl = CNumb("{close_damage:%s}", "dmgcls_var_rgb").." "..CKWord("Obrażeń", "Damage_rgb_pl").." do wrogów w odległości do "..CNumb("12.5", "n_12_5_rgb").." metrów na "..CNumb("{time:%s}", "time_var_rgb").." sek. po zabiciu wroga w tym zasięgu. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{close_damage:%s}", "dmgcls_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." a inimigos a até "..CNumb("12.5", "n_12_5_rgb").." metros por "..CNumb("{time:%s}", "time_var_rgb").." seg. após matar um inimigo nesse alcance. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{close_damage:%s}", "dmgcls_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." a inimigos a até "..CNumb("12.5", "n_12_5_rgb").." metros por "..CNumb("{time:%s}", "time_var_rgb").." segundos após matar um inimigo nesse alcance. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{close_damage:%s}", "dmgcls_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." a enemigos en un radio de "..CNumb("12.5", "n_12_5_rgb").." metros durante "..CNumb("{time:%s}", "time_var_rgb").." seg. tras matar a un enemigo en ese radio. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ DEATHSPITTER +]-- ruof Смертоносец
@@ -2099,7 +2083,7 @@ local weapon_localizations = {
 			ja = CNumb("12.5", "n_12_5_rgb").."メートル以内の敵をキルすると、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。最大 "..CNumb("5", "n_5_rgb").." 回スタック。"..CNote("Pwr_note"),
 			ko = CNumb("12.5", "n_12_5_rgb").."미터 이내의 적을 처치하면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 최대 "..CNumb("5", "n_5_rgb").."회 중첩."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." na "..CNumb("{time:%s}", "time_var_rgb").." sek. po zabiciu wroga w odległości do "..CNumb("12.5", "n_12_5_rgb").." metrów. Maks. "..CNumb("5", "n_5_rgb").." ładunków."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." seg. após matar um inimigo a até "..CNumb("12.5", "n_12_5_rgb").." metros. Acumula até "..CNumb("5", "n_5_rgb").." vezes."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos após matar um inimigo a até "..CNumb("12.5", "n_12_5_rgb").." metros. Acumula até "..CNumb("5", "n_5_rgb").." vezes."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." seg. tras matar a un enemigo a "..CNumb("12.5", "n_12_5_rgb").." metros o menos. Hasta "..CNumb("5", "n_5_rgb").." acumulaciones."..CNote("Pwr_note"),
 		},
 		--[+ STRIPPED DOWN +]-- ruof Срез	20.04.2026
@@ -2116,7 +2100,7 @@ local weapon_localizations = {
 			ja = CKWord("スタミナ", "Stamina_rgb_ja").."が "..CNumb("{stamina:%s}", "stam_var_rgb").." 以上の状態でダッシュすると、遠隔攻撃を回避。",
 			ko = CKWord("스태미나", "Stamina_rgb_ko").."가 "..CNumb("{stamina:%s}", "stam_var_rgb").." 이상인 상태로 질주하면 원거리 공격을 회피합니다.",
 			pl = "Zyskujesz odporność na ataki dystansowe podczas sprintu z ponad "..CNumb("{stamina:%s}", "stam_var_rgb").." "..CKWord("Wytrzymałości", "Stamina_rgb_pl")..".",
-			["pt-br"] = "Ganha imunidade a ataques à distância ao Correr com mais de "..CNumb("{stamina:%s}", "stam_var_rgb").." de "..CKWord("Vigor", "Stamina_rgb_pt_br")..".",
+			["pt-br"] = "Ganha imunidade a ataques à distância ao correr com mais de "..CNumb("{stamina:%s}", "stam_var_rgb").." de "..CKWord("vigor", "Stamina_rgb_pt_br")..".",
 			es = "Ganas inmunidad a ataques a distancia mientras Esprintas con más del "..CNumb("{stamina:%s}", "stam_var_rgb").." de "..CKWord("Aguante", "Stamina_rgb_es")..".",
 		},
 		--[+ SPEEDLOAD +]-- ruof Скоростная загрузка	20.04.2026
@@ -2138,7 +2122,7 @@ local weapon_localizations = {
 			ja = CNumb("12.5", "n_12_5_rgb").."メートル以内の敵をキルすると、"..CNumb("{time:%s}", "time_var_rgb").."秒間リロード速度が "..CNumb("{reload_speed:%s}", "reload_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。",
 			ko = CNumb("12.5", "n_12_5_rgb").."미터 이내의 적을 처치하면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 재장전 속도가 "..CNumb("{reload_speed:%s}", "reload_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩.",
 			pl = CNumb("{reload_speed:%s}", "reload_var_rgb").." Prędkości Przeładowania na "..CNumb("{time:%s}", "time_var_rgb").." sek. po zabiciu wroga w odległości do "..CNumb("12.5", "n_12_5_rgb").." metrów. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{reload_speed:%s}", "reload_var_rgb").." de Velocidade de Recarga por "..CNumb("{time:%s}", "time_var_rgb").." seg. após matar um inimigo a até "..CNumb("12.5", "n_12_5_rgb").." metros. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{reload_speed:%s}", "reload_var_rgb").." de velocidade de recarga por "..CNumb("{time:%s}", "time_var_rgb").." segundos após matar um inimigo a até "..CNumb("12.5", "n_12_5_rgb").." metros. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{reload_speed:%s}", "reload_var_rgb").." de Velocidad de Recarga durante "..CNumb("{time:%s}", "time_var_rgb").." seg. tras matar a un enemigo a "..CNumb("12.5", "n_12_5_rgb").." metros o menos. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ TERRIFYING BARRAGE +]-- ruof Устрашающий натиск	20.04.2026
@@ -2173,7 +2157,7 @@ local weapon_localizations = {
 			ja = "連続射撃中、消費したマガジンの "..CNumb("{ammo:%s}", "ammo_var_rgb").." ごとに移動速度ペナルティが "..CNumb("{movement_speed:%s}", "movspd_var_rgb").." 回復。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。",
 			ko = "연속 사격 중 탄창의 "..CNumb("{ammo:%s}", "ammo_var_rgb").."를 소모할 때마다 이동 속도 페널티가 "..CNumb("{movement_speed:%s}", "movspd_var_rgb").." 감소합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩.",
 			pl = CNumb("{movement_speed:%s}", "movspd_var_rgb").." Redukcji Prędkości Ruchu za każde "..CNumb("{ammo:%s}", "ammo_var_rgb").." magazynka zużytego podczas ognia ciągłego. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{movement_speed:%s}", "movspd_var_rgb").." de Redução de Velocidade de Movimento para cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." do carregador gasto durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{movement_speed:%s}", "movspd_var_rgb").." de redução de velocidade de movimento para cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." do carregador gasto durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{movement_speed:%s}", "movspd_var_rgb").." de Reducción de Velocidad de Movimiento por cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." del cargador gastado durante fuego continuo. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ CEASELESS BARRAGE +]-- ruof Беспощадный натиск	20.04.2026
@@ -2190,7 +2174,7 @@ local weapon_localizations = {
 			ja = "連続射撃中、消費したマガジンの "..CNumb("{ammo:%s}", "ammo_var_rgb").." ごとに制圧効果が "..CNumb("{suppression:%s}", "spprsn_var_rgb").." 増加し、制圧状態の敵への"..CKWord("ダメージ", "Damage_rgb_ja").."が "..CNumb("{damage_vs_suppressed}", "dmgvsprsd_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。",
 			ko = "연속 사격 중 탄창의 "..CNumb("{ammo:%s}", "ammo_var_rgb").."를 소모할 때마다 제압 효과가 "..CNumb("{suppression:%s}", "spprsn_var_rgb").." 증가하고 제압된 적에게 "..CKWord("피해", "Damage_rgb_ko").."가 "..CNumb("{damage_vs_suppressed}", "dmgvsprsd_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩.",
 			pl = CNumb("{suppression:%s}", "spprsn_var_rgb").." Supresji i "..CNumb("{damage_vs_suppressed}", "dmgvsprsd_var_rgb").." "..CKWord("Obrażeń", "Damage_rgb_pl").." przeciwko wrogom w stanie supresji za każde "..CNumb("{ammo:%s}", "ammo_var_rgb").." magazynka zużytego podczas ognia ciągłego. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{suppression:%s}", "spprsn_var_rgb").." de Supressão e "..CNumb("{damage_vs_suppressed}", "dmgvsprsd_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." contra inimigos suprimidos para cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." do carregador gasto durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{suppression:%s}", "spprsn_var_rgb").." de supressão e "..CNumb("{damage_vs_suppressed}", "dmgvsprsd_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." contra inimigos suprimidos para cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." do carregador gasto durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{suppression:%s}", "spprsn_var_rgb").." de Supresión y "..CNumb("{damage_vs_suppressed}", "dmgvsprsd_var_rgb").." de "..CKWord("Daño", "Damage_rgb_es").." contra enemigos suprimidos por cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." del cargador gastado durante fuego continuo. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ INSPIRING BARRAGE +]-- ruof Вдохновляющий натиск	20.04.2026
@@ -2207,7 +2191,7 @@ local weapon_localizations = {
 			ja = "連続射撃中、消費したマガジンの "..CNumb("{ammo:%s}", "ammo_var_rgb").." ごとに"..CKWord("タフネス", "Toughness_rgb_ja").."が "..CNumb("{toughness:%s}", "tghns_var_rgb").." 回復。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 回スタック。",
 			ko = "연속 사격 중 탄창의 "..CNumb("{ammo:%s}", "ammo_var_rgb").."를 소모할 때마다 "..CKWord("강인함", "Toughness_rgb_ko").."이 "..CNumb("{toughness:%s}", "tghns_var_rgb").." 회복됩니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩.",
 			pl = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Wytrzymałości", "Toughness_rgb_pl").." za każde "..CNumb("{ammo:%s}", "ammo_var_rgb").." magazynka zużytego podczas ognia ciągłego. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Resistência", "Toughness_rgb_pt_br").." para cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." do carregador gasto durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." de "..CKWord("resistência", "Toughness_rgb_pt_br").." para cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." do carregador gasto durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Aguante", "Toughness_rgb_es").." por cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." del cargador gastado durante fuego continuo. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ GHOST +]-- ruof Призрак	20.04.2026
@@ -2226,7 +2210,7 @@ local weapon_localizations = {
 			ja = CKWord("弱点ヒット", "Weakspothit_rgb_ja").."時、"..CNumb("{time:%s}", "time_var_rgb").."秒間、遠隔攻撃を回避。",
 			ko = CKWord("약점 적중", "Weakspothit_rgb_ko").." 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 원거리 공격을 회피합니다.",
 			pl = "Odporność na ataki dystansowe przez "..CNumb("{time:%s}", "time_var_rgb").." sek. przy "..CKWord("Trafieniu w Słaby Punkt", "Weakspothit_rgb_pl")..".",
-			["pt-br"] = "Imunidade a ataques à distância por "..CNumb("{time:%s}", "time_var_rgb").." seg. ao "..CKWord("Acertar um Ponto Fraco", "Weakspothit_rgb_pt_br")..".",
+			["pt-br"] = "Imunidade a ataques à distância por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao "..CKWord("acerto em ponto fraco", "Weakspothit_rgb_pt_br")..".",
 			es = "Inmunidad a ataques a distancia durante "..CNumb("{time:%s}", "time_var_rgb").." seg. al "..CKWord("Golpear un Punto Débil", "Weakspothit_rgb_es")..".",
 		},
 		--[+ SURGICAL +]-- ruof Зоркость
@@ -2245,7 +2229,7 @@ local weapon_localizations = {
 			ja = "照準中、"..CNumb("{time:%s}", "time_var_rgb").."秒ごとに"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。射撃または照準解除で全スタック消失。",
 			ko = "조준 중 "..CNumb("{time:%s}", "time_var_rgb").."초마다 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩. 사격 또는 조준 해제 시 모든 중첩이 사라집니다.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." co "..CNumb("{time:%s}", "time_var_rgb").." sek. podczas celowania. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy. Wszystkie ładunki tracone przy strzale lub opuszczeniu celowania.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." a cada "..CNumb("{time:%s}", "time_var_rgb").." segundos mirando. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. Todos os acúmulos são perdidos ao atirar ou sair da mira.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." a cada "..CNumb("{time:%s}", "time_var_rgb").." segundos mirando. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. Todos os acúmulos são perdidos ao atirar ou sair da mira.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." cada "..CNumb("{time:%s}", "time_var_rgb").." segundos apuntando. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces. Pierde todas las acumulaciones al disparar o dejar de apuntar.",
 		},
 		--[+ CRUCIAN ROULETTE +]-- ruof Круцианская рулетка	20.04.2026
@@ -2264,7 +2248,7 @@ local weapon_localizations = {
 			ja = "消費した弾薬 "..CNumb("1", "n_1_rgb").." 発ごとに"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。リロードでリセット。",
 			ko = "소모된 탄약 한 발당 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다. 재장전 시 초기화됩니다.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." za każdy zużyty nabój. Resetuje się przy przeładowaniu.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." para cada munição gasta na arma. Reseta ao recarregar.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." para cada munição gasta na arma. Reseta ao recarregar.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." por cada cartucho gastado. Se reinicia al recargar.",
 		},
 		--[+ DEADLY ACCURATE +]-- ruof Смертоностная точность
@@ -2281,7 +2265,7 @@ local weapon_localizations = {
 			ja = CKWord("弱点", "Weakspot_rgb_ja").."への"..CKWord("クリティカルダメージ", "Crit_dmg_r_rgb_ja").."が "..CNumb("{crit_weakspot_damage:%s}", "critwkspdmg_var_rgb").." 増加。",
 			ko = CKWord("약점", "Weakspot_rgb_ko").."에 대한 "..CKWord("크리티컬 피해", "Crit_dmg_r_rgb_ko").."가 "..CNumb("{crit_weakspot_damage:%s}", "critwkspdmg_var_rgb").." 증가합니다.",
 			pl = CNumb("{crit_weakspot_damage:%s}", "critwkspdmg_var_rgb").." "..CKWord("Obrażeń krytycznych", "Crt_strk_dmg_rgb_pl").." w "..CKWord("Słaby Punkt", "Weakspot_rgb_pl")..".",
-			["pt-br"] = CNumb("{crit_weakspot_damage:%s}", "critwkspdmg_var_rgb").." "..CKWord("Dano de golpe crítico", "Crt_strk_dmg_rgb_pt_br").." em "..CKWord("Ponto Fraco", "Weakspot_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{crit_weakspot_damage:%s}", "critwkspdmg_var_rgb").." de "..CKWord("dano de golpe crítico", "Crt_strk_dmg_rgb_pt_br").." em "..CKWord("ponto fraco", "Weakspot_rgb_pt_br")..".",
 			es = CNumb("{crit_weakspot_damage:%s}", "critwkspdmg_var_rgb").." "..CKWord("Daño de golpe crítico", "Crt_strk_dmg_rgb_es").." en "..CKWord("Punto Débil", "Weakspot_rgb_es")..".",
 		},
 		--[+ NO RESPITE +]-- ruof Нет отдыху
@@ -2298,7 +2282,7 @@ local weapon_localizations = {
 			ja = CKWord("スタッガー状態", "Staggered_rgb_ja").."の敵へのヒット時、"..CKWord("ダメージ", "Damage_rgb_ja").."が最大 "..CNumb("{damage:%s}", "dmg_var_rgb").." 増加。スタッガー効果が強いほどダメージ増加。",
 			ko = CKWord("스태거 상태", "Staggered_rgb_ko").."의 적 적중 시 "..CKWord("피해", "Damage_rgb_ko").."가 최대 "..CNumb("{damage:%s}", "dmg_var_rgb").." 증가합니다. 스태거 효과가 강할수록 피해가 증가합니다.",
 			pl = "Do "..CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażeń", "Damage_rgb_pl").." przy trafieniu "..CKWord("Oślepionego", "Staggered_rgb_pl").." wroga. Obrażenia rosną w zależności od siły efektu "..CKWord("Oszołomienia", "Stagger_rgb_pl")..".",
-			["pt-br"] = "Até "..CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." ao acertar um inimigo "..CKWord("Cambaleante", "Staggered_rgb_pt_br")..". O dano aumenta baseado na força do "..CKWord("Cambaleio", "Stagger_rgb_pt_br").." aplicado.",
+			["pt-br"] = "Até "..CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." ao acertar um inimigo "..CKWord("desequilibrado", "Staggered_rgb_pt_br")..". O dano aumenta baseado na força do "..CKWord("desequilibrio", "Stagger_rgb_pt_br").." aplicado.",
 			es = "Hasta "..CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." al golpear a un enemigo "..CKWord("Tambaleante", "Staggered_rgb_es")..". El daño aumenta según la fuerza del "..CKWord("Tambaleo", "Stagger_rgb_es").." aplicado.",
 		},
 		--[+ OPENING SALVO +]-- ruof Открывающий залп
@@ -2317,7 +2301,7 @@ local weapon_localizations = {
 			ja = "斉射の "..CNumb("1", "n_1_rgb").."発目の"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。"..CNote("Pwr_note"),
 			ko = "일제 사격의 첫 번째 사격의 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." przy pierwszym strzale Salwy."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." no primeiro disparo de uma Salva."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." no primeiro disparo de uma salva."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." en el primer disparo de una Salva."..CNote("Pwr_note"),
 		},
 		--[+ HEADHUNTER +]-- ruof Охотник за головами
@@ -2335,7 +2319,7 @@ local weapon_localizations = {
 			ja = CKWord("弱点ヒット", "Weakspothit_rgb_ja").."時、"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。次のクリティカルヒットで消費。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。",
 			ko = CKWord("약점 적중", "Weakspothit_rgb_ko").." 시 다음 "..CKWord("크리티컬 적중", "Crit_hit_rgb_ko").."까지 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." przy "..CKWord("Trafieniu w Słaby Punkt", "Weakspothit_rgb_pl").." do następnego "..CKWord("Krytycznego Trafienia", "Crit_hit_rgb_pl")..". Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." ao "..CKWord("Acertar um Ponto Fraco", "Weakspothit_rgb_pt_br").." até o próximo "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br")..". Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." ao "..CKWord("acerto em ponto fraco", "Weakspothit_rgb_pt_br").." até o próximo "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br")..". Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." al "..CKWord("Golpear un Punto Débil", "Weakspothit_rgb_es").." hasta el siguiente "..CKWord("Golpe Crítico", "Crit_hit_rgb_es")..". Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ BETWEEN THE EYES +]-- ruof Промеж глаз	20.04.2026
@@ -2354,7 +2338,7 @@ local weapon_localizations = {
 			ja = CKWord("弱点ヒット", "Weakspothit_rgb_ja").."時、"..CNumb("{time:%s}", "time_var_rgb").."秒間、制圧無効。",
 			ko = CKWord("약점 적중", "Weakspothit_rgb_ko").." 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 제압에 면역됩니다.",
 			pl = "Odporność na supresję przez "..CNumb("{time:%s}", "time_var_rgb").." sek. przy "..CKWord("Trafieniu w Słaby Punkt", "Weakspothit_rgb_pl")..".",
-			["pt-br"] = "Imunidade à supressão por "..CNumb("{time:%s}", "time_var_rgb").." seg. ao "..CKWord("Acertar um Ponto Fraco", "Weakspothit_rgb_pt_br")..".",
+			["pt-br"] = "Imunidade à supressão por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao "..CKWord("acerto em ponto fraco", "Weakspothit_rgb_pt_br")..".",
 			es = "Inmunidad a la supresión durante "..CNumb("{time:%s}", "time_var_rgb").." seg. al "..CKWord("Golpear un Punto Débil", "Weakspothit_rgb_es")..".",
 		},
 		--[+ BLAZE AWAY +]-- ruof Энтузиазм	20.04.2026
@@ -2373,7 +2357,7 @@ local weapon_localizations = {
 			ja = "連続射撃中、消費したマガジンの "..CNumb("{ammo:%s}", "ammo_var_rgb").." ごとに"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。"..CNote("Pwr_note"),
 			ko = "연속 사격 중 탄창의 "..CNumb("{ammo:%s}", "ammo_var_rgb").."를 소모할 때마다 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." za każde "..CNumb("{ammo:%s}", "ammo_var_rgb").." magazynka zużytego podczas ognia ciągłego. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." para cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." do carregador gasto durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." para cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." do carregador gasto durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." por cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." del cargador gastado durante fuego continuo. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces."..CNote("Pwr_note"),
 		},
 		--[+ POWDERBURN +]-- ruof Пороховой ожог	20.04.2026
@@ -2392,7 +2376,7 @@ local weapon_localizations = {
 			ja = "制圧状態の敵への"..CKWord("ダメージ", "Damage_rgb_ja").."が "..CNumb("{damage:%s}", "dmg_var_rgb").." 増加。 "..CNumb("12.5", "n_12_5_rgb").."メートル以内の敵をキルすると、制圧効果 "..CNumb("{suppression:%s}", "spprsn_var_rgb").."、反動 "..CNumb("{recoil_reduction:%s}", "recoil_red_var_rgb").."。",
 			ko = "제압된 적에게 "..CKWord("피해", "Damage_rgb_ko").."가 "..CNumb("{damage:%s}", "dmg_var_rgb").." 증가합니다. "..CNumb("12.5", "n_12_5_rgb").."미터 이내의 적을 처치하면 제압 효과 "..CNumb("{suppression:%s}", "spprsn_var_rgb")..", 반동 "..CNumb("{recoil_reduction:%s}", "recoil_red_var_rgb")..".",
 			pl = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Obrażeń", "Damage_rgb_pl").." przeciwko wrogom w stanie supresji, "..CNumb("{suppression:%s}", "spprsn_var_rgb").." Supresji i "..CNumb("{recoil_reduction:%s}", "recoil_red_var_rgb").." Odrzutu po zabiciu wroga w odległości do "..CNumb("12.5", "n_12_5_rgb").." metrów.",
-			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." contra inimigos suprimidos, "..CNumb("{suppression:%s}", "spprsn_var_rgb").." de Supressão e "..CNumb("{recoil_reduction:%s}", "recoil_red_var_rgb").." de Recuo ao matar inimigos a até "..CNumb("12.5", "n_12_5_rgb").." metros.",
+			["pt-br"] = CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." contra inimigos suprimidos, "..CNumb("{suppression:%s}", "spprsn_var_rgb").." de supressão e "..CNumb("{recoil_reduction:%s}", "recoil_red_var_rgb").." de recuo ao matar inimigos a até "..CNumb("12.5", "n_12_5_rgb").." metros.",
 			es = CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." contra enemigos suprimidos, "..CNumb("{suppression:%s}", "spprsn_var_rgb").." de Supresión y "..CNumb("{recoil_reduction:%s}", "recoil_red_var_rgb").." de Retroceso al matar enemigos a "..CNumb("12.5", "n_12_5_rgb").." metros o menos.",
 		},
 		--[+ CAVALCADE +]-- ruof Кавалькада	20.04.2026
@@ -2409,7 +2393,7 @@ local weapon_localizations = {
 			ja = "連続射撃中、消費したマガジンの "..CNumb("{ammo:%s}", "ammo_var_rgb").." ごとに"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。",
 			ko = "연속 사격 중 탄창의 "..CNumb("{ammo:%s}", "ammo_var_rgb").."를 소모할 때마다 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." za każde "..CNumb("{ammo:%s}", "ammo_var_rgb").." magazynka zużytego podczas ognia ciągłego. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." para cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." do carregador gasto durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." para cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." do carregador gasto durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." por cada "..CNumb("{ammo:%s}", "ammo_var_rgb").." del cargador gastado durante fuego continuo. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ PINNING FIRE +]-- ruof Схватывающий огонь	20.04.2026
@@ -2430,7 +2414,7 @@ local weapon_localizations = {
 			ja = "敵を"..CKWord("スタッガー", "Staggering_rgb_ja").."させるたびに、"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。"..CNote("Pwr_note"),
 			ko = "적을 "..CKWord("스태거", "Staggering_rgb_ko").."시킬 때마다 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." za każdego wroga, którego wprawisz w "..CKWord("Oszołomienie", "Staggering_rgb_pl")..". Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." para cada inimigo que você faz "..CKWord("Cambalear", "Staggering_rgb_pt_br")..". Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." para cada inimigo que você faz "..CKWord("desequilibrar", "Staggering_rgb_pt_br")..". Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." por cada enemigo que hagas "..CKWord("Tambalear", "Staggering_rgb_es")..". Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces."..CNote("Pwr_note"),
 		},
 		--[+ RUN 'N' GUN - RUN AND GUN +]-- ruof Стреляй и беги	20.04.2026
@@ -2449,7 +2433,7 @@ local weapon_localizations = {
 			ja = "ダッシュ中の腰撃ちが可能。ダッシュ中の近距離ダメージ "..CNumb("{damage_near:%s}", "dmgnr_var_rgb").."、武器の拡散 "..CNumb("{weapon_spread:%s}", "weapsprd_var_rgb").."。",
 			ko = "질주 중 사격 가능. 질주 중 근거리 피해 "..CNumb("{damage_near:%s}", "dmgnr_var_rgb").." 및 무기 확산 "..CNumb("{weapon_spread:%s}", "weapsprd_var_rgb")..".",
 			pl = "Pozwala strzelać z biodra podczas sprintu. "..CNumb("{damage_near:%s}", "dmgnr_var_rgb").." Obrażeń w zwarciu podczas sprintu i "..CNumb("{weapon_spread:%s}", "weapsprd_var_rgb").." Rozrzutu broni.",
-			["pt-br"] = "Permite atirar sem mirar enquanto corre. "..CNumb("{damage_near:%s}", "dmgnr_var_rgb").." Dano de perto correndo e "..CNumb("{weapon_spread:%s}", "weapsprd_var_rgb").." Dispersão da arma.",
+			["pt-br"] = "Permite atirar sem mirar enquanto corre. "..CNumb("{damage_near:%s}", "dmgnr_var_rgb").." de dano de perto correndo e "..CNumb("{weapon_spread:%s}", "weapsprd_var_rgb").." de dispersão da arma.",
 			es = "Permite disparar desde la cadera mientras esprintas. "..CNumb("{damage_near:%s}", "dmgnr_var_rgb").." Daño cercano al esprintar y "..CNumb("{weapon_spread:%s}", "weapsprd_var_rgb").." Dispersión del arma.",
 		},
 		--[+ PUNCTURE +]-- ruof Прокол
@@ -2469,7 +2453,7 @@ local weapon_localizations = {
 			ja = "遠隔攻撃ヒット時、敵に "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタックの"..CKWord("出血", "Bleed_rgb_ja").."を付与。",
 			ko = "원거리 공격 적중 시 적에게 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩의 "..CKWord("출혈", "Bleed_rgb_ko").."을 부여합니다.",
 			pl = CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CKWord("Krwawienia", "Bleed_rgb_pl").." przy Trafieniach Dystansowych.",
-			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("Sangramento", "Bleed_rgb_pt_br").." em Acertos à Distância.",
+			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("sangramento", "Bleed_rgb_pt_br").." em acertos à distância.",
 			es = CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CKWord("Sangrado", "Bleed_rgb_es").." en Golpes a Distancia.",
 		},
 		--[+ LETHAL PROXIMITY +]-- ruof Смертельное сближение	20.04.2026
@@ -2488,7 +2472,7 @@ local weapon_localizations = {
 			ja = "至近距離射撃で爆発が発生。爆発半径 "..CNumb("{radius:%s}", "radius_var_rgb").." 増加。",
 			ko = "근접 사격 시 폭발을 일으킵니다. 폭발 반경 "..CNumb("{radius:%s}", "radius_var_rgb").." 증가.",
 			pl = "Strzały z bliska wywołują Eksplozję. Zwiększa promień eksplozji o "..CNumb("{radius:%s}", "radius_var_rgb")..".",
-			["pt-br"] = "Tiros à queima-roupa causam uma Explosão. Aumenta o Raio da Explosão em "..CNumb("{radius:%s}", "radius_var_rgb")..".",
+			["pt-br"] = "Tiros à queima-roupa causam uma explosão. O raio da explosão aumenta em "..CNumb("{radius:%s}", "radius_var_rgb")..".",
 			es = "Los disparos a bocajarro provocan una Explosión. Aumenta el Radio de Explosión un "..CNumb("{radius:%s}", "radius_var_rgb")..".",
 		},
 		--[+ POINT BLANK +]-- ruof В упор	20.04.2026
@@ -2508,7 +2492,7 @@ local weapon_localizations = {
 			ja = "近接キル後、"..CNumb("{time:%s}", "time_var_rgb").."秒間、遠隔"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。",
 			ko = "근접 처치 후 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 원거리 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." na Dystans przez "..CNumb("{time:%s}", "time_var_rgb").." sek. po Zabójstwie w Walce Wręcz.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." à Distância por "..CNumb("{time:%s}", "time_var_rgb").." seg. após um Abate Corpo a Corpo.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." à distância por "..CNumb("{time:%s}", "time_var_rgb").." segundos após um abate corpo a corpo.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." a Distancia durante "..CNumb("{time:%s}", "time_var_rgb").." seg. tras una Muerte Cuerpo a Cuerpo.",
 		},
 		--[+ EXECUTION +]-- ruof Казнь
@@ -2525,7 +2509,7 @@ local weapon_localizations = {
 			ja = CKWord("スタッガー状態", "Staggered_rgb_ja").."の敵への"..CKWord("ダメージ", "Damage_rgb_ja").."が "..CNumb("{vs_stagger:%s}", "dmgvsstgr_var_rgb").." 増加。",
 			ko = CKWord("스태거 상태", "Staggered_rgb_ko").."의 적에게 "..CKWord("피해", "Damage_rgb_ko").."가 "..CNumb("{vs_stagger:%s}", "dmgvsstgr_var_rgb").." 증가합니다.",
 			pl = CNumb("{vs_stagger:%s}", "dmgvsstgr_var_rgb").." "..CKWord("Obrażeń", "Damage_rgb_pl").." Bonus przeciwko "..CKWord("Oślepionym", "Staggered_rgb_pl").." wrogom.",
-			["pt-br"] = CNumb("{vs_stagger:%s}", "dmgvsstgr_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." Bônus contra inimigos "..CKWord("Cambaleantes", "Staggered_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{vs_stagger:%s}", "dmgvsstgr_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." bônus contra inimigos que estejam"..CKWord("desequilibrado", "Staggered_rgb_pt_br")..".",
 			es = CNumb("{vs_stagger:%s}", "dmgvsstgr_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." adicional contra enemigos "..CKWord("Tambaleantes", "Staggered_rgb_es")..".",
 		},
 		--[+ GLORYHUNTER +]-- ruof Охотник за славой	20.04.2026
@@ -2547,7 +2531,7 @@ local weapon_localizations = {
 			ja = "エリートキル時、"..CKWord("タフネス", "Toughness_rgb_ja").."が "..CNumb("{toughness:%s}", "tghns_var_rgb").." 回復。",
 			ko = "엘리트 처치 시 "..CKWord("강인함", "Toughness_rgb_ko").."이 "..CNumb("{toughness:%s}", "tghns_var_rgb").." 회복됩니다.",
 			pl = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Wytrzymałości", "Toughness_rgb_pl").." przy Zabójstwie Elity.",
-			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Resistência", "Toughness_rgb_pt_br").." ao Matar um Elite.",
+			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." de "..CKWord("resistência", "Toughness_rgb_pt_br").." ao matar um elite.",
 			es = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Aguante", "Toughness_rgb_es").." al Matar a un Élite.",
 		},
 		--[+ SURGE +]-- ruof Импульс	20.04.2026
@@ -2568,7 +2552,7 @@ local weapon_localizations = {
 			ja = "遠隔"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").." "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 。\n主攻撃のクリティカルヒット時に "..CNumb("{value:%s}", "value_var_rgb").." 発射。",
 			ko = "원거리 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").." "..CNumb("{crit_chance:%s}", "crit_var_rgb").." .\n주 공격 크리티컬 적중 시 "..CNumb("{value:%s}", "value_var_rgb").."회 발사.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." na Dystans.\n"..CNumb("{value:%s}", "value_var_rgb").." Strzałów przy "..CKWord("Krytycznym Trafieniu", "Crit_hit_rgb_pl").." ataku głównego.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." à Distância.\n"..CNumb("{value:%s}", "value_var_rgb").." Disparos em um "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br").." do Ataque Primário.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." à distância.\n"..CNumb("{value:%s}", "value_var_rgb").." disparos em caso de "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br").." do ataque principal.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." a Distancia.\n"..CNumb("{value:%s}", "value_var_rgb").." Disparos en un "..CKWord("Golpe Crítico", "Crit_hit_rgb_es").." del Ataque Principal.",
 		},
 		--[+ SURGE +]-- ruof Импульс DOUBLE!	20.04.2026
@@ -2589,7 +2573,7 @@ local weapon_localizations = {
 			ja = "遠隔"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").." "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 。\n主攻撃のクリティカルヒット時に "..CNumb("{value:%s}", "value_var_rgb").." 発射。",
 			ko = "원거리 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").." "..CNumb("{crit_chance:%s}", "crit_var_rgb").." .\n주 공격 크리티컬 적중 시 "..CNumb("{value:%s}", "value_var_rgb").."회 발사.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." na Dystans.\n"..CNumb("{value:%s}", "value_var_rgb").." Strzałów przy "..CKWord("Krytycznym Trafieniu", "Crit_hit_rgb_pl").." ataku głównego.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." à Distância.\n"..CNumb("{value:%s}", "value_var_rgb").." Disparos em um "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br").." do Ataque Primário.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." à distância.\n"..CNumb("{value:%s}", "value_var_rgb").." disparos em caso de "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br").." do ataque principal.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." a Distancia.\n"..CNumb("{value:%s}", "value_var_rgb").." Disparos en un "..CKWord("Golpe Crítico", "Crit_hit_rgb_es").." del Ataque Principal.",
 		},
 		--[+ WARP FLURRY +]-- ruof Варп-шквал	20.04.2026
@@ -2608,7 +2592,7 @@ local weapon_localizations = {
 			ja = "連続セカンダリ攻撃時、チャージ時間 "..CNumb("{charge_time:%s}", "chrgtime_var_rgb").." 。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。",
 			ko = "연속 보조 공격 시 충전 시간 "..CNumb("{charge_time:%s}", "chrgtime_var_rgb").." . 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩.",
 			pl = CNumb("{charge_time:%s}", "chrgtime_var_rgb").." Czasu Ładowania przy Kolejnych Atakach Specjalnych. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{charge_time:%s}", "chrgtime_var_rgb").." de Tempo de Carga em Ataques Secundários Consecutivos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{charge_time:%s}", "chrgtime_var_rgb").." de tempo de carga em ataques secundários consecutivos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{charge_time:%s}", "chrgtime_var_rgb").." de Tiempo de Carga en Ataques Secundarios Encadenados. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ WARP NEXUS +]-- ruof Варп-сектор	20.04.2026
@@ -2627,7 +2611,7 @@ local weapon_localizations = {
 			ja = "現在の"..CKWord("ペリル", "Peril_rgb_ja").."量に応じて、"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." ～ "..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." 増加。",
 			ko = "현재 "..CKWord("위험도", "Peril_rgb_ko").."에 따라 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 에서 "..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." 까지 증가합니다.",
 			pl = "Zyskaj od "..CNumb("{crit_chance:%s}", "crit_var_rgb").." do "..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." "..CKWord("Szansy na krytyka", "Crit_chance_rgb_pl").." w zależności od aktualnego poziomu "..CKWord("Zagrożenia", "Peril_rgb_pl")..".",
-			["pt-br"] = "Ganha entre "..CNumb("{crit_chance:%s}", "crit_var_rgb").." e "..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." de "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." baseado no seu nível de "..CKWord("Perigo", "Peril_rgb_pt_br").." atual.",
+			["pt-br"] = "Ganha entre "..CNumb("{crit_chance:%s}", "crit_var_rgb").." e "..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." baseado no seu nível de "..CKWord("perigo", "Peril_rgb_pt_br").." atual.",
 			es = "Obtén entre "..CNumb("{crit_chance:%s}", "crit_var_rgb").." y "..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." de "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." según tu nivel de "..CKWord("Peligro", "Peril_rgb_es").." actual.",
 		},
 		--[+ TRANSFER PERIL +]-- ruof Перемещение угрозы	20.04.2026
@@ -2647,7 +2631,7 @@ local weapon_localizations = {
 			ja = CKWord("弱点ヒット", "Weakspothit_rgb_ja").."時、"..CKWord("ペリル", "Peril_rgb_ja").."が "..CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." 解消。",
 			ko = CKWord("약점 적중", "Weakspothit_rgb_ko").." 시 "..CKWord("위험도", "Peril_rgb_ko").."가 "..CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." 감소합니다.",
 			pl = CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." "..CKWord("Zagrożenia", "Peril_rgb_pl").." jest rozpraszane przy "..CKWord("Trafieniu w Słaby Punkt", "Weakspothit_rgb_pl")..".",
-			["pt-br"] = CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." "..CKWord("Perigo", "Peril_rgb_pt_br").." é aplacado ao "..CKWord("Acertar um Ponto Fraco", "Weakspothit_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." do "..CKWord("perigo", "Peril_rgb_pt_br").." é subjugado ao "..CKWord("acerto em ponto fraco", "Weakspothit_rgb_pt_br")..".",
 			es = CNumb("{warp_charge:%s}", "warpchrg_var_rgb").." "..CKWord("Peligro", "Peril_rgb_es").." se aplaca al "..CKWord("Golpear un Punto Débil", "Weakspothit_rgb_es")..".",
 		},
 		--[+ RENDING SHOCKWAVE +]-- ruof Разрушительная волна	20.04.2026
@@ -2665,7 +2649,7 @@ local weapon_localizations = {
 			ja = "セカンダリ攻撃のチャージ時間に応じて、敵に最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタックの "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("脆弱", "Brittleness_rgb_ja").."を付与。持続 "..CNumb("{time:%s}", "time_var_rgb").."秒。最大 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." スタック、合計 "..CNumb("40%", "pc_40_rgb").."。"..CNote("Brtl_note"),
 			ko = "보조 공격 차지 시간에 따라 적에게 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩의 "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("취약", "Brittleness_rgb_ko").."을 부여합니다. "..CNumb("{time:%s}", "time_var_rgb").."초 지속. 최대 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." 중첩, 최대 "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
 			pl = "Nakłada do "..CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Kruchości", "Brittleness_rgb_pl").." w zależności od czasu ładowania ataku specjalnego. Trwa "..CNumb("{time:%s}", "time_var_rgb").." sek. Maks. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." ładunków, łącznie do "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
-			["pt-br"] = "Aplica até "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Fragilidade", "Brittleness_rgb_pt_br").." baseado no tempo de carga do ataque secundário. Dura "..CNumb("{time:%s}", "time_var_rgb").." seg. Máx. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos, até "..CNumb("40%", "pc_40_rgb").." no total."..CNote("Brtl_note"),
+			["pt-br"] = "Aplica até "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{rending:%s}", "rending_var_rgb").." de "..CKWord("fragilidade", "Brittleness_rgb_pt_br").." baseado no tempo de carregamento do ataque secundário. Dura "..CNumb("{time:%s}", "time_var_rgb").." segundos. Máximo de "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos, total de até "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
 			es = "Aplica hasta "..CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Fragilidad", "Brittleness_rgb_es").." según el tiempo de carga del ataque secundario. Dura "..CNumb("{time:%s}", "time_var_rgb").." seg. Máx. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acumulaciones, hasta un "..CNumb("40%", "pc_40_rgb").." en total."..CNote("Brtl_note"),
 		},
 		--[+ FOCUSED CHANNELLING +]-- ruof Сосредоточенный призыв	20.04.2026
@@ -2684,7 +2668,7 @@ local weapon_localizations = {
 			ja = "セカンダリ攻撃が中断されなくなり、セカンダリ攻撃中の移動速度ペナルティが "..CNumb("{reduction:%s}", "red_var_rgb").." 減少。",
 			ko = "보조 공격이 방해받지 않으며, 보조 공격 시 이동 속도 페널티가 "..CNumb("{reduction:%s}", "red_var_rgb").." 감소합니다.",
 			pl = "Twój Atak Specjalny nie może zostać przerwany, a kara do Prędkości Ruchu podczas Ataku Specjalnego jest zmniejszona o "..CNumb("{reduction:%s}", "red_var_rgb")..".",
-			["pt-br"] = "Seu Ataque Secundário não pode ser interrompido e a penalidade de Velocidade de Movimento do Ataque Secundário é reduzida em "..CNumb("{reduction:%s}", "red_var_rgb")..".",
+			["pt-br"] = "Seu ataque secundário não pode ser interrompido e a penalidade de velocidade de movimento do ataque secundário é reduzida em "..CNumb("{reduction:%s}", "red_var_rgb")..".",
 			es = "Tu Ataque Secundario no puede ser interrumpido y la penalización de Velocidad de Movimiento del Ataque Secundario se reduce un "..CNumb("{reduction:%s}", "red_var_rgb")..".",
 		},
 			-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! BUGGED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2704,7 +2688,7 @@ local weapon_localizations = {
 			ja = CKWord("クリティカルヒット", "Crit_hit_rgb_ja").."時、敵に "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタックの"..CKWord("ソウルブレイズ", "Soulblaze_rgb_ja").."を付与。",
 			ko = CKWord("크리티컬 적중", "Crit_hit_rgb_ko").." 시 적에게 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩의 "..CKWord("영혼의 불꽃", "Soulblaze_rgb_ko").."을 부여합니다.",
 			pl = "Wróg otrzymuje "..CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CKWord("Pożogi Duszy", "Soulblaze_rgb_pl").." przy "..CKWord("Krytycznym Trafieniu", "Crit_hit_rgb_pl")..".",
-			["pt-br"] = "O inimigo ganha "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("Labareda d'Alma", "Soulblaze_rgb_pt_br").." ao sofrer um "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br")..".",
+			["pt-br"] = "O inimigo ganha "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("chama da alma", "Soulblaze_rgb_pt_br").." ao sofrer um "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br")..".",
 			es = "El enemigo obtiene "..CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CKWord("Fuego de Alma", "Soulblaze_rgb_es").." al recibir un "..CKWord("Golpe Crítico", "Crit_hit_rgb_es")..".",
 		},
 		--[+ PENETRATING FLAME +]-- ruof Убойное пламя	20.04.2026
@@ -2724,7 +2708,7 @@ local weapon_localizations = {
 			ja = "直撃時、敵に "..CNumb("1%", "pc_1_rgb").." "..CKWord("脆弱", "Brittleness_rgb_ja").."を "..CNumb("{num_stacks:%s}", "stacks_num_var_rgb").." スタック付与。持続 "..CNumb("{duration:%s}", "dur_var_rgb").."秒。最大 "..CNumb("20%", "pc_20_rgb").."。"..CNote("Brtl_note"),
 			ko = "직접 타격 시 적에게 "..CNumb("1%", "pc_1_rgb").." "..CKWord("취약", "Brittleness_rgb_ko").."을 "..CNumb("{num_stacks:%s}", "stacks_num_var_rgb").." 중첩 부여합니다. "..CNumb("{duration:%s}", "dur_var_rgb").."초 지속. 최대 "..CNumb("20%", "pc_20_rgb").." 증가."..CNote("Brtl_note"),
 			pl = "Bezpośrednie trafienia nakładają "..CNumb("{num_stacks:%s}", "stacks_num_var_rgb").." ładunków "..CNumb("1%", "pc_1_rgb").." "..CKWord("Kruchości", "Brittleness_rgb_pl").." na "..CNumb("{duration:%s}", "dur_var_rgb").." sek. Maks. "..CNumb("20%", "pc_20_rgb").."."..CNote("Brtl_note"),
-			["pt-br"] = "Acertos diretos aplicam "..CNumb("{num_stacks:%s}", "stacks_num_var_rgb").." acúmulos de "..CNumb("1%", "pc_1_rgb").." "..CKWord("Fragilidade", "Brittleness_rgb_pt_br").." por "..CNumb("{duration:%s}", "dur_var_rgb").." seg. Até "..CNumb("20%", "pc_20_rgb").."."..CNote("Brtl_note"),
+			["pt-br"] = "Acertos diretos aplicam "..CNumb("{num_stacks:%s}", "stacks_num_var_rgb").." acúmulos de "..CNumb("1%", "pc_1_rgb").." de "..CKWord("fragilidade", "Brittleness_rgb_pt_br").." por "..CNumb("{duration:%s}", "dur_var_rgb").." segundos. Até "..CNumb("20%", "pc_20_rgb").."."..CNote("Brtl_note"),
 			es = "Los golpes directos aplican "..CNumb("{num_stacks:%s}", "stacks_num_var_rgb").." acumulaciones de "..CNumb("1%", "pc_1_rgb").." "..CKWord("Fragilidad", "Brittleness_rgb_es").." durante "..CNumb("{duration:%s}", "dur_var_rgb").." seg. Hasta un "..CNumb("20%", "pc_20_rgb").."."..CNote("Brtl_note"),
 		},
 		--[+ SHOWSTOPPER +]-- ruof Театральная пауза	20.04.2026
@@ -2741,7 +2725,7 @@ local weapon_localizations = {
 			ja = "エリートまたはスペシャリストをキルした時、"..CNumb("{proc_chance:%s}", "procch_var_rgb").." の確率で爆発が発生。",
 			ko = "엘리트 및 특수 적 처치 시 "..CNumb("{proc_chance:%s}", "procch_var_rgb").." 확률로 적이 폭발합니다.",
 			pl = CNumb("{proc_chance:%s}", "procch_var_rgb").." szansy, że elitarni i specjalni wrogowie eksplodują po zabiciu.",
-			["pt-br"] = CNumb("{proc_chance:%s}", "procch_var_rgb").." de chance de inimigos de Elite e Especiais Explodirem ao morrer.",
+			["pt-br"] = CNumb("{proc_chance:%s}", "procch_var_rgb").." de chance de inimigos elite e especiais explodirem ao morrer.",
 			es = CNumb("{proc_chance:%s}", "procch_var_rgb").." de probabilidad de que los enemigos Élite y Especiales Exploten al morir.",
 		},
 		--[+ INFERNUS +]-- ruof Инфернус	20.04.2026
@@ -2760,7 +2744,7 @@ local weapon_localizations = {
 			ja = CKWord("クリティカルヒット", "Crit_hit_rgb_ja").."時、"..CNumb("{stacks:%s}", "stacks_var_rgb").." スタックの"..CKWord("燃焼", "Burn_rgb_ja").."を付与。最大 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." スタック。",
 			ko = CKWord("크리티컬 적중", "Crit_hit_rgb_ko").." 시 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩의 "..CKWord("화상", "Burn_rgb_ko").."을 부여합니다. 최대 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." 중첩.",
 			pl = CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CKWord("Podpalenia", "Burn_rgb_pl").." przy "..CKWord("Krytycznym Trafieniu", "Crit_hit_rgb_pl")..". Maks. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." ładunków.",
-			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("Queimadura", "Burn_rgb_pt_br").." ao causar um "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br")..". Máximo de "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos.",
+			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("queimadura", "Burn_rgb_pt_br").." ao causar um "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br")..". Máximo de "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos.",
 			es = CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CKWord("Quemadura", "Burn_rgb_es").." al asestar un "..CKWord("Golpe Crítico", "Crit_hit_rgb_es")..". Máximo de "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acumulaciones.",
 		},
 		--[+ EFFICIENCY +]-- ruof Эффективность	20.04.2026
@@ -2798,7 +2782,7 @@ local weapon_localizations = {
 			ja = "連続で遠隔"..CKWord("弱点ヒット", "Weakspothit_rgb_ja").."を当てると、"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が最大 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。最大 "..CNumb("5", "n_5_rgb").." スタック。",
 			ko = "연속 원거리 "..CKWord("약점 적중", "Weakspothit_rgb_ko").." 시 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 최대 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다. 최대 "..CNumb("5", "n_5_rgb").." 중첩.",
 			pl = "Do "..CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansy na krytyka", "Crit_chance_rgb_pl").." przy Wielokrotnych Dystansowych "..CKWord("Trafieniach w Słaby Punkt", "Weakspothit_rgb_pl").." (dowolny cel). Maks. "..CNumb("5", "n_5_rgb").." ładunków.",
-			["pt-br"] = "Até "..CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." em "..CKWord("Acertos em Ponto Fraco", "Weakspothit_rgb_pt_br").." consecutivos à Distância (qualquer alvo). Acumula até "..CNumb("5", "n_5_rgb").." vezes.",
+			["pt-br"] = "Até "..CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." em caso de "..CKWord("acerto em ponto fraco", "Weakspothit_rgb_pt_br").." consecutivo à distância, se aplica a qualquer alvo. Acumula até "..CNumb("5", "n_5_rgb").." vezes.",
 			es = "Hasta "..CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." en "..CKWord("Golpes a Punto Débil", "Weakspothit_rgb_es").." a Distancia repetidos (cualquier objetivo). Hasta "..CNumb("5", "n_5_rgb").." acumulaciones.",
 		},
 		--[+ DESPERADO +]-- ruof Сорвиголова	20.04.2026
@@ -2818,7 +2802,7 @@ local weapon_localizations = {
 			ja = "回避成功時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。",
 			ko = "회피 성공 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 원거리 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek. po Udanej Uniku.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos após uma Esquiva bem-sucedida.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos após uma esquiva bem-sucedida.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos tras una Esquiva exitosa.",
 		},
 		--[+ REASSURINGLY ACCURATE +]-- ruof Внушительная точность
@@ -2837,7 +2821,7 @@ local weapon_localizations = {
 			ja = CKWord("クリティカルキル", "Crit_kill_rgb_ja").."時、"..CKWord("タフネス", "Toughness_rgb_ja").."が "..CNumb("{toughness:%s}", "tghns_var_rgb").." 回復。",
 			ko = CKWord("크리티컬 처치", "Crit_kill_rgb_ko").." 시 "..CKWord("강인함", "Toughness_rgb_ko").."이 "..CNumb("{toughness:%s}", "tghns_var_rgb").." 회복됩니다.",
 			pl = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Wytrzymałości", "Toughness_rgb_pl").." przy Zabójstwie "..CKWord("Krytycznym", "Crit_kill_rgb_pl")..".",
-			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Resistência", "Toughness_rgb_pt_br").." ao Matar com um "..CKWord("Crítico", "Crit_kill_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." de "..CKWord("resistência", "Toughness_rgb_pt_br").." ao matar com um "..CKWord("crítico", "Crit_kill_rgb_pt_br")..".",
 			es = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Aguante", "Toughness_rgb_es").." al Matar con un "..CKWord("Golpe Crítico", "Crit_kill_rgb_es")..".",
 		},
 		--[+ FLECHETTE +]-- ruof Флешетта	20.04.2026
@@ -2856,7 +2840,7 @@ local weapon_localizations = {
 			ja = CKWord("クリティカルヒット", "Crit_hit_rgb_ja").."時、敵に "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタックの"..CKWord("出血", "Bleed_rgb_ja").."を付与。最大 "..CNumb("16", "n_16_rgb").." スタック。",
 			ko = CKWord("크리티컬 적중", "Crit_hit_rgb_ko").." 시 적에게 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩의 "..CKWord("출혈", "Bleed_rgb_ko").."을 부여합니다. 최대 "..CNumb("16", "n_16_rgb").." 중첩.",
 			pl = CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CKWord("Krwawienia", "Bleed_rgb_pl").." przy "..CKWord("Krytycznym Trafieniu", "Crit_hit_rgb_pl")..". Maks. "..CNumb("16", "n_16_rgb").." ładunków.",
-			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("Sangramento", "Bleed_rgb_pt_br").." ao causar um "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br")..". Máximo de "..CNumb("16", "n_16_rgb").." acúmulos.",
+			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("sangramento", "Bleed_rgb_pt_br").." ao causar um "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br")..". Máximo de "..CNumb("16", "n_16_rgb").." acúmulos.",
 			es = CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CKWord("Sangrado", "Bleed_rgb_es").." al asestar un "..CKWord("Golpe Crítico", "Crit_hit_rgb_es")..". Máximo "..CNumb("16", "n_16_rgb").." acumulaciones.",
 		},
 		--[+ MAN-STOPPER +]-- ruof Усмирение	20.04.2026
@@ -2875,7 +2859,7 @@ local weapon_localizations = {
 			ja = CKWord("クリティカルヒット", "Crit_hit_rgb_ja").."時に"..CKWord("薙ぎ払い", "Cleave_rgb_ja").."が増加し、遠隔攻撃の"..CKWord("スタッガー", "Stagger_rgb_ja").."効果が "..CNumb("{stagger:%s}", "stgr_var_rgb").." 増加。",
 			ko = CKWord("크리티컬 적중", "Crit_hit_rgb_ko").." 시 "..CKWord("베어넘기기", "Cleave_rgb_ko").."가 증가하고, 원거리 "..CKWord("스태거", "Stagger_rgb_ko").." 효과가 "..CNumb("{stagger:%s}", "stgr_var_rgb").." 증가합니다.",
 			pl = "Zwiększa "..CKWord("Przebicie", "Cleave_rgb_pl").." przy "..CKWord("Krytycznym Trafieniu", "Crit_hit_rgb_pl").." oraz zwiększa "..CKWord("Oszołomienie", "Stagger_rgb_pl").." na Dystans o "..CNumb("{stagger:%s}", "stgr_var_rgb")..".",
-			["pt-br"] = "Aumenta o "..CKWord("Corte Profundo", "Cleave_rgb_pt_br").." em um "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br").." e também aumenta o "..CKWord("Cambaleio", "Stagger_rgb_pt_br").." à Distância em "..CNumb("{stagger:%s}", "stgr_var_rgb")..".",
+			["pt-br"] = "Aumenta o "..CKWord("fender", "Cleave_rgb_pt_br").." em um "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br").." e também aumenta o "..CKWord("desequilibrio", "Stagger_rgb_pt_br").." à distância em "..CNumb("{stagger:%s}", "stgr_var_rgb")..".",
 			es = "Aumenta la "..CKWord("Hendidura", "Cleave_rgb_es").." al asestar un "..CKWord("Golpe Crítico", "Crit_hit_rgb_es").." y también aumenta el "..CKWord("Tambaleo", "Stagger_rgb_es").." a Distancia un "..CNumb("{stagger:%s}", "stgr_var_rgb")..".",
 		},
 		--[+ SCATTERSHOT +]-- ruof Разброс	20.04.2026
@@ -2894,7 +2878,7 @@ local weapon_localizations = {
 			ja = "前回の攻撃で命中した敵 "..CNumb("1", "n_1_rgb").." 体ごとに、"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。",
 			ko = "이전 공격으로 적중한 적 한 명당 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." za każdego wroga trafionego poprzednim atakiem. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." para cada inimigo atingido pelo seu ataque anterior. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." para cada inimigo atingido pelo seu ataque anterior. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." por cada enemigo golpeado por tu ataque anterior. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ FULL BORE +]-- ruof Напор	20.04.2026
@@ -2913,7 +2897,7 @@ local weapon_localizations = {
 			ja = "一度の射撃の全弾が同一の敵に命中すると、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。"..CNote("Pwr_note"),
 			ko = "한 번의 사격의 모든 탄환이 동일한 적에게 적중하면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." na "..CNumb("{time:%s}", "time_var_rgb").." sekund, gdy wszystkie pociski z jednego strzału trafią tego samego wroga."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos quando todos os projéteis de um disparo atingem o mesmo inimigo."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos quando todos os projéteis de um disparo atingem o mesmo inimigo."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos cuando todos los perdigones de un disparo golpean al mismo enemigo."..CNote("Pwr_note"),
 		},
 		--[+ BOTH BARRELS +]-- ruof Дуплет	20.04.2026
@@ -2930,7 +2914,7 @@ local weapon_localizations = {
 			ja = "両方の銃身でキルすると、次のリロード速度が "..CNumb("{reload_speed:%s}", "reload_var_rgb").." 増加。",
 			ko = "양쪽 총신으로 적을 처치하면 다음 재장전 속도가 "..CNumb("{reload_speed:%s}", "reload_var_rgb").." 증가합니다.",
 			pl = CNumb("{reload_speed:%s}", "reload_var_rgb").." Szybkości Przeładowania po zabiciu wroga z obu luf podczas celowania.",
-			["pt-br"] = CNumb("{reload_speed:%s}", "reload_var_rgb").." de Velocidade de Recarga após matar um inimigo com ambos os canos enquanto mira.",
+			["pt-br"] = CNumb("{reload_speed:%s}", "reload_var_rgb").." de velocidade de recarga após matar um inimigo com ambos os canos enquanto mira.",
 			es = CNumb("{reload_speed:%s}", "reload_var_rgb").." de Velocidad de Recarga tras matar a un enemigo con ambos cañones mientras apuntas.",
 		},
 		--[+ TRICKSHOOTER +]-- ruof Меткий стрелок	20.04.2026
@@ -2950,7 +2934,7 @@ local weapon_localizations = {
 			ja = "連続"..CKWord("弱点ヒット", "Weakspothit_rgb_ja").."時、"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。"..CNote("Pwr_note"),
 			ko = "연속 "..CKWord("약점 적중", "Weakspothit_rgb_ko").." 시 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." przy Kolejnych "..CKWord("Trafieniach w Słaby Punkt", "Weakspothit_rgb_pl").." (dowolny cel). Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." em "..CKWord("Acertos em Ponto Fraco", "Weakspothit_rgb_pt_br").." consecutivos (qualquer alvo). Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." em caso de "..CKWord("acerto em ponto fraco", "Weakspothit_rgb_pt_br").." consecutivo, se aplica a qualquer alvo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." en "..CKWord("Golpes a Punto Débil", "Weakspothit_rgb_es").." Encadenados (cualquier objetivo). Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces."..CNote("Pwr_note"),
 		},
 		--[+ HAND-CANNON +]-- ruof Ручная пушка	20.04.2026
@@ -2969,7 +2953,7 @@ local weapon_localizations = {
 			ja = CKWord("クリティカルヒット", "Crit_hit_rgb_ja").."時、"..CKWord("貫通", "Rending_rgb_ja").."が "..CNumb("{rend:%s}", "rend_var_rgb").." 増加。"..CNote("Rend_note"),
 			ko = CKWord("크리티컬 적중", "Crit_hit_rgb_ko").." 시 "..CKWord("관통", "Rending_rgb_ko").."이 "..CNumb("{rend:%s}", "rend_var_rgb").." 증가합니다."..CNote("Rend_note"),
 			pl = CNumb("{rend:%s}", "rend_var_rgb").." "..CKWord("Rozrywanie", "Rending_rgb_pl").." przy "..CKWord("Krytycznym Trafieniu", "Crit_hit_rgb_pl").."."..CNote("Rend_note"),
-			["pt-br"] = CNumb("{rend:%s}", "rend_var_rgb").." "..CKWord("Penetração", "Rending_rgb_pt_br").." ao causar um "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br").."."..CNote("Rend_note"),
+			["pt-br"] = CNumb("{rend:%s}", "rend_var_rgb").." de "..CKWord("penetração", "Rending_rgb_pt_br").." ao causar um "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br").."."..CNote("Rend_note"),
 			es = CNumb("{rend:%s}", "rend_var_rgb").." "..CKWord("Penetración", "Rending_rgb_es").." al asestar un "..CKWord("Golpe Crítico", "Crit_hit_rgb_es").."."..CNote("Rend_note"),
 		},
 		--[+ SHATTERING IMPACT +]-- ruof Рассеивающий импульс	20.04.2026
@@ -2988,7 +2972,7 @@ local weapon_localizations = {
 			ja = "直撃時、敵に "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("脆弱", "Brittleness_rgb_ja").."を "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック付与。持続 "..CNumb("{time:%s}", "time_var_rgb").."秒。最大 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." スタック、合計 "..CNumb("40%", "pc_40_rgb").."。"..CNote("Brtl_note"),
 			ko = "직접 사격 적중 시 적에게 "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("취약", "Brittleness_rgb_ko").."을 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩 부여합니다. "..CNumb("{time:%s}", "time_var_rgb").."초 지속. 최대 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." 중첩, 최대 "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
 			pl = "Cel otrzymuje "..CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Kruchości", "Brittleness_rgb_pl").." przy bezpośrednim trafieniu pociskiem. Trwa "..CNumb("{time:%s}", "time_var_rgb").." sek. Maks. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." ładunków, do "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
-			["pt-br"] = "O alvo recebe "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Fragilidade", "Brittleness_rgb_pt_br").." se atingido diretamente por um projétil. Dura "..CNumb("{time:%s}", "time_var_rgb").." seg. Máx. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos, até "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
+			["pt-br"] = "O alvo recebe "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{rending:%s}", "rending_var_rgb").." de "..CKWord("fragilidade", "Brittleness_rgb_pt_br").." se atingido diretamente por um projétil. Dura "..CNumb("{time:%s}", "time_var_rgb").." segundos. Máximo de "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos, até "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
 			es = "El objetivo recibe "..CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Fragilidad", "Brittleness_rgb_es").." al ser golpeado directamente por un proyectil. Dura "..CNumb("{time:%s}", "time_var_rgb").." seg. Máx. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acumulaciones, hasta un "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
 		},
 		--[+ EVERLASTING FLAME +]-- ruof Бесконечное пламя	20.04.2026
@@ -3005,7 +2989,7 @@ local weapon_localizations = {
 			ja = CKWord("クリティカルヒット", "Crit_hits_rgb_ja").."時、現在のタンクではなく予備弾薬から消費する。",
 			ko = CKWord("크리티컬 적중", "Crit_hits_rgb_ko").." 시 현재 연료 탱크 대신 예비 탄약에서 탄약을 소모합니다.",
 			pl = CKWord("Krytyczne Trafienia", "Crit_hits_rgb_pl").." zużywają Amunicję z Rezerwy zamiast z bieżącego zbiornika paliwa.",
-			["pt-br"] = CKWord("Acertos Críticos", "Crit_hits_rgb_pt_br").." gastam Munição da sua Reserva em vez do tanque de combustível atual.",
+			["pt-br"] = CKWord("acertos críticos", "Crit_hits_rgb_pt_br").." gastam munição da sua reserva em vez do carregador atual.",
 			es = "Los "..CKWord("Golpes Críticos", "Crit_hits_rgb_es").." gastan Munición de tu Reserva en lugar de tu tanque de combustible actual.",
 		},
 		--[+ QUICKFLAME +]-- ruof Воспламенение	20.04.2026
@@ -3022,7 +3006,7 @@ local weapon_localizations = {
 			ja = "装填数が "..CNumb("0", "n_0_rgb").." の時、リロード速度 "..CNumb("{reload_speed:%s}", "reload_var_rgb").." 。",
 			ko = "탄창이 비었을 때 재장전 속도 "..CNumb("{reload_speed:%s}", "reload_var_rgb").." .",
 			pl = CNumb("{reload_speed:%s}", "reload_var_rgb").." Prędkości Przeładowania, jeśli pusty.",
-			["pt-br"] = CNumb("{reload_speed:%s}", "reload_var_rgb").." de Velocidade de Recarga se vazio.",
+			["pt-br"] = CNumb("{reload_speed:%s}", "reload_var_rgb").." de velocidade de recarga se vazio.",
 			es = CNumb("{reload_speed:%s}", "reload_var_rgb").." de Velocidad de Recarga si está vacío.",
 		},
 		--[+ FAN THE FLAMES +]-- ruof Раздувая пламя	20.04.2026
@@ -3041,7 +3025,7 @@ local weapon_localizations = {
 			ja = "主攻撃が"..CKWord("燃焼中", "Burning_rgb_ja").."の敵の"..CKWord("スタッガー", "Stagger_rgb_ja").."耐性を "..CNumb("{stagger_reduction:%s}", "stgrrdct_var_rgb").." 無視し、"..CKWord("衝撃", "Impact_rgb_ja").."が "..CNumb("{impact_modifier:%s}", "impmod_var_rgb").." 増加。",
 			ko = "주 공격이 "..CKWord("화상 중", "Burning_rgb_ko").."인 적의 "..CKWord("스태거", "Stagger_rgb_ko").." 저항을 "..CNumb("{stagger_reduction:%s}", "stgrrdct_var_rgb").." 무시하고 "..CKWord("충격", "Impact_rgb_ko").."이 "..CNumb("{impact_modifier:%s}", "impmod_var_rgb").." 증가합니다.",
 			pl = "Atak Podstawowy ignoruje "..CNumb("{stagger_reduction:%s}", "stgrrdct_var_rgb").." Odporności na "..CKWord("Oszołomienie", "Stagger_rgb_pl").." u "..CKWord("Płonących", "Burning_rgb_pl").." wrogów oraz zadaje "..CNumb("{impact_modifier:%s}", "impmod_var_rgb").." "..CKWord("Impetu", "Impact_rgb_pl")..".",
-			["pt-br"] = "O Ataque Primário ignora "..CNumb("{stagger_reduction:%s}", "stgrrdct_var_rgb").." da Resistência a "..CKWord("Cambaleio", "Stagger_rgb_pt_br").." de inimigos "..CKWord("Queimando", "Burning_rgb_pt_br")..", e causa "..CNumb("{impact_modifier:%s}", "impmod_var_rgb").." "..CKWord("Impacto", "Impact_rgb_pt_br")..".",
+			["pt-br"] = "O ataque principal ignora "..CNumb("{stagger_reduction:%s}", "stgrrdct_var_rgb").." da resistência a "..CKWord("desequilibrio", "Stagger_rgb_pt_br").." de inimigos "..CKWord("queimando", "Burning_rgb_pt_br")..", e causa "..CNumb("{impact_modifier:%s}", "impmod_var_rgb").." de "..CKWord("impacto", "Impact_rgb_pt_br")..".",
 			es = "El Ataque Principal ignora "..CNumb("{stagger_reduction:%s}", "stgrrdct_var_rgb").." de la Resistencia al "..CKWord("Tambaleo", "Stagger_rgb_es").." de los enemigos "..CKWord("Ardiendo", "Burning_rgb_es")..", e inflige "..CNumb("{impact_modifier:%s}", "impmod_var_rgb").." "..CKWord("Impacto", "Impact_rgb_es")..".",
 		},
 		--[+ OVERPRESSURE +]-- ruof Избыточное давление	20.04.2026
@@ -3061,7 +3045,7 @@ local weapon_localizations = {
 			ja = "残弾数に応じて、"..CKWord("威力", "Strength_rgb_ja").."が最大 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。"..CNote("Pwr_note"),
 			ko = "남은 탄약량에 따라 "..CKWord("위력", "Strength_rgb_ko").."이 최대 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." w zależności od pozostałej amunicji. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." baseado na munição restante. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." baseado na munição restante. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." según la munición restante. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces."..CNote("Pwr_note"),
 		},
 		--[+ HOT-SHOT +]-- ruof В точку	20.04.2026
@@ -3078,7 +3062,7 @@ local weapon_localizations = {
 			ja = CKWord("弱点ヒット", "Weakspothits_rgb_ja").."時、"..CKWord("薙ぎ払い", "Cleave_rgb_ja").."が "..CNumb("{hit_mass_reduction:%s}", "hit_mass_red_var_rgb").." 増加。",
 			ko = CKWord("약점 적중", "Weakspothits_rgb_ko").." 시 "..CKWord("베어넘기기", "Cleave_rgb_ko").."가 "..CNumb("{hit_mass_reduction:%s}", "hit_mass_red_var_rgb").." 증가합니다.",
 			pl = CNumb("{hit_mass_reduction:%s}", "hit_mass_red_var_rgb").." "..CKWord("Przebicia", "Cleave_rgb_pl").." przy "..CKWord("Trafieniach w Słaby Punkt", "Weakspothits_rgb_pl")..".",
-			["pt-br"] = CNumb("{hit_mass_reduction:%s}", "hit_mass_red_var_rgb").." "..CKWord("Corte Profundo", "Cleave_rgb_pt_br").." em "..CKWord("Acertos em Ponto Fraco", "Weakspothits_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{hit_mass_reduction:%s}", "hit_mass_red_var_rgb").." de "..CKWord("fender", "Cleave_rgb_pt_br").." em "..CKWord("acertos em pontos fracos", "Weakspothits_rgb_pt_br")..".",
 			es = CNumb("{hit_mass_reduction:%s}", "hit_mass_red_var_rgb").." "..CKWord("Hendidura", "Cleave_rgb_es").." en "..CKWord("Golpes a Punto Débil", "Weakspothits_rgb_es")..".",
 		},
 		--[+ WEIGHT OF FIRE +]-- ruof Плотность огня	20.04.2026
@@ -3097,7 +3081,7 @@ local weapon_localizations = {
 			ja = "連続チャージ射撃時、チャージ時間が "..CNumb("{charge_time:%s}", "chrgtime_var_rgb").." 短縮。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。",
 			ko = "연속 충전 공격 시 충전 시간이 "..CNumb("{charge_time:%s}", "chrgtime_var_rgb").." 감소합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").."회 중첩.",
 			pl = CNumb("{charge_time:%s}", "chrgtime_var_rgb").." Czasu Ładowania za ładunek przy kolejnych celowanych atakach ładowanych. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{charge_time:%s}", "chrgtime_var_rgb").." de Tempo de Carga por Acúmulo em Ataques Carregados e Mirados consecutivos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{charge_time:%s}", "chrgtime_var_rgb").." de tempo de carga por acúmulo em ataques carregados e visados consecutivos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{charge_time:%s}", "chrgtime_var_rgb").." de Tiempo de Carga por Acumulación en Ataques Cargados Apuntados consecutivos. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ ARMOURBANE +]-- ruof Бронебой	20.04.2026
@@ -3117,17 +3101,17 @@ local weapon_localizations = {
 			ja = "チャージレベルに応じて、命中した敵に "..CNumb("2.5%", "pc_2_5_rgb").." "..CKWord("脆弱", "Brittleness_rgb_ja").."を "..CNumb("{min_stack_count:%s}", "min_stk_cnt_var_rgb").."～"..CNumb("{max_stack_count:%s}", "max_stk_cnt_var_rgb").." スタック付与。"..CNote("Brtl_note"),
 			ko = "충전 레벨에 따라 적에게 "..CNumb("2.5%", "pc_2_5_rgb").." "..CKWord("취약", "Brittleness_rgb_ko").."을 "..CNumb("{min_stack_count:%s}", "min_stk_cnt_var_rgb").."~"..CNumb("{max_stack_count:%s}", "max_stk_cnt_var_rgb").." 중첩 부여합니다."..CNote("Brtl_note"),
 			pl = "Zadaje trafionym wrogom od "..CNumb("{min_stack_count:%s}", "min_stk_cnt_var_rgb").." do "..CNumb("{max_stack_count:%s}", "max_stk_cnt_var_rgb").." ładunków "..CNumb("2.5%", "pc_2_5_rgb").." "..CKWord("Kruchości", "Brittleness_rgb_pl").." w zależności od poziomu naładowania."..CNote("Brtl_note"),
-			["pt-br"] = "Aplica de "..CNumb("{min_stack_count:%s}", "min_stk_cnt_var_rgb").." a "..CNumb("{max_stack_count:%s}", "max_stk_cnt_var_rgb").." acúmulos de "..CNumb("2.5%", "pc_2_5_rgb").." "..CKWord("Fragilidade", "Brittleness_rgb_pt_br").." aos inimigos atingidos, baseado no nível de carga."..CNote("Brtl_note"),
+			["pt-br"] = "Aplica de "..CNumb("{min_stack_count:%s}", "min_stk_cnt_var_rgb").." a "..CNumb("{max_stack_count:%s}", "max_stk_cnt_var_rgb").." acúmulos de "..CNumb("2.5%", "pc_2_5_rgb").." "..CKWord("fragilidade", "Brittleness_rgb_pt_br").." aos inimigos atingidos, baseado no nível de carga."..CNote("Brtl_note"),
 			es = "Aplica de "..CNumb("{min_stack_count:%s}", "min_stk_cnt_var_rgb").." a "..CNumb("{max_stack_count:%s}", "max_stk_cnt_var_rgb").." acumulaciones de "..CNumb("2.5%", "pc_2_5_rgb").." "..CKWord("Fragilidad", "Brittleness_rgb_es").." a los enemigos golpeados, según el nivel de carga."..CNote("Brtl_note"),
 		},
-		--[+ POWER BLAST +]-- ruof Мощный взрыв	20.04.2026
+		--[+ POWER BLAST -- Энерговзрыв +]-- ruof Мощный взрыв	20.04.2026
 		-- Crit Chance per stack (per tier)
 		-- Plasma Gun -- 2% | 3% | 4% | 5% (up to +25%)
 		["loc_trait_bespoke_increased_crit_chance_bonus_based_on_charge_time_desc"] = { -- crit_chance_min: 5%, crit_chance_max: 25%, +colors
 			en = CNumb("+", "n_plus_rgb")..CNumb("{crit_chance_min:%s}", "critchmin_var_rgb").." "..CKWord("Critical Chance", "Crit_chance_rgb").." per "..CNumb("20%", "pc_20_rgb").." charge level. "..Dot_nc.." Stacks up to "..CNumb("5", "n_5_rgb").." times. Maximum of "..CNumb("+", "n_plus_rgb")..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." "..CKWord("Critical Chance", "Crit_chance_rgb").." at "..CNumb("91%", "pc_91p_rgb").." charge level.\n"
 				..Dot_nc.." Max Stacks can only be reached by the Alt fire charging action.",
-			ru = CNumb("+", "n_plus_rgb")..CNumb("{crit_chance_min:%s}", "critchmin_var_rgb").." к "..CKWord("шансу критического выстрела", "sh_krit_vystrela_rgb_ru").." за каждые "..CNumb("20%", "pc_20_rgb").." перегрева. "
-				..Dot_nc.." Суммируется до "..CNumb("5", "n_5_rgb").." раз, вплоть до "..CNumb("+", "n_plus_rgb")..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." к "..CKWord("шансу критического выстрела", "sh_krit_vystrela_rgb_ru").." при уровне перегрева "..CNumb("91%", "pc_91p_rgb").." или выше.", -- Энерговзрыв
+			ru = CNumb("+", "n_plus_rgb")..CNumb("{crit_chance_min:%s}", "critchmin_var_rgb").." к "..CKWord("шансу критического выстрела", "sh_krit_vystrela_rgb_ru").." за каждые "..CNumb("20%", "pc_20_rgb").." набранного заряда.\n"
+				..Dot_nc.." Суммируется до "..CNumb("5", "n_5_rgb").." раз, вплоть до "..CNumb("+", "n_plus_rgb")..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." к "..CKWord("шансу критического выстрела", "sh_krit_vystrela_rgb_ru").." при максимальном уровне заряда.",
 			fr = "Gagnez entre "..CNumb("{crit_chance_min:%s}", "critchmin_var_rgb").." et "..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." de "..CKWord("Taux de coup critique", "Crit_chance_rgb_fr").." en fonction du niveau de charge lorsque vous tirez.",
 			["zh-tw"] = "依據 "..CKWord("充能", "Heat2_rgb_tw").." 等級，\n "..CNumb("+", "n_plus_rgb")..CNumb("{crit_chance_min:%s}", "critchmin_var_rgb").." 到 "..CNumb("+", "n_plus_rgb")..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." "..CKWord("暴擊機率", "Crit_chance_rgb_tw").."。",
 			["zh-cn"] = "随充能程度叠加层数，每充能\n"..CNumb("20%", "pc_20_rgb").." 叠加 "..CNumb("1", "n_1_rgb").." 层，每层 "..CNumb("+", "n_plus_rgb")..CNumb("{crit_chance_min:%s}", "critchmin_var_rgb").." "..CKWord("暴击几率", "Crit_chance_rgb_zh_cn").."。\n最多叠加 "..CNumb("5", "n_5_rgb").." 层，最高 "..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").."。",
@@ -3136,7 +3120,7 @@ local weapon_localizations = {
 			ja = "チャージレベルに応じて、射撃時に"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance_min:%s}", "critchmin_var_rgb").."～"..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." 増加。",
 			ko = "충전 레벨에 따라 사격 시 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance_min:%s}", "critchmin_var_rgb").."에서 "..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").."까지 증가합니다.",
 			pl = "Zyskaj od "..CNumb("{crit_chance_min:%s}", "critchmin_var_rgb").." do "..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." "..CKWord("Szansy na krytyka", "Crit_chance_rgb_pl").." w zależności od poziomu naładowania podczas strzału.",
-			["pt-br"] = "Ganha entre "..CNumb("{crit_chance_min:%s}", "critchmin_var_rgb").." e "..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." de "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." baseado no nível de carga ao atirar.",
+			["pt-br"] = "Ganha entre "..CNumb("{crit_chance_min:%s}", "critchmin_var_rgb").." e "..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." baseado no nível de carga ao atirar.",
 			es = "Gana entre "..CNumb("{crit_chance_min:%s}", "critchmin_var_rgb").." y "..CNumb("{crit_chance_max:%s}", "critchmax_var_rgb").." de "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." según el nivel de carga al disparar.",
 		},
 		--[+ GETS HOT! +]-- ruof Становится жарко!	20.04.2026
@@ -3161,7 +3145,7 @@ local weapon_localizations = {
 			ja = "現在の"..CKWord("ヒート", "Heat_rgb_ja").."量に応じてスタック獲得。スタックごとに"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").." "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 、遠隔"..CKWord("クリティカルダメージ", "Crit_dmg_r_rgb_ja").." "..CNumb("{ranged_crit_damage:%s}", "rangcrtdmg_var_rgb").." 増加。最大 "..CNumb("5", "n_5_rgb").." スタック。",
 			ko = "현재 "..CKWord("열기", "Heat_rgb_ko").."에 따라 중첩을 얻습니다. 중첩당 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").." "..CNumb("{crit_chance:%s}", "crit_var_rgb").." , 원거리 "..CKWord("크리티컬 피해", "Crit_dmg_r_rgb_ko").." "..CNumb("{ranged_crit_damage:%s}", "rangcrtdmg_var_rgb").." 증가. 최대 "..CNumb("5", "n_5_rgb").." 중첩.",
 			pl = "Zwiększa o "..CNumb("{crit_chance:%s}", "crit_var_rgb").." na ładunek "..CKWord("Szansę na krytyka", "Crit_chance_rgb_pl").." i o "..CNumb("{ranged_crit_damage:%s}", "rangcrtdmg_var_rgb").." na ładunek Dystansowe "..CKWord("Obrażenia krytyczne", "Crt_strk_dmg_rgb_pl")..", proporcjonalnie do aktualnego poziomu "..CKWord("Ciepła", "Heat_rgb_pl")..". Maks. "..CNumb("5", "n_5_rgb").." ładunków.",
-			["pt-br"] = "Aumenta em "..CNumb("{crit_chance:%s}", "crit_var_rgb").." por acúmulo a "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." e em "..CNumb("{ranged_crit_damage:%s}", "rangcrtdmg_var_rgb").." por acúmulo o "..CKWord("Dano Crítico", "Crt_strk_dmg_rgb_pt_br").." à Distância, baseado no nível de "..CKWord("Calor", "Heat_rgb_pt_br").." atual. Máx. "..CNumb("5", "n_5_rgb").." acúmulos.",
+			["pt-br"] = "Aumenta em "..CNumb("{crit_chance:%s}", "crit_var_rgb").." por acúmulo a "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." e em "..CNumb("{ranged_crit_damage:%s}", "rangcrtdmg_var_rgb").." por acúmulo o "..CKWord("dano de golpe crítico", "Crt_strk_dmg_rgb_pt_br").." à distância, baseado no nível de "..CKWord("calor", "Heat_rgb_pt_br").." atual. Máximo de "..CNumb("5", "n_5_rgb").." acúmulos.",
 			es = "Aumenta en "..CNumb("{crit_chance:%s}", "crit_var_rgb").." por acumulación la "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." y en "..CNumb("{ranged_crit_damage:%s}", "rangcrtdmg_var_rgb").." por acumulación el "..CKWord("Daño Crítico", "Crt_strk_dmg_rgb_es").." a Distancia, según el nivel de "..CKWord("Calor", "Heat_rgb_es").." actual. Máx. "..CNumb("5", "n_5_rgb").." acumulaciones.",
 		},
 		--[+ VOLATILE +]-- ruof Испарение	20.04.2026
@@ -3178,7 +3162,7 @@ local weapon_localizations = {
 			ja = "低"..CKWord("オーバーヒート", "Overheat_rgb_ja").."時、チャージ速度 "..CNumb("+{charge_speed:%s}", "p_chrgspd_var_rgb").." 。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。",
 			ko = "낮은 "..CKWord("과열", "Overheat_rgb_ko").." 상태일 때 충전 속도 "..CNumb("+{charge_speed:%s}", "p_chrgspd_var_rgb").." . 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩.",
 			pl = CNumb("+{charge_speed:%s}", "p_chrgspd_var_rgb").." Prędkości Ładowania przy niskim "..CKWord("Przegrzaniu", "Overheat_rgb_pl")..". Kumuluje się do "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("+{charge_speed:%s}", "p_chrgspd_var_rgb").." de Velocidade de Carga com "..CKWord("Superaquecimento", "Overheat_rgb_pt_br").." baixo. Acumula até "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("+{charge_speed:%s}", "p_chrgspd_var_rgb").." de velocidade de recarregamento com "..CKWord("superaquecimento", "Overheat_rgb_pt_br").." baixo. Acumula até "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("+{charge_speed:%s}", "p_chrgspd_var_rgb").." de Velocidad de Carga con "..CKWord("Sobrecalentamiento", "Overheat_rgb_es").." bajo. Se acumula hasta "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ BLAZE AWAY +]-- ALT OGRYN ruof Энтузиазм	20.04.2026
@@ -3198,7 +3182,7 @@ local weapon_localizations = {
 			ja = "連続射撃中、一発撃つごとに"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。"..CNote("Pwr_note"),
 			ko = "연속 사격 중 매 발사 시 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." za każdy strzał podczas ognia ciągłego. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." para cada disparo durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." para cada disparo durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." por cada disparo durante fuego continuo. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces."..CNote("Pwr_note"),
 		},
 		--[+ RISING HEAT +]-- ruof Сильная жара	20.04.2026
@@ -3217,7 +3201,7 @@ local weapon_localizations = {
 			ja = CKWord("ヒート", "Heat_rgb_ja").."レベルに応じて、最大 "..CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("威力", "Strength_rgb_ja").." 増加。"..CNote("Pwr_note"),
 			ko = CKWord("열기", "Heat_rgb_ko").." 수준에 따라 최대 "..CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("위력", "Strength_rgb_ko").." 증가."..CNote("Pwr_note"),
 			pl = "Do "..CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." w zależności od poziomu "..CKWord("Ciepła", "Heat_rgb_pl").."."..CNote("Pwr_note"),
-			["pt-br"] = "Até "..CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." baseado no nível de "..CKWord("Calor", "Heat_rgb_pt_br").."."..CNote("Pwr_note"),
+			["pt-br"] = "Até "..CNumb("{damage:%s}", "dmg_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." baseado no nível de "..CKWord("calor", "Heat_rgb_pt_br").."."..CNote("Pwr_note"),
 			es = "Hasta "..CNumb("{damage:%s}", "dmg_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." según el nivel de "..CKWord("Calor", "Heat_rgb_es").."."..CNote("Pwr_note"),
 		},
 		--[+ OPTIMISED COOLING +]-- ruof Оптимизированное охлаждение	20.04.2026
@@ -3236,7 +3220,7 @@ local weapon_localizations = {
 			ja = "連続射撃またはチャージショット時、スタックごとに"..CKWord("ヒート", "Heat_rgb_ja").."蓄積が減少。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。",
 			ko = "연속 사격 또는 충전 사격 시 중첩당 "..CKWord("열기", "Heat_rgb_ko").." 축적이 감소합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩.",
 			pl = "Zmniejsza generację "..CKWord("Ciepła", "Heat_rgb_pl").." na ładunek przy kolejnych lub ładowanych strzałach. Kumuluje się do "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = "Reduz a geração de "..CKWord("Calor", "Heat_rgb_pt_br").." por acúmulo para tiros consecutivos ou carregados. Acumula até "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = "Reduz a geração de "..CKWord("calor", "Heat_rgb_pt_br").." por acúmulo para tiros consecutivos ou carregados. Acumula até "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = "Reduce la generación de "..CKWord("Calor", "Heat_rgb_es").." por acumulación para disparos consecutivos o cargados. Se acumula hasta "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ FOCUSED COOLING +]-- ruof Сосредоточенное охлаждение	20.04.2026
@@ -3253,7 +3237,7 @@ local weapon_localizations = {
 			ja = CKWord("クリティカルヒット", "Crit_hit_rgb_ja").."時、"..CKWord("ヒート", "Heat_rgb_ja").."生成量が "..CNumb("{heat_percentage:%s}", "heat_pc_var_rgb").." に減少。",
 			ko = CKWord("크리티컬 적중", "Crit_hit_rgb_ko").." 시 "..CKWord("열기", "Heat_rgb_ko").." 생성량이 "..CNumb("{heat_percentage:%s}", "heat_pc_var_rgb").." 로 감소합니다.",
 			pl = CNumb("{heat_percentage:%s}", "heat_pc_var_rgb").." generacji "..CKWord("Ciepła", "Heat_rgb_pl").." przy "..CKWord("Krytycznym Trafieniu", "Crit_hit_rgb_pl")..".",
-			["pt-br"] = CNumb("{heat_percentage:%s}", "heat_pc_var_rgb").." de geração de "..CKWord("Calor", "Heat_rgb_pt_br").." em um "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{heat_percentage:%s}", "heat_pc_var_rgb").." de geração de "..CKWord("calor", "Heat_rgb_pt_br").." em um "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br")..".",
 			es = CNumb("{heat_percentage:%s}", "heat_pc_var_rgb").." de generación de "..CKWord("Calor", "Heat_rgb_es").." en un "..CKWord("Golpe Crítico", "Crit_hit_rgb_es")..".",
 		},
 		--[+ GAUNTLET MOMENTUM +]-- ruof Перчатка моментума	20.04.2026
@@ -3274,7 +3258,7 @@ local weapon_localizations = {
 			ja = "近接連続ヒットでスタック獲得。スタックごとに近接"..CKWord("威力", "Strength_rgb_ja").." "..CNumb("{power:%s}", "pwr_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。持続時間 "..CNumb("{time:%s}", "time_var_rgb").."秒。 {#color(255, 35, 5)}バグ：全ティア5%{#reset()}"..CNote("Pwr_note"),
 			ko = "근접 연속 공격 시 중첩을 얻습니다. 중첩당 근접 "..CKWord("위력", "Strength_rgb_ko").." "..CNumb("{power:%s}", "pwr_var_rgb").." 증가. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩. 지속 "..CNumb("{time:%s}", "time_var_rgb").."초. {#color(255, 35, 5)}버그: 모든 단계 5%{#reset()}"..CNote("Pwr_note"),
 			pl = CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." w Walce Wręcz na ładunek. Ładunki zyskuje się przy kolejnych trafieniach w walce wręcz, maks. "..CNumb("{stacks:%s}", "stacks_var_rgb")..". Każdy ładunek trwa "..CNumb("{time:%s}", "time_var_rgb").." sek. {#color(255, 35, 5)}Błąd: 5% na wszystkich poziomach.{#reset()}"..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." Corpo a Corpo por acúmulo. Acumula em acertos consecutivos corpo a corpo, até "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. Cada acúmulo dura "..CNumb("{time:%s}", "time_var_rgb").." seg. {#color(255, 35, 5)}BUG: 5% em todos os níveis.{#reset()}"..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power:%s}", "pwr_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." corpo a corpo por acúmulo. Acumula em acertos consecutivos corpo a corpo, até "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. Cada acúmulo dura "..CNumb("{time:%s}", "time_var_rgb").." segundos. {#color(255, 35, 5)}BUG: 5% em todos os níveis.{#reset()}"..CNote("Pwr_note"),
 			es = CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." Cuerpo a Cuerpo por acumulación. Se acumula con golpes encadenados cuerpo a cuerpo, hasta "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces. Cada acumulación dura "..CNumb("{time:%s}", "time_var_rgb").." seg. {#color(255, 35, 5)}BUG: 5% en todos los niveles.{#reset()}"..CNote("Pwr_note"),
 		},
 		--[+ PULVERISE +]-- ruof Пульверизация	20.04.2026
@@ -3291,7 +3275,7 @@ local weapon_localizations = {
 			ja = "近接キル時、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("クリティカル発生率", "Crit_chance_rgb_ja").."が "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 増加。",
 			ko = "근접 처치 시 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("크리티컬 확률", "Crit_chance_rgb_ko").."이 "..CNumb("{crit_chance:%s}", "crit_var_rgb").." 증가합니다.",
 			pl = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Szansa na krytyka", "Crit_chance_rgb_pl").." przez "..CNumb("{time:%s}", "time_var_rgb").." sek. po Zabójstwie w Walce Wręcz.",
-			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos após um Abate Corpo a Corpo.",
+			["pt-br"] = CNumb("{crit_chance:%s}", "crit_var_rgb").." de "..CKWord("chance de crítico", "Crit_chance_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos após um abate corpo a corpo.",
 			es = CNumb("{crit_chance:%s}", "crit_var_rgb").." "..CKWord("Probabilidad de crítico", "Crit_chance_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos tras una Muerte Cuerpo a Cuerpo.",
 		},
 		--[+ DISRUPTIVE +]-- ruof Разрывной эффект	20.04.2026
@@ -3310,7 +3294,7 @@ local weapon_localizations = {
 			ja = "セカンダリ攻撃で "..CNumb("3", "n_3_rgb").." 体以上の敵に命中すると、"..CNumb("{time:%s}", "time_var_rgb").."秒間、近接"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。"..CNote("Pwr_note"),
 			ko = "보조 공격으로 최소 "..CNumb("3", "n_3_rgb").."명의 적을 적중시키면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 근접 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다."..CNote("Pwr_note"),
 			pl = "Trafienie co najmniej "..CNumb("3", "n_3_rgb").." wrogów Atakiem Specjalnym daje "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." w Walce Wręcz na "..CNumb("{time:%s}", "time_var_rgb").." sek."..CNote("Pwr_note"),
-			["pt-br"] = "Atingir pelo menos "..CNumb("3", "n_3_rgb").." inimigos com seu Ataque Secundário concede "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." Corpo a Corpo por "..CNumb("{time:%s}", "time_var_rgb").." seg."..CNote("Pwr_note"),
+			["pt-br"] = "Atingir pelo menos "..CNumb("3", "n_3_rgb").." inimigos com seu ataque secundário concede "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." corpo a corpo por "..CNumb("{time:%s}", "time_var_rgb").." segundos."..CNote("Pwr_note"),
 			es = "Golpear al menos a "..CNumb("3", "n_3_rgb").." enemigos con tu Ataque Secundario otorga "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." Cuerpo a Cuerpo durante "..CNumb("{time:%s}", "time_var_rgb").." seg."..CNote("Pwr_note"),
 		},
 		--[+ EXPLOSIVE OFFENSIVE +]-- ruof Взрывное наступление	20.04.2026
@@ -3329,7 +3313,7 @@ local weapon_localizations = {
 			ja = "武器特殊攻撃の爆発が複数の敵に命中すると、"..CNumb("{time:%s}", "time_var_rgb").."秒間"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。"..CNote("Pwr_note"),
 			ko = "무기 특수 공격 폭발이 여러 적에게 적중하면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." na "..CNumb("{time:%s}", "time_var_rgb").." sekund po trafieniu wielu wrogów eksplozją Ataku Specjalnego Broni."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos após atingir múltiplos inimigos com a explosão do Ataque Especial da arma."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos após atingir múltiplos inimigos com a explosão do ataque especial da arma."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos tras golpear a varios enemigos con la explosión del Ataque Especial del arma."..CNote("Pwr_note"),
 		},
 		--[+ PINPOINTING TARGET +]-- ruof Определение цели	20.04.2026
@@ -3347,7 +3331,7 @@ local weapon_localizations = {
 			ja = "照準中、"..CNumb("{time:%s}", "time_var_rgb").."秒ごとに"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。射撃または照準解除で全スタック消失。"..CNote("Pwr_note"),
 			ko = "조준 중 "..CNumb("{time:%s}", "time_var_rgb").."초마다 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩. 사격 또는 조준 해제 시 모든 중첩이 사라집니다."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." co "..CNumb("{time:%s}", "time_var_rgb").." sek. podczas celowania. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy. Wszystkie ładunki tracone przy strzale lub opuszczeniu celowania."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." a cada "..CNumb("{time:%s}", "time_var_rgb").." segundos mirando. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. Todos os acúmulos são perdidos ao atirar ou sair da mira."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." a cada "..CNumb("{time:%s}", "time_var_rgb").." segundos mirando. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. Todos os acúmulos são perdidos ao atirar ou sair da mira."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." cada "..CNumb("{time:%s}", "time_var_rgb").." segundos apuntando. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces. Pierde todas las acumulaciones al disparar o dejar de apuntar."..CNote("Pwr_note"),
 		},
 		--[+ CHARMED RELOAD +]-- ruof Зачарованная перезарядка	20.04.2026
@@ -3366,7 +3350,7 @@ local weapon_localizations = {
 			ja = CKWord("クリティカルヒット", "Crit_hit_rgb_ja").."時、予備弾薬から "..CNumb("{bullet_amount:%s}", "blltam_var_rgb").." 発補充。",
 			ko = CKWord("크리티컬 적중", "Crit_hit_rgb_ko").." 시 예비 탄약에서 "..CNumb("{bullet_amount:%s}", "blltam_var_rgb").." 발을 장전합니다.",
 			pl = CNumb("{bullet_amount:%s}", "blltam_var_rgb").." naboi załadowanych z Rezerwy przy "..CKWord("Krytycznym Trafieniu", "Crit_hit_rgb_pl")..".",
-			["pt-br"] = CNumb("{bullet_amount:%s}", "blltam_var_rgb").." balas carregadas da Reserva em um "..CKWord("Acerto Crítico", "Crit_hit_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{bullet_amount:%s}", "blltam_var_rgb").." balas recarregadas da reserva ao realizar um "..CKWord("acerto crítico", "Crit_hit_rgb_pt_br")..".",
 			es = CNumb("{bullet_amount:%s}", "blltam_var_rgb").." balas cargadas de la Reserva en un "..CKWord("Golpe Crítico", "Crit_hit_rgb_es")..".",
 		},
 		--[+ OVERWHELMING FIRE +]-- ruof Огонь на поражение	20.04.2026
@@ -3385,7 +3369,7 @@ local weapon_localizations = {
 			ja = "同一敵に "..CNumb("{hit:%s}", "hit_var_rgb").." 発命中するごとに、"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power:%s}", "pwr_var_rgb").." 増加。持続 "..CNumb("{time:%s}", "time_var_rgb").."秒。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。"..CNote("Pwr_note"),
 			ko = "동일 대상에게 "..CNumb("{hit:%s}", "hit_var_rgb").."회 적중할 때마다 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power:%s}", "pwr_var_rgb").." 증가합니다. 지속 "..CNumb("{time:%s}", "time_var_rgb").."초. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩."..CNote("Pwr_note"),
 			pl = CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." za każde "..CNumb("{hit:%s}", "hit_var_rgb").." Trafienia w Pojedynczy Cel. Trwa "..CNumb("{time:%s}", "time_var_rgb").." sek. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." para cada "..CNumb("{hit:%s}", "hit_var_rgb").." Acertos no Mesmo Alvo. Dura "..CNumb("{time:%s}", "time_var_rgb").." seg. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power:%s}", "pwr_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." para cada "..CNumb("{hit:%s}", "hit_var_rgb").." acertos no mesmo alvo. Dura "..CNumb("{time:%s}", "time_var_rgb").." segundos. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes."..CNote("Pwr_note"),
 			es = CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." por cada "..CNumb("{hit:%s}", "hit_var_rgb").." Golpes al Mismo Objetivo. Dura "..CNumb("{time:%s}", "time_var_rgb").." seg. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces."..CNote("Pwr_note"),
 		},
 		--[+ CAN OPENER +]-- ruof Открывашка	20.04.2026
@@ -3404,7 +3388,7 @@ local weapon_localizations = {
 			ja = "特殊攻撃を命中させると、敵に "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("脆弱", "Brittleness_rgb_ja").."を "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック付与。持続 "..CNumb("{time:%s}", "time_var_rgb").."秒。最大 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." スタック、合計 "..CNumb("40%", "pc_40_rgb").."。"..CNote("Brtl_note"),
 			ko = "특수 공격 적중 시 적에게 "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("취약", "Brittleness_rgb_ko").."을 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩 부여합니다. "..CNumb("{time:%s}", "time_var_rgb").."초 지속. 최대 "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." 중첩, 최대 "..CNumb("40%", "pc_40_rgb").." 증가."..CNote("Brtl_note"),
 			pl = "Trafienie wroga Atakiem Specjalnym nakłada "..CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Kruchości", "Brittleness_rgb_pl")..". Trwa "..CNumb("{time:%s}", "time_var_rgb").." sek. Maks. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." ładunków, łącznie do "..CNumb("40%", "pc_40_rgb").."."..CNote("Brtl_note"),
-			["pt-br"] = "Acertar um inimigo com o ataque especial aplica "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Fragilidade", "Brittleness_rgb_pt_br")..". Dura "..CNumb("{time:%s}", "time_var_rgb").." seg. Máx. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos, até "..CNumb("40%", "pc_40_rgb").." no total."..CNote("Brtl_note"),
+			["pt-br"] = "Acertar um inimigo com o ataque especial aplica "..CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CNumb("{rending:%s}", "rending_var_rgb").." de "..CKWord("fragilidade", "Brittleness_rgb_pt_br")..". Dura "..CNumb("{time:%s}", "time_var_rgb").." segundos. Máximo de "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acúmulos, até "..CNumb("40%", "pc_40_rgb").." no total."..CNote("Brtl_note"),
 			es = "Golpear a un enemigo con el ataque especial aplica "..CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CNumb("{rending:%s}", "rending_var_rgb").." "..CKWord("Fragilidad", "Brittleness_rgb_es")..". Dura "..CNumb("{time:%s}", "time_var_rgb").." seg. Máx. "..CNumb("{max_stacks:%s}", "maxstks_var_rgb").." acumulaciones, hasta un "..CNumb("40%", "pc_40_rgb").." en total."..CNote("Brtl_note"),
 		},
 		--[+ BORN IN BLOOD +]-- ruof Рожденный в крови	20.04.2026
@@ -3423,7 +3407,7 @@ local weapon_localizations = {
 			ja = CNumb("12.5", "n_12_5_rgb").."メートル以内の敵をキルすると、"..CKWord("タフネス", "Toughness_rgb_ja").."が "..CNumb("{toughness:%s}", "tghns_var_rgb").." 回復。",
 			ko = CNumb("12.5", "n_12_5_rgb").."미터 이내의 적을 처치하면 "..CKWord("강인함", "Toughness_rgb_ko").."이 "..CNumb("{toughness:%s}", "tghns_var_rgb").." 회복됩니다.",
 			pl = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Wytrzymałości", "Toughness_rgb_pl").." przy zabiciu wroga w odległości do "..CNumb("12.5", "n_12_5_rgb").." metrów.",
-			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Resistência", "Toughness_rgb_pt_br").." ao matar inimigos a até "..CNumb("12.5", "n_12_5_rgb").." metros.",
+			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." de "..CKWord("resistência", "Toughness_rgb_pt_br").." ao matar inimigos a até "..CNumb("12.5", "n_12_5_rgb").." metros.",
 			es = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Aguante", "Toughness_rgb_es").." al matar a un enemigo a "..CNumb("12.5", "n_12_5_rgb").." metros o menos.",
 		},
 		--[+ PIERCE +]-- ruof Прокол	20.04.2026
@@ -3442,7 +3426,7 @@ local weapon_localizations = {
 			ja = "特殊攻撃の"..CKWord("スタッガー", "Stagger_rgb_ja").."効果が "..CNumb("{stagger:%s}", "stgr_var_rgb").." 増加し、装甲による"..CKWord("ヒットマス", "Hit_mass_rgb_ja").."ボーナスを無視。",
 			ko = "특수 공격의 "..CKWord("스태거", "Stagger_rgb_ko").." 효과가 "..CNumb("{stagger:%s}", "stgr_var_rgb").." 증가하고, 방어구의 "..CKWord("충돌 질량", "Hit_mass_rgb_ko").." 보너스를 무시합니다.",
 			pl = "Ataki Specjalne zyskują "..CNumb("{stagger:%s}", "stgr_var_rgb").." "..CKWord("Oszołomienia", "Stagger_rgb_pl").." i ignorują premię do "..CKWord("Masy Trafienia", "Hit_mass_rgb_pl").." z pancerza.",
-			["pt-br"] = "Ataques Especiais ganham "..CNumb("{stagger:%s}", "stgr_var_rgb").." "..CKWord("Cambaleio", "Stagger_rgb_pt_br").." e ignoram o bônus de "..CKWord("Massa de Impacto", "Hit_mass_rgb_pt_br").." da armadura.",
+			["pt-br"] = "Ataques especiais ganham "..CNumb("{stagger:%s}", "stgr_var_rgb").." de "..CKWord("desequilibrio", "Stagger_rgb_pt_br").." e ignoram o bônus de "..CKWord("massa de impacto", "Hit_mass_rgb_pt_br").." da armadura.",
 			es = "Los Ataques Especiales ganan "..CNumb("{stagger:%s}", "stgr_var_rgb").." "..CKWord("Tambaleo", "Stagger_rgb_es").." e ignoran el bono de "..CKWord("Masa de Golpe", "Hit_mass_rgb_es").." de la armadura.",
 		},
 		--[+ PUNISHING FIRE +]-- ruof Карательный обстрел	20.04.2026
@@ -3461,7 +3445,7 @@ local weapon_localizations = {
 			ja = "武器特殊攻撃で複数の敵を"..CKWord("薙ぎ払う", "Cleaving_rgb_ja").."と、"..CNumb("{time:%s}", "time_var_rgb").."秒間、遠隔"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。"..CNote("Pwr_note"),
 			ko = "무기 특수 공격으로 여러 적을 "..CKWord("베어넘긴", "Cleaving_rgb_ko").." 후 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 원거리 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." na Dystans przez "..CNumb("{time:%s}", "time_var_rgb").." sek. po "..CKWord("Przebiciu", "Cleaving_rgb_pl").." wielu wrogów Atakiem Specjalnym Broni."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." à Distância por "..CNumb("{time:%s}", "time_var_rgb").." segundos após "..CKWord("Cortar", "Cleaving_rgb_pt_br").." vários inimigos com o Ataque Especial da arma."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." à distância por "..CNumb("{time:%s}", "time_var_rgb").." segundos após "..CKWord("fender", "Cleaving_rgb_pt_br").." vários inimigos com o ataque especial da arma."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." a Distancia durante "..CNumb("{time:%s}", "time_var_rgb").." segundos tras "..CKWord("Hender", "Cleaving_rgb_es").." a varios enemigos con el Ataque Especial del arma."..CNote("Pwr_note"),
 		},
 		--[+ INSPIRING BARRAGE +]-- ALT OGRYN ruof Вдохновляющий натиск	20.04.2026
@@ -3478,7 +3462,7 @@ local weapon_localizations = {
 			ja = "連続射撃中、一発撃つごとに"..CKWord("タフネス", "Toughness_rgb_ja").."が "..CNumb("{toughness:%s}", "tghns_var_rgb").." 回復。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。",
 			ko = "연속 사격 중 매 발사 시 "..CKWord("강인함", "Toughness_rgb_ko").."이 "..CNumb("{toughness:%s}", "tghns_var_rgb").." 회복됩니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩.",
 			pl = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Wytrzymałości", "Toughness_rgb_pl").." za każdy strzał podczas ognia ciągłego. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Resistência", "Toughness_rgb_pt_br").." para cada disparo durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{toughness:%s}", "tghns_var_rgb").." de "..CKWord("resistência", "Toughness_rgb_pt_br").." para cada disparo durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{toughness:%s}", "tghns_var_rgb").." "..CKWord("Aguante", "Toughness_rgb_es").." por cada disparo durante fuego continuo. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ EXPANSIVE +]-- ruof Расширение	20.04.2026
@@ -3497,7 +3481,7 @@ local weapon_localizations = {
 			ja = "遠隔攻撃で "..CNumb("3", "n_3_rgb").." 体以上の敵に命中すると、"..CNumb("{time:%s}", "time_var_rgb").."秒間、近接"..CKWord("威力", "Strength_rgb_ja").."が "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 増加。"..CNote("Pwr_note"),
 			ko = "원거리 공격으로 "..CNumb("3", "n_3_rgb").."명 이상의 적을 적중시키면 "..CNumb("{time:%s}", "time_var_rgb").."초 동안 근접 "..CKWord("위력", "Strength_rgb_ko").."이 "..CNumb("{power_level:%s}", "pwrlvl_var_rgb").." 증가합니다."..CNote("Pwr_note"),
 			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." w Walce Wręcz na "..CNumb("{time:%s}", "time_var_rgb").." sek. po trafieniu co najmniej "..CNumb("3", "n_3_rgb").." wrogów Atakiem Dystansowym."..CNote("Pwr_note"),
-			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potência", "Strength_rgb_pt_br").." Corpo a Corpo por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao atingir pelo menos "..CNumb("3", "n_3_rgb").." inimigos com um ataque à Distância."..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("força", "Strength_rgb_pt_br").." corpo a corpo por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao atingir pelo menos "..CNumb("3", "n_3_rgb").." inimigos com um ataque à distância."..CNote("Pwr_note"),
 			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Potencia", "Strength_rgb_es").." Cuerpo a Cuerpo durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al golpear al menos a "..CNumb("3", "n_3_rgb").." enemigos con un ataque a Distancia."..CNote("Pwr_note"),
 		},
 		--[+ SHRAPNEL +]-- ruof Шрапнель	20.04.2026
@@ -3516,7 +3500,7 @@ local weapon_localizations = {
 			ja = "近距離爆発により、敵に "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタックの"..CKWord("出血", "Bleed_rgb_ja").."を付与。",
 			ko = "근거리 폭발로 적에게 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩의 "..CKWord("출혈", "Bleed_rgb_ko").."을 부여합니다.",
 			pl = CNumb("{stacks:%s}", "stacks_var_rgb").." ładunków "..CKWord("Krwawienia", "Bleed_rgb_pl").." przy eksplozjach z bliskiego zasięgu.",
-			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("Sangramento", "Bleed_rgb_pt_br").." com explosões de curto alcance.",
+			["pt-br"] = CNumb("{stacks:%s}", "stacks_var_rgb").." acúmulos de "..CKWord("sangramento", "Bleed_rgb_pt_br").." com explosões de curto alcance.",
 			es = CNumb("{stacks:%s}", "stacks_var_rgb").." acumulaciones de "..CKWord("Sangrado", "Bleed_rgb_es").." con explosiones a corta distancia.",
 		},
 		--[+ BLAST ZONE +]-- ruof Зона взрыва	20.04.2026
@@ -3533,7 +3517,7 @@ local weapon_localizations = {
 			ja = "連続射撃中、一発撃つごとに爆発半径が "..CNumb("{radius:%s}", "radius_var_rgb").." 増加。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。",
 			ko = "연속 사격 중 매 발사 시 폭발 반경이 "..CNumb("{radius:%s}", "radius_var_rgb").." 증가합니다. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩.",
 			pl = CNumb("{radius:%s}", "radius_var_rgb").." Promienia Wybuchu za każdy strzał podczas ognia ciągłego. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy.",
-			["pt-br"] = CNumb("{radius:%s}", "radius_var_rgb").." de Raio de Explosão para cada disparo durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
+			["pt-br"] = CNumb("{radius:%s}", "radius_var_rgb").." de raio de explosão para cada disparo durante fogo contínuo. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes.",
 			es = CNumb("{radius:%s}", "radius_var_rgb").." de Radio de Explosión por cada disparo durante fuego continuo. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces.",
 		},
 		--[+ ADHESIVE CHARGE +]-- ruof Цепной заряд	20.04.2026
@@ -3550,7 +3534,7 @@ local weapon_localizations = {
 			ja = "オグリンと怪物への"..CKWord("ダメージ", "Damage_rgb_ja").."が "..CNumb("{dmg_vs_ogryn_monster:%s}", "dmgvogrmon_var_rgb").." 増加。グレネードがオグリンと怪物に粘着する。",
 			ko = "오그린 및 괴수에게 "..CKWord("피해", "Damage_rgb_ko").." "..CNumb("{dmg_vs_ogryn_monster:%s}", "dmgvogrmon_var_rgb").." . 수류탄이 오그린과 괴수에게 점착됩니다.",
 			pl = CNumb("{dmg_vs_ogryn_monster:%s}", "dmgvogrmon_var_rgb").." "..CKWord("Obrażeń", "Damage_rgb_pl").." przeciwko Ogrynom i Monstrum. Twoje granaty przyklejają się do Ogrynów i Monstrów.",
-			["pt-br"] = CNumb("{dmg_vs_ogryn_monster:%s}", "dmgvogrmon_var_rgb").." "..CKWord("Dano", "Damage_rgb_pt_br").." contra Ogryns e Monstruosidades. Suas granadas grudam em Ogryns e Monstruosidades.",
+			["pt-br"] = CNumb("{dmg_vs_ogryn_monster:%s}", "dmgvogrmon_var_rgb").." de "..CKWord("dano", "Damage_rgb_pt_br").." contra Ogryns e monstruosidades. Suas granadas grudam em Ogryns e monstruosidades.",
 			es = CNumb("{dmg_vs_ogryn_monster:%s}", "dmgvogrmon_var_rgb").." "..CKWord("Daño", "Damage_rgb_es").." contra Ogretes y Monstruosidades. Tus granadas se adhieren a Ogretes y Monstruosidades.",
 		},
 		--[+ MARKSMAN'S REFLEX +]-- ruof Рефлекс стрелка	20.04.2026
@@ -3569,8 +3553,110 @@ local weapon_localizations = {
 			ja = "弾丸が"..CKWord("弱点ヒット", "Weakspothit_rgb_ja").."すると、"..CNumb("{duration:%s}", "dur_var_rgb").."秒間リロード速度が "..CNumb("{reload_speed:%s}", "reload_var_rgb").." 増加。",
 			ko = "탄환이 "..CKWord("약점 적중", "Weakspothit_rgb_ko").." 시 "..CNumb("{duration:%s}", "dur_var_rgb").."초 동안 재장전 속도가 "..CNumb("{reload_speed:%s}", "reload_var_rgb").." 증가합니다.",
 			pl = CNumb("{reload_speed:%s}", "reload_var_rgb").." Prędkości Przeładowania na "..CNumb("{duration:%s}", "dur_var_rgb").." sek. po Trafieniu Pociskiem w "..CKWord("Słaby Punkt", "Weakspothit_rgb_pl")..".",
-			["pt-br"] = CNumb("{reload_speed:%s}", "reload_var_rgb").." de Velocidade de Recarga por "..CNumb("{duration:%s}", "dur_var_rgb").." segundos ao Acertar um Projétil em "..CKWord("Ponto Fraco", "Weakspothit_rgb_pt_br")..".",
+			["pt-br"] = CNumb("{reload_speed:%s}", "reload_var_rgb").." de velocidade de recarga por "..CNumb("{duration:%s}", "dur_var_rgb").." segundos ao "..CKWord("acerto em ponto fraco", "Weakspothit_rgb_pt_br").."com um projétil.",
 			es = CNumb("{reload_speed:%s}", "reload_var_rgb").." de Velocidad de Recarga durante "..CNumb("{duration:%s}", "dur_var_rgb").." segundos al Golpear con un Proyectil en "..CKWord("Punto Débil", "Weakspothit_rgb_es")..".",
+		},
+		--[+ VOLTAGHEIST OVERLOAD - ВОЛЬТАГЕЙСТОВАЯ ПЕРЕГРУЗКА +]-- ruof 	17.07.2026
+		-- Instakill Chance (per tier)
+		-- Arc Maul -- 5% | 7.5% | 10% | 12.5%
+		["loc_trait_bespoke_arc_has_killing_blow_chance_desc"] = {
+			en = CNumb("{proc_chance:%s}", "procch_var_rgb").." chance to Instakill Human-sized enemies hit by "..CKWord("Arc", "Arc_rgb").." lightning. Instakill prevents other triggers.",
+			ru = CNumb("{proc_chance:%s}", "procch_var_rgb").." к шансу убить одним ударом врага человеческого размера при попадании "..CKWord("электродугами", "elektrodugami_rgb_ru")..". Таланты, работающие от убийств, не активируются при этом.",
+			fr = CNumb("{proc_chance:%s}", "procch_var_rgb").." de chance de tuer instantanément les ennemis de taille humaine touchés par la foudre "..CKWord("Arc", "Arc_rgb_fr")..". La mort instantanée empêche les autres déclencheurs.",
+			["zh-tw"] = CNumb("{proc_chance:%s}", "procch_var_rgb").." 機率對被 "..CKWord("電弧", "Arc_rgb_tw").." 閃電擊中的人類體型敵人即死。即死效果不會觸發其他機制。",
+			["zh-cn"] = CNumb("{proc_chance:%s}", "procch_var_rgb").." 几率对被 "..CKWord("电弧", "Arc_rgb_zh_cn").." 闪电击中人形敌人即死。即死效果不会触发其他机制。",
+			de = CNumb("{proc_chance:%s}", "procch_var_rgb").." Chance, von "..CKWord("Arc", "Arc_rgb_de").."-Blitzen getroffene menschgroße Gegner sofort zu töten. Soforttötung verhindert andere Auslöser.",
+			it = CNumb("{proc_chance:%s}", "procch_var_rgb").." di possibilità di uccidere all'istante nemici di taglia umana colpiti da fulmini "..CKWord("Arco", "Arc_rgb_it")..". L'uccisione istantanea impedisce altri attivatori.",
+			ja = CNumb("{proc_chance:%s}", "procch_var_rgb").." の確率で "..CKWord("アーク", "Arc_rgb_ja").." 稲妻に当たった人間サイズの敵を即死させる。即死は他の発動を妨げる。",
+			ko = CNumb("{proc_chance:%s}", "procch_var_rgb").." 확률로 "..CKWord("아크", "Arc_rgb_ko").." 번개에 맞은 인간형 적을 즉사시킵니다. 즉사는 다른 발동을 방해합니다.",
+			pl = CNumb("{proc_chance:%s}", "procch_var_rgb").." szansy na natychmiastowe zabicie wrogów rozmiaru człowieka trafionych piorunami "..CKWord("Łuku", "Arc_rgb_pl")..". Natychmiastowe zabicie uniemożliwia inne wyzwalacze.",
+			["pt-br"] = CNumb("{proc_chance:%s}", "procch_var_rgb").." de chance de matar instantaneamente inimigos de tamanho humano atingidos por raios "..CKWord("Arco", "Arc_rgb_pt_br")..". A morte instantânea impede outros gatilhos.",
+			es = CNumb("{proc_chance:%s}", "procch_var_rgb").." de probabilidad de matar instantáneamente a enemigos de tamaño humano golpeados por rayos "..CKWord("Arco", "Arc_rgb_es")..". La muerte instantánea impide otros desencadenantes.",
+		},
+		--[+ ENHANCED VOLTAIC ARCS - УЛУЧШЕННЫЕ ВОЛЬТАИЧЕСКИЕ ЭЛЕКТРОДУГИ +]-- ruof 	17.07.2026
+		-- Jump Angle & Jump Radius & Max Jumps (per tier)
+		-- Arc Maul -- 5° & 0.5m & +1 | 7.5° & 1m & +1 | 10° & 1.5m & +2 | 12.5° & 2m & +2
+		["loc_trait_bespoke_enhanced_arc_jumps_angle_desc"] = {
+			en = CKWord("Arc", "Arc_rgb").." lightning gains "..CNumb("{angle:%s}", "angle_var_rgb").." jump angle and "..CNumb("{radius:%s}", "radius_var_rgb").." meters jump distance, and can jump "..CNumb("{jumps:%s}", "jumps_var_rgb").." additional times.",
+			ru = CKWord("Электродуги", "Elektrodugi_rgb").." получают "..CNumb("{angle:%s}", "angle_var_rgb").." к углу прыжка, "..CNumb("{radius:%s}", "radius_var_rgb").." метра к расстоянию прыжка и могут перепрыгнуть дополнительно "..CNumb("{jumps:%s}", "jumps_var_rgb").." раза.",
+			fr = "La foudre "..CKWord("Arc", "Arc_rgb_fr").." gagne "..CNumb("{angle:%s}", "angle_var_rgb").." d'angle de saut, "..CNumb("{radius:%s}", "radius_var_rgb").." mètres de distance de saut, et peut effectuer "..CNumb("{jumps:%s}", "jumps_var_rgb").." sauts supplémentaires.",
+			["zh-tw"] = CKWord("電弧", "Arc_rgb_tw").."閃電獲得 "..CNumb("{angle:%s}", "angle_var_rgb").." 跳躍角度， "..CNumb("{radius:%s}", "radius_var_rgb").." 公尺跳躍距離，並且可以額外跳躍 "..CNumb("{jumps:%s}", "jumps_var_rgb").." 次。",
+			["zh-cn"] = CKWord("电弧", "Arc_rgb_zh_cn").."闪电获得 "..CNumb("{angle:%s}", "angle_var_rgb").." 跳跃角度， "..CNumb("{radius:%s}", "radius_var_rgb").." 米跳跃距离，并且可以额外跳跃 "..CNumb("{jumps:%s}", "jumps_var_rgb").." 次。",
+			de = CKWord("Arc", "Arc_rgb_de").."-Blitze erhalten "..CNumb("{angle:%s}", "angle_var_rgb").." Sprungwinkel und "..CNumb("{radius:%s}", "radius_var_rgb").." Meter Sprungdistanz und können "..CNumb("{jumps:%s}", "jumps_var_rgb").." zusätzliche Sprünge ausführen.",
+			it = "I fulmini di "..CKWord("Arco", "Arc_rgb_it").." ottengono "..CNumb("{angle:%s}", "angle_var_rgb").." di angolo di balzo e "..CNumb("{radius:%s}", "radius_var_rgb").." metri di distanza di balzo, e possono balzare "..CNumb("{jumps:%s}", "jumps_var_rgb").." volte aggiuntive.",
+			ja = CKWord("アーク", "Arc_rgb_ja").."稲妻は "..CNumb("{angle:%s}", "angle_var_rgb").." のジャンプ角度、 "..CNumb("{radius:%s}", "radius_var_rgb").." メートルのジャンプ距離を獲得し、追加で "..CNumb("{jumps:%s}", "jumps_var_rgb").." 回ジャンプできる。",
+			ko = CKWord("아크", "Arc_rgb_ko").." 번개가 "..CNumb("{angle:%s}", "angle_var_rgb").." 점프 각도와 "..CNumb("{radius:%s}", "radius_var_rgb").." 미터 점프 거리를 얻고, 추가로 "..CNumb("{jumps:%s}", "jumps_var_rgb").."회 더 점프할 수 있습니다.",
+			pl = "Pioruny "..CKWord("Łuku", "Arc_rgb_pl").." zyskują "..CNumb("{angle:%s}", "angle_var_rgb").." kąt skoku i "..CNumb("{radius:%s}", "radius_var_rgb").." metrów odległości skoku, oraz mogą wykonać "..CNumb("{jumps:%s}", "jumps_var_rgb").." dodatkowych skoków.",
+			["pt-br"] = "Os raios "..CKWord("Arco", "Arc_rgb_pt_br").." ganham "..CNumb("{angle:%s}", "angle_var_rgb").." de ângulo de salto e "..CNumb("{radius:%s}", "radius_var_rgb").." metros de distância de salto, e podem saltar mais "..CNumb("{jumps:%s}", "jumps_var_rgb").." vezes.",
+			es = "Los rayos "..CKWord("Arco", "Arc_rgb_es").." ganan "..CNumb("{angle:%s}", "angle_var_rgb").." de ángulo de salto y "..CNumb("{radius:%s}", "radius_var_rgb").." metros de distancia de salto, y pueden saltar "..CNumb("{jumps:%s}", "jumps_var_rgb").." veces adicionales.",
+		},
+		--[+ OVERWHELMING FORCE - ALT +]-- ruof Подавляющая сила
+		-- Cooldown and Proc Chance (per tier)
+		-- Arc Maul -- 5s and 10% | 4.5s and 15% | 4s and 20% | 3.5s and 25%
+		["loc_trait_bespoke_staggering_hits_has_chance_to_stun_elites_specials_desc"] = {
+			en = CKWord("Staggering", "Staggering_rgb").." an Elite or Specialist Enemy has a "..CNumb("{chance:%s}", "chnc_var_rgb").." Chance to "..CKWord("Electrocute", "Electrocute_rgb").." the enemy. Cooldown "..CNumb("{cooldown:%s}", "cd_var_rgb").." seconds. "..Dot_red.." Does not proc on pushes.",
+			ru = CKWord("Ошеломление", "Oshelomlenie_rgb_ru").." элитного врага или специалиста с шансом в "..CNumb("{chance:%s}", "chnc_var_rgb").." может наложить эффект "..CKWord("электрошока", "elektroshoka_rgb_ru").." на врага. Восстанавливается "..CNumb("{cooldown:%s}", "cd_var_rgb").." секунды. "..Dot_red.." Не срабатывает при толчках.",
+			fr = CKWord("Vaciller", "Staggering_rgb_fr").." un ennemi Élite ou Spécialiste a "..CNumb("{chance:%s}", "chnc_var_rgb").." de chance de l'"..CKWord("Électrocuter", "Electrocute_rgb_fr")..". Temps de recharge : "..CNumb("{cooldown:%s}", "cd_var_rgb").." secondes. "..Dot_red.." Ne se déclenche pas sur les poussées.",
+			["zh-tw"] = CKWord("踉蹌", "Staggering_rgb_tw").."精英或專家敵人時，有 "..CNumb("{chance:%s}", "chnc_var_rgb").." 機率 "..CKWord("電擊", "Electrocute_rgb_tw").."該敵人。冷卻時間 "..CNumb("{cooldown:%s}", "cd_var_rgb").." 秒。"..Dot_red.." 推擠不會觸發。",
+			["zh-cn"] = CKWord("踉跄", "Staggering_rgb_zh_cn").."精英或专家敌人时，有 "..CNumb("{chance:%s}", "chnc_var_rgb").." 几率 "..CKWord("电击", "Electrocute_rgb_zh_cn").."该敌人。冷却时间 "..CNumb("{cooldown:%s}", "cd_var_rgb").." 秒。"..Dot_red.." 推挤不会触发。",
+			de = CKWord("Taumeln", "Staggering_rgb_de").." eines Elite- oder Spezialisten-Gegners hat eine "..CNumb("{chance:%s}", "chnc_var_rgb").." Chance, den Gegner zu "..CKWord("elektrokutieren", "Electrocute_rgb_de")..". Abklingzeit "..CNumb("{cooldown:%s}", "cd_var_rgb").." Sekunden."..Dot_red.." Wird nicht durch Schubsen ausgelöst.",
+			it = CKWord("Barcollare", "Staggering_rgb_it").." un nemico Élite o Specialista ha "..CNumb("{chance:%s}", "chnc_var_rgb").." di probabilità di "..CKWord("Elettrizzarlo", "Electrocute_rgb_it")..". Ricarica "..CNumb("{cooldown:%s}", "cd_var_rgb").." secondi."..Dot_red.." Non si attiva con le spinte.",
+			ja = CKWord("スタッガー", "Staggering_rgb_ja").."エリートまたはスペシャリストの敵に "..CNumb("{chance:%s}", "chnc_var_rgb").." の確率で "..CKWord("感電", "Electrocute_rgb_ja").."させる。クールダウン "..CNumb("{cooldown:%s}", "cd_var_rgb").."秒。"..Dot_red.." プッシュでは発動しない。",
+			ko = CKWord("스태거", "Staggering_rgb_ko").." 엘리트 또는 전문가 적에게 "..CNumb("{chance:%s}", "chnc_var_rgb").." 확률로 "..CKWord("감전", "Electrocute_rgb_ko").."시킵니다. 재사용 대기시간 "..CNumb("{cooldown:%s}", "cd_var_rgb").."초."..Dot_red.." 밀치기로는 발동하지 않습니다.",
+			pl = CKWord("Oszołomienie", "Staggering_rgb_pl").." Elitarnego wroga lub Specjalisty ma "..CNumb("{chance:%s}", "chnc_var_rgb").." szansy na "..CKWord("Porażenie", "Electrocute_rgb_pl").." wroga. Odnowienie "..CNumb("{cooldown:%s}", "cd_var_rgb").." sekund."..Dot_red.." Nie działa przy pchnięciach.",
+			["pt-br"] = CKWord("Desequilibrar", "Staggering_rgb_pt_br").." um inimigo Elite ou Especialista tem "..CNumb("{chance:%s}", "chnc_var_rgb").." de chance de "..CKWord("Eletrocutar", "Electrocute_rgb_pt_br").." o inimigo. Tempo de recarga "..CNumb("{cooldown:%s}", "cd_var_rgb").." segundos."..Dot_red.." Não é ativado por empurrões.",
+			es = CKWord("Tambalear", "Staggering_rgb_es").." a un enemigo Élite o Especialista tiene un "..CNumb("{chance:%s}", "chnc_var_rgb").." de probabilidad de "..CKWord("Electrocutarlo", "Electrocute_rgb_es")..". Tiempo de recarga "..CNumb("{cooldown:%s}", "cd_var_rgb").." segundos."..Dot_red.." No se activa con empujones.",
+		},
+		--[+ SUPERIORITY - ALT +]-- ruof Превосходство	17.07.2026
+		-- Melee Power per stack (per tier)
+		-- Mechanicus Power Sword, Paired Transonic Blades -- 4% | 6% | 8% | 10% (up to +30%)
+		["loc_trait_bespoke_elite_kills_grants_stackable_melee_power_desc"] = {
+			en = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." Melee "..CKWord("Strength", "Strength_rgb").." for "..CNumb("{time:%s}", "time_var_rgb").." seconds on Elite and Specialist Kill. Stacks "..CNumb("{stacks:%s}", "stacks_var_rgb").." times. "..CPhrs("Can_be_refr_drop_1").." "..CNote("Pwr_note"),
+			ru = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." к "..CKWord("силе", "sile_rgb_ru").." в ближнем бою на "..CNumb("{time:%s}", "time_var_rgb").." секунд при убийстве элитного врага или специалиста. Суммируется "..CNumb("{stacks:%s}", "stacks_var_rgb").." раза. "..CPhrs("Can_be_refr_drop_1").." "..CNote("Pwr_note"),
+			fr = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("Puissance", "Strength_rgb_fr").." pendant "..CNumb("{time:%s}", "time_var_rgb").." secondes lors d'une élimination d'élite ou de spécialiste. Se cumule "..CNumb("{stacks:%s}", "stacks_var_rgb").." fois. "..CPhrs("Can_be_refr_drop_1").." "..CNote("Pwr_note"),
+			["zh-tw"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("威力", "Strength_rgb_tw").."，持續 "..CNumb("{time:%s}", "time_var_rgb").." 秒，擊殺精英或專家敵人時獲得。疊加 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 層。"..CPhrs("Can_be_refr_drop_1").." "..CNote("Pwr_note"),
+			["zh-cn"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("强度", "Strength_rgb_zh_cn").."，持续 "..CNumb("{time:%s}", "time_var_rgb").." 秒，击杀精英或专家敌人时获得。叠加 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 层。"..CPhrs("Can_be_refr_drop_1").." "..CNote("Pwr_note"),
+			de = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Stärke", "Strength_rgb_de").." für "..CNumb("{time:%s}", "time_var_rgb").." Sekunden bei Elite- oder Spezialisten-Tötung. Stapelt "..CNumb("{stacks:%s}", "stacks_var_rgb").." Mal. "..CPhrs("Can_be_refr_drop_1").." "..CNote("Pwr_note"),
+			it = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." di "..CKWord("Potenza", "Strength_rgb_it").." per "..CNumb("{time:%s}", "time_var_rgb").." secondi dopo l'uccisione di un Elite o Specialista. Cumulabile "..CNumb("{stacks:%s}", "stacks_var_rgb").." volte. "..CPhrs("Can_be_refr_drop_1").." "..CNote("Pwr_note"),
+			ja = CNumb("{power_level:%s}", "pwrlvl_var_rgb").."の"..CKWord("強さ", "Strength_rgb_ja").."を"..CNumb("{time:%s}", "time_var_rgb").."秒間、エリートまたはスペシャリストキル時に獲得。最大 "..CNumb("{stacks:%s}", "stacks_var_rgb").." スタック。"..CPhrs("Can_be_refr_drop_1").." "..CNote("Pwr_note"),
+			ko = CNumb("{power_level:%s}", "pwrlvl_var_rgb").."의 "..CKWord("힘", "Strength_rgb_ko").."을 "..CNumb("{time:%s}", "time_var_rgb").."초간, 정예 또는 전문가 처치 시 획득. 최대 "..CNumb("{stacks:%s}", "stacks_var_rgb").." 중첩."..CPhrs("Can_be_refr_drop_1").." "..CNote("Pwr_note"),
+			pl = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." na "..CNumb("{time:%s}", "time_var_rgb").." sek. po zabiciu Elity lub Specjalisty. Kumuluje się "..CNumb("{stacks:%s}", "stacks_var_rgb").." razy. "..CPhrs("Can_be_refr_drop_1").." "..CNote("Pwr_note"),
+			["pt-br"] = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("Força", "Strength_rgb_pt_br").." por "..CNumb("{time:%s}", "time_var_rgb").." segundos ao matar um Elite ou Especialista. Acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." vezes. "..CPhrs("Can_be_refr_drop_1").." "..CNote("Pwr_note"),
+			es = CNumb("{power_level:%s}", "pwrlvl_var_rgb").." de "..CKWord("Potencia", "Strength_rgb_es").." durante "..CNumb("{time:%s}", "time_var_rgb").." segundos al Matar a un Élite o Especialista. Se acumula "..CNumb("{stacks:%s}", "stacks_var_rgb").." veces. "..CPhrs("Can_be_refr_drop_1").." "..CNote("Pwr_note"),
+		},
+		--[+ MACHINE SPIRIT RESURGENT +]-- ruof
+		-- Cooldown (per tier)
+		-- Mechanicus Power Sword -- 6s | 5s | 4s | 3s
+		["loc_trait_bespoke_refund_charge_on_weapon_special_weakspot_kill_desc"] = {
+			en = "Killing an enemy with a "..CKWord("Weakspot Hit", "Weakspothit_rgb").." with the weapon Special Attack instantly restores "..CNumb("1", "n_1_rgb").." weapon Special charge. Can occur only every "..CNumb("{time:%s}", "time_var_rgb").." seconds.",
+			ru = "Убийство врага в "..CKWord("уязвимое место", "ujazvimoe_mesto_rgb_ru").." с помощью специальной атаки мгновенно восстанавливает "..CNumb("1", "n_1_rgb").." заряд специальной атаки оружия. Срабатывает не чаще, чем раз в "..CNumb("{time:%s}", "time_var_rgb").." секунды.",
+			fr = "Tuer un ennemi avec un "..CKWord("Coup sur point faible", "Weakspothit_rgb_fr").." à l'aide de l'Attaque Spéciale de l'arme restaure instantanément "..CNumb("1", "n_1_rgb").." charge d'Attaque Spéciale. Ne peut se produire que toutes les "..CNumb("{time:%s}", "time_var_rgb").." secondes.",
+			["zh-tw"] = "使用武器的特殊攻擊以 "..CKWord("命中弱點", "Weakspothit_rgb_tw").." 擊殺敵人時，立即恢復 "..CNumb("1", "n_1_rgb").." 次武器特殊攻擊充能。每 "..CNumb("{time:%s}", "time_var_rgb").." 秒只能觸發一次。",
+			["zh-cn"] = "使用武器的特殊攻击以 "..CKWord("命中弱点", "Weakspothit_rgb_zh_cn").." 击杀敌人时，立即恢复 "..CNumb("1", "n_1_rgb").." 次武器特殊攻击充能。每 "..CNumb("{time:%s}", "time_var_rgb").." 秒只能触发一次。",
+			de = "Das Töten eines Gegners mit einem "..CKWord("Schwachstellen-Treffer", "Weakspothit_rgb_de").." durch den Spezialangriff der Waffe stellt sofort "..CNumb("1", "n_1_rgb").." Spezialangriff-Ladung wieder her. Kann nur alle "..CNumb("{time:%s}", "time_var_rgb").." Sekunden auftreten.",
+			it = "Uccidere un nemico con un "..CKWord("Colpo a punto debole", "Weakspothit_rgb_it").." usando l'Attacco Speciale dell'arma ripristina istantaneamente "..CNumb("1", "n_1_rgb").." carica dell'Attacco Speciale. Può verificarsi solo ogni "..CNumb("{time:%s}", "time_var_rgb").." secondi.",
+			ja = "武器の特殊攻撃で "..CKWord("弱点ヒット", "Weakspothit_rgb_ja").." により敵を倒すと、特殊攻撃チャージを "..CNumb("1", "n_1_rgb").." 即座に回復する。"..CNumb("{time:%s}", "time_var_rgb").." 秒に一度のみ発動可能。",
+			ko = "무기 특수 공격으로 "..CKWord("약점 히트", "Weakspothit_rgb_ko").."를 통해 적을 처치하면 특수 공격 충전이 "..CNumb("1", "n_1_rgb").." 즉시 회복됩니다. "..CNumb("{time:%s}", "time_var_rgb").."초에 한 번만 발동합니다.",
+			pl = "Zabicie wroga "..CKWord("Trafieniem w słaby punkt", "Weakspothit_rgb_pl").." za pomocą Ataku Specjalnego broni natychmiast przywraca "..CNumb("1", "n_1_rgb").." ładunek Ataku Specjalnego. Może wystąpić tylko co "..CNumb("{time:%s}", "time_var_rgb").." sekund.",
+			["pt-br"] = "Matar um inimigo com um "..CKWord("acerto em ponto fraco", "Weakspothit_rgb_pt_br").." usando o Ataque Especial da arma restaura instantaneamente "..CNumb("1", "n_1_rgb").." carga do Ataque Especial. Só pode ocorrer a cada "..CNumb("{time:%s}", "time_var_rgb").." segundos.",
+			es = "Matar a un enemigo con un "..CKWord("Golpe en punto débil", "Weakspothit_rgb_es").." mediante el Ataque Especial del arma restaura instantáneamente "..CNumb("1", "n_1_rgb").." carga de Ataque Especial. Solo puede ocurrir cada "..CNumb("{time:%s}", "time_var_rgb").." segundos.",
+		},
+		--[+ DEADLY FREQUENCIES +]-- ruof
+		-- Melee Power (per tier)
+		-- Paired Transonic Blades -- 15% | 20% | 25% | 30%
+		["loc_trait_bespoke_increased_melee_power_on_weapon_special_follow_up_hits_desc"] = {
+			en = "After any Melee Attack, use Weapon Special and land a Heavy Attack on any Enemy to gain "..CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Strength", "Strength_rgb").." to your next "..CNumb("3", "n_3_rgb").." Melee Attacks. "..Dot_red.." Misses consume buffed Attacks.",
+			ru = "После любой атаки ближнего боя, используйте специальную атаку и попадите тяжёлой атакой по любому врагу, чтобы получить "..CNumb("{power:%s}", "pwr_var_rgb").." к "..CKWord("силе", "sile_rgb_ru").." для следующих "..CNumb("3", "n_3_rgb").." атак ближнего боя. "..Dot_red.." При промахе усиленные атаки тратятся.",
+			fr = "Après toute attaque de mêlée, utilisez l'attaque spéciale et touchez un ennemi avec une attaque lourde pour gagner "..CNumb("{power:%s}", "pwr_var_rgb").." de "..CKWord("Force", "Strength_rgb_fr").." pour vos "..CNumb("3", "n_3_rgb").." prochaines attaques de mêlée. "..Dot_red.." Les attaques manquées consomment les attaques renforcées.",
+			["zh-tw"] = "任何近戰攻擊後，使用特殊攻擊並以重攻擊擊中任何敵人，獲得 "..CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("威力", "Strength_rgb_tw").." 至下 "..CNumb("3", "n_3_rgb").." 次近戰攻擊。 "..Dot_red.." 揮空會消耗強化攻擊。",
+			["zh-cn"] = "任何近战攻击后，使用特殊攻击并以重攻击击中任何敌人，获得 "..CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("强度", "Strength_rgb_zh_cn").." 至下 "..CNumb("3", "n_3_rgb").." 次近战攻击。 "..Dot_red.." 挥空会消耗强化攻击。",
+			de = "Nach jeder Nahkampfattacke, nutze den Spezialangriff und lande einen schweren Angriff auf einen beliebigen Gegner, um "..CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Stärke", "Strength_rgb_de").." für deine nächsten "..CNumb("3", "n_3_rgb").." Nahkampfangriffe zu erhalten. "..Dot_red.." Verfehlte Angriffe verbrauchen verstärkte Angriffe.",
+			it = "Dopo qualsiasi attacco corpo a corpo, usa l'attacco speciale e colpisci un nemico con un attacco pesante per ottenere "..CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Forza", "Strength_rgb_it").." per i prossimi "..CNumb("3", "n_3_rgb").." attacchi corpo a corpo. "..Dot_red.." I colpi a vuoto consumano gli attacchi potenziati.",
+			ja = "近接攻撃後、特殊攻撃を使用し、任意の敵にヘビーアタックを当てると、次の "..CNumb("3", "n_3_rgb").." 回の近接攻撃に "..CNumb("{power:%s}", "pwr_var_rgb").." の"..CKWord("強さ", "Strength_rgb_ja").."を獲得。 "..Dot_red.." 空振りは強化攻撃を消費する。",
+			ko = "근접 공격 후, 특수 공격을 사용하고 어떤 적에게 강공격을 적중시키면 다음 "..CNumb("3", "n_3_rgb").."회 근접 공격에 "..CNumb("{power:%s}", "pwr_var_rgb").."의 "..CKWord("힘", "Strength_rgb_ko").."을 얻습니다. "..Dot_red.." 빗나가면 강화된 공격이 소모됩니다.",
+			pl = "Po dowolnym ataku w walce wręcz, użyj ataku specjalnego i traf dowolnego wroga ciężkim atakiem, aby uzyskać "..CNumb("{power:%s}", "pwr_var_rgb").." "..CKWord("Siły", "Strength_rgb_pl").." do następnych "..CNumb("3", "n_3_rgb").." ataków w walce wręcz. "..Dot_red.." Chybione ataki zużywają wzmocnione ataki.",
+			["pt-br"] = "Após qualquer ataque corpo a corpo, use o ataque especial e acerte um inimigo com um ataque pesado para ganhar "..CNumb("{power:%s}", "pwr_var_rgb").." de "..CKWord("Força", "Strength_rgb_pt_br").." para os próximos "..CNumb("3", "n_3_rgb").." ataques corpo a corpo. "..Dot_red.." Ataques errados consomem ataques fortalecidos.",
+			es = "Después de cualquier ataque cuerpo a cuerpo, usa el ataque especial y golpea a cualquier enemigo con un ataque pesado para obtener "..CNumb("{power:%s}", "pwr_var_rgb").." de "..CKWord("Fuerza", "Strength_rgb_es").." para los siguientes "..CNumb("3", "n_3_rgb").." ataques cuerpo a cuerpo. "..Dot_red.." Los fallos consumen ataques potenciados.",
 		},
 }
 

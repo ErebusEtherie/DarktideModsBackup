@@ -3,9 +3,10 @@
 -- FOR TRANSLATORS: YOU DON'T NEED TO DO ANYTHING IN THIS FILE!
 
 local mod = get_mod("Enhanced_descriptions")
+local VERSION = "6.0.0b"
 
 -- <<<CODE_REVEALER>>>
--- local function create_template(id, loc_keys, locales, handle_func) return { id = id, loc_keys = loc_keys, locales = locales, handle_func = handle_func } end mod.localization_templates = { create_template("code_reveal", {"loc_trait_bespoke_stacking_rending_debuff_on_weakspot_desc"}, {"ru", "en"}, function(locale, value) return string.gsub(value, "{", "(") end), }
+-- local function create_template(id, loc_keys, locales, handle_func) return { id = id, loc_keys = loc_keys, locales = locales, handle_func = handle_func } end mod.localization_templates = { create_template("code_reveal", {"loc_trait_bespoke_increased_melee_power_on_weapon_special_follow_up_hits_desc"}, {"ru", "en"}, function(locale, value) return string.gsub(value, "{", "(") end), }
 -- <<</CODE_REVEALER>>>
 
 -- Кэш утилит
@@ -65,7 +66,6 @@ end
 local location = "Enhanced_descriptions/Main_Modules/"
 
 -- CONSTANTS
-local VERSION = "5.92b"
 local LOCALIZATION_FILES = {
 	WEAPONS_Blessings_Perks =		"enable_weapons_file",
 	TALENTS_Modular =				"enable_talents_file",
@@ -300,6 +300,17 @@ local FIXES = {
 		--[+ Regain +]--
 		loc_talent_buff_toughness_during_stimm = {
 			toughness_amount =					MFF.fixes.all_plus
+		},
+
+--[+ ++SKITARII - СКИТАРИЙ++ +]--
+	--[+ PASSIVES - ПАССИВНЫЙ - 21 - Superior Defence Engrams - Улучшенные энграммы защиты +]--
+		loc_talent_cryptic_ranged_stacking_toughness_desc = {
+			toughness =							MFF.fixes.all_plus
+		},
+	--[+ PASSIVES - ПАССИВНЫЙ - 47 - Slaughter Protocol - Протокол бойни +]--
+		loc_talent_cryptic_toughness_replenishment_on_kill_bonus_desc = {
+			toughness_percent =					MFF.fixes.all_plus,
+			toughness_percent_improved =		MFF.fixes.all_plus
 		},
 }
 

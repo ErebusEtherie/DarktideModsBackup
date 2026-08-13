@@ -30,7 +30,6 @@ local function seg_corruption_for(i, wounds, total_cor_frac)
 end
 
 -- Pure presentation logic for teammate health segments.
--- Performance: O(N) where N is number of wounds (max 11). Low impact.
 function S.update(style, tint, wounds, hp_frac, corruption_total_frac, toughness_state)
     if not style then return end
 

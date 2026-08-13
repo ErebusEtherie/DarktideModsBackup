@@ -3,7 +3,7 @@
 
 local mod = get_mod("RingHud")
 if not mod then return end
-mod.version                             = "RingHud version 1.17.0"
+mod.version                             = "RingHud version 1.18.0"
 
 local MISSION_BOARD_PACKAGE             = "packages/ui/views/mission_board_view/mission_board_view"
 
@@ -15,7 +15,8 @@ local PlayerUnitStatus                  = require("scripts/utilities/attack/play
 local Ammo                              = require("scripts/utilities/ammo")
 
 -------------------------------------------------------------------------------
--- Global Mod State (non-settings) -- TODO Constants or not constants?
+-- Global Mod State (non-settings)
+-- [ ] TODO Constants or not constants?
 -------------------------------------------------------------------------------
 mod.AMMO_CLIP_ARC_MIN                   = 0.51
 mod.AMMO_CLIP_ARC_MAX                   = 0.975
@@ -94,8 +95,8 @@ mod:io_dofile("RingHud/scripts/mods/RingHud/features/talent_feature")
 
 do
     local C = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/constants")
-    if C and type(C) == "table" and type(C.recompute_edge_marker_size) == "function" then
-        mod.recompute_edge_marker_size = C.recompute_edge_marker_size
+    if C and type(C) == "table" and type(C.recompute_tile_scalars) == "function" then
+        mod.recompute_tile_scalars = C.recompute_tile_scalars
     end
 end
 
@@ -189,6 +190,12 @@ end
 -------------------------------------------------------------------------------
 -- Custom HUD Element Registration
 -------------------------------------------------------------------------------
+local UIHudSettings = require("scripts/settings/ui/ui_hud_settings")
+local RINGHUD_DRAW_LAYER = 310
+
+UIHudSettings.element_draw_layers.HudElementRingHud_player = RINGHUD_DRAW_LAYER
+UIHudSettings.element_draw_layers.HudElementRingHud_team_docked = RINGHUD_DRAW_LAYER
+
 local custom_hud_element_data = {
     use_hud_scale = true,
     class_name = "HudElementRingHud_player",
@@ -261,6 +268,7 @@ end)
 -- HudElementWorldMarkers orchestration (single init hook)
 -------------------------------------------------------------------------------
 mod._world_markers_init_callbacks = mod._world_markers_init_callbacks or {}
+
 function mod:on_world_markers_init(cb)
     if type(cb) ~= "function" then return end
     local hewm = rawget(mod, "_hewm_world_markers")
@@ -325,6 +333,7 @@ function mod.handle_show_all_hud_hotkey_state(...)
     mod._hotkey_manual_active = (pressed == true)
 end
 
+-- [ ] TODO Would it be more performant to reuse the cached ADS detector from utils instead of duplicating?
 local function _is_ads_now()
     local player = Managers.player and Managers.player.local_player_safe and Managers.player:local_player_safe(1)
     local unit   = player and player.player_unit
@@ -408,13 +417,19 @@ mod.update = function(dt)
                 end
             end
         end
+
         mod.team_average_health_fraction = (health_count > 0) and (total_health / health_count) or 1.0
         mod.team_average_ammo_fraction   = (ammo_count > 0) and (total_ammo / ammo_count) or 1.0
         mod.next_team_stats_poll_time    = t + TEAM_STATS_POLL_INTERVAL
     end
 
-    if mod.reassure_health and t >= (mod.reassure_health_last_set_time or 0) + mod.REASSURE_TIMEOUT then mod.reassure_health = false end
-    if mod.reassure_ammo and t >= (mod.reassure_ammo_last_set_time or 0) + mod.REASSURE_TIMEOUT then mod.reassure_ammo = false end
+    if mod.reassure_health and t >= (mod.reassure_health_last_set_time or 0) + mod.REASSURE_TIMEOUT then
+        mod.reassure_health = false
+    end
+
+    if mod.reassure_ammo and t >= (mod.reassure_ammo_last_set_time or 0) + mod.REASSURE_TIMEOUT then
+        mod.reassure_ammo = false
+    end
 end
 
 mod.on_game_state_changed = function(status, state_name)
@@ -441,9 +456,11 @@ mod.on_game_state_changed = function(status, state_name)
         _refresh_compat_caches()
         _apply_team_mode_runtime()
         mod._refresh_assistance_markers_visibility()
+
         if ScannerContext and ScannerContext.on_game_state_changed then
             ScannerContext.on_game_state_changed(status, state_name)
         end
+
         if mod.objective_feed_streamliner and mod.objective_feed_streamliner.on_game_state_changed then
             mod.objective_feed_streamliner.on_game_state_changed(status, state_name)
         end
@@ -455,12 +472,15 @@ mod.on_game_state_changed = function(status, state_name)
     if state_name == "StateLoading" and status == "enter" then
         if mod._ringhud_accumulated_time then mod._ringhud_accumulated_time = 0 end
         _reset_player_hud_ammo_clip_latch()
+
         if ProximitySystem and ProximitySystem.on_game_state_changed then
             ProximitySystem.on_game_state_changed(status, state_name)
         end
+
         if VanillaHudManager and VanillaHudManager.on_game_state_changed then
             VanillaHudManager.on_game_state_changed(status, state_name)
         end
+
         _refresh_compat_caches()
     end
 end
@@ -471,16 +491,22 @@ mod.on_all_mods_loaded = function()
     mod._compat_profile_pictures = (get_mod("ProfilePictures") ~= nil)
     mod._numeric_ui_installed = (get_mod("NumericUI") ~= nil)
 
-    if ProximitySystem and ProximitySystem.on_all_mods_loaded then ProximitySystem.on_all_mods_loaded() end
-    if VanillaHudManager and VanillaHudManager.on_all_mods_loaded then VanillaHudManager.on_all_mods_loaded() end
+    if ProximitySystem and ProximitySystem.on_all_mods_loaded then
+        ProximitySystem.on_all_mods_loaded()
+    end
+
+    if VanillaHudManager and VanillaHudManager.on_all_mods_loaded then
+        VanillaHudManager.on_all_mods_loaded()
+    end
+
     _refresh_compat_caches()
 
     if mod.floating_manager and mod.floating_manager.install then
         mod.floating_manager.install()
     end
 
-    if mod.recompute_edge_marker_size then
-        mod.recompute_edge_marker_size()
+    if mod.recompute_tile_scalars then
+        mod.recompute_tile_scalars()
     end
 
     if mod.ammo_vis_on_setting_changed then mod.ammo_vis_on_setting_changed() end
@@ -521,7 +547,9 @@ mod.on_enabled = function(initial_call)
     end
 
     mod._ringhud_visibility_applied_to_hud = setmetatable({}, { __mode = "k" })
+
     _apply_team_mode_runtime()
+
     if mod.ammo_vis_on_setting_changed then mod.ammo_vis_on_setting_changed() end
     if mod.pockets_vis_on_setting_changed then mod.pockets_vis_on_setting_changed() end
 end

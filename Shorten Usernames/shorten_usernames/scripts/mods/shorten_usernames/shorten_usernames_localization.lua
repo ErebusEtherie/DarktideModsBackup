@@ -2,6 +2,12 @@ return {
 	mod_description = {
 		en = "Shortens usernames in the HUD.",
 	},
+	general_settings = {
+		en = "General Settings",
+	},
+	length_settings = {
+		en = "Length Settings",
+	},
 	shorten_myself = {
 		en = "Shorten Myself",
 	},
@@ -53,5 +59,4 @@ return {
 	header_formatting = {
 		en = "Formatting",
 	},
-
 }

@@ -7,14 +7,24 @@ local TOXIC_GAS_MUTATOR = "mutator_toxic_gas_volumes"
 local DARKNESS_THEME = "darkness"
 local VENTILATION_THEME = "ventilation_purge"
 local TOXIC_GAS_THEME = "toxic_gas"
+local EMBER_THEME = "ember"
+local NOIR_THEME = "noir"
+local NURGLE_THEME = "nurgle_manifestation"
+-- local DAWN_THEME = "dawn"
 
 local _state = mod:persistent_table("state", {
 	is_darkness_mission = false,
 	is_ventilation_mission = false,
 	is_toxic_gas_mission = false,
+	is_ember_mission = false,
+	is_noir_mission = false,
+	is_nurgle_mission = false,
 	preserved_is_darkness = false,
 	preserved_is_ventilation = false,
 	preserved_is_toxic_gas = false,
+	preserved_is_ember = false,
+	preserved_is_noir = false,
+	preserved_is_nurgle = false,
 	in_mission = false,
 	hooks_called = {},
 	original_themes = nil,
@@ -110,6 +120,10 @@ local function update_mission_state()
 	_state.is_darkness_mission = theme == DARKNESS_THEME
 	_state.is_ventilation_mission = theme == VENTILATION_THEME
 	_state.is_toxic_gas_mission = theme == TOXIC_GAS_THEME
+	_state.is_ember_mission = theme == EMBER_THEME
+	_state.is_noir_mission = theme == NOIR_THEME
+	_state.is_nurgle_mission = theme == NURGLE_THEME
+	-- _state.is_dawn_mission = theme == DAWN_THEME
 	_state.current_theme_tag = theme
 	if template.mutators then
 		for _, mutator in pairs(template.mutators) do
@@ -127,7 +141,8 @@ local function update_mission_state()
 end
 
 local function is_special_mission()
-	return _state.is_darkness_mission or _state.is_ventilation_mission or _state.is_toxic_gas_mission or _state.preserved_is_darkness or _state.preserved_is_ventilation or _state.preserved_is_toxic_gas
+	-- dawn deliberately excluded (brightens, not obscures); to enable add `or _state.is_dawn_mission` to the return below.
+	return _state.is_darkness_mission or _state.is_ventilation_mission or _state.is_toxic_gas_mission or _state.is_ember_mission or _state.is_noir_mission or _state.is_nurgle_mission or _state.preserved_is_darkness or _state.preserved_is_ventilation or _state.preserved_is_toxic_gas or _state.preserved_is_ember or _state.preserved_is_noir or _state.preserved_is_nurgle
 end
 
 local function should_block_environment()
@@ -188,6 +203,29 @@ local function should_block_shading(name)
 			return true
 		end
 	end
+	if _state.is_ember_mission and should_block_environment() then
+		-- "fire"/"heat"/"smoke" are guessed substrings for the ember shading env resource name; only "ember" is confirmed.
+		if string.find(n, "ember") or string.find(n, "fire") or string.find(n, "heat") or string.find(n, "smoke") then
+			return true
+		end
+	end
+	-- noir is a film-noir colour grade (not fog/darkness) and is backend/event-only (never assigned by client code), so this branch is effectively dormant.
+	if _state.is_noir_mission and should_block_environment() then
+		if string.find(n, "noir") then
+			return true
+		end
+	end
+	if _state.is_nurgle_mission and should_block_environment() then
+		if string.find(n, "nurgle") or string.find(n, "pox") or string.find(n, "blight") then
+			return true
+		end
+	end
+	-- -- dawn (disabled; brightens rather than obscures):
+	-- if _state.is_dawn_mission and should_block_environment() then
+	-- 	if string.find(n, "dawn") then
+	-- 		return true
+	-- 	end
+	-- end
 	return false
 end
 
@@ -318,6 +356,10 @@ local function reset_state()
 	_state.is_darkness_mission = false
 	_state.is_ventilation_mission = false
 	_state.is_toxic_gas_mission = false
+	_state.is_ember_mission = false
+	_state.is_noir_mission = false
+	_state.is_nurgle_mission = false
+	-- _state.is_dawn_mission = false
 	_state.in_mission = false
 	_state.original_themes = nil
 	_state.original_slots = nil
@@ -399,6 +441,9 @@ local function get_status_info()
 		dark = _state.is_darkness_mission,
 		vent = _state.is_ventilation_mission,
 		toxic = _state.is_toxic_gas_mission,
+		ember = _state.is_ember_mission,
+		noir = _state.is_noir_mission,
+		nurgle = _state.is_nurgle_mission,
 		theme_tag = _state.current_theme_tag,
 		env_mode = mod:get("environment_control_mode"),
 		light_mode = mod:get("light_control_mode"),

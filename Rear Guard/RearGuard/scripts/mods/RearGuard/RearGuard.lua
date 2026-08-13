@@ -1,4 +1,5 @@
 -- Author: ImperialSkoom
+-- Modified by ErebusEth
 
 local mod = get_mod("RearGuard")
 
@@ -66,6 +67,7 @@ local function should_use_weapon_special()
 
 	return string.find(weapon_name, "^combatsword_p1_m%d+$") ~= nil
 		or string.find(weapon_name, "^combatsword_p3_m%d+$") ~= nil
+		or string.find(weapon_name, "^duelingsword_p%d_m%d+$") ~= nil
 end
 
 local function wielded_slot_name()

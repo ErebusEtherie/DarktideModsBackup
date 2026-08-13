@@ -36,7 +36,7 @@ local table_array_contains = table.array_contains
 -- #######
 -- Mod Locals
 -- #######
-mod.version = "1.11.1"
+mod.version = "1.13.8"
 local debug_messages_enabled
 local separate_companion_damage = {}
 local track_blitz_damage
@@ -208,7 +208,7 @@ end
 mod.replace_key_to_edit = function(self, row_name, account_id, value)
 	local row = scoreboard:get_scoreboard_row(row_name)
 	if row then
-		local validation = row.validation
+		-- local validation = row.validation
 		if tonumber(value) then
 			local value = value and math_max(0, value) or 0
 			row.data = row.data or {}
@@ -269,7 +269,7 @@ end
 -- ########################
 
 -- Manage blank rows on update
---	WAIT WHAT THE FUCK THIS RUNS ON EVERY SINGLE GAME TICK???
+--	@Backup158: WAIT WHAT THE FUCK THIS RUNS ON EVERY SINGLE GAME TICK???
 function mod.update(main_dt)
 	mod:manage_blank_rows()
 end
@@ -280,7 +280,7 @@ end
 -- ############
 local function replace_registered_scoreboard_value(row_name, key_to_edit, function_to_use, other_parameters)
 	if not scoreboard then
-		mod:info("scoreboard missing. attempted to change: "..row_name)
+		mod:info("Scoreboard missing. Attempted to change row: "..row_name)
 		return
 	end
 
@@ -288,7 +288,8 @@ local function replace_registered_scoreboard_value(row_name, key_to_edit, functi
 	-- like why tf am i doing this O(N) when I could use a key access for constant time
 	-- scoreboard only runs with arrays for itself and the plugins, and adds the plugins to itself
 	-- adding a key messes up the order sorting, so my rows ended up at the bottom every time
-	for _, row in ipairs(scoreboard.registered_scoreboard_rows) do
+	for i = 1, #(scoreboard.registered_scoreboard_rows) do
+		local row = scoreboard.registered_scoreboard_rows[i]
 		if row.name == row_name then
 			function_to_use(row, key_to_edit, other_parameters)
 		end
@@ -299,9 +300,11 @@ local replace_row_with_value = function(row, key_to_edit, value)
 	row[key_to_edit] = value
 end
 
-local replace_value_within_row_table = function(row, key_to_edit, value)
-	for _, i in ipairs(row[key_to_edit]) do
-		if i == value then i = nil end
+local replace_value_within_row_table = function(row, key_to_edit, value, replacing_value)
+	for i = 1, #(row[key_to_edit]) do
+		if row[key_to_edit][i] == value then 
+			row[key_to_edit][i] = replacing_value or nil 
+		end
 	end
 end
 
@@ -399,6 +402,21 @@ local function update_all_scoreboard_row_visibilities()
 	--replace_registered_scoreboard_value("total_melee", "setting", replace_row_with_value, "offense_tier_3")
 	--replace_registered_scoreboard_value("total_melee_damage", "setting", replace_row_with_value, "offense_tier_3")
 	--replace_registered_scoreboard_value("total_melee_kills", "setting", replace_row_with_value, "offense_tier_3")
+
+	-- ------------
+	-- Defense
+	-- ------------
+	-- Hiding friendly fire damage
+	if mod:get("option_hide_friendly_fire") then
+		change_scoreboard_row_visibility("total_friendly", false)
+		change_scoreboard_row_visibility("friendly_damage", false)
+		change_scoreboard_row_visibility("friendly_shots_blocked", false)
+	else
+		-- this is the default, but I need this here to work without a restart/reload
+		change_scoreboard_row_visibility("total_friendly", true)
+		change_scoreboard_row_visibility("friendly_damage", true)
+		change_scoreboard_row_visibility("friendly_shots_blocked", true)
+	end
 
 	-- ------------
 	-- Expeditions Pickup Classification
@@ -727,20 +745,20 @@ function mod.on_all_mods_loaded()
 				self._player_state_tracker[account_id].state = self._player_state_tracker[account_id].state or {}
 				
 				if self._player_state_tracker[account_id].state ~= player_state then
-					if 	(	not table_array_contains(mod_states_disabled, self._player_state_tracker[account_id].state) 
-							and not table_array_contains(mod_states_disabled, player_state) 
+					if 	(	not mod_states_disabled[self._player_state_tracker[account_id].state] 
+							and not mod_states_disabled[player_state] 
 						) and
-						(	not table_array_contains(mod_optional_states_disabled, self._player_state_tracker[account_id].state) 
-							and not table_array_contains(mod_optional_states_disabled, player_state) 
+						(	not mod_optional_states_disabled[self._player_state_tracker[account_id].state]
+							and not mod_optional_states_disabled[player_state] 
 						)
 					then
 						tracked_disabled_players_for_players[account_id] = nil
 					end
 					self._player_state_tracker[account_id].state = player_state
-					if table_array_contains(mod_states_disabled, player_state) then
+					if mod_states_disabled[player_state] then
 						scoreboard:update_stat("total_times_disabled", account_id, 1)
 					-- optionally tracks these disabled states, if enabled
-					elseif table_array_contains(mod_optional_states_disabled, player_state) then
+					elseif mod_optional_states_disabled[player_state] then
 						if mod:get("track_"..player_state) then
 							scoreboard:update_stat("total_times_disabled", account_id, 1)
 						end
@@ -767,11 +785,11 @@ function mod.on_all_mods_loaded()
 			if unit then
 				local player = Managers.player:player_by_unit(unit)
 				if player then
-					--mod:echo("interaction - player "..player:name()..", type: "..type)
 					local account_id = player:account_id() or player:name()
 					if type == "pull_up" or type == "remove_net" then
 						scoreboard:update_stat("total_operatives_helped", account_id, 1)
 					elseif type == "revive" then
+						-- mod:echo(">> reviver's account_id (from interaction): "..tostring(account_id))
 						scoreboard:update_stat("total_operatives_revived", account_id, 1)
 					elseif type == "rescue" then
 						scoreboard:update_stat("total_operatives_rescued", account_id, 1)
@@ -781,6 +799,300 @@ function mod.on_all_mods_loaded()
 		end
 		func(self, result, ...)
 	end)
+
+	-- ######
+	-- Defense: Helping Allies
+	-- 	Tracks Servo Skull revives
+	-- ######
+	-- lol no
+	--[[
+	mod:hook(CLASS.CompanionServoSkullAbility, "start_inject_ally_ability", function(companion_unit, target_finder_component, position_finder_component, ability_extension, is_server, ...)
+		mod:echo("injecting ally")
+	end)
+	]]
+	--  never played
+	--[[
+	mod:hook_require("scripts/extension_systems/behavior/nodes/actions/bt_inject_syringe", function(instance)
+		mod:hook(instance, "_revive_ally_if_needed", function(self, owner_player, target_ally, scratchpad, t, ...)
+			mod:echo("injecting ally 3")
+			if owner_player then
+				mod:echo(">> owner_player: "..tostring(owner_player))
+			end
+			if target_ally then
+				mod:echo(">> target_ally: "..tostring(target_ally))
+			end
+		end)
+	end)
+	mod:hook_require("scripts/extension_systems/interaction/interactions/revive_interaction", function(instance)
+		mod:hook_safe(instance, "stop", function(self, world, interactor_unit, unit_data_component, t, result, interactor_is_server, ...)
+			mod:echo("ally revive direct")
+			if result == interaction_results.success then
+				local target_unit = unit_data_component.target_unit
+				if interactor_unit then
+					mod:echo(">> interactor_unit: "..tostring(interactor_unit))
+				end
+				if target_unit then
+					mod:echo(">> target_unit: "..tostring(target_unit))
+				end
+				
+			end
+		end)
+	end)
+	mod:hook_require("scripts/extension_systems/interaction/interactions/assist_base_interaction", function(instance)
+		mod:hook(instance, "_record_stats_and_telemetry", function(self, interactor_unit, target_unit, stat_id, from_state_name, ...)
+			mod:echo("ally revived")
+			local player_unit_spawn_manager = Managers.state.player_unit_spawn
+			local interactor_player = player_unit_spawn_manager:owner(interactor_unit)
+			local target_player = player_unit_spawn_manager:owner(target_unit)
+			if interactor_player then
+				mod:echo(">> interactor_player: "..tostring(interactor_player))
+			end
+			if target_player then
+				mod:echo(">> target_player: "..tostring(target_player))
+			end
+		end)
+	end)
+	-- Only tells you one of the players
+	mod:hook_require("scripts/foundation/managers/player/player_manager", function(instance)
+		mod:hook(instance, "rpc_player_assisted", function(self, channel_id, peer_id, assist_type_lookup, ...)
+			local assist_type = NetworkLookup.assist_type_lookup[assist_type_lookup]
+			if reviver_player then
+				mod:echo(">> reviver_player: "..tostring(reviver_player))
+			end
+			if revivee_player then
+				mod:echo(">> revivee_player: "..tostring(revivee_player))
+			end
+		end)
+	end)
+	-- Server only
+	mod:hook_require("scripts/utilities/player_assist_notifications", function(instance)
+		mod:hook(instance, "show_notification", function(assisted_unit, assisting_unit, assist_type, ...)
+			mod:echo("(notifications) Ally was saved")
+
+			if assisted_unit and assisting_unit then
+				local assisting_player = Managers.state.player_unit_spawn:owner(assisting_unit)
+				if not assisting_player then return end
+
+				local assisting_player_id = assisting_player:peer_id()
+				local assisted_player = Managers.state.player_unit_spawn:owner(assisted_unit)
+				if assisted_player then
+					-- bots dont have id
+					local assisted_player_id = assisted_player:channel_id()
+				end
+
+				mod:echo(">> "..tostring(assisting_player_id).." saved "..tostring(assisted_player_id))
+			end
+		end)
+	end)
+	]]
+
+	-- Only worked for player, not allies
+	--[[
+	-- ty Wobin
+	mod:hook_require("scripts/utilities/companion/companion_servo_skull_ability", function(instance)
+		mod:hook(instance, "start_inject_ally_ability", function(companion_unit, target_finder_component, position_finder_component, ability_extension, is_server, ...)
+			mod:echo("Injecting ally: start_inject_ally_ability")
+			mod:echo("target_finder_component is a "..type(target_finder_component))
+			if target_finder_component.target_unit_1 then
+				mod:echo("target_finder_component.target_unit_1 is a "..type(target_finder_component.target_unit_1))
+			end
+			local ally = target_finder_component
+			if not ally then
+				mod:echo("No target")
+				return
+			end
+
+			local companion_injecting = companion_unit
+			if not companion_injecting then
+				mod:echo("Nobody wants to inject :(")
+				return
+			end
+			
+			local all_players = Managers.player:players()
+			for _, player in pairs(all_players) do
+				local player_unit = player.player_unit
+				if player_unit and ALIVE[player_unit] then
+					local spawner_ext = ScriptUnit.has_extension(player_unit, "companion_spawner_system")
+					if spawner_ext then
+						-- Identify companions
+						local companions = {}
+						if spawner_ext._spawned_units then
+							for _, u in ipairs(spawner_ext._spawned_units) do
+								table.insert(companions, u)
+							end
+						end
+						local SpecialRules = require("scripts/settings/ability/special_rules_settings").special_rules
+						if SpecialRules and spawner_ext.spawned_unit_lookup then
+							local rules = {
+								"cryptic_servo_skull",
+								"cryptic_servo_skull_lasgun",
+								"cryptic_servo_skull_flamethrower",
+								"cryptic_servo_skull_hack",
+								"cryptic_servo_skull_inject_ally"
+							}
+							for _, rule_name in ipairs(rules) do
+								local success, rule = pcall(function() return SpecialRules[rule_name] end)
+								if success and rule then
+									local u = spawner_ext:spawned_unit_lookup(rule)
+									if u then table.insert(companions, u) end
+								end
+							end
+						end
+						for _, spawned_unit in ipairs(companions) do
+							if spawned_unit == companion_injecting then
+								if type(player) == "table" then
+									table.dump(table, "Player with companion owo", 10)
+								end
+								mod:echo("player with companion injecting xddd "..tostring(player))
+							end
+						end
+
+						table.dump(companions, "All companions owo", 10)
+					end
+				end
+			end
+			
+			--local unit = self._interactor_unit
+			--if unit then
+			--	local player = Managers.player:player_by_unit(unit)
+			--	if player then
+			--		local account_id = player:account_id() or player:name()
+			--		if type == "pull_up" or type == "remove_net" then
+			--			scoreboard:update_stat("total_operatives_helped", account_id, 1)
+			--		elseif type == "revive" then
+			--			mod:echo(">> reviver's account_id (from interaction): "..tostring(account_id))
+			--			scoreboard:update_stat("total_operatives_revived", account_id, 1)
+			--		elseif type == "rescue" then
+			--			scoreboard:update_stat("total_operatives_rescued", account_id, 1)
+			--		end
+			--	end
+			--end
+		end)
+	end)
+	]]
+
+	-- Works for skull. would have to replace the other one
+	-- Seems to mainly work when it's the player doing it. and is inconsistent in online matches
+	--[[
+	mod:hook_require("scripts/managers/telemetry/telemetry_events", function(instance)
+		mod:hook(instance, "player_revived_ally", function(self, reviver_player, revivee_player, reviver_position, revivee_position, state_name, revived_by_servo_skull, ...)
+			mod:echo("ally revived from telemetry")
+
+			if reviver_player then
+				mod:echo(">> reviver_player: "..tostring(reviver_player))
+			end
+			if revivee_player then
+				mod:echo(">> revivee_player: "..tostring(revivee_player))
+			end
+		end)
+	end)
+	]]
+
+	-- ######
+	-- Defense: Helping Allies
+	-- 	Tracks VoC revives
+	-- ######
+	-- didn't work
+	--[[
+	mod:hook_require("scripts/utilities/shout_ability", function(instance)
+		-- This is a local function in that file
+		mod:hook(instance, "_handle_allied_targets", function(t, radius, target_settings, player_unit, locomotion_component, player_side, player_buff_extension, backup_position, backup_rotation, external_power_modifier, ...)
+			mod:echo("voc targetted ally ally")
+
+			if revive_allies and talent_extension then
+				mod:echo("voc variables exist")
+			end
+		end)
+	end)
+	]]
+	--[[
+	function mod.veteran_shout_handle_allies_copy(t, radius, target_settings, player_unit, locomotion_component, player_side, player_buff_extension, backup_position, backup_rotation, external_power_modifier)
+		if not target_settings then
+			return
+		end
+
+		if not player_side then
+			return
+		end
+
+		local player_position = locomotion_component and locomotion_component.position or backup_position
+		local player_stat_buffs = player_buff_extension:stat_buffs()
+		local buff_to_add = target_settings.buff_to_add
+		local talent_extension = ScriptUnit.has_extension(player_unit, "talent_system")
+		local shout_restores_toughness = talent_extension:has_special_rule(special_rules.shout_restores_toughness) or target_settings.shout_restores_toughness
+
+		if buff_to_add or shout_restores_toughness then
+			local coherency_extension = ScriptUnit.has_extension(player_unit, "coherency_system")
+			local in_coherence_units = coherency_extension:in_coherence_units()
+
+			for unit, _ in pairs(in_coherence_units) do
+				if ALIVE[unit] then
+					if buff_to_add then
+						local buff_extension = ScriptUnit.extension(unit, "buff_system")
+
+						if buff_extension then
+							buff_extension:add_internally_controlled_buff(buff_to_add, t, "owner_unit", player_unit)
+						end
+					end
+
+					if shout_restores_toughness then
+						local unit_data_extension = ScriptUnit.has_extension(unit, "unit_data_system")
+						local breed = unit_data_extension and unit_data_extension:breed()
+
+						if Breed.is_player(breed) then
+							local recover_toughness_effect = target_settings.recover_toughness_effect
+
+							if recover_toughness_effect then
+								local fx_extension = ScriptUnit.extension(unit, "fx_system")
+
+								fx_extension:spawn_exclusive_particle(recover_toughness_effect, Vector3(0, 0, 1))
+							end
+
+							local toughness_percent = target_settings.toughness_replenish_percent or 1
+
+							Toughness.replenish_percentage(unit, toughness_percent, nil, "ability_shout")
+						end
+					end
+				end
+			end
+		end
+
+		local revive_allies = target_settings.revive_allies
+
+		if revive_allies and talent_extension then
+			local allied_side_names = player_side:relation_side_names("allied")
+			local broadphase_system = Managers.state.extension:system("broadphase_system")
+			local broadphase = broadphase_system.broadphase
+			local radius_modifier = player_stat_buffs.shout_radius_modifier or 1
+			local radius_to_use = radius * radius_modifier
+
+			table.clear(broadphase_results)
+
+			local num_hits = broadphase.query(broadphase, player_position, radius_to_use, broadphase_results, allied_side_names, PLAYER_BREED_TYPE)
+
+			for ii = 1, num_hits do
+				local unit = broadphase_results[ii]
+				local revive_special_rule = special_rules.shout_revives_allies
+				local has_special_rule = talent_extension:has_special_rule(revive_special_rule)
+
+				if has_special_rule then
+					local unit_data_extension = ScriptUnit.has_extension(unit, "unit_data_system")
+					local character_state_component = unit_data_extension and unit_data_extension:read_component("character_state")
+
+					if character_state_component and PlayerUnitStatus.is_knocked_down(character_state_component) then
+						local assisted_state_input_component = unit_data_extension:write_component("assisted_state_input")
+
+						assisted_state_input_component.force_assist = true
+
+						if ALIVE[unit] then
+							PlayerAssistNotifications.show_notification(unit, player_unit, "saved")
+						end
+					end
+				end
+			end
+		end
+	end
+	]]
 
 	-- ############
 	-- Offense
@@ -817,7 +1129,7 @@ function mod.on_all_mods_loaded()
 						scoreboard:update_stat("total_kills", account_id, 1)
 
 						-- killed a disabler while an ally was disabled
-						if table_array_contains(mod_disablers, breed_or_nil.name) then
+						if mod_disablers[breed_or_nil.name] then
 							for k,v in pairs(tracked_disabled_players_for_players) do
 								if v == attacked_unit then
 									scoreboard:update_stat("total_operatives_helped", account_id, 1)
@@ -856,7 +1168,7 @@ function mod.on_all_mods_loaded()
 					--	Melee
 					-- ------------
 					-- manual exception for companion, due to shared damage profile
-					if table_array_contains(mod_melee_attack_types, attack_type) or (table_array_contains(mod_melee_damage_profiles, damage_profile.name) and not table_array_contains(mod_companion_attack_types, attack_type)) then
+					if mod_melee_attack_types[attack_type] or (mod_melee_damage_profiles[damage_profile.name] and not mod_companion_attack_types[attack_type]) then
 						self._melee_rate = (self._melee_rate or {})
 						self._melee_rate[account_id] = self._melee_rate[account_id] or {}
 						self._melee_rate[account_id].hits = self._melee_rate[account_id].hits or 0
@@ -891,8 +1203,8 @@ function mod.on_all_mods_loaded()
 					--  Tracks Crit and Weakspot because of Assail and such
 					-- ------------
 					elseif track_blitz_damage 
-					and (table_array_contains(mod_blitz_attack_types, attack_type) 
-						or table_array_contains(mod_blitz_damage_profiles, damage_profile.name)
+					and (mod_blitz_attack_types[attack_type] 
+						or mod_blitz_damage_profiles[damage_profile.name]
 				 		) 
 					then
 						self._blitz_rate = self._blitz_rate or {}
@@ -923,9 +1235,22 @@ function mod.on_all_mods_loaded()
 							mod:replace_key_to_edit("blitz_cr", account_id, self._blitz_rate[account_id].cr)
 						end
 					-- ------------
+					--	Companion
+					--  After Skitarii released, companion overlaps with ranged too
+					-- ------------
+					elseif mod_companion_attack_types[attack_type] or mod_companion_damage_profiles[damage_profile.name] then
+						-- Crit and Weakspot rates don't matter
+		
+						-- By default, uses its own companion row, which reads: total_companion_damage and total_companion_kills
+						scoreboard:update_stat(separate_companion_damage.damage, account_id, actual_damage)
+
+						if attack_result == "died" then
+							scoreboard:update_stat(separate_companion_damage.kills, account_id, 1)
+						end
+					-- ------------
 					--	Ranged
 					-- ------------
-					elseif table_array_contains(mod_ranged_attack_types, attack_type) or table_array_contains(mod_ranged_damage_profiles, damage_profile.name) then
+					elseif mod_ranged_attack_types[attack_type] or mod_ranged_damage_profiles[damage_profile.name] then
 						self._ranged_rate = self._ranged_rate or {}
 						self._ranged_rate[account_id] = self._ranged_rate[account_id] or {}
 						self._ranged_rate[account_id].hits = self._ranged_rate[account_id].hits or 0
@@ -958,21 +1283,9 @@ function mod.on_all_mods_loaded()
 						mod:replace_key_to_edit("ranged_cr", account_id, self._ranged_rate[account_id].cr)
 						mod:replace_key_to_edit("ranged_wr", account_id, self._ranged_rate[account_id].wr)
 					-- ------------
-					--	Companion
-					-- ------------
-					elseif table_array_contains(mod_companion_attack_types, attack_type) or table_array_contains(mod_companion_damage_profiles, damage_profile.name) then
-						-- Crit and Weakspot rates don't matter
-		
-						-- By default, uses its own companion row, which reads: total_companion_damage and total_companion_kills
-						scoreboard:update_stat(separate_companion_damage.damage, account_id, actual_damage)
-
-						if attack_result == "died" then
-							scoreboard:update_stat(separate_companion_damage.kills, account_id, 1)
-						end
-					-- ------------
 					--	Bleed
 					-- ------------
-					elseif table_array_contains(mod_bleeding_damage_profiles, damage_profile.name) then
+					elseif mod_bleeding_damage_profiles[damage_profile.name] then
 						self._bleeding_rate = self._bleeding_rate or {}
 						self._bleeding_rate[account_id] = self._bleeding_rate[account_id] or {}
 						self._bleeding_rate[account_id].hits = self._bleeding_rate[account_id].hits or 0
@@ -993,7 +1306,7 @@ function mod.on_all_mods_loaded()
 					-- ------------
 					--	Burning
 					-- ------------
-					elseif table_array_contains(mod_burning_damage_profiles, damage_profile.name) then
+					elseif mod_burning_damage_profiles[damage_profile.name] then
 						self._burning_rate = (self._burning_rate or {})
 						self._burning_rate[account_id] = (self._burning_rate[account_id] or {})
 						self._burning_rate[account_id].hits = (self._burning_rate[account_id].hits or 0) + 1
@@ -1013,7 +1326,7 @@ function mod.on_all_mods_loaded()
 					-- ------------
 					--	Warp
 					-- ------------
-					elseif table_array_contains(mod_warpfire_damage_profiles, damage_profile.name) then
+					elseif mod_warpfire_damage_profiles[damage_profile.name] then
 						self._warpfire_rate = (self._warpfire_rate or {})
 						self._warpfire_rate[account_id] = (self._warpfire_rate[account_id] or {})
 						self._warpfire_rate[account_id].hits = (self._warpfire_rate[account_id].hits or 0) + 1
@@ -1033,7 +1346,7 @@ function mod.on_all_mods_loaded()
 					-- ------------
 					--	Toxin
 					-- ------------
-					elseif table_array_contains(mod_toxin_damage_profiles, damage_profile.name) then
+					elseif mod_toxin_damage_profiles[damage_profile.name] then
 						self._toxin_rate = self._toxin_rate or {}
 						self._toxin_rate[account_id] = self._toxin_rate[account_id] or {}
 						self._toxin_rate[account_id].hits = self._toxin_rate[account_id].hits or 0
@@ -1054,7 +1367,7 @@ function mod.on_all_mods_loaded()
 					-- ------------
 					-- 	Environmental
 					-- ------------
-					elseif table_array_contains(mod_environmental_damage_profiles, damage_profile.name) then
+					elseif mod_environmental_damage_profiles[damage_profile.name] then
 						self._environmental_rate = (self._environmental_rate or {})
 						self._environmental_rate[account_id] = (self._environmental_rate[account_id] or {})
 						self._environmental_rate[account_id].hits = (self._environmental_rate[account_id].hits or 0) + 1
@@ -1083,67 +1396,49 @@ function mod.on_all_mods_loaded()
 					-- ------------------------
 					-- Categorizing which enemy was damaged
 					-- ------------------------
-					--[[
-					-- @Backup158
-					-- TODO maybe this could be a switch
-					-- 	eh that doesn't really work since you can't match the case exactly
-					-- 	and looping would require string operations, which is worse for performance for no real gain
-					for group_name, group_table_data in pairs(mod_enemy_groups) do
-						local group_name_total = string_sub(group_name, "melee_", "")
-
-						if table_array_contains(group_table_data, breed_or_nil.name) then
-							scoreboard:update_stat("total_lesser_damage", account_id, actual_damage)
-							scoreboard:update_stat("melee_lesser_damage", account_id, actual_damage)
-							if attack_result == "died" then
-								scoreboard:update_stat("total_lesser_kills", account_id, 1)
-								scoreboard:update_stat("melee_lesser_kills", account_id, 1)
-							end
-						end
-					end
-					]]
-					if table_array_contains(mod_melee_lessers, breed_or_nil.name) then
+					if mod_melee_lessers[breed_or_nil.name] then
 						scoreboard:update_stat("total_lesser_damage", account_id, actual_damage)
 						scoreboard:update_stat("melee_lesser_damage", account_id, actual_damage)
 						if attack_result == "died" then
 							scoreboard:update_stat("total_lesser_kills", account_id, 1)
 							scoreboard:update_stat("melee_lesser_kills", account_id, 1)
 						end
-					elseif table_array_contains(mod_ranged_lessers, breed_or_nil.name) then
+					elseif mod_ranged_lessers[breed_or_nil.name] then
 						scoreboard:update_stat("total_lesser_damage", account_id, actual_damage)
 						scoreboard:update_stat("ranged_lesser_damage", account_id, actual_damage)
 						if attack_result == "died" then
 							scoreboard:update_stat("total_lesser_kills", account_id, 1)
 							scoreboard:update_stat("ranged_lesser_kills", account_id, 1)
 						end
-					elseif table_array_contains(mod_melee_elites, breed_or_nil.name) then
+					elseif mod_melee_elites[breed_or_nil.name] then
 						scoreboard:update_stat("total_elite_damage", account_id, actual_damage)
 						scoreboard:update_stat("melee_elite_damage", account_id, actual_damage)
 						if attack_result == "died" then
 							scoreboard:update_stat("total_elite_kills", account_id, 1)
 							scoreboard:update_stat("melee_elite_kills", account_id, 1)
 						end
-					elseif table_array_contains(mod_ranged_elites, breed_or_nil.name) then
+					elseif mod_ranged_elites[breed_or_nil.name] then
 						scoreboard:update_stat("total_elite_damage", account_id, actual_damage)
 						scoreboard:update_stat("ranged_elite_damage", account_id, actual_damage)
 						if attack_result == "died" then
 							scoreboard:update_stat("total_elite_kills", account_id, 1)
 							scoreboard:update_stat("ranged_elite_kills", account_id, 1)
 						end
-					elseif table_array_contains(mod_specials, breed_or_nil.name) then
+					elseif mod_specials[breed_or_nil.name] then
 						scoreboard:update_stat("total_special_damage", account_id, actual_damage)
 						scoreboard:update_stat("damage_special_damage", account_id, actual_damage)
 						if attack_result == "died" then
 							scoreboard:update_stat("total_special_kills", account_id, 1)
 							scoreboard:update_stat("damage_special_kills", account_id, 1)
 						end
-					elseif table_array_contains(mod_disablers, breed_or_nil.name) then
+					elseif mod_disablers[breed_or_nil.name] then
 						scoreboard:update_stat("total_special_damage", account_id, actual_damage)
 						scoreboard:update_stat("disabler_special_damage", account_id, actual_damage)
 						if attack_result == "died" then
 							scoreboard:update_stat("total_special_kills", account_id, 1)
 							scoreboard:update_stat("disabler_special_kills", account_id, 1)
 						end
-					elseif table_array_contains(mod_bosses, breed_or_nil.name) then
+					elseif mod_bosses[breed_or_nil.name] then
 						scoreboard:update_stat("total_boss_damage", account_id, actual_damage)
 						scoreboard:update_stat("boss_damage", account_id, actual_damage)
 						if attack_result == "died" then
@@ -1153,7 +1448,7 @@ function mod.on_all_mods_loaded()
 					-- ------------
 					-- 	Error Catching
 					-- ------------
-					elseif table_array_contains(mod_skip, breed_or_nil.name) then
+					elseif mod_skip[breed_or_nil.name] then
 						-- do nothing
 						-- this is so ugly but idc :D
 					else

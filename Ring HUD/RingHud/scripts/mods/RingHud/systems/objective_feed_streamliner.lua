@@ -542,7 +542,7 @@ function Streamliner.init()
                         local obj_name = _get_objective_name(obj)
 
                         if should_filter then
-                            if expedition_context.active and obj_name == EXPEDITION_LOCATION_OBJECTIVE_NAME then
+                            if obj_name == EXPEDITION_LOCATION_OBJECTIVE_NAME then
                                 keep = true
                             elseif expedition_context.active and obj_name == EXPEDITION_TIMER_OBJECTIVE_NAME then
                                 keep = false

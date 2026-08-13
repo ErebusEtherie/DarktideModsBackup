@@ -1,3 +1,4 @@
+---@class AutoMarkMod:DMFMod
 local mod                    = get_mod("AutoMark")
 local auto_mark_settings     = mod.auto_mark_settings
 local context                = mod.context
@@ -5,26 +6,59 @@ local DEFAULT_CLASS_SETTINGS = mod.DEFAULT_CLASS_SETTINGS
 local TAG_NAMES              = mod.TAG_NAMES
 
 -- Imports
-local archetypes             = require("scripts/settings/archetype/archetypes")
+local Archetypes             = require("scripts/settings/archetype/archetypes")
+local Breed                  = require("scripts/utilities/breed")
+local Breeds                 = require("scripts/settings/breed/breeds")
 
 -- Global Cache
 local table_clone            = table.clone
 
 -- Constants
 local BASE_CLASSES           = {}
-for class_name, _ in pairs(archetypes) do
+for class_name, _ in pairs(Archetypes) do
     BASE_CLASSES[class_name] = true
 end
 -- Additional Class Name for Arbites and Veteran
 local ADAMANT_COMPANION    = "adamant_companion"
+local CRYPTIC_SERVO_SKULL  = "cryptic_servo_skull"
 local VETERAN_FOCUS_TARGET = "veteran_focus_target"
 -- Valid Class Names
 local VALID_CLASSES        = {
     [ADAMANT_COMPANION] = true,
+    [CRYPTIC_SERVO_SKULL] = true,
     [VETERAN_FOCUS_TARGET] = true,
 }
-for class_name, _ in pairs(archetypes) do
+for class_name, _ in pairs(Archetypes) do
     VALID_CLASSES[class_name] = true
+end
+
+local ADAMANT_COMPANION_DEFAULT_CLASS_SETTINGS = table_clone(DEFAULT_CLASS_SETTINGS)
+local adamant_companion_breed_priorities = ADAMANT_COMPANION_DEFAULT_CLASS_SETTINGS.breed_priorities
+adamant_companion_breed_priorities["chaos_daemonhost_passive"] = 0
+adamant_companion_breed_priorities["chaos_mutator_daemonhost_passive"] = 0
+adamant_companion_breed_priorities["chaos_ogryn_houndmaster"] = 0
+adamant_companion_breed_priorities["chaos_poxwalker_bomber"] = 0
+
+local CRYPTIC_SERVO_SKULL_DEFAULT_CLASS_SETTINGS = table_clone(DEFAULT_CLASS_SETTINGS)
+local cryptic_servo_skull_breed_priorities = CRYPTIC_SERVO_SKULL_DEFAULT_CLASS_SETTINGS.breed_priorities
+cryptic_servo_skull_breed_priorities["chaos_daemonhost_passive"] = 0
+cryptic_servo_skull_breed_priorities["chaos_mutator_daemonhost_passive"] = 0
+cryptic_servo_skull_breed_priorities["chaos_poxwalker_bomber"] = 0
+
+local VETERAN_FOCUS_TARGET_DEFAULT_CLASS_SETTINGS = table_clone(DEFAULT_CLASS_SETTINGS)
+local veteran_focus_target_breed_priorities = VETERAN_FOCUS_TARGET_DEFAULT_CLASS_SETTINGS.breed_priorities
+-- veteran_focus_target_breed_priorities["chaos_daemonhost_passive"] = 0
+veteran_focus_target_breed_priorities["chaos_mutator_daemonhost_passive"] = 0
+
+local function get_default_class_settings(class_name)
+    if class_name == ADAMANT_COMPANION then
+        return ADAMANT_COMPANION_DEFAULT_CLASS_SETTINGS
+    elseif class_name == CRYPTIC_SERVO_SKULL then
+        return CRYPTIC_SERVO_SKULL_DEFAULT_CLASS_SETTINGS
+    elseif class_name == VETERAN_FOCUS_TARGET then
+        return VETERAN_FOCUS_TARGET_DEFAULT_CLASS_SETTINGS
+    end
+    return DEFAULT_CLASS_SETTINGS
 end
 
 local function init_table(dest, source)
@@ -36,7 +70,7 @@ local function init_table(dest, source)
                 dest[key] = table_clone(value)
             end
         else
-            if dest[key] == nil or type(dest[key]) == "table" then
+            if dest[key] == nil or type(dest[key]) ~= type(value) then
                 dest[key] = value
             end
         end
@@ -51,14 +85,6 @@ local function init_table(dest, source)
     return dest
 end
 
-local function overwrite_companion_default_settings()
-    local breed_priorities = auto_mark_settings[ADAMANT_COMPANION].breed_priorities
-    breed_priorities["chaos_daemonhost"] = 0
-    breed_priorities["chaos_mutator_daemonhost"] = 0
-    breed_priorities["chaos_ogryn_houndmaster"] = 0
-    breed_priorities["chaos_poxwalker_bomber"] = 0
-end
-
 -- Init Auto Mark Settings
 function mod:init_auto_mark_settings()
     for class_name, _ in pairs(VALID_CLASSES) do
@@ -66,7 +92,7 @@ function mod:init_auto_mark_settings()
             auto_mark_settings[class_name] = {}
         end
         local class_settings = auto_mark_settings[class_name]
-        init_table(class_settings, DEFAULT_CLASS_SETTINGS)
+        init_table(class_settings, get_default_class_settings(class_name))
     end
 
     for class_name, _ in pairs(auto_mark_settings) do
@@ -75,18 +101,14 @@ function mod:init_auto_mark_settings()
         end
     end
 
-    overwrite_companion_default_settings()
-
     mod:set("auto_mark_settings", auto_mark_settings, false)
 end
 
 -- Reset Auto Mark Settings to Default
 function mod:reset_auto_mark_settings()
     for class_name, _ in pairs(VALID_CLASSES) do
-        auto_mark_settings[class_name] = table_clone(DEFAULT_CLASS_SETTINGS)
+        auto_mark_settings[class_name] = table_clone(get_default_class_settings(class_name))
     end
-
-    overwrite_companion_default_settings()
 
     mod:set("auto_mark_settings", auto_mark_settings, false)
 end
@@ -96,11 +118,7 @@ function mod:reset_class_settings(class_name)
         return
     end
 
-    auto_mark_settings[class_name] = table_clone(DEFAULT_CLASS_SETTINGS)
-    if class_name == ADAMANT_COMPANION then
-        overwrite_companion_default_settings()
-    end
-
+    auto_mark_settings[class_name] = table_clone(get_default_class_settings(class_name))
     mod:set("auto_mark_settings", auto_mark_settings, false)
 end
 
@@ -132,7 +150,7 @@ function mod:set_menu_settings(class_name)
 
     mod:set("class_selection", class_name, false)
     local class_settings = auto_mark_settings[class_name]
-    for setting_name, default_setting in pairs(DEFAULT_CLASS_SETTINGS) do
+    for setting_name, default_setting in pairs(get_default_class_settings(class_name)) do
         if type(default_setting) == "table" then
             local breed_priorities = class_settings[setting_name]
             for breed_name, _ in pairs(default_setting) do
@@ -152,6 +170,8 @@ function mod:get_class_settings(tag_name)
         return auto_mark_settings[VETERAN_FOCUS_TARGET]
     elseif tag_name == TAG_NAMES.COMPANION_TAG then
         return auto_mark_settings[ADAMANT_COMPANION]
+    elseif tag_name == TAG_NAMES.SERVO_SKULL_TAG then
+        return auto_mark_settings[CRYPTIC_SERVO_SKULL]
     end
 end
 
@@ -161,6 +181,8 @@ function mod:get_menu_class_name()
         return ADAMANT_COMPANION
     elseif context.class_name == "veteran" and context.has_focus_target then
         return VETERAN_FOCUS_TARGET
+    elseif context.class_name == "cryptic" and context.has_servo_skull then
+        return CRYPTIC_SERVO_SKULL
     else
         return context.class_name or "adamant"
     end

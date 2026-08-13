@@ -14,6 +14,16 @@ return {
 				setting_id = "use_audio",
 				type = "checkbox",
 				default_value = false,
+                sub_widgets = {
+                    {
+                        setting_id = "audio_volume",
+                        type = "numeric",
+                        default_value = 75,
+                        range = {0, 200},
+                        unit_text = "audio_volume_units",
+                        decimals_number = 1,
+                    },
+                }
 			},
 			{
                 setting_id = "scan_sound",

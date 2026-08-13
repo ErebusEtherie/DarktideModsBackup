@@ -6,7 +6,6 @@ local RingHudColors                   = mod:io_dofile("RingHud/scripts/mods/Ring
 local RSBridge                        = mod:io_dofile("RingHud/scripts/mods/RingHud/compat/recolor_stimms_bridge")
 local U                               = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/utils")
 local PV                              = mod:io_dofile("RingHud/scripts/mods/RingHud/context/pocketables_visibility")
-local AbilityFeature                  = mod:io_dofile("RingHud/scripts/mods/RingHud/features/ability_feature")
 
 local PocketableFeature               = {}
 
@@ -186,6 +185,46 @@ local function _hide_timer_text(widget)
     return changed
 end
 
+local function _allow_subsecond_update(widget, t)
+    local last = widget._ringhud_last_subsec_update_t or 0
+    if (t - last) >= 0.1 then
+        widget._ringhud_last_subsec_update_t = t
+        return true
+    end
+    return false
+end
+
+----------------------------------------------------------------
+-- Layout Application
+----------------------------------------------------------------
+function PocketableFeature.apply_layout(widgets, ctx)
+    if not widgets then return end
+    local apply_shake_offset = U.apply_shake_to_style_offset
+
+    local stw = widgets.stimm_indicator_widget
+    if stw and stw.style then
+        local changed = false
+        if stw.style.stimm_icon then
+            if apply_shake_offset(stw.style.stimm_icon, 0, 0, 0, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.n_user_bias_px) then
+                changed = true
+            end
+        end
+        if stw.style.stimm_timer_text then
+            if apply_shake_offset(stw.style.stimm_timer_text, ctx.stimm_timer_base_x, ctx.stimm_timer_base_y, 1, ctx.apply_shake, ctx.dx, ctx.dy, ctx.text_bias_comb, ctx.n_text_bias_comb) then
+                changed = true
+            end
+        end
+        if changed then stw.dirty = true end
+    end
+
+    local cw = widgets.crate_indicator_widget
+    if cw and cw.style and cw.style.crate_icon then
+        if apply_shake_offset(cw.style.crate_icon, 0, 0, 0, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.n_user_bias_px) then
+            cw.dirty = true
+        end
+    end
+end
+
 ----------------------------------------------------------------
 -- Main update
 ----------------------------------------------------------------
@@ -286,17 +325,17 @@ function PocketableFeature.update(widgets, hud_state, hotkey_override)
 
         if timer_mode == "buff" then
             -- Use the shared ability buff helper.
-            text_str, text_color   = AbilityFeature.buff_timer_text_and_color(timer_value, timer_max)
-            font_type, drop_shadow = AbilityFeature.get_buff_font_settings()
+            text_str, text_color   = U.buff_timer_text_and_color(timer_value, timer_max)
+            font_type, drop_shadow = U.get_buff_font_settings()
             wants_subsec           = true
 
             -- Buff timers: ~50% larger than normal cooldown size.
             font_scale             = 1.5
         elseif timer_mode == "cooldown" then
             -- Use the shared ability cooldown formatter + font settings.
-            text_str               = AbilityFeature.format_single_cd(timer_value)
+            text_str               = U.format_single_cd(timer_value)
             text_color             = mod.PALETTE_ARGB255.GENERIC_WHITE
-            font_type, drop_shadow = AbilityFeature.get_cd_font_settings()
+            font_type, drop_shadow = U.get_cd_font_settings()
             wants_subsec           = (timer_value or 0) <= 1
             font_scale             = 1.0
         end
@@ -307,7 +346,7 @@ function PocketableFeature.update(widgets, hud_state, hotkey_override)
 
         if wants_subsec then
             -- Share the same subsecond cadence as the ability timer; always allow first draw.
-            can_update = AbilityFeature.should_update_subsecond(stimm_widget, t)
+            can_update = _allow_subsecond_update(stimm_widget, t)
                 or content.stimm_timer_text == ""
         end
 

@@ -1,4 +1,4 @@
--- Guarantee Ability Activation by KamiUnitY. Ver. 1.3.13
+-- Guarantee Ability Activation by KamiUnitY. Ver. 1.4.1
 
 local mod = get_mod("guarantee_ability_activation")
 local modding_tools = get_mod("modding_tools")
@@ -40,6 +40,21 @@ local IS_WEAPON_ABILITY = {
     psyker_force_field_dome     = true,
     adamant_area_buff_drone     = true,
     broker_ability_stimm_field  = true,
+    cryptic_chordclaw           = true,
+}
+
+local IS_CANCEL_NORMAL_ABILITY = {
+    zealot_relic      = true,
+    cryptic_chordclaw = true,
+}
+
+local IS_CANCEL_SPRINT_ABILITY = {
+    zealot_relic      = true,
+    cryptic_chordclaw = true,
+}
+
+local IS_MUST_HOLD_ABILITY = {
+    cryptic_chordclaw = true,
 }
 
 local IS_PSYKER_DISCHARGE_ABILITY = {
@@ -49,13 +64,22 @@ local IS_PSYKER_DISCHARGE_ABILITY = {
 
 local INTERVAL_DO_PROMISE = 0.05
 
+local ABILITY_PROMISE_DURATION = {
+    cryptic_chordclaw = 0.65,
+}
+
+local ABILITY_PROMISE_COOLDOWN = {
+    cryptic_chordclaw = 0.25,
+}
+
 ---------------
 -- VARIABLES --
 ---------------
 
 mod.promise_ability = false
 
-mod.last_do_promise = 0
+local last_do_promise = 0
+local last_set_promise = 0
 
 local is_in_hub = false
 
@@ -69,6 +93,17 @@ local grenade_ability = ""
 local weapon_template_name = ""
 
 local last_ability_pressed = 0
+
+local ability_promise_expire = 0
+local ability_promise_duration = 1
+local ability_promise_cooldown = 0
+
+local is_dash_ability = nil
+local is_weapon_ability = nil
+local is_cancel_sprint_ability = nil
+local is_cancel_normal_ability = nil
+local is_must_hold_ability = nil
+local is_psyker_discharge_ability = nil
 
 ---------------
 -- UTILITIES --
@@ -114,7 +149,7 @@ end
 
 local is_allowed_character_state = function()
     return ALLOWED_CHARACTER_STATE[character_state] or
-        (IS_PSYKER_DISCHARGE_ABILITY[combat_ability] and character_state == "exploding")
+        (is_psyker_discharge_ability and character_state == "exploding")
 end
 
 --------------------------
@@ -123,6 +158,7 @@ end
 
 mod.settings = {
     enable_prevent_relic_cancel   = mod:get("enable_prevent_relic_cancel"),
+    enable_prevent_relic_sprint   = mod:get("enable_prevent_relic_sprint"),
     enable_prevent_ability_aiming = mod:get("enable_prevent_ability_aiming"),
     enable_debug_modding_tools    = mod:get("enable_debug_modding_tools"),
 }
@@ -161,12 +197,17 @@ local function setPromise(from)
     if not is_available_ability_charges() then
         return
     end
-    if not mod.promise_ability then
-        if is_allowed_character_state() then
-            mod.promise_ability = true
-            if modding_tools then debug:print_mod("setPromiseFrom: " .. from) end
-        end
+    if not is_allowed_character_state() then
+        return
     end
+    if elapsed(last_set_promise) < ability_promise_cooldown then
+        debug:print_mod("Promise on cooldown")
+        return
+    end
+    mod.promise_ability = true
+    last_set_promise = time_now()
+    ability_promise_expire = last_set_promise + ability_promise_duration
+    if modding_tools then debug:print_mod("setPromiseFrom: " .. from) end
 end
 
 local function clearPromise(from)
@@ -176,23 +217,27 @@ local function clearPromise(from)
     end
 end
 
-local function isPromised()
+local function isPromised(t)
     local promise = mod.promise_ability
 
     if promise then
-        if elapsed(mod.last_do_promise) < INTERVAL_DO_PROMISE then
+        if t > ability_promise_expire then
+            clearPromise("PROMISE_TIMEOUT")
+            return false
+        end
+        if t - last_do_promise < INTERVAL_DO_PROMISE then
             return false
         end
         if not is_available_ability_charges() then
             clearPromise("empty_ability_charges")
             return false
         end
-        if IS_DASH_ABILITY[combat_ability] then
+        if is_dash_ability then
             if not ALLOWED_DASH_STATE[character_state] then
                 return false
             end
         end
-        mod.last_do_promise = time_now()
+        last_do_promise = t
         if modding_tools then debug:print_mod("Attempting to activate combat ability for you !!!") end
     end
 
@@ -235,16 +280,24 @@ local IS_AIM_CANCEL = {
     [AIM_CANCEL_WITH_SPRINT] = true,
 }
 
-local PREVENT_CANCEL_DURATION = 0.3
+local PREVENT_CANCEL_DURATION = 0.25
 
 -- HANDLE PROMISE ON START HOLDING ABILITY
 
 mod:hook_safe("ActionBase", "start", function(self, action_settings, t, time_scale, action_start_params)
     if self._player.viewport_name == "player1" then
-        if action_settings.ability_type == "combat_ability" then
+        if action_settings.ability_type == "combat_ability" and not is_weapon_ability then
             clearPromise("ability_base_start")
             if modding_tools then debug:print_mod("Game has successfully initiated the execution of ActionAbilityBase:Start") end
         end
+    end
+end)
+
+-- CLEAR PROMISE ON SKITARIIA PRECISION STANCE TOGGLE
+
+mod:hook_safe("ActionPrecisionStanceToggle", "start", function(self, action_settings, t, time_scale, action_start_params)
+    if self._player.viewport_name == "player1" then
+        clearPromise("ActionPrecisionStanceToggle")
     end
 end)
 
@@ -256,11 +309,11 @@ mod:hook_safe("ActionBase", "finish", function(self, reason, data, t, time_in_ac
         if action_settings and action_settings.ability_type == "combat_ability" then
             if IS_AIM_CANCEL[reason] then
                 if action_settings.start_input then
-                    if reason == AIM_CANCEL_WITH_SPRINT then
+                    if reason == AIM_CANCEL_WITH_SPRINT and not is_cancel_sprint_ability then
                         setPromise("AIM_CANCEL_WITH_SPRINT")
                         return
                     end
-                    if elapsed(last_ability_pressed) <= PREVENT_CANCEL_DURATION then
+                    if elapsed(last_ability_pressed) <= PREVENT_CANCEL_DURATION and not is_cancel_normal_ability then
                         setPromise("AIM_CANCEL_NORMAL")
                         return
                     end
@@ -367,6 +420,15 @@ local _on_ability_equip = function (self)
     if _equipped_abilities then
         combat_ability = _equipped_abilities.combat_ability and _equipped_abilities.combat_ability.name
         grenade_ability = _equipped_abilities.grenade_ability and _equipped_abilities.grenade_ability.name
+
+        ability_promise_duration = ABILITY_PROMISE_DURATION[combat_ability] or 1
+        ability_promise_cooldown = ABILITY_PROMISE_COOLDOWN[combat_ability] or 0
+        is_dash_ability = IS_DASH_ABILITY[combat_ability]
+        is_weapon_ability = IS_WEAPON_ABILITY[combat_ability]
+        is_cancel_sprint_ability = IS_CANCEL_SPRINT_ABILITY[combat_ability]
+        is_cancel_normal_ability = IS_CANCEL_NORMAL_ABILITY[combat_ability]
+        is_must_hold_ability = IS_MUST_HOLD_ABILITY[combat_ability]
+        is_psyker_discharge_ability = IS_PSYKER_DISCHARGE_ABILITY[combat_ability]
     end
 end
 
@@ -403,22 +465,22 @@ local _input_hook = function(func, self, action_name)
 
     if action_name == "combat_ability_pressed" then
         if pressed then
-            last_ability_pressed = time_now()
+            last_ability_pressed = self._last_time
             if mod.settings["enable_prevent_relic_cancel"] and combat_ability == "zealot_relic" and current_slot == "slot_combat_ability" then
                 return false
             end
-            if IS_DASH_ABILITY[combat_ability] and character_state == "lunging" then
+            if is_dash_ability and character_state == "lunging" then
                 return false
             end
             setPromise("pressed")
             if modding_tools then debug:print_mod("Player pressed " .. action_name) end
         end
-        return out or isPromised()
+        return out or isPromised(self._last_time)
     end
 
     if action_name == "combat_ability_release" then
         if pressed then
-            if IS_PSYKER_DISCHARGE_ABILITY[combat_ability] and character_state == "exploding" then
+            if is_psyker_discharge_ability and character_state == "exploding" then
                 setPromise("exploding")
             end
             if modding_tools then debug:print_mod("Player pressed " .. action_name) end
@@ -427,15 +489,29 @@ local _input_hook = function(func, self, action_name)
     end
 
     if action_name == "combat_ability_hold" then
-        if pressed and mod.settings["enable_prevent_ability_aiming"] then
-            return false
+        if pressed then
+            if mod.settings["enable_prevent_ability_aiming"] and not is_must_hold_ability then
+                return false
+            end
+        end
+        return out
+    end
+
+    if action_name == "sprint" then
+        if pressed then
+            if mod.settings["enable_prevent_relic_sprint"] and combat_ability == "zealot_relic" and current_slot == "slot_combat_ability" then
+                return false
+            end
         end
         return out
     end
 
     -- Release Mouse on using Weapon Ability
-    if mod.promise_ability and IS_WEAPON_ABILITY[combat_ability] then
+    if mod.promise_ability and is_weapon_ability then
         if action_name == "action_one_pressed" or action_name == "action_one_hold" then
+            return false
+        end
+        if action_name == "weapon_extra_pressed" or action_name == "weapon_extra_hold" then
             return false
         end
         if action_name == "action_two_pressed" or action_name == "action_two_hold" then

@@ -1,6 +1,8 @@
 local mod = get_mod("BuffStackHUD")
 
 local color_option = {}
+local sort_by_alpha = false
+--sort_by_alpha = true
 
 local _is_duplicated = function(a, color_name)
     local join = function(t)
@@ -94,6 +96,15 @@ for group_name, _ in pairs(mod.group_overrides) do
 		text = "group_g_" .. group_name,
 		value = "g_" .. group_name,
 	}
+end
+
+if sort_by_alpha then
+	table.sort(widgets, function(a, b)
+		return mod:localize(a.setting_id) < mod:localize(b.setting_id)
+	end)
+	table.sort(lock_options, function(a, b)
+		return mod:localize(a.text) < mod:localize(b.text)
+	end)
 end
 
 local lock_settings = {}

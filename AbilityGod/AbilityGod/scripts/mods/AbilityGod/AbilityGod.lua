@@ -46,6 +46,11 @@ local AB = {
     { id="broker_punk",  talents={ "broker_ability_punk_rage" } },
     { id="broker_stimm", talents={ "broker_ability_stimm_field" } },
   },
+  cryptic = {
+    { id="cryptic_chordclaw", talents={ "cryptic_chordclaw" } },
+    { id="cryptic_discharge",  talents={ "cryptic_ability_discharge" } },
+    { id="cryptic_stance", talents={ "cryptic_precision_stance" } },
+  },
 }
 
 local MODE = {

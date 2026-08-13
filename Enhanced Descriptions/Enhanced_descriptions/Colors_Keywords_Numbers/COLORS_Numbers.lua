@@ -9,6 +9,7 @@ local CONFIG = {
 		ammo_var =				"{ammo:%s}",
 		amount_var =			"{amount}",
 		amountp_var =			"{amount:%s}",
+		angle_var =				"{angle:%s}",
 		attack_spd_var =		"{attack_speed:%s}",
 		blltam_var =			"{bullet_amount:%s}",
 		block_var =				"{block_cost:%s}",
@@ -49,6 +50,7 @@ local CONFIG = {
 		impact_var =			"{impact:%s}",
 		impmod_var =			"{impact_modifier:%s}",
 		interval_var =			"{interval:%s}",
+		jumps_var =				"{jumps:%s}",
 		max_stk_cnt_var =		"{max_stack_count:%s}",
 		maxstks_var =			"{max_stacks:%s}",
 		mel_weapsp_dmg_var =	"{melee_weakspot_damage}",
@@ -117,6 +119,7 @@ local CONFIG = {
 		n_meter =	"m",
 		n_metr =	"м",
 		n_second =	"s",
+		n_x =		"x",
 		n__s =		"'s",
 		pc =		"%",
 
@@ -135,6 +138,7 @@ local CONFIG = {
 		n_0_4 =		"0.4",
 		n_0_5 =		"0.5",
 		n_0_55 =	"0.55",
+		n__0_85 =	"~0.85",
 		n_0_875 =	"0.875",
 		n_0_9 =		"0.9",
 		n_0_75 =	"0.75",
@@ -234,13 +238,19 @@ local CONFIG = {
 		n_90 =		"90",
 
 		n_100 =		"100",
+		n_150 =		"150",
 
 		n_200 =		"200",
 		n_225 =		"225",
+		n_245 =		"245",
 		n_250 =		"250",
 
+		n_300 =		"300",
+		n_326 =		"326",
 		n_340 =		"340",
 		n_380 =		"380",
+
+		n_489 =		"489",
 
 		n_500 =		"500",
 		n_585 =		"585",
@@ -264,6 +274,8 @@ local CONFIG = {
 	},
 
 	PERCENTAGES = {
+		pc_0_5 =	"0.5%",
+
 		pc_1 =		"1%",
 
 		pc_2 =		"2%",
@@ -289,6 +301,7 @@ local CONFIG = {
 		pc_19 =		"19%",
 
 		pc_20 =		"20%",
+		pc_21 =		"21%",
 		pc_24 =		"24%",
 		pc_25 =		"25%",
 
@@ -304,6 +317,7 @@ local CONFIG = {
 		pc_50 =		"50%",
 
 		pc_60 =		"60%",
+		pc_63 =		"63%",
 		pc_66 =		"66%",
 
 		pc_75 =		"75%",

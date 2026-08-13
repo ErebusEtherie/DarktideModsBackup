@@ -48,6 +48,14 @@ local ADAMANT_TERMINUS_WARRANT_RANGED_STACK_BUFFS = {
     adamant_terminus_warrant_ranged = true,
 }
 
+local OGRYN_BLO_MELEE_MAX_STACKS = 10
+local OGRYN_BLO_MELEE_PARENT_BUFFS = {
+    ogryn_blo_melee = true,
+}
+local OGRYN_BLO_MELEE_STACK_BUFFS = {
+    ogryn_blo_melee_active_buff = true,
+}
+
 ----------------------------------------------------------------
 -- Time helpers
 ----------------------------------------------------------------
@@ -68,7 +76,7 @@ end
 
 -- Detects any "windup increases power" buff (Thrust blessing or intrinsic weapon buff).
 -- Prioritizes 'child' buffs as they typically carry the stack count.
-function mod.update_thrust_state(player_unit, weapon_template_name, charge_level, hud_state)
+function mod.update_thrust_state(player_unit, weapon_template_name, charge_level, is_special_windup, hud_state)
     if not player_unit then
         return
     end
@@ -81,10 +89,16 @@ function mod.update_thrust_state(player_unit, weapon_template_name, charge_level
     end
 
     local found_buff_name = nil
+    local allow_special_power_windup = is_special_windup == true
+        and weapon_template_name == "powersword_p3_m1"
 
-    -- Broad search for any active windup buff (Thrust or Intrinsic)
     for key, _ in pairs(stacking) do
-        if string.find(key, "windup_increases_power", 1, true) then
+        local is_windup_buff = allow_special_power_windup
+            and string.find(key, "windup_increases_special_power", 1, true)
+            or not allow_special_power_windup
+            and string.find(key, "windup_increases_power", 1, true)
+
+        if is_windup_buff then
             -- Prefer 'child' variants (usually the ones holding the stack count)
             if string.find(key, "child", 1, true) then
                 found_buff_name = key
@@ -396,6 +410,73 @@ function mod.talent_update_state(player, player_unit, hud_state)
 
         -- Keep td.stacks meaningful for any generic “active?” checks elsewhere
         td.stacks       = math.max(melee_stacks, ranged_stacks)
+
+        return
+    end
+
+    ----------------------------------------------------------------
+    -- Ogryn: Lucky Bullet chance earned from melee kills
+    ----------------------------------------------------------------
+    if archetype == "ogryn" then
+        local buff_ext = _resolve_buff_ext(player_unit, hud_state)
+        if not buff_ext then
+            return
+        end
+
+        local stacks, active_has = mod.get_buff_stack_count(buff_ext, OGRYN_BLO_MELEE_STACK_BUFFS)
+        stacks                   = math.clamp(tonumber(stacks) or 0, 0, OGRYN_BLO_MELEE_MAX_STACKS)
+
+        local parent_has = false
+        if not active_has then
+            local _, has_parent = mod.get_buff_stack_count(buff_ext, OGRYN_BLO_MELEE_PARENT_BUFFS)
+            parent_has = has_parent == true
+        end
+
+        if not active_has and not parent_has then
+            return
+        end
+
+        td.mode         = "ogryn_blo_melee"
+        td.segment_max  = OGRYN_BLO_MELEE_MAX_STACKS
+        td.stacks       = stacks
+        td.is_available = true
+        td.is_active    = stacks > 0
+
+        return
+    end
+
+    ----------------------------------------------------------------
+    -- Cryptic: dynamic segmented ability charges and cooldown
+    ----------------------------------------------------------------
+    if archetype == "cryptic" then
+        local ability_ext = ScriptUnit.has_extension(player_unit, "ability_system")
+            and ScriptUnit.extension(player_unit, "ability_system")
+
+        if not ability_ext or not ability_ext.ability_is_equipped or not ability_ext:ability_is_equipped("combat_ability") then
+            return
+        end
+
+        local max_charges = ability_ext:max_ability_charges("combat_ability") or 0
+        if max_charges <= 0 then
+            return
+        end
+
+        local rem_charges       = ability_ext:remaining_ability_charges("combat_ability") or 0
+        local max_cd            = ability_ext:max_ability_cooldown("combat_ability") or 0
+        local rem_cd            = ability_ext:remaining_ability_cooldown("combat_ability") or 0
+        local is_paused         = ability_ext.is_cooldown_paused and ability_ext:is_cooldown_paused("combat_ability")
+
+        local cooldown_fraction = 0
+        if not is_paused and rem_charges < max_charges and max_cd > 0 then
+            cooldown_fraction = math.clamp(1 - (rem_cd / max_cd), 0, 1)
+        end
+
+        td.mode              = "cryptic_ability_charges"
+        td.segment_max       = max_charges
+        td.stacks            = math.floor(rem_charges + 0.0001)
+        td.cooldown_fraction = cooldown_fraction
+        td.is_available      = true
+        td.is_active         = (td.stacks > 0 or cooldown_fraction > 0)
 
         return
     end

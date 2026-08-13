@@ -50,6 +50,7 @@ local CHARGED_RANGED = {
     forcestaff_p4_m1 = true,
     -- Plasma Gun
     plasmagun_p1_m1 = true,
+    plasmagun_p1_m2 = true,
     -- Smite
     psyker_chain_lightning = true,
 }

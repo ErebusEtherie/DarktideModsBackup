@@ -25,7 +25,7 @@ return {
 				default_value = true
 			},
 			{
-				setting_id = SettingNames.RemoveAdamantTagSkull,
+				setting_id = SettingNames.RemoveCompanionTagSkull,
 				type = "checkbox",
 				default_value = true
 			},

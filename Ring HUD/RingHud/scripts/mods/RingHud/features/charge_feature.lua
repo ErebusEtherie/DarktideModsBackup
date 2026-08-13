@@ -12,54 +12,32 @@ local CHARGE_MAX_STACK_SOUND_EVENT = "wwise/events/player/play_device_auspex_sca
 
 local SETTINGS                     = mod._settings
 local EPS                          = mod.NOTCH_EPSILON or 1e-4
-local MAX_CHARGE_SEGMENTS          = mod.MAX_CHARGE_SEGMENTS or 6
+local MAX_CHARGE_SEGMENTS          = mod.MAX_CHARGE_SEGMENTS or 8
 
 local COL_DEFAULT                  = mod.PALETTE_RGBA1.GENERIC_WHITE
 local COL_DAMAGE                   = mod.PALETTE_RGBA1.default_damage_color_rgba
 
-local SEG1_TOP, SEG1_BOTTOM        = 0.24, 0.01
-local SEG2_TOP, SEG2_BOTTOM        = 0.50, 0.27
+local CHARGE_SEGMENT_GAP           = 0.03
+local CHARGE_ARC_MIN               = 0.01
+local CHARGE_ARC_MAX               = 0.495
 
-local CHARGE_ARC_MIN               = math.min(SEG1_BOTTOM, SEG2_BOTTOM) -- 0.01
-local CHARGE_ARC_MAX               = math.max(SEG1_TOP, SEG2_TOP)       -- 0.50
-local CHARGE_SEGMENT_GAP           = SEG2_BOTTOM - SEG1_TOP             -- same gap as between seg1/seg2
+local function _charge_segment_bounds()
+    local half = (CHARGE_ARC_MAX - CHARGE_ARC_MIN - CHARGE_SEGMENT_GAP) / 2
+    local s1_bot = CHARGE_ARC_MIN
+    local s1_top = CHARGE_ARC_MIN + half
+    local s2_bot = s1_top + CHARGE_SEGMENT_GAP
+    local s2_top = CHARGE_ARC_MAX
+    return s1_top, s1_bot, s2_top, s2_bot, CHARGE_ARC_MIN, CHARGE_ARC_MAX, CHARGE_SEGMENT_GAP
+end
 
-local _seg_style_keys              = {}
-local _edge_style_keys             = {}
+local _seg_style_keys  = {}
+local _edge_style_keys = {}
 for i = 1, MAX_CHARGE_SEGMENTS do
     _seg_style_keys[i] = "charge_seg_" .. i
     _edge_style_keys[i] = "charge_seg_edge_" .. i
 end
 
 local _cached_arcs = {}
-
-local function _get_arcs_for_count(num_segments)
-    if num_segments <= 0 then return nil end
-
-    if _cached_arcs[num_segments] then
-        return _cached_arcs[num_segments]
-    end
-
-    local arcs         = {}
-    local total_arc    = CHARGE_ARC_MAX - CHARGE_ARC_MIN
-    local num_gaps     = math.max(0, num_segments - 1)
-    local gap_space    = num_gaps * CHARGE_SEGMENT_GAP
-    local visual_space = math.max(0, total_arc - gap_space)
-    local seg_arc      = (visual_space / num_segments)
-    local current_bot  = CHARGE_ARC_MIN
-
-    for i = 1, num_segments do
-        local top = math.min(CHARGE_ARC_MAX, current_bot + seg_arc)
-        if i == num_segments then
-            top = CHARGE_ARC_MAX
-        end
-        arcs[i] = { top, current_bot }
-        current_bot = top + CHARGE_SEGMENT_GAP
-    end
-
-    _cached_arcs[num_segments] = arcs
-    return arcs
-end
 
 local function _fast_hide_all(widget, style)
     local changed = false
@@ -220,8 +198,8 @@ local function _write_segment(style, style_edge, seg_top, seg_bottom, f, visible
     return changed
 end
 
--- Sub-update: Dual Shivs
-local function _update_dual(widget, style, hud_state, outline_clr, is_hide_full_mode, visible_gate)
+-- Sub-update: segmented weapon charges
+local function _update_segmented(widget, style, hud_state, outline_clr, is_hide_full_mode, visible_gate)
     local changed = _hide_standard_passes(style)
 
     local cur = hud_state.charge_current_charges or 0
@@ -229,18 +207,19 @@ local function _update_dual(widget, style, hud_state, outline_clr, is_hide_full_
     local num_seg = math.min(MAX_CHARGE_SEGMENTS, math.max(0, max))
 
     if num_seg > 0 then
-        local arcs = _get_arcs_for_count(num_seg)
+        local s1_top, s1_bot, s2_top, s2_bot, CHARGE_ARC_MIN, CHARGE_ARC_MAX, ARC_GAP = _charge_segment_bounds()
+        local arcs = U.get_segment_arcs(_cached_arcs, num_seg, CHARGE_ARC_MIN, CHARGE_ARC_MAX, ARC_GAP)
 
         for i = 1, MAX_CHARGE_SEGMENTS do
             local seg_style = style[_seg_style_keys[i]]
             local edge_style = style[_edge_style_keys[i]]
             if seg_style and seg_style.material_values then
                 local seg_top, seg_bottom = CHARGE_ARC_MIN, CHARGE_ARC_MIN
-                if i <= num_seg and arcs[i] then
+                if i <= num_seg and arcs and arcs[i] then
                     seg_top, seg_bottom = arcs[i][1], arcs[i][2]
                 end
 
-                local f = (i <= cur) and 1 or 0
+                local f = math.clamp(cur - (i - 1), 0, 1)
                 local show_empty = false
                 local seg_outline = outline_clr
 
@@ -272,18 +251,19 @@ end
 local function _update_thrust(widget, style, hud_state, outline_clr, visible_gate)
     local changed = _hide_standard_passes(style)
 
+    local s1_top, s1_bot, s2_top, s2_bot, CHARGE_ARC_MIN, CHARGE_ARC_MAX, ARC_GAP = _charge_segment_bounds()
     local stacks = hud_state.charge_thrust_stacks or 0
     local prog = hud_state.charge_thrust_progress or 0
     local max_stacks = hud_state.charge_thrust_max_stacks or 3
     local num_seg = math.min(MAX_CHARGE_SEGMENTS, math.max(1, max_stacks))
-    local arcs = _get_arcs_for_count(num_seg)
+    local arcs = U.get_segment_arcs(_cached_arcs, num_seg, CHARGE_ARC_MIN, CHARGE_ARC_MAX, ARC_GAP)
     local total_fill = math.clamp(stacks + prog, 0, num_seg)
 
     for i = 1, MAX_CHARGE_SEGMENTS do
         local seg_style = style[_seg_style_keys[i]]
         local edge_style = style[_edge_style_keys[i]]
         if seg_style and seg_style.material_values then
-            if i <= num_seg and arcs[i] then
+            if i <= num_seg and arcs and arcs[i] then
                 local seg_top, seg_bottom = arcs[i][1], arcs[i][2]
                 local f = math.clamp(total_fill - (i - 1), 0, 1)
 
@@ -319,6 +299,8 @@ end
 local function _update_standard(widget, style, hud_state, outline_clr, hotkey_override, visible_gate)
     local changed = _hide_all_segmented_passes(style)
 
+    local SEG1_TOP, SEG1_BOTTOM, SEG2_TOP, SEG2_BOTTOM = _charge_segment_bounds()
+
     local split_thresh = 0.5
     local fraction = hud_state.charge_fraction or 0
     local current_fill = (hotkey_override and fraction == 0) and 0 or fraction
@@ -344,6 +326,52 @@ local function _update_standard(widget, style, hud_state, outline_clr, hotkey_ov
         outline_clr,
         false
     ) or changed
+
+    if changed then widget.dirty = true end
+end
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Layout Application
+-- ─────────────────────────────────────────────────────────────────────────────
+function ChargeFeature.apply_layout(widget, ctx)
+    if not widget or not widget.style then return end
+
+    local changed = false
+    local style = widget.style
+    local apply_shake_offset = U.apply_shake_to_style_offset
+
+    -- Legacy 2-segment bar (still used for non-segmented charge systems)
+    if style.charge_bar_1 and apply_shake_offset(
+            style.charge_bar_1, 0, 0, 1, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.user_bias_px) then
+        changed = true
+    end
+    if style.charge_bar_1_edge and apply_shake_offset(
+            style.charge_bar_1_edge, 0, 0, 2, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.user_bias_px) then
+        changed = true
+    end
+    if style.charge_bar_2 and apply_shake_offset(
+            style.charge_bar_2, 0, 0, 2, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.user_bias_px) then
+        changed = true
+    end
+    if style.charge_bar_2_edge and apply_shake_offset(
+            style.charge_bar_2_edge, 0, 0, 3, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.user_bias_px) then
+        changed = true
+    end
+
+    -- Segmented weapon-charge/thrust passes
+    for i = 1, MAX_CHARGE_SEGMENTS do
+        local st  = style[_seg_style_keys[i]]
+        local ste = style[_edge_style_keys[i]]
+
+        if st and apply_shake_offset(
+                st, 0, 0, 2, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.user_bias_px) then
+            changed = true
+        end
+        if ste and apply_shake_offset(
+                ste, 0, 0, 3, ctx.apply_shake, ctx.dx, ctx.dy, ctx.user_bias_px, ctx.user_bias_px) then
+            changed = true
+        end
+    end
 
     if changed then widget.dirty = true end
 end
@@ -381,9 +409,11 @@ function ChargeFeature.update(widget, hud_state, hotkey_override)
     local show_kill        = SETTINGS.charge_kills_enabled
         and charge_system_type == "kill_count"
 
+    local other_segmented  = charge_system_type == "other_segmented"
     local is_other         = (charge_system_type == "block_passive"
         or charge_system_type == "action_module"
-        or charge_system_type == "ogryn_powermaul")
+        or charge_system_type == "ogryn_powermaul"
+        or other_segmented)
 
     local show_other       = SETTINGS.charge_other_enabled
         and is_other
@@ -392,8 +422,8 @@ function ChargeFeature.update(widget, hud_state, hotkey_override)
     local active_wants_bar = (charge_fraction > 0)
         and (show_perilous or (show_kill and not dual_is_shivs) or show_other)
 
-    -- Fallback latch for dual shivs
-    if not active_wants_bar and not dual_is_shivs then
+    -- Fallback latch for dual shivs.
+    if not active_wants_bar and not dual_is_shivs and not other_segmented then
         local latched_max = hud_state.latched_dual_shiv_max or 0
         if latched_max > 0 then
             dual_is_shivs = true
@@ -402,39 +432,38 @@ function ChargeFeature.update(widget, hud_state, hotkey_override)
         end
     end
 
-    local dual_mode_enabled   = SETTINGS.charge_kills_enabled
-        and dual_is_shivs
+    local segmented_mode_enabled = ((SETTINGS.charge_kills_enabled and dual_is_shivs)
+            or (SETTINGS.charge_other_enabled and other_segmented))
         and (hud_state.charge_max_charges or 0) > 0
 
-    local thrust_mode_enabled = SETTINGS.charge_other_enabled
-        and charge_system_type == "action_module"
+    local thrust_mode_enabled    = SETTINGS.charge_other_enabled
+        and (charge_system_type == "action_module" or other_segmented)
         and thrust_has
         and (hud_state.charge_thrust_max_stacks or 0) > 0
 
-    local g_setting           = SETTINGS.grenade_bar_dropdown
-    local is_hide_full_mode   = (g_setting == "grenade_hide_full_compact" or g_setting == "grenade_hide_full")
+    local g_setting              = SETTINGS.grenade_bar_dropdown
+    local is_hide_full_mode      = (g_setting == "grenade_hide_full_compact" or g_setting == "grenade_hide_full")
 
     -- Calculate Visibility
-    local displayable         = false
+    local displayable            = false
 
     if active_wants_bar then
         displayable = true
-    elseif dual_mode_enabled then
-        local cur = hud_state.charge_current_charges or 0
-        local max = hud_state.charge_max_charges or 0
-        if is_hide_full_mode then
-            if cur == max then
-                displayable = false
-            else
-                displayable = true
-            end
-        else
-            displayable = cur > 0
-        end
     elseif thrust_mode_enabled then
         displayable = (hud_state.charge_thrust_stacks > 0)
             or (hud_state.charge_thrust_progress > 0)
             or (charge_fraction > 0)
+    elseif segmented_mode_enabled then
+        local cur = hud_state.charge_current_charges or 0
+        local max = hud_state.charge_max_charges or 0
+
+        if other_segmented then
+            displayable = cur > 0
+        elseif is_hide_full_mode then
+            displayable = cur ~= max
+        else
+            displayable = cur > 0
+        end
     elseif charge_system_type == "ogryn_powermaul" and show_other then
         displayable = true
         if is_hide_full_mode and charge_fraction >= 0.99 then
@@ -459,11 +488,18 @@ function ChargeFeature.update(widget, hud_state, hotkey_override)
         outline_clr = mod.current_peril_color_rgba or COL_DEFAULT
     end
 
-    -- Render
-    if dual_mode_enabled then
-        _update_dual(widget, widget.style, hud_state, outline_clr, is_hide_full_mode, visible_gate)
-    elseif thrust_mode_enabled then
+    -- Render: the power sword's active special windup deliberately overrides its six reserve-charge segments.
+    if thrust_mode_enabled then
         _update_thrust(widget, widget.style, hud_state, outline_clr, visible_gate)
+    elseif segmented_mode_enabled then
+        _update_segmented(
+            widget,
+            widget.style,
+            hud_state,
+            outline_clr,
+            dual_is_shivs and is_hide_full_mode,
+            visible_gate
+        )
     else
         _update_standard(widget, widget.style, hud_state, outline_clr, hotkey_override, visible_gate)
     end
@@ -476,6 +512,8 @@ function ChargeFeature.add_widgets(dst, styles, metrics, colors)
     local size = (metrics and metrics.size) or { 240, 240 }
     local ARGB = (colors and colors.ARGB) or (mod.PALETTE_ARGB255 or {})
     setmetatable(ARGB, { __index = function() return { 255, 255, 255, 255 } end })
+
+    local SEG1_TOP, SEG1_BOTTOM, SEG2_TOP, SEG2_BOTTOM, CHARGE_ARC_MIN, CHARGE_ARC_MAX = _charge_segment_bounds()
 
     local passes = {}
     local function _add_pass(def) passes[#passes + 1] = def end
@@ -502,6 +540,7 @@ function ChargeFeature.add_widgets(dst, styles, metrics, colors)
                 arc_top_bottom       = { SEG1_TOP, SEG1_BOTTOM },
                 fill_outline_opacity = { 1.3, 1.3 },
                 outline_color        = { 1, 1, 1, 1 },
+                SizeThicknessOutline = { 0.45, 0.03, 0.02 },
             },
         },
     })
@@ -527,6 +566,7 @@ function ChargeFeature.add_widgets(dst, styles, metrics, colors)
                 arc_top_bottom       = { SEG1_TOP, SEG1_BOTTOM },
                 fill_outline_opacity = { 1.3, 1.3 },
                 outline_color        = { 1, 1, 1, 1 },
+                SizeThicknessOutline = { 0.45, 0.03, 0.02 },
             },
         },
     })
@@ -553,6 +593,7 @@ function ChargeFeature.add_widgets(dst, styles, metrics, colors)
                 arc_top_bottom       = { SEG2_TOP, SEG2_BOTTOM },
                 fill_outline_opacity = { 1.3, 1.3 },
                 outline_color        = { 1, 1, 1, 1 },
+                SizeThicknessOutline = { 0.45, 0.03, 0.02 },
             },
         },
     })
@@ -578,6 +619,7 @@ function ChargeFeature.add_widgets(dst, styles, metrics, colors)
                 arc_top_bottom       = { SEG2_TOP, SEG2_BOTTOM },
                 fill_outline_opacity = { 1.3, 1.3 },
                 outline_color        = { 1, 1, 1, 1 },
+                SizeThicknessOutline = { 0.45, 0.03, 0.02 },
             },
         },
     })
@@ -605,6 +647,7 @@ function ChargeFeature.add_widgets(dst, styles, metrics, colors)
                     arc_top_bottom       = { CHARGE_ARC_MAX, CHARGE_ARC_MIN },
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color        = { 1, 1, 1, 1 },
+                    SizeThicknessOutline = { 0.45, 0.03, 0.02 },
                 },
             },
         })
@@ -630,6 +673,7 @@ function ChargeFeature.add_widgets(dst, styles, metrics, colors)
                     arc_top_bottom       = { CHARGE_ARC_MAX, CHARGE_ARC_MIN },
                     fill_outline_opacity = { 1.3, 1.3 },
                     outline_color        = { 1, 1, 1, 1 },
+                    SizeThicknessOutline = { 0.45, 0.03, 0.02 },
                 },
             },
         })

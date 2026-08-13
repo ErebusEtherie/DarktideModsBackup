@@ -59,6 +59,9 @@ return {
     header_broker = {
       en = "\xEE\x81\x92 Hive Scum Abilities",
     },
+    header_cryptic = {
+      en = "\xEE\x81\x92 Skitarii Abilities",
+    },
     veteran_exec   = {
       en = "Executioners Stance",
     },
@@ -112,5 +115,14 @@ return {
     },
     broker_stimm = {
       en = "Stimm Supply",
+    },
+    cryptic_chordclaw = {
+      en = "Chordclaw Strike",
+    },
+    cryptic_discharge = {
+      en = "Voltaic Emitter",
+    },
+    cryptic_stance = {
+      en = "Advanced Combat Doctrines",
     },
 }

@@ -10,10 +10,11 @@ local function _health_ext(unit)
 end
 
 local function _uds(unit)
-    return unit
+    local uds = unit
         and ScriptUnit.has_extension(unit, "unit_data_system")
         and ScriptUnit.extension(unit, "unit_data_system")
         or nil
+    return (uds and uds.read_component) and uds or nil
 end
 
 local function _inventory(unit)
@@ -76,25 +77,24 @@ function Status.for_unit(unit)
     local auspex_active = false
     local scanning_component = _scanning_component(unit)
     local minigame_state = _minigame_state(unit)
-    
+
     if scanning_component and scanning_component.is_active then
         auspex_active = true
     elseif minigame_state and minigame_state.pocketable_device_active then
         auspex_active = true
     end
-    
+
     local auspex_mod = get_mod("better_downed_indicators")
     if auspex_mod and auspex_mod._auspex_active_units and auspex_mod._auspex_active_units[unit] then
         auspex_active = true
     end
-    
+
     local inventory = _inventory(unit)
     local luggable = false
     if inventory and inventory.wielded_slot == "slot_luggable" then
         luggable = true
     end
 
-    -- Check for interactions (use tracked state from RPC hooks - works for all players)
     local interaction_status = nil
     local interaction_mod = get_mod("better_downed_indicators")
     if interaction_mod and interaction_mod._interaction_active_units and interaction_mod._interaction_active_units[unit] then
@@ -105,8 +105,6 @@ function Status.for_unit(unit)
         elseif interaction_type == "revive" or interaction_type == "remove_net" or interaction_type == "pull_up" or interaction_type == "rescue" then
             interaction_status = "helping"
         elseif interaction_type then
-            -- Catch-all for other interactions (setup_decoding, door_control_panel, scripted_scenario, moveable_platform, chest, etc.)
-            -- Only show for long-press interactions
             local InteractionSettings = require("scripts/settings/interaction/interaction_settings")
             local interaction_templates = require("scripts/settings/interaction/interaction_templates")
             local template = interaction_templates[interaction_type]
@@ -115,8 +113,7 @@ function Status.for_unit(unit)
             end
         end
     end
-    
-    -- Fallback: check interaction component directly (for local player reliability)
+
     local interaction_component = _interaction_component(unit)
     if not interaction_status and interaction_component then
         local InteractionSettings = require("scripts/settings/interaction/interaction_settings")
@@ -129,7 +126,6 @@ function Status.for_unit(unit)
             elseif interaction_type == "revive" or interaction_type == "remove_net" or interaction_type == "pull_up" or interaction_type == "rescue" then
                 interaction_status = "helping"
             elseif interaction_type then
-                -- Check if it's a long-press interaction (includes setup_decoding, door_control_panel, etc.)
                 local interaction_templates = require("scripts/settings/interaction/interaction_templates")
                 local template = interaction_templates[interaction_type]
                 if template and template.duration and template.duration > 0 then
@@ -166,8 +162,8 @@ Status.icons_glowing = {
     netted = "content/ui/materials/mission_board/circumstances/special_waves_03",
     ledge_hanging = "content/ui/materials/mission_board/circumstances/maelstrom_01",
     mutant_charged = "content/ui/materials/mission_board/circumstances/less_resistance_01",
-    dead = "content/ui/materials/icons/player_states/dead",
-    respawning = "content/ui/materials/icons/player_states/dead",
+    dead = "content/ui/materials/mission_board/circumstances/maelstrom_02",
+    respawning = "content/ui/materials/mission_board/circumstances/maelstrom_02",
     hogtied = "content/ui/materials/mission_board/circumstances/maelstrom_02",
     auspex = "content/ui/materials/icons/pocketables/hud/auspex_scanner",
     luggable = "content/ui/materials/icons/player_states/lugged",
@@ -187,7 +183,7 @@ Status.icons = {
     mutant_charged = "content/ui/materials/icons/circumstances/less_resistance_01",
     dead = "content/ui/materials/icons/player_states/dead",
     respawning = "content/ui/materials/icons/player_states/dead",
-    hogtied = "content/ui/materials/icons/circumstances/maelstrom_02",
+    hogtied = "content/ui/materials/hud/interactions/icons/environment_alert",
     auspex = "content/ui/materials/icons/pocketables/hud/auspex_scanner",
     luggable = "content/ui/materials/icons/player_states/lugged",
     healing = "content/ui/materials/hud/interactions/icons/respawn",

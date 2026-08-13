@@ -1,3 +1,4 @@
+---@class AutoMarkMod:DMFMod
 local mod                   = get_mod("AutoMark")
 local mod_name              = mod:localize("mod_name")
 

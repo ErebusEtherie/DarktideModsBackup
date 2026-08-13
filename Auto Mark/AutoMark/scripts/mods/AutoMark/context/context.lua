@@ -1,3 +1,4 @@
+---@class AutoMarkMod:DMFMod
 local mod        = get_mod("AutoMark")
 local context    = mod.context
 
@@ -27,6 +28,11 @@ local function get_companion_spawner_extension()
     return player and ScriptUnit.extension(player.player_unit, "companion_spawner_system")
 end
 
+local function get_player_ability_extension()
+    local player = Managers.player:local_player_safe(1)
+    return player and ScriptUnit.extension(player.player_unit, "ability_system")
+end
+
 -- Track Player
 local function init_player()
     local player = Managers.player:local_player_safe(1)
@@ -47,11 +53,13 @@ local function init_player_components(player_data_extension)
     end
 
     context.talent_resource_component = player_data_extension:read_component("talent_resource")
+    context.disabled_character_state_component = player_data_extension:read_component("disabled_character_state")
     mod:print_debug("Init talent_resource_component")
 end
 
 local function destroy_player_components()
     context.talent_resource_component = nil
+    context.disabled_character_state_component = nil
 end
 
 -- Track Player Extensions
@@ -64,14 +72,29 @@ local function init_player_extensions()
     if companion_spawner_extension then
         context.companion_spawner_extension = companion_spawner_extension
     end
+    local player_ability_extension = get_player_ability_extension()
+    if player_ability_extension then
+        context.player_ability_extension = player_ability_extension
+    end
+end
+
+local function init_hud_elements()
+    local hud = Managers.ui:get_hud()
+    local hud_element_smart_tagging = hud and hud:element("HudElementSmartTagging")
+    if hud_element_smart_tagging then
+        context.hud_element_smart_tagging = hud_element_smart_tagging
+    end
 end
 
 -- Talent Names
 local TALENT_NAMES                  = {
-    LONE_WOLF       = "adamant_disable_companion",
-    EXECUTION_ORDER = "adamant_execution_order",
-    FOCUS_TARGET    = "veteran_improved_tag",
-    FOCUSED_FIRE    = "veteran_improved_tag_more_damage",
+    LONE_WOLF          = "adamant_disable_companion",
+    EXECUTION_ORDER    = "adamant_execution_order",
+    FOCUS_TARGET       = "veteran_improved_tag",
+    FOCUSED_FIRE       = "veteran_improved_tag_more_damage",
+    FORCE_FIELD        = "cryptic_grenade_ability_force_field",
+    ARC_GRENADE        = "cryptic_grenade_ability_arc_grenade",
+    NOOSPHERIC_COMMAND = "cryptic_servo_skull_improved_tagging",
 }
 -- Talent Settings
 local talent_settings               = require("scripts/settings/talent/talent_settings")
@@ -89,22 +112,24 @@ local function init_player_talent_status(player_talent_extension)
     -- has companion
     context.has_companion = context.class_name == "adamant" and not talents[TALENT_NAMES.LONE_WOLF]
     -- has execution order
-    context.has_execution_order = context.class_name == "adamant"
-        and not not talents[TALENT_NAMES.EXECUTION_ORDER]
+    context.has_execution_order = context.class_name == "adamant" and not not talents[TALENT_NAMES.EXECUTION_ORDER]
     -- has focus target
-    context.has_focus_target = context.class_name == "veteran"
-        and not not talents[TALENT_NAMES.FOCUS_TARGET]
+    context.has_focus_target = context.class_name == "veteran" and not not talents[TALENT_NAMES.FOCUS_TARGET]
     -- has focused fire
     local has_focused_fire = not not talents[TALENT_NAMES.FOCUSED_FIRE]
     -- focus target max stacks
-    context.focus_target_max_stacks = context.class_name == "veteran" and context.has_focus_target
-        and (has_focused_fire and veteran_tag_max_stacks_talent or veteran_tag_max_stacks)
-        or 0
+    context.focus_target_max_stacks = context.class_name == "veteran" and context.has_focus_target and (has_focused_fire and veteran_tag_max_stacks_talent or veteran_tag_max_stacks) or 0
+
+    context.has_servo_skull = context.class_name == "cryptic" and not talents[TALENT_NAMES.FORCE_FIELD] and not talents[TALENT_NAMES.ARC_GRENADE]
+
+    context.has_noospheric_command = context.class_name == "cryptic" and not not talents[TALENT_NAMES.NOOSPHERIC_COMMAND]
 
     mod:print_debug("has companion", context.has_companion)
     mod:print_debug("has execution order", context.has_execution_order)
     mod:print_debug("has focus target", context.has_focus_target)
     mod:print_debug("focus target max stacks", context.focus_target_max_stacks)
+    mod:print_debug("has servo skull", context.has_servo_skull)
+    mod:print_debug("has noospheric command", context.has_noospheric_command)
 end
 
 -- Track Systems
@@ -117,6 +142,22 @@ local function init_systems()
     if outline_system then
         context.outline_system = outline_system
     end
+    local smoke_fog_system = Managers.state.extension and Managers.state.extension:system("smoke_fog_system")
+    if smoke_fog_system then
+        context.smoke_fog_system = smoke_fog_system
+    end
+    local force_field_system = Managers.state.extension and Managers.state.extension:system("force_field_system")
+    if force_field_system then
+        context.force_field_system = force_field_system
+    end
+    local broadphase_system = Managers.state.extension and Managers.state.extension:system("broadphase_system")
+    if broadphase_system then
+        context.broadphase_system = broadphase_system
+    end
+    local side_system = Managers.state.extension and Managers.state.extension:system("side_system")
+    if side_system then
+        context.side_system = side_system
+    end
 end
 
 -- Track Game Settings
@@ -128,12 +169,19 @@ function mod:init_game_settings()
     init_game_settings()
 end
 
+local INVALID_MODE_NAMES = {
+    training_grounds = true,
+    hub = true,
+    prologue_hub = true,
+}
 -- Check if player is in hub
-function mod:check_is_in_hub()
+function mod:check_game_mode()
     local game_mode_manager = Managers.state.game_mode
-    if game_mode_manager and not game_mode_manager:is_social_hub() and not game_mode_manager:is_prologue_hub() then
+    local game_mode_name = game_mode_manager and game_mode_manager:game_mode_name()
+    if game_mode_name and not INVALID_MODE_NAMES[game_mode_name] then
         context.game_mode_valid = true
     end
+    mod:print_debug("Game mode:", game_mode_name, context.game_mode_valid and "valid" or "invalid")
 end
 
 -- Init all params
@@ -144,6 +192,8 @@ function mod:init_context()
     init_player_components()
     -- Init Extensions
     init_player_extensions()
+    -- Init HUD Elements
+    init_hud_elements()
     -- Init Talents Status
     init_player_talent_status()
     -- Init Systems
@@ -228,6 +278,38 @@ mod:hook_safe(CLASS.CompanionSpawnerExtension, "destroy",
         end
     end)
 
+mod:hook_safe(CLASS.PlayerUnitAbilityExtension, "init",
+    function(self)
+        if self._player.viewport_name == "player1" then
+            mod:print_debug("Init PlayerUnitAbilityExtension")
+            context.player_ability_extension = self
+        end
+    end)
+
+mod:hook_safe(CLASS.PlayerUnitAbilityExtension, "delete",
+    function(self)
+        if self._player.viewport_name == "player1" then
+            mod:print_debug("Delete PlayerUnitAbilityExtension")
+            context.player_ability_extension = nil
+        end
+    end)
+
+-- Cache HUD Elements
+mod:hook_safe(CLASS.HudElementSmartTagging, "init",
+    function(self, parent, draw_layer, start_scale)
+        if self._parent._player_viewport_name == "player1" then
+            mod:print_debug("Init HudElementSmartTagging")
+            context.hud_element_smart_tagging = self
+        end
+    end)
+
+mod:hook_safe(CLASS.HudElementSmartTagging, "destroy",
+    function(self, ui_renderer)
+        if self._parent._player_viewport_name == "player1" then
+            mod:print_debug("Destroy HudElementSmartTagging")
+            context.hud_element_smart_tagging = nil
+        end
+    end)
 
 -- Update Talent Status
 mod:hook_safe(CLASS.PlayerUnitTalentExtension, "_apply_talents",
@@ -267,6 +349,54 @@ mod:hook_safe(CLASS.OutlineSystem, "destroy",
     function()
         mod:print_debug("Destroy OutlineSystem")
         context.outline_system = nil
+    end)
+
+mod:hook_safe(CLASS.SmokeFogSystem, "init",
+    function(self)
+        mod:print_debug("Init SmokeFogSystem")
+        context.smoke_fog_system = self
+    end)
+
+mod:hook_safe(CLASS.SmokeFogSystem, "destroy",
+    function()
+        mod:print_debug("Destroy SmokeFogSystem")
+        context.smoke_fog_system = nil
+    end)
+
+mod:hook_safe(CLASS.ForceFieldSystem, "init",
+    function(self)
+        mod:print_debug("Init ForceFieldSystem")
+        context.force_field_system = self
+    end)
+
+mod:hook_safe(CLASS.ForceFieldSystem, "destroy",
+    function()
+        mod:print_debug("Destroy ForceFieldSystem")
+        context.force_field_system = nil
+    end)
+
+mod:hook_safe(CLASS.BroadphaseSystem, "init",
+    function(self)
+        mod:print_debug("Init BroadphaseSystem")
+        context.broadphase_system = self
+    end)
+
+mod:hook_safe(CLASS.BroadphaseSystem, "destroy",
+    function()
+        mod:print_debug("Destroy BroadphaseSystem")
+        context.broadphase_system = nil
+    end)
+
+mod:hook_safe(CLASS.SideSystem, "init",
+    function(self)
+        mod:print_debug("Init SideSystem")
+        context.side_system = self
+    end)
+
+mod:hook_safe(CLASS.SideSystem, "destroy",
+    function()
+        mod:print_debug("Destroy SideSystem")
+        context.side_system = nil
     end)
 
 -- Update settings when input settings changed

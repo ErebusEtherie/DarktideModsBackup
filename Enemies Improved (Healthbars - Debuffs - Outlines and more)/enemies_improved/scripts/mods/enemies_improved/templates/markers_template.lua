@@ -5,6 +5,19 @@ local template = {}
 local BreedQueries = require("scripts/utilities/breed_queries")
 local minion_breeds = BreedQueries.minion_breeds_by_name()
 
+local MARKER_TYPE_ICONS = {
+	boss = "content/ui/materials/icons/difficulty/flat/difficulty_skull_damnation",
+	elite = "content/ui/materials/hud/interactions/icons/enemy_priority",
+	far = "content/ui/materials/icons/circumstances/assault_01",
+	special = "content/ui/materials/icons/difficulty/flat/difficulty_skull_uprising",
+	disabler = "content/ui/materials/icons/generic/exclamation_mark",
+	sniper = "content/ui/materials/icons/weapons/actions/ads",
+	captain = "content/ui/materials/icons/difficulty/flat/difficulty_skull_auric",
+	witch = "content/ui/materials/hud/icons/speaker",
+	shield = "content/ui/materials/hud/interactions/icons/void_shield",
+	horde = "content/ui/materials/icons/system/page_indicator_02_idle"
+}
+
 -----------------------------------------------------------------------
 -- Cached settings / constants
 -----------------------------------------------------------------------
@@ -34,7 +47,7 @@ local math_floor = math.floor
 template.name = "enemy_markers"
 template.unit_node = "root_point"
 template.min_distance = 0
-template.position_offset = { 0, 0, fs.marker_y_offset }
+template.position_offset = { 0, 0, fs.hb_y_offset }
 
 template.size = size
 template.icon_size = icon_size
@@ -100,6 +113,9 @@ template.fade_settings = {
 
 -- Fatshark typo: world markers expect `create_widget_defintion`
 template.create_widget_defintion = function(template, scenegraph_id)
+	local fs = mod.frame_settings
+	local mkr_y_offset = fs.marker_y_offset * 100 or 0
+
 	return UIWidget.create_definition({
 		{
 			pass_type = "texture",
@@ -112,21 +128,21 @@ template.create_widget_defintion = function(template, scenegraph_id)
 				size = background_size,
 				default_size = background_size,
 
-				offset = { 0, 0, 1 },
-				default_offset = { 0, 0, 1 },
+				offset = { 0, mkr_y_offset, 1 },
+				default_offset = { 0, mkr_y_offset, 1 },
 
 				color = fs.marker_bg_colour,
 				default_alpha = fs.marker_bg_colour[1],
 			},
 			change_function = function(content, style)
-				if not fs.markers_health_enable then
-					content.background = "content/ui/materials/icons/system/page_indicator_02_idle"
-				else
+				if fs.marker_visual_style == "simple_health" then
 					content.background = "content/ui/materials/hud/interactions/frames/point_of_interest_back"
+				else
+					content.background = "content/ui/materials/icons/system/page_indicator_02_idle"
 				end
 			end,
 			visibility_function = function(content, style)
-				return content.m_built
+				return content.m_built and fs.marker_visual_style ~= "type_icon"
 			end,
 		},
 
@@ -142,8 +158,8 @@ template.create_widget_defintion = function(template, scenegraph_id)
 				size = { background_size[1] / 2, background_size[2] / 2 },
 				default_size = { background_size[1] / 2, background_size[2] / 2 },
 
-				offset = { 0, 0, 2 },
-				default_offset = { 0, 0, 2 },
+				offset = { 0, mkr_y_offset, 2 },
+				default_offset = { 0, mkr_y_offset, 2 },
 
 				color = { 200, 220, 0, 0 },
 				default_alpha = 200,
@@ -182,7 +198,7 @@ template.create_widget_defintion = function(template, scenegraph_id)
 			end,
 
 			visibility_function = function(content, style)
-				return fs.markers_health_enable and content.m_built
+				return fs.marker_visual_style == "simple_health" and content.m_built
 			end,
 		},
 
@@ -197,8 +213,8 @@ template.create_widget_defintion = function(template, scenegraph_id)
 				size = size,
 				default_size = size,
 
-				offset = { 0, 0, 5 },
-				default_offset = { 0, 0, 5 },
+				offset = { 0, mkr_y_offset, 5 },
+				default_offset = { 0, mkr_y_offset, 5 },
 
 				color = { 0, 255, 255, 255 },
 				default_alpha = 0,
@@ -218,8 +234,8 @@ template.create_widget_defintion = function(template, scenegraph_id)
 				size = ping_size,
 				default_size = ping_size,
 
-				offset = { 0, 0, 0 },
-				default_offset = { 0, 0, 0 },
+				offset = { 0, mkr_y_offset, 0 },
+				default_offset = { 0, mkr_y_offset, 0 },
 
 				color = { 255, 255, 255, 255 },
 				default_alpha = 255,
@@ -239,8 +255,8 @@ template.create_widget_defintion = function(template, scenegraph_id)
 				size = icon_size,
 				default_size = icon_size,
 
-				offset = { 0, 0, 3 },
-				default_offset = { 0, 0, 3 },
+				offset = { 0, mkr_y_offset, 3 },
+				default_offset = { 0, mkr_y_offset, 3 },
 
 				color = { 0, 200, 175, 0 },
 				default_alpha = 0,
@@ -260,8 +276,8 @@ template.create_widget_defintion = function(template, scenegraph_id)
 				size = arrow_size,
 				default_size = arrow_size,
 
-				offset = { 0, 0, 2 },
-				default_offset = { 0, 0, 2 },
+				offset = { 0, mkr_y_offset, 2 },
+				default_offset = { 0, mkr_y_offset, 2 },
 
 				color = { 255, 255, 255, 255 },
 				default_alpha = 255,
@@ -273,6 +289,32 @@ template.create_widget_defintion = function(template, scenegraph_id)
 				style.angle = content.angle
 			end,
 		},
+		{
+			pass_type = "texture",
+			style_id = "type_icon",
+			value = "content/ui/materials/icons/system/page_indicator_02_idle",
+			value_id = "type_icon",
+			style = {
+				horizontal_alignment = "center",
+				vertical_alignment = "center",
+				size = icon_size,
+				default_size = icon_size,
+
+				offset = { 0, mkr_y_offset, 4 },
+				default_offset = { 0, mkr_y_offset, 4 },
+
+				color = { 255, 255, 255, 255 },
+				default_alpha = 255,
+			},
+			change_function = function(content, style)
+				if content.type_icon_path then
+					content.type_icon = content.type_icon_path
+				end
+			end,
+			visibility_function = function(content, style)
+				return fs.marker_visual_style == "type_icon" and content.m_built and content.marker_type_icon_show
+			end,
+		},
 	}, scenegraph_id)
 end
 
@@ -280,13 +322,21 @@ end
 -- Lifecycle
 -----------------------------------------------------------------------
 
-template.on_enter = function(widget, marker, template)
-	template.position_offset = { 0, 0, fs.marker_y_offset }
-	widget.alpha_multiplier = 0
-	local content = widget.content
-	content.m_built = false
+local Unit_alive = Unit.alive
 
-	marker.draw = false -- force hidden until ready...
+template.on_enter = function(widget, marker, template)
+	local content = widget.content
+	local fs = mod.frame_settings
+
+	if not marker.unit or not Unit_alive(marker.unit) then
+		content.draw_mkr = false
+		content.m_built = false
+		return
+	end
+
+	template.position_offset = { 0, 0, fs.hb_y_offset }
+	content.m_built = false
+	content.draw_mkr = false -- force hidden until ready...
 
 	local unit = marker.unit
 	content.unit = unit
@@ -298,7 +348,7 @@ template.on_enter = function(widget, marker, template)
 	content.breed_settings = content.breed and minion_breeds[content.breed.name]
 
 	if content.breed and content.breed.name then
-		content.healthbar_enabled = mod:get("healthbar_" .. content.breed.name .. "_enable")
+		content.healthbar_enabled = fs.breed_healthbar_enabled[content.breed.name]
 	end
 
 	content.m_allowed = true
@@ -306,7 +356,7 @@ template.on_enter = function(widget, marker, template)
 	local enemy_individual = content.breed and content.breed.name
 
 	if enemy_individual then
-		local enabled = mod:get("markers_" .. enemy_individual .. "_toggle")
+		local enabled = fs.breed_marker_toggle and fs.breed_marker_toggle[enemy_individual] or nil
 
 		if enabled ~= nil then
 			content.m_allowed = enabled
@@ -315,7 +365,6 @@ template.on_enter = function(widget, marker, template)
 
 	content.special_attack_imminent = false
 
-	local fs = mod.frame_settings
 	max_size_value = 32 * fs.marker_size
 	size[1], size[2] = max_size_value, max_size_value
 	ping_size[1], ping_size[2] = max_size_value, max_size_value
@@ -339,31 +388,66 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 		return
 	end
 
-	-- if not on screen or draw == false, throttle heavily....
-	if not marker.is_inside_frustum or marker.draw == false then
-		widget._next_update = t + fs.off_screen_throttle_rate
-		return
-	-- distance based updates
-	elseif marker.distance < 50 then
-		widget._next_update = t + fs.general_throttle_rate
-	elseif marker.distance < 70 then
-		widget._next_update = t + fs.general_throttle_rate * 1.5
-	else
-		widget._next_update = t + fs.general_throttle_rate * 2
-	end
-
 	local content = widget.content
 	local distance = content.distance or 0
-	local data = marker.data
 	local unit = marker.unit
 	local style = widget.style
 	local marker_scale = marker.scale
 
-	if not unit then
-		marker.draw = false
-		marker.alpha_multiplier = 0
-		widget.alpha_multiplier = 0
-		marker.remove = true
+	-- if not on screen or draw == false, throttle heavily....
+	if not marker.is_inside_frustum or content.draw_mkr == false then
+		widget._next_update = t + fs.off_screen_throttle_rate
+	-- distance based updates
+	elseif marker.distance < 50 then
+		widget._next_update = t + fs.general_throttle_rate
+	elseif marker.distance < 70 then
+		widget._next_update = t + fs.general_throttle_rate * 2
+	else
+		widget._next_update = t + fs.general_throttle_rate * 3
+	end
+
+	local entry = mod.enemy_cache[unit]
+
+	if not unit or not Unit_alive(unit) then
+		content.draw_mkr = false
+		content.m_built = false
+		return
+	end
+
+	local breed_name = entry and entry.breed_name
+	local breed_type = entry and entry.breed_type
+
+	local override_enabled = nil
+
+	-- group override
+	if breed_type then
+		local enabled = fs.breed_marker_type_enabled and fs.breed_marker_type_enabled[breed_type] or nil
+
+		if enabled ~= nil then
+			override_enabled = enabled
+		end
+	end
+
+	-- individual override
+	if breed_name then
+		local enabled = fs.breed_marker_toggle and fs.breed_marker_toggle[breed_name] or nil
+
+		if enabled and enabled == true then
+			override_enabled = enabled
+		end
+	end
+
+	-- Horde filter
+	if entry and entry.is_horde and not fs.markers_horde_enable and not override_enabled then
+		content.draw_mkr = false
+		content.m_built = false
+		return
+	end
+
+	-- Non-horde filter (elites, specials, monsters, etc.)
+	if entry and not entry.is_horde and not fs.markers_non_horde_enable and not override_enabled then
+		content.draw_mkr = false
+		content.m_built = false
 		return
 	end
 
@@ -376,37 +460,44 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 	local style = widget.style
 
 	if content.m_allowed == false then
-		marker.draw = false
-		marker.alpha_multiplier = 0
-		widget.alpha_multiplier = 0
-		marker.remove = true
+		content.draw_mkr = false
+		content.m_built = false
 		return
 	end
 
 	local is_alive = mod.detect_alive(unit)
 
 	if not is_alive then
-		marker.draw = false
-		marker.alpha_multiplier = 0
-		widget.alpha_multiplier = 0
-		marker.remove = true
+		content.draw_mkr = false
+		content.m_built = false
 		return
 	end
 
-	-- marker height
-	if content.breed and is_alive then
-		local root_position = Unit.world_position(unit, 1)
+	if is_alive then
+		local marker_display = fs.marker_display_option or "always_show"
 
-		if mod.frame_settings.healthbar_enable then
-			root_position.z = root_position.z + content.breed.base_height + 0.1
-		else
-			root_position.z = root_position.z + content.breed.base_height + 0.5
-		end
+		if marker_display ~= "always_show" then
+			local time_since_last_damage = t - (content.last_damage_taken_time or 0)
 
-		if not marker.world_position then
-			marker.world_position = Vector3Box(root_position)
-		else
-			marker.world_position:store(root_position)
+			local health_ext = content.health_extension
+			if not health_ext then
+				health_ext = ScriptUnit_has_extension(unit, "health_system")
+				content.health_extension = health_ext
+			end
+
+			-- Only show if they ARE damaged
+			if marker_display == "hide_unless_damaged" and time_since_last_damage > 5 then
+				content.draw_mkr = false
+				content.m_built = false
+				return
+			end
+
+			-- Hide if they are damaged
+			if marker_display == "hide_when_damaged" and time_since_last_damage < 5 then
+				content.draw_mkr = false
+				content.m_built = false
+				return
+			end
 		end
 	end
 
@@ -439,7 +530,11 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 		local breed_settings = content.breed_settings
 		if breed_settings then
 			local tags = breed_settings.tags
-			local individual_breed_type = mod.find_breed_category_by_tags(tags)
+			local individual_breed_type = mod.find_breed_category_by_tags(tags, enemy_individual)
+
+			--if breed_settings.name == "renegade_vanguard" or breed_settings.name == "cultist_vanguard" then
+			--	individual_breed_type = "elite"
+			--end
 
 			if individual_breed_type == content.breed_type then
 				if content.healthbar_enabled then
@@ -456,7 +551,7 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 
 	-- adjust colour of overhead marker to healthbar colour
 	if fs.overhead_marker_uses_healthbar_colour then
-		if fs.markers_health_enable then
+		if fs.marker_visual_style == "simple_health" then
 			style.marker_health.color[2] = bar_color[2]
 			style.marker_health.color[3] = bar_color[3]
 			style.marker_health.color[4] = bar_color[4]
@@ -475,30 +570,19 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 	if entry and fs.marker_specials_enable and entry.alert_outline then
 		content.special_attack_imminent = true
 
-		local sr = (mod:get("outline_specials_colour_R"))
-		local sg = (mod:get("outline_specials_colour_G"))
-		local sb = (mod:get("outline_specials_colour_B"))
+		local spec_col = fs.outline_specials_colour
+		style.arrow.color[2] = spec_col[2]
+		style.arrow.color[3] = spec_col[3]
+		style.arrow.color[4] = spec_col[4]
 
-		if not sr then
-			sr = 255
-		end
-		if not sg then
-			sg = 0
-		end
-		if not sb then
-			sb = 0
-		end
-
-		style.arrow.color[2] = sr
-		style.arrow.color[3] = sg
-		style.arrow.color[4] = sb
-
-		style.background.color[2] = sr
-		style.background.color[3] = sg
-		style.background.color[4] = sb
+		style.background.color[2] = spec_col[2]
+		style.background.color[3] = spec_col[3]
+		style.background.color[4] = spec_col[4]
 	else
 		--content.is_clamped = false
-		content.special_attack_imminent = false
+	content.special_attack_imminent = false
+	content.marker_type_icon_show = false
+	content.type_icon_path = nil
 
 		style.arrow.color[2] = 255
 		style.arrow.color[3] = 255
@@ -508,17 +592,42 @@ template.update_function = function(parent, ui_renderer, widget, marker, templat
 		style.marker_health.size[2] = (background_size[2] / 2) * marker_scale
 	end
 
-	content.line_of_sight_progress = line_of_sight_progress
-	widget.alpha_multiplier = line_of_sight_progress or 1
-	marker.alpha_multiplier = line_of_sight_progress or 1
+	-----------------------------------------------------------------------
+	-- Enemy type icon on overhead marker (non-boss enemies)
+	-----------------------------------------------------------------------
+	content.marker_type_icon_show = true
 
-	if not marker.is_inside_frustum then
-		marker.draw = false
-		marker.alpha_multiplier = 0
-		widget.alpha_multiplier = 0
+	if fs.marker_visual_style == "type_icon" then
+		local icon_breed_type = breed_type or content.breed_type
+
+		if icon_breed_type and icon_breed_type ~= "monster" and icon_breed_type ~= "horde" then
+			local icon_settings = mod.ICON_SETTINGS[icon_breed_type]
+			local icon_path = MARKER_TYPE_ICONS[icon_breed_type]
+
+			if icon_settings and icon_settings.enabled and icon_path then
+				--content.marker_type_icon_show = true
+				content.type_icon_path = icon_path
+				content.type_icon = icon_path
+
+				local icon_color = mod.ICON_COLOURS[icon_breed_type]
+				if icon_color then
+					style.type_icon.color[2] = icon_color[2]
+					style.type_icon.color[3] = icon_color[3]
+					style.type_icon.color[4] = icon_color[4]
+				end
+			end
+		end
 	end
 
-	if marker.draw then
+	if not marker.is_inside_frustum then
+		content.draw_mkr = false
+		content.m_built = false
+		return
+	end
+
+	content.draw_mkr = true
+
+	if content.draw_mkr then
 		content.m_built = true
 	else
 		content.m_built = false

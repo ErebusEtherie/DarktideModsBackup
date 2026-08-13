@@ -7,58 +7,25 @@ return {
 	options = {
 		widgets = {
 			{
-				setting_id = "shorten_myself",
-				type = "checkbox",
-				default_value = true,
-			},
-		{
-			setting_id = "shorten_teammates",
-			type = "checkbox",
-			default_value = true,
-		},
-		{
-			setting_id = "only_in_gameplay",
-			type = "checkbox",
-			default_value = false,
-		},
-			{
-				setting_id = "header_character",
+				setting_id = "general_settings",
 				type = "group",
+				tab = "General",
 				sub_widgets = {
 					{
-						setting_id = "enable_shorten_character_name",
+						setting_id = "shorten_myself",
 						type = "checkbox",
 						default_value = true,
 					},
 					{
-						setting_id = "max_length",
-						type = "numeric",
-						default_value = 15,
-						range = {5, 30},
-					},
-				},
-			},
-			{
-				setting_id = "header_account",
-				type = "group",
-				sub_widgets = {
-					{
-						setting_id = "enable_shorten_account_name",
+						setting_id = "shorten_teammates",
 						type = "checkbox",
 						default_value = true,
 					},
 					{
-						setting_id = "max_length_account_name",
-						type = "numeric",
-						default_value = 15,
-						range = {5, 30},
+						setting_id = "only_in_gameplay",
+						type = "checkbox",
+						default_value = false,
 					},
-				},
-			},
-			{
-				setting_id = "header_formatting",
-				type = "group",
-				sub_widgets = {
 					{
 						setting_id = "truncation_string",
 						type = "dropdown",
@@ -72,8 +39,49 @@ return {
 							{text = "truncation_option_none", value = ""},
 						},
 					},
-				},
+				}
 			},
-		},
-	},
+			{
+				setting_id = "length_settings",
+				type = "group",
+				tab = "Lengths",
+				sub_widgets = {
+					{
+						setting_id = "header_character",
+						type = "group",
+						sub_widgets = {
+							{
+								setting_id = "enable_shorten_character_name",
+								type = "checkbox",
+								default_value = true,
+							},
+							{
+								setting_id = "max_length",
+								type = "numeric",
+								default_value = 20,
+								range = {1, 30},
+							},
+						},
+					},
+					{
+						setting_id = "header_account",
+						type = "group",
+						sub_widgets = {
+							{
+								setting_id = "enable_shorten_account_name",
+								type = "checkbox",
+								default_value = true,
+							},
+							{
+								setting_id = "max_length_account_name",
+								type = "numeric",
+								default_value = 20,
+								range = {1, 30},
+							},
+						},
+					},
+				}
+			}
+		}
+	}
 }

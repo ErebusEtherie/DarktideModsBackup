@@ -40,6 +40,8 @@ local SUB_SEQUENCE = {
     sprint_heavy_attack = { "start_attack", "sprint_heavy_attack" },
     block = { "block", "idle" },
     special_action = { "special_action", "idle" },
+    special_heavy = { "special_start_attack", "special_heavy_execute", "idle" },
+    special_invert = { "special_invert", "idle" },
     push = { "block", "push", "idle" },
     push_attack = { "block", "push", "push_follow_up" },
     wield = { "quick_wield" },
@@ -164,7 +166,6 @@ SkitariusEngram.new_engram = function(self, bind_name_or_temp_data, temp_or_nil)
                 end
             end
         end
-
         self.COMMANDS = expanded_queue
         self.SETTINGS = engram_settings
         self.TEMP = false

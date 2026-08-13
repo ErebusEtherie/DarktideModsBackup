@@ -322,7 +322,7 @@ mod:hook_safe(CLASS.StoreItemDetailView, "_present_bundle", function(self)
 
 	-- change camera to full body view
 	local breed_name = self._presentation_profile and self._presentation_profile.archetype.breed or "human"
-	local default_camera_settings = self._breeds_default_camera_settings[breed_name]
+	local default_camera_settings = self:_default_camera_settings()
 	self:_set_initial_viewport_camera_position(default_camera_settings)
 end)
 
@@ -437,15 +437,16 @@ end
 -- override generate spawn profile to include account's other characters for previewing
 mod._generate_spawn_profile = function(self, item, optional_specific_profile)
 	if item then
-		local profile = StoreItemDetailView._generic_profile_from_item(self, item)
+		local player = self:_player()
+		local base_profile = self._preview_profile or player:profile()
+		local profile = StoreItemDetailView._generate_mannequin_profile(self, base_profile, item)
 
 		self._preview_profile = profile
-		self._mannequin_loadout = StoreItemDetailView._generate_mannequin_loadout(self, profile, item)
+		self._mannequin_loadout = profile.loadout
 		self._default_mannequin_loadout = table.clone_instance(self._mannequin_loadout)
 		self._mannequin_profile = table.clone_instance(profile)
 		self._mannequin_profile.loadout = self._mannequin_loadout
 
-		local player = self:_player()
 		local player_profile = player:profile()
 
 		if optional_specific_profile then
@@ -545,6 +546,8 @@ mod.get_archetype_symbol = function(archetype)
 		archetype_symbol = ""
 	elseif archetype.name == "broker" then
 		archetype_symbol = ""
+	elseif archetype.name == "cryptic" then
+		archetype_symbol = ""
 	end
 
 	return archetype_symbol
@@ -612,6 +615,7 @@ StoreItemDetailView._setup_side_panel = function(self, element)
 			local restrictions_text
 			local present_restrictions
 			local hide_restrictions = false
+
 			-- Go through bundle items, and get the restrictions
 			for _, item_data in pairs(self._items) do
 				item = item_data.item
@@ -627,21 +631,31 @@ StoreItemDetailView._setup_side_panel = function(self, element)
 					local item_type
 					if item.__master_item then
 						item_type = item.__master_item.item_type
-					elseif item then
+					elseif item and item.slot_weapon_skin and item.slot_weapon_skin.__master_item then
 						item_type = item.slot_weapon_skin.__master_item.item_type
 						hide_restrictions = true
+					else
+						local real_item = item_data.real_item
+						if real_item and real_item.__master_item and real_item.__master_item.item_type then
+							item_type = real_item.__master_item.item_type
+						end
 					end
 
-					if item_type == "GEAR_HEAD" then
-						slot_list[#slot_list + 1] = Localize("slot_head")
-					elseif item_type == "GEAR_LOWERBODY" then
-						slot_list[#slot_list + 1] = Localize("slot_legs")
-					elseif item_type == "GEAR_UPPERBODY" then
-						slot_list[#slot_list + 1] = Localize("slot_body")
-					elseif item_type == "WEAPON_SKIN" then
-						slot_list[#slot_list + 1] = Localize("slot_weapon")
-					elseif item_type == "GEAR_EXTRA_COSMETIC" then
-						slot_list[#slot_list + 1] = Localize("slot_extra")
+					if item_type then
+						if item_type == "GEAR_HEAD" then
+							slot_list[#slot_list + 1] = Localize("slot_head")
+						elseif item_type == "GEAR_LOWERBODY" then
+							slot_list[#slot_list + 1] = Localize("slot_legs")
+						elseif item_type == "GEAR_UPPERBODY" then
+							slot_list[#slot_list + 1] = Localize("slot_body")
+						elseif item_type == "WEAPON_SKIN" then
+							slot_list[#slot_list + 1] = Localize("slot_weapon")
+						elseif item_type == "GEAR_EXTRA_COSMETIC" then
+							slot_list[#slot_list + 1] = Localize("slot_extra")
+						elseif item_type == "WEAPON_TRINKET" then
+							slot_list[#slot_list + 1] = Localize("slot_weapon_trinket")
+							hide_restrictions = true
+						end
 					end
 					bundle_restrictions[restrictions_text] = slot_list
 				end
@@ -795,7 +809,7 @@ end
 -- Add buttons to swap preview characters
 StoreItemDetailView._setup_input_legend = function(self)
 	self._input_legend_element = self:_add_element(ViewElementInputLegend, "input_legend", 10)
-
+	dbg_s = self
 	local legend_inputs = Definitions.legend_inputs
 
 	for i = 1, #legend_inputs do
@@ -837,14 +851,29 @@ mod.cycle_preview_operative = function(self)
 		is_bundle = true
 	end
 
+	local item
+	if self._items then
+		if self._items[1].item and self._items[1].item.__master_item then
+			item = self._items[1].item.__master_item
+		elseif self._items[1].item then
+			item = self._items[1].item
+		elseif self._items[1].real_item and self._items[1].real_item.__master_item then
+			item = self._items[1].real_item.__master_item
+		end
+	elseif self._context and self._context.preview_item then
+		item = self._context.preview_item
+	elseif self._preview_item then
+		item = self._preview_item
+	end
+
 	-- set allowed characters for entire bundle (only characters that ALL items in the bundle can be shown on)
-	if is_bundle and self._items then
+	if is_bundle and item then
 		local temp_arch
-		if self._items then
-			if self._items[1].item and self._items[1].item.__master_item then
-				temp_arch = self._items[1].item.__master_item.archetypes
-			elseif self._items[1].item then
-				temp_arch = self._items[1].item.archetypes
+		if item then
+			if item and item.__master_item then
+				temp_arch = item.__master_item.archetypes
+			elseif item then
+				temp_arch = item.archetypes
 			end
 		elseif self._context and self._context.preview_item then
 			temp_arch = self._context.preview_item.archetypes
@@ -870,16 +899,16 @@ mod.cycle_preview_operative = function(self)
 				end
 			end
 
-			allowed_archetypes = common_class
+			allowed_archetypes = temp_arch
 		end
 	end
 
 	if not is_bundle then
-		if self._items then
-			if self._items[1].item and self._items[1].item.__master_item then
-				allowed_archetypes = self._items[1].item.__master_item.archetypes
-			elseif self._items[1].item then
-				allowed_archetypes = self._items[1].item.archetypes
+		if item then
+			if item.__master_item then
+				allowed_archetypes = item.__master_item.archetypes
+			elseif item then
+				allowed_archetypes = item.archetypes
 			end
 		elseif self._context and self._context.preview_item then
 			allowed_archetypes = self._context.preview_item.archetypes
@@ -965,11 +994,18 @@ mod.has_multiple_operatives = function(self)
 			item = self._items[1].item.__master_item
 		elseif self._items[1].item then
 			item = self._items[1].item
+		elseif self._items[1].real_item and self._items[1].real_item.__master_item then
+			item = self._items[1].real_item.__master_item
 		end
 	elseif self._context and self._context.preview_item then
 		item = self._context.preview_item
 	elseif self._preview_item then
 		item = self._preview_item
+	end
+
+	-- Early return if item is a weapon trinket (not shown on characters)
+	if item and item.item_type == "weapon_trinket" then
+		return false
 	end
 
 	-- disable swapping operatives on bundles with different item restrictions
@@ -996,7 +1032,7 @@ mod.has_multiple_operatives = function(self)
 				end
 			end
 
-			if all_contain then
+			if all_contain and item.archetypes then
 				for i, class in pairs(item.archetypes) do
 					if string.find(rest1:lower(), class:lower()) then
 						common_class[1] = class
@@ -1006,7 +1042,7 @@ mod.has_multiple_operatives = function(self)
 		end
 
 		if item then
-			local allowed_archetypes = common_class
+			local allowed_archetypes = item.archetypes
 			local allowed_characters = {}
 
 			local find_in_table = function(search, table)

@@ -122,7 +122,7 @@ local CONFIG = {
 		Stamina_c_r =	"Ausdauerkosten",
 	},
 	toughness_text_colour = {
-		TDR =			"TDSR",
+		TDR =			"WSSR",
 		TGHN =			"WIDER",
 		Tghns_dmg =		"Widerstandsschaden",
 		Tghns_dmg_red =	"Widerstandsschadensreduktion",

@@ -75,11 +75,12 @@ local function create_radius_decal(self)
     local position = Unit.local_position(unit, 1)
 
     if not Managers.package:has_loaded(PACKAGE_NAME) then
-        Managers.package:load(PACKAGE_NAME, "clear_smoke", function()
-            spawn_radius_decal(position, world, duration)
-        end)
-    else
-        spawn_radius_decal(position, world, duration)
+		local position_box = Vector3Box(position)
+		Managers.package:load(PACKAGE_NAME, "clear_smoke", function()
+			spawn_radius_decal(position_box:unbox(), world, duration)
+		end)
+	else
+		spawn_radius_decal(position, world, duration)
     end
 end
 
@@ -162,8 +163,9 @@ mod:hook("SmokeFogSystem", "update", function(func, self, context, dt, t, ...)
             extension.is_expired = false
         end
 
-        if is_server and remaining_duration <= -DELETE_AFTER_DURATION_TIMER then
+        if is_server and remaining_duration <= -DELETE_AFTER_DURATION_TIMER and not extension.marked_for_deletion then
             Managers.state.unit_spawner:mark_for_deletion(unit)
+			extension.marked_for_deletion = true
         end
     end
 

@@ -87,6 +87,25 @@ local function _best_voice_for_group(group_key, voices)
     return voices[1]
 end
 
+local function _speaker_short_label(voice_profile)
+    if type(voice_profile) ~= "string" or voice_profile == "" then
+        return mod:localize("label_unknown_voice")
+    end
+
+    local SpeakerVoiceSettings = mod.try_require("scripts/settings/dialogue/dialogue_speaker_voice_settings")
+    local s = SpeakerVoiceSettings and SpeakerVoiceSettings[voice_profile]
+
+    if type(s) == "table" then
+        local short_label = mod.try_localize_loc_key(s.short_name)
+        if short_label then return short_label end
+
+        local fallback_label = mod.try_localize_loc_key(s.full_name or s.display_name or s.name)
+        if fallback_label then return fallback_label end
+    end
+
+    return voice_profile
+end
+
 local function _register_voice_mapping(map, voice, canonical_key)
     map[voice] = canonical_key
     local stripped = mod.strip_past_prefix(voice)
@@ -151,7 +170,6 @@ local function _pick_smaller_minor_group(source_key, source_pool_size, match_key
     return best_key or source_key
 end
 
--- Performance Impact: Moderate (runs only once during initial mod setup).
 mod.zipit2_build_npcs = function(D)
     do
         local MissionGiverVoSettings = mod.try_require("scripts/settings/dialogue/mission_giver_vo_settings") or {}
@@ -236,6 +254,7 @@ mod.zipit2_build_npcs = function(D)
 
             local best = _best_voice_for_group(key, out)
             g.label = best and mod.speaker_label(best) or key
+            g.short_label = best and _speaker_short_label(best) or g.label or key
         end
 
         local major_keys = mod.sorted_list_from_set(major_classes_set)
@@ -426,3 +445,4 @@ mod.zipit2_build_npcs = function(D)
         D.minor_voice_to_group = minor_voice_to_group
     end
 end
+

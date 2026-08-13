@@ -2,8 +2,11 @@
 -- HIVE SCUM TALENT MODULE -- МОДУЛЬ ТАЛАНТОВ ОТРЕБЬЯ УЛЬЯ
 
 local mod = get_mod("Enhanced_descriptions")
+
+-- Using cached utilities - Используем кэшированные утилиты
 local Utils = mod.get_utils()
 
+-- Importing all necessary functions and constants - Импорт всех нужных функций и констант
 local create_template = Utils.create_template
 local loc_text = Utils.loc_text
 local CKWord = Utils.CKWord
@@ -14,7 +17,7 @@ local Dot_nc = Utils.DOT_NC or "•"
 local Dot_red = Utils.DOT_RED or "•"
 local Dot_green = Utils.DOT_GREEN or "•"
 
--- LOCALIZATION OF HIVE SCUM TALENTS -- ЛОКАЛИЗАЦИИ ТАЛАНТОВ ОТРЕБЬЯ УЛЬЯ
+-- Localization of hive Scum talents -- Локализации талантов отребья улья
 local scum_localizations = {
 --[+ ++HIVE SCUM - ОТРЕБЬЕ УЛЬЯ++ +]--
 --[+ +BLITZ - БЛИЦ+ +]--
@@ -36,6 +39,13 @@ local scum_localizations = {
 			-- .."\n"
 			..Dot_green.." "..CKWord("Ошеломляет", "Oshelomlaet_rgb_ru").." всех врагов, кроме мутантов, чудовищ, сестры из близнецов и капитанов только без пустотного щита.\n"
 			..Dot_nc.." Все гранаты пополняются из подобранного ящика гранат.", -- Ослепитель
+		["zh-tw"] = "快速使用的手雷，"..CKWord("踉蹌", "Staggers_rgb_tw").." 敵人。\n"
+			.."\n"
+			..Dot_green.." 每 "..CNumb("12.5", "n_12_5_rgb").." 米內擊殺 {num_kills:%s} 次補充 {num_charges:%s} 個手雷，最多 {max_charges:%s} 個。\n"
+			..Dot_nc.." 最大爆炸半徑： "..CNumb("3.5", "n_3_5_rgb").." 米。\n"
+			.."\n"
+			..Dot_green.." "..CKWord("踉蹌", "Staggers_rgb_tw").." 除變種人、巨獸、雙子和沒有虛空盾的隊長以外所有敵人。\n"
+			..Dot_nc.." 拾取手雷時補充全部。",
 	},
 	--[+ BLITZ 1 - Blackout +]--	26.03.2026
 	["loc_talent_broker_blitz_flash_grenade_improved_desc"] = { -- Grenade(s)->Grenade, num_kills: 20, num_charges: 1, max_charges: 5, talent_name: Blinder, +colors
@@ -57,6 +67,14 @@ local scum_localizations = {
 			.."\n"
 			..Dot_green.." "..CKWord("Ошеломляет", "Oshelomlaet_rgb_ru").." всех врагов, кроме мутантов, чудовищ, сестры из близнецов и капитанов только без пустотного щита.\n"
 			..Dot_nc.." Все гранаты пополняются из подобранного ящика гранат.", -- Затмение
+		["zh-tw"] = "快速使用的手雷，"..CKWord("踉蹌", "Staggers_rgb_tw").." 敵人。\n"
+			..Dot_green.." 為 {talent_name:%s} 的增強版本。\n"
+			.."\n"
+			..Dot_green.." 每 "..CNumb("12.5", "n_12_5_rgb").." 米內擊殺 {num_kills:%s} 次補充 {num_charges:%s} 個手雷，最多 {max_charges:%s} 個。\n"
+			..Dot_nc.." 最大爆炸半徑： "..CNumb("3.5", "n_3_5_rgb").." 米。\n"
+			.."\n"
+			..Dot_green.." "..CKWord("踉蹌", "Staggers_rgb_tw").." 除變種人、巨獸、雙子和沒有虛空盾的隊長以外所有敵人。\n"
+			..Dot_nc.." 拾取手雷時補充全部。",
 	},
 	--[+ BLITZ 2 - Boom Bringer +]--	26.03.2026
 	["loc_talent_broker_blitz_missile_launcher_desc"] = { -- max_charges: , +colors
@@ -107,6 +125,17 @@ local scum_localizations = {
 			.."\n"
 			..Dot_green.." Очень высокое "..CKWord("ошеломление", "oshelomlenie_rgb_ru").." против всех врагов, кроме мутантов, близнецов и капитанов без пустотного щита.\n"
 			..Dot_nc.." Все заряды пополняются из подобранного ящика гранат.", -- Бабахер
+		["zh-tw"] = "高功率火箭發射器。\n"
+			.."\n"
+			..Dot_nc.." 最多彈藥：{max_charges:%s}。最大爆炸半徑： "..CNumb("7", "n_7_rgb").." 米。\n"
+			.."\n"
+			..Dot_nc.." 射擊基礎"..CKWord("傷害", "Damage_rgb_tw").."： "..CNumb("1800", "n_1800_rgb").."。\n"
+			..Dot_green.." 無視城牆護盾。\n"
+			..CPhrs("Cant_Crit")
+			.."\n"
+			..Dot_green.." 爆炸基礎"..CKWord("傷害", "Damage_rgb_tw").."：["..CNumb("2800", "n_2800_rgb").." - "..CNumb("1300", "n_1300_rgb").."]。\n"
+			..Dot_green.." 除變種人、隊長/雙子（沒有虛空盾）外，對所有敵人造成极高"..CKWord("踉蹌", "Stagger_rgb_tw").."。\n"
+			..Dot_nc.." 拾取手雷時補充全部火箭。",
 	},
 	--[+ BLITZ 3 - Chem Grenade +]--	26.03.2026
 	["loc_talent_broker_blitz_tox_grenade_desc_02"] = { -- toxin: Chem Toxin, max_charges: 3, +colors
@@ -160,6 +189,22 @@ local scum_localizations = {
 			..Dot_green.." Базовый "..CKWord("урон", "uron_rgb_ru").." от взрыва: ["..CNumb("200", "n_200_rgb").."-"..CNumb("100", "n_100_rgb").."].\n"
 			..Dot_nc.." Средний "..CKWord("урон", "uron_rgb_ru").." по броне.\n"
 			..Dot_red.." Низкий "..CKWord("урон", "uron_rgb_ru").." по противоосколочной брони.", -- Хим-граната
+		["zh-tw"] = "投擲載有"..CKWord("化學毒素", "Chem_Tox_rgb_tw").." 的容器，爆炸時散布內容。\n"
+			.."\n"
+			..Dot_nc.." 最多 {max_charges:%s} 個。引爆 5 秒，擊擊後 1.5 秒。毒素區得 "..CNumb("10", "n_10_rgb").." 米，持續 15 秒。\n"
+			..Dot_nc.." 拾取手雷時補充全部。\n"
+			.."\n"
+			.."毒素施加：\n"
+			..Dot_nc.." 每 0.35 秒 1 層"..CKWord("化學毒素", "Chem_Tox_rgb_tw").."，最多 6 層。敵人離開毒素區時額外 +1 層。\n"
+			.."\n"
+			.."敵人減益：\n"
+			..Dot_green.." "..CNumb("-", "n_minus_rgb")..CNumb("50%", "pc_50_rgb").." "..CKWord("順劈目標", "Hit_mass_rgb_tw").."，近戰攻擊時。持續 1 秒。\n"
+			..CPhrs("Can_be_refr").."\n"
+			..Dot_red.." 不與其他"..CKWord("巢都敗類", "cls_scm_rgb_tw").." 的相同效果疊加。\n"
+			.."\n"
+			.."毒素爆炸：\n"
+			..Dot_nc.." 敵人在最後一層後 12 秒內死亡才會觸發。爆炸半徑 2.5 米。\n"
+			..Dot_green.." 爆炸基礎"..CKWord("傷害", "Damage_rgb_tw").."：["..CNumb("200", "n_200_rgb").." - "..CNumb("100", "n_100_rgb").."]。",
 	},
 --[+ +AURA - АУРЫ+ +]--
 	--[+ AURA 0 - Gunslinger +]--	26.03.2026
@@ -170,6 +215,9 @@ local scum_localizations = {
 		ru = Dot_green.." {ammo:%s} патронов с любого найденного боекомплекта, подобранного вами или союзниками в "..CKWord("сплочённости", "splochennosti_rgb_ru")..", восполняется каждому из вас.\n"
 			.."\n"
 			..CPhrs("Doesnt_Stack_Scm_Aura"), -- Стрелок
+		["zh-tw"] = Dot_green.." 你或"..CKWord("協同", "Coherency_rgb_tw").." 盟友拾取彈藥時，每人都分到 {ammo:%s}。\n"
+			.."\n"
+			..Dot_red.." 不與其他"..CKWord("巢都敗類", "cls_scm_rgb_tw").." 的相同光環疊加。",
 	},
 	--[+ AURA 1 - Gunslinger Improved +]--	26.03.2026
 	["loc_talent_broker_aura_gunslinger_improved_desc"] = { -- ammo: 10%, talent: Gunslinger, +colors
@@ -181,6 +229,10 @@ local scum_localizations = {
 			..Dot_green.." Это улучшенная версия таланта {talent:%s}.\n"
 			.."\n"
 			..CPhrs("Doesnt_Stack_Scm_Aura"), -- Улучшенный стрелок
+		["zh-tw"] = Dot_green.." 你或"..CKWord("協同", "Coherency_rgb_tw").." 盟友拾取彈藥時，每人都分到 {ammo:%s}。\n"
+			..Dot_green.." 為 {talent:%s} 的增強版本。\n"
+			.."\n"
+			..Dot_red.." 不與其他"..CKWord("巢都敗類", "cls_scm_rgb_tw").." 的相同光環疊加。",
 	},
 	--[+ AURA 2 - Ruffian +]--	26.03.2026
 	["loc_talent_broker_aura_ruffian_desc"] = { -- melee_damage: +10%, talent_name: , +colors
@@ -190,6 +242,9 @@ local scum_localizations = {
 		ru = Dot_green.." {melee_damage:%s} к "..CKWord("урону", "uronu_rgb_ru").." в ближнем бою для вас и союзников в "..CKWord("сплочённости", "splochennosti_rgb_ru")..".\n"
 			.."\n"
 			..CPhrs("Doesnt_Stack_Scm_Aura"), -- Хулиган
+		["zh-tw"] = Dot_green.." {melee_damage:%s} 對你和"..CKWord("協同", "Coherency_rgb_tw").." 盟友的近戰"..CKWord("傷害", "Damage_rgb_tw").."。\n"
+			.."\n"
+			..Dot_red.." 不與其他"..CKWord("巢都敗類", "cls_scm_rgb_tw").." 的相同光環疊加。",
 	},
 	--[+ AURA 3 - Anarchist +]--	30.12.2025
 	["loc_talent_broker_aura_anarchist_desc"] = { -- critical_chance: +5%, +colors
@@ -199,6 +254,9 @@ local scum_localizations = {
 		ru = Dot_green.." {critical_chance:%s} к "..CKWord("шансу критического удара", "sh_krit_udara_rgb_ru").." для вас и союзников в "..CKWord("сплочённости", "splochennosti_rgb_ru")..".\n"
 			.."\n"
 			..CPhrs("Doesnt_Stack_Scm_Aura"), -- Анархист
+		["zh-tw"] = Dot_green.." {critical_chance:%s} 對你和"..CKWord("協同", "Coherency_rgb_tw").." 盟友的"..CKWord("暴擊機率", "Crit_chance_rgb_tw").."。\n"
+			.."\n"
+			..Dot_red.." 不與其他"..CKWord("巢都敗類", "cls_scm_rgb_tw").." 的相同光環疊加。",
 	},
 --[+ +ABILITIES - СПОСОБНОСТИ+ +]--
 	--[+ ABILITY 0 - Desperado +]--	26.03.2026
@@ -223,6 +281,16 @@ local scum_localizations = {
 			..Dot_green.." Перезарядка не тратит боеприпасы из резерва.\n"
 			-- .."\n"
 			..Dot_nc.." Восстановление: {cooldown:%s} секунд.", -- Безбашенный
+		["zh-tw"] = "補滿"..CKWord("韌性", "Toughness_rgb_tw").."，切換並換彈遠程武器，進入 {talent_name:%s} {duration:%s} 秒。\n"
+			.."\n"
+			.."期間獲得：\n"
+			..Dot_green.." {sprint_movement_speed:%s} 衝刺速度，\n"
+			..Dot_green.." 衝刺不消耗"..CKWord("耐力", "Stamina_rgb_tw").."，\n"
+			..Dot_green.." 免疫遠程攻擊，\n"
+			..Dot_green.." 免疫壓制，\n"
+			..Dot_green.." 換彈不消耗備用彈藥。\n"
+			.."\n"
+			..Dot_nc.." 基礎冷卻：{cooldown:%s} 秒。",
 	},
 	--[+ ABILITY 1 - Enhanced Desperado +]--	26.03.2026
 	["loc_talent_broker_ability_focus_improved_desc"] = { -- talent_name: Enhanced Desperado, duration: 10, sprint_movement_speed: +20%, duration_extend: 1, duration_max: 20, cooldown: 45, s->seconds, +colors
@@ -264,6 +332,21 @@ local scum_localizations = {
 			..CPhrs("Can_proc_mult_str")
 			.."\n"
 			..Dot_nc.." Базовое время восстановления: {cooldown:%s} секунд.", -- Улучшенный Безбашенный
+		["zh-tw"] = "補滿"..CKWord("韌性", "Toughness_rgb_tw").."，切換並換彈遠程武器，進入 {talent_name:%s} {duration:%s} 秒。\n"
+			..Dot_green.." 為 {default_talent:%s} 的增強版本。\n"
+			.."\n"
+			.."期間獲得：\n"
+			..Dot_green.." {sprint_movement_speed:%s} 衝刺速度，衝刺不消耗"..CKWord("耐力", "Stamina_rgb_tw").."，免疫遠程攻擊和壓制，換彈不消耗備用彈藥。\n"
+			.."\n"
+			.."12.5 米內的敵人會被標出。\n"
+			.."\n"
+			.."遠程擊殺標出敵人延長 {talent_name:%s}：\n"
+			..Dot_green.." 前 {duration_max:%s} 秒：每次擊殺 +{duration_extend:%s} 秒。\n"
+			..Dot_green.." 超過 {duration_max:%s} 秒後：每次 +0.2 秒。\n"
+			..Dot_nc.." 效果每 {duration_max:%s} 秒進一步衰減。\n"
+			..CPhrs("Can_proc_mult_str")
+			.."\n"
+			..Dot_nc.." 基礎冷卻：{cooldown:%s} 秒。",
 	},
 	--[+ ABILITY 1-1 - Pick Your Targets +]--	26.03.2026
 	["loc_talent_broker_ability_focus_sub_2_desc"] = { -- rending: +15%, focus: Enhanced Desperado, damage: +3%, stacks: 5, +colors
@@ -291,6 +374,16 @@ local scum_localizations = {
 			..Dot_green.." {damage:%s} к дальнобойному "..CKWord("урону", "uronu_rgb_ru")..", до {rending:%s}.\n"
 			.."\n"
 			..CNote("Rend_note"),
+		["zh-tw"] = "{focus:%s} 啟用期間獲得：\n"
+			..Dot_green.." {rending:%s} 遠程"..CKWord("撕裂", "Rending_rgb_tw").."。\n"
+			.."\n"
+			.."擊殺標出敵人也給予層數。最多 {stacks:%s} 層，持續 3 秒。\n"
+			..CPhrs("Can_be_refr_drop_1").."\n"
+			.."\n"
+			.."每層獲得：\n"
+			..Dot_green.." {damage:%s} 遠程"..CKWord("傷害", "Damage_rgb_tw").."，最多 {rending:%s}。\n"
+			.."\n"
+			..CNote("Rend_note"),
 	},
 	--[+ ABILITY 1-2 - Focused Resolve +]--	26.03.2026
 	["loc_talent_broker_ability_focus_sub_3_desc"] = { -- cooldown_base: 0.5, cooldown_elite: 1, cooldown_max: 5, s->seconds, +colors
@@ -306,6 +399,13 @@ local scum_localizations = {
 			..Dot_green.." Элита или специалист: "..CNumb("-", "n_minus_rgb").."{cooldown_elite:%s} секунда.\n"
 			.."\n"
 			..Dot_nc.." Максимум: "..CNumb("-", "n_minus_rgb").."{cooldown_max:%s} секунд.\n"
+			.."\n"
+			..CPhrs("Can_proc_mult_str"),
+		["zh-tw"] = "擊殺標出敵人恢復"..CKWord("技能冷卻", "Ability_cd_rgb_tw").."：\n"
+			..Dot_green.." 普通敵人：{cooldown_base:%s} 秒。\n"
+			..Dot_green.." 精英或特殊：{cooldown_elite:%s} 秒。\n"
+			.."\n"
+			..Dot_nc.." 最多 {cooldown_max:%s} 秒。\n"
 			.."\n"
 			..CPhrs("Can_proc_mult_str"),
 	},
@@ -349,6 +449,23 @@ local scum_localizations = {
 			..Dot_red.." Время восстановления приостанавливается, пока {talent_name:%s} активно.\n"
 			.."\n"
 			..CNote("Pwr_note"),
+		["zh-tw"] = "補滿"..CKWord("韌性", "Toughness_rgb_tw").." 並進入 {talent_name:%s} {duration:%s} 秒。\n"
+			.."\n"
+			.."期間獲得：\n"
+			..Dot_green.." {power:%s} 近戰"..CKWord("威力", "Strength_rgb_tw").."，\n"
+			..Dot_green.." {attack_speed:%s} 近戰攻擊速度，\n"
+			..Dot_green.." "..CNumb("+", "n_plus_rgb").." {damage_taken:%s} 傷害抑制，\n"
+			..Dot_green.." "..CKWord("眩暈", "Stun_rgb_tw").." 免疫 和 慢速免疫。\n"
+			.."\n"
+			.."近戰命中延長持續時間：\n"
+			..Dot_green.." 前 {rage_duration_max:%s} 秒：每次 +{rage_duration_extend:%s} 秒。\n"
+			..Dot_green.." 超過 {rage_duration_max:%s} 秒後：每次 +0.15 秒。\n"
+			..CPhrs("Can_proc_mult")
+			.."\n"
+			..Dot_nc.." 基礎冷卻：{cooldown:%s} 秒。\n"
+			..Dot_red.." {talent_name:%s} 啟用期間將暫停冷卻。\n"
+			.."\n"
+			..CNote("Pwr_note"),
 	},
 	--[+ ABILITY 2-1 - Channelled Aggression +]--	26.03.2026
 	["loc_talent_broker_ability_punk_rage_sub_1_desc_02"] = { -- rending: +25%, punk_rage: Rampage!, ability_progress: 50%, +colors
@@ -360,6 +477,10 @@ local scum_localizations = {
 			..Dot_green.." {rending:%s} к "..CKWord("пробиванию", "probivaniu_rgb_ru").." брони.\n"
 			.."\n"
 			..CNote("Rend_note"),
+		["zh-tw"] = "{punk_rage:%s} 啟用期間，重型攻擊獲得：\n"
+			..Dot_green.." {rending:%s} "..CKWord("撕裂", "Rending_rgb_tw").."。\n"
+			.."\n"
+			..CNote("Rend_note"),
 	},
 	--[+ ABILITY 2-2 - Boiling Blood +]--	26.03.2026
 	["loc_talent_broker_ability_punk_rage_sub_4_desc"] = { -- punk_rage: Rampage!, rage_duration_extend_elites: 1, rage_duration_max_upgrade: 30, +colors
@@ -369,6 +490,9 @@ local scum_localizations = {
 		ru = Dot_green.." Удары в ближнем бою по элитным врагам, специалистам и чудовищам продлевают время действия способности {punk_rage:%s} с "..CNumb("0.3", "n_0_3_rgb").." до {rage_duration_extend_elites:%s} секунды.\n"
 			.."\n"
 			..Dot_green.." Дополнительно, ослабление эффекта продления времени за удары в ближнем бою увеличивается до {rage_duration_max_upgrade:%s} секунд.",
+		["zh-tw"] = Dot_green.." 近戰命中精英、專家或巨獸時，{punk_rage:%s} 延長從 0.3 延長至 {rage_duration_extend_elites:%s} 秒。\n"
+			.."\n"
+			..Dot_green.." 效果縮減時間增加至 {rage_duration_max_upgrade:%s} 秒。",
 	},
 	--[+ ABILITY 2-3 - Forge's Bellow +]--	26.03.2026
 	["loc_talent_broker_ability_punk_rage_sub_3_desc_02"] = { -- punk_rage: Rampage!, : +50%, duration: 5, s->seconds
@@ -394,6 +518,12 @@ local scum_localizations = {
 			.."Этот "..CKWord("Крик", "Shout_rgb_ru").." повторяется после окончания действия способности {punk_rage:%s}\n"
 			.."\n"
 			..CPhrs("Doesnt_Stack_Scm_eff"),
+		["zh-tw"] = "啟用 {punk_rage:%s} 時釋放一次大吼，半徑 4.5 米，持續 {duration:%s} 秒。\n"
+			.."大吼對命中敵人施加減益：\n"
+			..Dot_green.." {attack_speed_reduction:%s} 攻擊間隔時間。\n"
+			..Dot_green.." "..CKWord("踉蹌", "Stagger_rgb_tw").."。\n"
+			.."{punk_rage:%s} 結束時再重複一次。\n"
+			..Dot_red.." 不與其他"..CKWord("巢都敗類", "cls_scm_rgb_tw").." 的相同效果疊加。",
 	},
 	--[+ ABILITY 2-4 - Pulverising Strikes +]--	26.03.2026
 	["loc_talent_broker_ability_punk_rage_sub_2_desc"] = { -- punk_rage: Rampage!, cleave: +50%, melee_power: +2.5%, max_stacks: 10, s->seconds, +colors
@@ -411,6 +541,11 @@ local scum_localizations = {
 			.."\n"
 			.."За каждый заряд вы получаете:\n"
 			..Dot_green.." {melee_power:%s} к "..CKWord("силе", "sile_rgb_ru").." атак ближнего боя, вплоть до "..CNumb("+", "n_plus_rgb")..CNumb("25%", "pc_25_rgb")..".",
+		["zh-tw"] = "{punk_rage:%s} 啟用期間：\n"
+			..Dot_green.." {cleave:%s} "..CKWord("順劈攻擊", "Cleave_rgb_tw").."。\n"
+			.."\n"
+			.."每秒增加一層，最多 {max_stacks:%s} 層。每層獲得：\n"
+			..Dot_green.." {melee_power:%s} 近戰"..CKWord("威力", "Strength_rgb_tw").."，最多 +25%。",
 	},
 	--[+ ABILITY 3 - Stimm Supply +]--	26.03.2026
 	["loc_talent_broker_ability_stimm_field_desc_3"] = { -- duration: 20, total_corruption_heal: 40, stimm_field: Stimm Supply, cooldown: 60, s->seconds, +colors
@@ -438,6 +573,16 @@ local scum_localizations = {
 			.."\n"
 			..Dot_nc.." Базовое время восстановления: {cooldown:%s} секунд.\n"
 			..Dot_red.." Пока {stimm_field:%s} активен, время восстановления останавливается и не может быть уменьшен.",
+		["zh-tw"] = "在地面放置改裝醫包，加強你和盟友 {duration:%s} 秒。半徑 3 米。\n"
+			.."\n"
+			.."吸入氣體的成員治癒"..CKWord("腐敗", "Corruption_rgb_tw").." 並獲得免疫。\n"
+			..Dot_green.." 每 0.25 秒移除 0.5 "..CKWord("腐敗傷害", "Corruptdmg_rgb_tw").."，最多 {total_corruption_heal:%s}。\n"
+			..Dot_green.." 治癒"..CKWord("腐敗傷害", "Corruptdmg_rgb_tw").." 至下一個"..CKWord("生命", "Health_rgb_tw").." 段。\n"
+			.."\n"
+			.."若裝備了興奮劑，{stimm_field:%s} 會複製其內容並散布到空氣中，賦予附近盟友效果。\n"
+			.."\n"
+			..Dot_nc.." 基礎冷卻：{cooldown:%s} 秒。\n"
+			..Dot_red.." {stimm_field:%s} 啟用期間暫停冷卻且不可縮短。",
 	},
 	--[+ ABILITY 3-1 - Practiced Deployment +]--	26.03.2026
 	["loc_talent_broker_ability_stimm_field_sub_3_desc"] = { -- stimm_field: Stimm Supply
@@ -457,6 +602,14 @@ local scum_localizations = {
 			.."Активация заблокирована при:\n"
 			..Dot_red.." Активном {stimm_field:%s}.\n"
 			..Dot_red.." Замене экипированного стима на другой.",
+		["zh-tw"] = "以下情況重置 {stimm_field:%s} 冷卻：\n"
+			..Dot_green.." 拾取興奮劑，\n"
+			..Dot_green.." 從盟友接受興奮劑，\n"
+			..Dot_green.." 卡特爾特殊興奮劑冷卻結束。\n"
+			.."\n"
+			.."啟用被阻止情況：\n"
+			..Dot_red.." {stimm_field:%s} 啟用期間。\n"
+			..Dot_red.." 替換已裝備的興奮劑。",
 	},
 	--[+ ABILITY 3-2 - Booby Trap +]--	26.03.2026
 	["loc_talent_broker_ability_stimm_field_sub_2_desc"] = { -- stimm_field: Stimm Supply, stacks: 7, toxin: Chem Toxin
@@ -470,6 +623,10 @@ local scum_localizations = {
 			..Dot_nc.." Радиус: "..CNumb("3", "n_3_rgb").." метра.\n"
 			.."\n"
 			..Dot_green.." Базовый "..CKWord("урон", "uron_rgb_ru")..": "..CNumb("200", "n_200_rgb")..".",
+		["zh-tw"] = "{stimm_field:%s} 持續時間結束時爆炸，對附近敵人施加 {stacks:%s} 層"..CKWord("化學毒素", "Chem_Tox_rgb_tw").."。\n"
+			..Dot_nc.." 半徑 3 米。\n"
+			.."\n"
+			..Dot_green.." 基礎"..CKWord("傷害", "Damage_rgb_tw").."： "..CNumb("200", "n_200_rgb").."。",
 	},
 	--[+ ABILITY 3-3 - Fast Acting Stimms +]--	26.03.2026
 	["loc_talent_broker_ability_stimm_field_sub_1_desc"] = { -- stimm_field: Stimm Supply, duration: 5, linger_duration: 15, s->seconds, +colors
@@ -479,12 +636,16 @@ local scum_localizations = {
 		ru = Dot_red.." Длительность способности {stimm_field:%s} сокращается с "..CNumb("20", "n_20_rgb").." до {duration:%s} секунд.\n"
 			.."\n"
 			..Dot_green.." Но его эффекты сохраняются {linger_duration:%s} секунд после выхода из области.",
+		["zh-tw"] = Dot_red.." {stimm_field:%s} 持續時間從 20 秒縮短至 {duration:%s} 秒。\n"
+			.."\n"
+			..Dot_green.." 髖區後 {linger_duration:%s} 秒內持續生效。",
 	},
 --[+ +KEYSTONES - КЛЮЧЕВЫЕ+ +]--
 	--[+ KEYSTONE 0-1 - Alley Rat +]--	26.03.2026
 	["loc_talent_broker_passive_longer_dodges_desc"] = { -- dodge_distance_modifier: +50%
 		en = Dot_green.." {dodge_distance_modifier:%s} Dodge Distance.",
 		ru = Dot_green.." {dodge_distance_modifier:%s} к расстоянию уклонения.", -- Уличная крыса
+		["zh-tw"] = Dot_green.." {dodge_distance_modifier:%s} 閃避距離。",
 	},
 	--[+ KEYSTONE 0-2 - Nimble +]--	26.03.2026
 	["loc_talent_broker_passive_improved_dodges_desc_02"] = { -- dodge_distance_modifier: +25%, dodge_linger_time: +0.15, s->seconds, +colors
@@ -494,6 +655,9 @@ local scum_localizations = {
 		ru = Dot_green.." {dodge_distance_modifier:%s} к скорости уклонения.\n"
 			.."\n"
 			..Dot_green.." {dodge_linger_time:%s} секунды к длительности уклонения.",
+		["zh-tw"] = Dot_green.." {dodge_distance_modifier:%s} 閃避速度。\n"
+			.."\n"
+			..Dot_green.." {dodge_linger_time:%s} 秒閃避持續時間。",
 	},
 	--[+ KEYSTONE 1 - Vulture’s Mark +]--	30.03.2026
 	["loc_talent_broker_keystone_vultures_mark_on_kill_desc"] = { -- duration: 8, max_stacks: 3, ranged_damage: +5%, movement_speed: +5%, crit_chance: +5%, toughness: 15%, s->seconds, +colors
@@ -523,6 +687,17 @@ local scum_localizations = {
 			.."\n"
 			.." При максимальных зарядах, убийства элитных врагов и специалистов оружием дальнего боя восстанавливают вам и союзникам в "..CKWord("сплочённости", "splochennosti_rgb_ru")..":\n"
 			..Dot_green.." {toughness:%s} "..CKWord("стойкости", "stoikosti_rgb_ru")..".", -- Метка стервятника
+		["zh-tw"] = "遠程武器擊殺特殊或精英敵人獲得一層"..CKWord("禿鷹標記", "VultsMark_rgb_tw").."。\n"
+			..Dot_nc.." 持續 {duration:%s} 秒。最多 {max_stacks:%s} 層。\n"
+			..CPhrs("Can_be_refr").."\n"
+			.."\n"
+			.."每層獲得：\n"
+			..Dot_green.." {ranged_damage:%s} 遠程"..CKWord("傷害", "Damage_rgb_tw").."，\n"
+			..Dot_green.." {movement_speed:%s} 移動速度，\n"
+			..Dot_green.." {crit_chance:%s} 遠程"..CKWord("暴擊機率", "Crt_hit_chnc_rgb_tw").."。\n"
+			.."\n"
+			.."滿層時，遠程擊殺特殊或精英敵人恢復你和"..CKWord("協同", "Coherency_rgb_tw").." 盟友：\n"
+			..Dot_green.." {toughness:%s} "..CKWord("韌性", "Toughness_rgb_tw").."。",
 	},
 	--[+ KEYSTONE 1-1 - Vulture's Push +]--	26.03.2026
 	["loc_talent_broker_keystone_vultures_mark_aoe_stagger_desc"] = { -- +colors
@@ -532,6 +707,7 @@ local scum_localizations = {
 		ru = "Убийство элитных врагов или специалистов атаками дальнего боя создаёт не наносящий "..CKWord("урон", "uron_rgb_ru").." взрыв, который почти не "..CKWord("ошеломляет", "oshelomlaet_rgb_ru").." врагов вокруг вас.\n"
 			.."\n"
 			..Dot_nc.." Радиус "..CNumb("3", "n_3_rgb").." метров.",
+		["zh-tw"] = "遠程擊殺精英或專家時，在你所在位置中心 3 米內造成不造成傷害的爆炸，"..CKWord("踉蹌", "Staggers_rgb_tw").." 附近敵人。",
 	},
 	--[+ KEYSTONE 1-2 - Vulture's Dodge +]--	26.03.2026
 	["loc_talent_broker_keystone_vultures_mark_dodge_on_ranged_crit_desc"] = { -- duration: 1, s->second, +colors
@@ -543,11 +719,16 @@ local scum_localizations = {
 			..Dot_green.." Иммунитет ко всем атакам.\n"
 			.."\n"
 			..CPhrs("Can_be_refr"),
+		["zh-tw"] = "遠程"..CKWord("暴擊打擊", "Crit_strikes_rgb_tw").." 獲得 {duration:%s} 秒：\n"
+			..Dot_green.." 免疫所有攻擊。\n"
+			.."\n"
+			..CPhrs("Can_be_refr"),
 	},
 	--[+ KEYSTONE 1-3 - Patient Hunter +]--	26.03.2026
 	["loc_talent_broker_keystone_vultures_mark_increased_duration_desc"] = { -- duration: 12, s->seconds, +colors
 		en = Dot_green.." Increases duration of "..CKWord("Vulture's Mark", "VultsMark_rgb").." from "..CNumb("8", "n_8_rgb").." to {duration:%s} seconds.",
 		ru = Dot_green.." Увеличена длительность "..CKWord("Метки стервятника", "VultsMark_rgb_ru").." с "..CNumb("8", "n_8_rgb").." до {duration:%s} секунд.",
+		["zh-tw"] = Dot_green.." "..CKWord("禿鷹標記", "VultsMark_rgb_tw").." 持續時間從 8 秒增加至 {duration:%s} 秒。",
 	},
 	--[+ KEYSTONE 2 - Adrenaline Frenzy +]--	26.03.2026
 	["loc_talent_broker_keystone_adrenaline_junkie_desc"] = { -- adrenaline: Adrenaline, on_crit: +1, duration: 2, max_stacks: 30, frenzy: Adrenaline Frenzy, melee_damage: +25%, attack_speed: +10%, frenzy_duration: 10, s->seconds, +colors
@@ -580,6 +761,14 @@ local scum_localizations = {
 			.."{frenzy:%s} даёт:\n"
 			..Dot_green.." {melee_damage:%s} "..CKWord("урона", "uronu_rgb_ru").." в ближнем бою и\n"
 			..Dot_green.." {attack_speed:%s} к скорости атаки.", -- Адреналиновое безумие
+		["zh-tw"] = "近戰命中獲得"..CKWord("腎上腺素", "Adren_rgb_tw").." 層數。最多 {max_stacks:%s} 層，持續 {duration:%s} 秒，逐一衰減。\n"
+			.."\n"
+			..CKWord("暴擊", "Critical_rgb_tw").." 近戰命中額外 +{on_crit:%s} 層。\n"
+			.."\n"
+			.."滿層時，消耗所有"..CKWord("腎上腺素", "Adren_rgb_tw").." 層數，獲得 {frenzy:%s} {frenzy_duration:%s} 秒。\n"
+			.."{frenzy:%s} 提供：\n"
+			..Dot_green.." {melee_damage:%s} 近戰"..CKWord("傷害", "Damage_rgb_tw").." 和\n"
+			..Dot_green.." {attack_speed:%s} 攻擊速度。",
 	},
 	--[+ KEYSTONE 2-1 - Adrenaline Assassin +]--	26.03.2026
 	["loc_talent_broker_keystone_adrenaline_junkie_sub_1_desc"] = { -- stacks: +2, +colors
@@ -595,6 +784,9 @@ local scum_localizations = {
 			..Dot_red.." Обычные попадания в ближнем бою не дают зарядов.\n"
 			.."\n"
 			..Dot_green.." Попадания в ближнем бою не по "..CKWord("уязвимым местам", "ujazvimym_mestam_rgb_ru")..", но "..CKWord("критическими ударами", "krit_udarami_rgb_ru")..", всё ещё дают {stacks:%s} заряда.",
+		["zh-tw"] = CKWord("弱點", "Weakspot_rgb_tw").." 命中現在給予 {stacks:%s} 額外"..CKWord("腎上腺素", "Adren_rgb_tw").." 層，從 1 增至 3 層。\n"
+			..Dot_red.." 普通近戰命中不給予。\n"
+			..Dot_green.." 非弱點卻暴擊的近戰命中，仍給予 {stacks:%s} 層。",
 	},
 	--[+ KEYSTONE 2-2 - Adrenaline Smiter +]--	26.03.2026
 	["loc_talent_broker_keystone_adrenaline_junkie_sub_2_desc"] = { -- stacks: +4, adrenaline: Adrenaline, elite_stacks: +10, +colors
@@ -619,11 +811,16 @@ local scum_localizations = {
 			..Dot_green.." "..CNumb("+", "n_plus_rgb")..CNumb("1", "n_1_rgb").." дополнительный заряд, в дополнение к другим зарядам "..CKWord("Адреналина", "Adren_rgb_ru").." за каждого убитого врага.\n"
 			.."\n"
 			..Dot_red.." Не смертельные удары не дают ничего.",
+		["zh-tw"] = "譴殺現在給予 {stacks:%s} 額外"..CKWord("腎上腺素", "Adren_rgb_tw").." 層，從 1 增至 5 層。\n"
+			.."譴殺精英額外 +14 層，增至 15 層。\n"
+			..CKWord("暴擊", "Critical_rgb_tw").." 譴殺額外 +1 層/敵人。\n"
+			..Dot_red.." 非譴殺不給予層數。",
 	},
 	--[+ KEYSTONE 2-3 - Stoked Rage +]--	26.03.2026
 	["loc_talent_broker_keystone_adrenaline_junkie_sub_3_desc"] = { -- frenzy: Adrenaline Frenzy, duration: 20, +colors
 		en = Dot_green.." Increases duration of {frenzy:%s} from "..CNumb("10", "n_10_rgb").." to {duration:%s} seconds.",
 		ru = Dot_green.." Увеличена длительность таланта {frenzy:%s} с "..CNumb("10", "n_10_rgb").." до {duration:%s} секунд.",
+		["zh-tw"] = Dot_green.." {frenzy:%s} 持續時間從 10 秒增加至 {duration:%s} 秒。",
 	},
 	--[+ KEYSTONE 2-4 - Adrenaline Unbound +]--	26.03.2026
 	["loc_talent_broker_keystone_adrenaline_junkie_sub_5_desc"] = { -- frenzy: Adrenaline Frenzy, toughness: 5%, +colors
@@ -631,11 +828,13 @@ local scum_localizations = {
 			..Dot_green.." {toughness:%s} "..CKWord("Toughness", "Toughness_rgb").." per second.",
 		ru = "Пока активен {frenzy:%s}, вы восстанавливаете:\n"
 			..Dot_green.." {toughness:%s} "..CKWord("стойкости", "stoikosti_rgb_ru").." в секунду.",
+		["zh-tw"] = "{frenzy:%s} 啟用期間，{toughness:%s} "..CKWord("韌性", "Toughness_rgb_tw").." /秒恢復。",
 	},
 	--[+ KEYSTONE 2-5 - Uncontrolled Aggression +]--	26.03.2026
 	["loc_talent_broker_keystone_adrenaline_junkie_sub_4_desc"] = { -- adrenaline: Adrenaline, duration: 4, +colors
 		en = Dot_green.." Increases duration of "..CKWord("Adrenaline", "Adren_rgb").." from "..CNumb("2", "n_2_rgb").." to {duration:%s} seconds.",
 		ru = Dot_green.." Увеличена длительность "..CKWord("Адреналина", "Adren_rgb_ru").." с "..CNumb("2", "n_2_rgb").." до {duration:%s} секунд.",
+		["zh-tw"] = Dot_green.." "..CKWord("腎上腺素", "Adren_rgb_tw").." 持續時間從 2 秒增加至 {duration:%s} 秒。",
 	},
 	--[+ KEYSTONE 3 - Chemical Dependency +]--	26.03.2026
 	["loc_talent_broker_keystone_chemical_dependency_desc"] = { -- dependency: Dependency, duration: 90, : +10%, : 3, +colors
@@ -653,11 +852,17 @@ local scum_localizations = {
 			.."\n"
 			.."За каждый заряд вы получаете:\n"
 			..Dot_green.." "..CNumb("-", "n_minus_rgb").."{cooldown_reduction:%s} от времени "..CKWord("восстановления способности", "vost_sposobnosti_rgb_ru")..".", -- Зависимость от химии - Химическая зависимость
+		["zh-tw"] = "使用興奮劑獲得 {dependency:%s} 層，持續 {duration:%s} 秒。最多 {max_stacks:%s} 層。\n"
+			..CPhrs("Can_be_refr_drop_1").."\n"
+			.."\n"
+			.."每層獲得：\n"
+			..Dot_green.." "..CNumb("-", "n_minus_rgb").." {cooldown_reduction:%s} "..CKWord("技能冷卻", "Ability_cd_rgb_tw").." 減少。",
 	},
 	--[+ KEYSTONE 3-1 - Chem Enhanced +]--	26.03.2026
 	["loc_talent_broker_keystone_chemical_dependency_sub_1_desc"] = { -- dependency: Dependency, critical_chance: +5%, +colors
 		en = Dot_green.." {critical_chance:%s} "..CKWord("Critical Hit Chance", "Crt_hit_chnc_rgb").." per Stack of {dependency:%s}.",
 		ru = Dot_green.." {critical_chance:%s} к "..CKWord("шансу критического удара", "sh_krit_udara_rgb_ru").." за каждый заряд "..CKWord("Зависимости", "Depend_rgb_ru")..".",
+		["zh-tw"] = Dot_green.." 每層 {dependency:%s} {critical_chance:%s} "..CKWord("暴擊命中機率", "Crt_hit_chnc_rgb_tw").."。",
 	},
 	--[+ KEYSTONE 3-2 - Chem Fortified +]--	26.03.2026
 	["loc_talent_broker_keystone_chemical_dependency_sub_2_desc"] = { -- toughness: 50%, toughness: +5%, dependency: Dependency, +colors
@@ -669,6 +874,10 @@ local scum_localizations = {
 			..Dot_green.." {toughness:%s} "..CKWord("стойкости", "stoikost_rgb_ru")..".\n"
 			.."\n"
 			..Dot_green.." {toughness_damage_reduction:%s} к "..CKWord("снижению урона стойкости", "snu_ur_stoikosti_rgb_ru").." за каждый заряд "..CKWord("Зависимости", "Depend_rgb_ru")..".",
+		["zh-tw"] = "使用興奮劑恢復：\n"
+			..Dot_green.." {toughness:%s} "..CKWord("韌性", "Toughness_rgb_tw").."。\n"
+			.."\n"
+			..Dot_green.." 每層 {dependency:%s} {toughness_damage_reduction:%s} "..CKWord("韌性傷害減免", "Tghns_dmg_red_rgb_tw").."。",
 	},
 	--[+ KEYSTONE 3-3 - Maxed Out Chems +]--	26.03.2026
 	["loc_talent_broker_keystone_chemical_dependency_sub_3_desc"] = { -- : , +colors
@@ -678,6 +887,9 @@ local scum_localizations = {
 		ru = Dot_red.." Длительность зарядов "..CKWord("Зависимости", "Depend_rgb_ru").." уменьшена с "..CNumb("90", "n_90_rgb").." до {duration:%s} секунд.\n"
 			.."\n"
 			..Dot_green.." Максимальное количество зарядов увеличено с "..CNumb("3", "n_3_rgb").." до {max_stacks:%s}.",
+		["zh-tw"] = Dot_red.." {dependency:%s} 層數持續時間從 90 秒減短至 {duration:%s} 秒。\n"
+			.."\n"
+			..Dot_green.." 最大層數從 3 增加至 {max_stacks:%s}。",
 	},
 --[+ +PASSIVES - ПАССИВНЫЕ+ +]--
 	--[+ Passive 1 - Voice of Tertium +]--	26.03.2026
@@ -694,6 +906,13 @@ local scum_localizations = {
 			.."\n"
 			.."Элитные враги и специалисты восполняют:\n"
 			..Dot_green.." {toughness_elites:%s} "..CKWord("стойкости", "stoikosti_rgb_ru")..".\n"
+			.."\n"
+			..CPhrs("Can_proc_mult_str"),
+		["zh-tw"] = "在 "..CNumb("12.5", "n_12_5_rgb").." 米內以遠程擊殺時，恢復：\n"
+			..Dot_green.." {toughness:%s} "..CKWord("韌性", "Toughness_rgb_tw").."。\n"
+			.."\n"
+			.."精英與專家敵人改為恢復：\n"
+			..Dot_green.." {toughness_elites:%s} "..CKWord("韌性", "Toughness_rgb_tw").."。\n"
 			.."\n"
 			..CPhrs("Can_proc_mult_str"),
 	},
@@ -725,6 +944,18 @@ local scum_localizations = {
 			.."Срабатывает при успешном уклонении от:\n"
 			..Dot_nc.." Атак врагов в ближнем или дальнем бою (кроме стрельбы пулемётчика, жнеца, снайпера),\n"
 			..Dot_nc.." Атак обездвиживающих врагов (прыжок чумной гончей, сетка скаба-ловца, захват мутанта).",
+		["zh-tw"] = "成功閃避後，獲得 {duration:%s} 秒：\n"
+			..Dot_green.." 對 "..CNumb("12.5", "n_12_5_rgb").." 米內目標造成 {damage_near:%s} "..CKWord("傷害", "Damage_rgb_tw").."。\n"
+			.."_______________________________\n"
+			.."距離 ("..CNumb("m", "n_meter_rgb").."):   "..CNumb("1", "n_1_rgb").."| "..CNumb("12.5", "n_12_5_rgb").."|   "..CNumb("15", "n_15_rgb").."|  "..CNumb("20", "n_20_rgb").."|   "..CNumb("25", "n_25_rgb").."| "..CNumb("30", "n_30_rgb")..CNumb("+", "n_plus_rgb").."\n"
+			..CKWord("傷害", "Damage_rgb_tw").." ("..CNumb("%", "pc_rgb").."):  "..CNumb("15", "n_15_rgb").."|    "..CNumb("15", "n_15_rgb").."| "..CKWord("~13", "n__13_rgb").."|   "..CKWord("~9", "n__9_rgb").."|   "..CKWord("~4", "n__4_rgb").."|   "..CNumb("0", "n_0_rgb").."\n"
+			.."_______________________________\n"
+			.."\n"
+			.."成功閃避下列攻擊時觸發：\n"
+			..Dot_nc.." 敵人的近戰或遠程攻擊\n"
+			.."   （砲手、收割者、狙擊手除外），\n"
+			..Dot_nc.." 控制敵人的攻擊\n"
+			.."   （瘟疫獵犬撲擊、陷阱兵網、突變者抓取）。",
 	},
 	--[+ Passive 3 - Precision Violence +]--	30.12.2025
 	["loc_talent_broker_passive_restore_toughness_on_weakspot_kill_desc"] = { -- default: 4%, weakspot: 8%, critical: 12%, +colors
@@ -748,6 +979,19 @@ local scum_localizations = {
 			..Dot_green.." {critical:%s} "..CKWord("стойкости", "stoikosti_rgb_ru")..".\n"
 			.."\n"
 			..Dot_red.." Срабатывает раз за атаку ближнего боя независимо от количества поражённых врагов.",
+		["zh-tw"] = "近戰命中恢復：\n"
+			..Dot_green.." {default:%s} "..CKWord("韌性", "Toughness_rgb_tw").."。\n"
+			.."\n"
+			.."近戰"..CKWord("暴擊打擊", "Crit_strikes_rgb_tw")
+			.."與"..CKWord("弱點命中", "Weakspothits_rgb_tw").."恢復：\n"
+			..Dot_green.." {weakspot:%s} "..CKWord("韌性", "Toughness_rgb_tw").."。\n"
+			.."\n"
+			..CKWord("暴擊", "Critical_rgb_tw").." "
+			..CKWord("弱點命中", "Weakspothits_rgb_tw").."恢復：\n"
+			..Dot_green.." {critical:%s} "..CKWord("韌性", "Toughness_rgb_tw").."。\n"
+			.."\n"
+			..Dot_red.." 每次近戰攻擊只觸發一次，"
+			.."不受命中敵人數量影響。",
 	},
 	--[+ Passive 4 - In Your Face +]--	26.03.2026
 	["loc_talent_broker_passive_close_ranged_damage_desc"] = { -- damage_near: +25%, range_near: 12.5, damage_far: +10%, range_far: 30, +colors
@@ -757,6 +1001,10 @@ local scum_localizations = {
 		ru = Dot_green.." {damage_near:%s} к дальнобойному "..CKWord("урону", "uronu_rgb_ru").." по целям в пределах {range_near:%s} метров.\n"
 			.."\n"
 			..Dot_nc.." Уменьшается до {damage_far:%s} к "..CKWord("урону", "uronu_rgb_ru").." на дистанции от {range_far:%s} метров и далее.", -- В харю
+		["zh-tw"] = Dot_green.." 對 {range_near:%s} 米內目標造成 {damage_near:%s} 遠程"..CKWord("傷害", "Damage_rgb_tw").."。\n"
+			.."\n"
+			..Dot_nc.." 逐漸降低，至 {range_far:%s} 米及更遠時，"
+			.."最低為 {damage_far:%s} "..CKWord("傷害", "Damage_rgb_tw").."。",
 	},
 	--[+ Passive 5 - Calling for a Time Out +]--	26.03.2026
 	["loc_talent_broker_passive_reduced_toughness_damage_during_reload_desc"] = { -- duration: 4, toughness_damage_taken_modifier: -25%, +colors
@@ -764,6 +1012,9 @@ local scum_localizations = {
 			..Dot_green.." "..CNumb("+", "n_plus_rgb").."{toughness_damage_taken_modifier:%s} "..CKWord("Toughness Damage Reduction", "Tghns_dmg_red_rgb")..".",
 		ru = "При перезарядке и на {duration:%s} секунды после её завершения вы получаете:\n"
 			..Dot_green.." "..CNumb("+", "n_plus_rgb").."{toughness_damage_taken_modifier:%s} к "..CKWord("снижению урона стойкости", "snu_ur_stoikosti_rgb_ru")..".",
+		["zh-tw"] = "裝填期間與裝填完成後 {duration:%s} 秒，獲得：\n"
+			..Dot_green.." "..CNumb("+", "n_plus_rgb").."{toughness_damage_taken_modifier:%s} "
+			..CKWord("韌性傷害減免", "Tghns_dmg_red_rgb_tw").."。",
 	},
 	--[+ Passive 6 - Burst of Energy +]--	26.03.2026
 	["loc_talent_broker_passive_stun_immunity_on_toughness_broken_desc"] = { -- duration: 6, toughness: +50%, cooldown: 10, +colors
@@ -777,6 +1028,11 @@ local scum_localizations = {
 			..Dot_green.." Иммунитет к "..CKWord("оглушению", "oglusheniu_rgb_ru").." на {duration:%s} секунд.\n"
 			.."\n"
 			..Dot_nc.." Восстановление: {cooldown:%s} секунд.",
+		["zh-tw"] = CKWord("韌性", "Toughness_rgb_tw").."被擊破時，獲得：\n"
+			..Dot_green.." {toughness:%s} "..CKWord("韌性", "Toughness_rgb_tw").."，並\n"
+			..Dot_green.." {duration:%s} 秒"..CKWord("眩暈", "Stun_rgb_tw").."免疫。\n"
+			.."\n"
+			..Dot_nc.." 冷卻：{cooldown:%s} 秒。",
 	},
 	--[+ Passive 7 - Sticky Hands +]--	26.03.2026
 	["loc_talent_broker_passive_reduce_swap_time_desc"] = { -- wield_speed: +40%, recoil: -10%, spread: -30%, +colors
@@ -798,11 +1054,24 @@ local scum_localizations = {
 			..Dot_nc.." Прицеливание работает у: автопистолета, усиленного автомата, парных автопистолетов, парных стаб-пистолетов.\n"
 			.."\n"
 			..Dot_nc.." Скорость смены оружия и предметов сокращает время действий при смене слотов (оружие, гранаты, стимы, медпаки, ящики с боеприпасами, книги и т.д.).",
+		["zh-tw"] = Dot_green.." {wield_speed:%s} 切換速度。\n"
+			.."\n"
+			.."腰射或架槍射擊時，獲得：\n"
+			..Dot_green.." {recoil:%s} 後座力，並\n"
+			..Dot_green.." {spread:%s} 擴散。\n"
+			.."\n"
+			..Dot_nc.." 可架槍武器：自動手槍、架勢自動槍、"
+			.."雙持自動手槍與雙持短管手槍。\n"
+			.."\n"
+			..Dot_nc.." 切換速度會縮短切換物品欄位時的取出動作\n"
+			.."   （武器、手雷、興奮劑、醫療包、彈藥箱、書籍等）。",
 	},
 	--[+ Passive 8 - A Tertium Welcome +]--	26.03.2026
 	["loc_talent_broker_passive_first_target_damage_desc"] = { -- damage: +15%, +colors
 		en = Dot_green.." {damage:%s} Melee "..CKWord("Damage", "Damage_rgb").." on first Enemy hit with each attack.",
 		ru = Dot_green.." {damage:%s} к "..CKWord("урону", "uronu_rgb_ru").." ближнего боя по первому врагу при каждой атаке.",
+		["zh-tw"] = Dot_green.." 每次攻擊命中的第一個敵人，"
+			.."受到 {damage:%s} 近戰"..CKWord("傷害", "Damage_rgb_tw").."。",
 	},
 	--[+ Passive 9 - Speedloader +]--	26.03.2026
 	["loc_talent_broker_passive_reload_speed_on_close_kill_desc"] = { -- reload_speed: +30%, duration: 8, +colors
@@ -812,6 +1081,10 @@ local scum_localizations = {
 			..CPhrs("Can_be_refr"),
 		ru = "При убийстве врага дальнобойной атакой в пределах "..CNumb("12.5", "n_12_5_rgb").." метров вы получаете на {duration:%s} секунд:\n"
 			..Dot_green.." {reload_speed:%s} к скорости перезарядки.\n"
+			.."\n"
+			..CPhrs("Can_be_refr"),
+		["zh-tw"] = "在 "..CNumb("12.5", "n_12_5_rgb").." 米內以遠程擊殺時，獲得 {duration:%s} 秒：\n"
+			..Dot_green.." {reload_speed:%s} 裝填速度。\n"
 			.."\n"
 			..CPhrs("Can_be_refr"),
 	},
@@ -837,6 +1110,18 @@ local scum_localizations = {
 			.."Срабатывает при успешном уклонении от:\n"
 			..Dot_nc.." Атак врагов в ближнем или дальнем бою (кроме стрельбы пулемётчика, жнеца, снайпера),\n"
 			..Dot_nc.." Атак обездвиживающих врагов (прыжок чумной гончей, сетка скаба-ловца, захват мутанта).",
+		["zh-tw"] = "完美格擋與成功閃避會獲得 {duration:%s} 秒：\n"
+			..Dot_green.." {critical_strike_chance:%s} "..CKWord("暴擊打擊機率", "Crt_chnc_r_rgb_tw").."。\n"
+			.."\n"
+			..CPhrs("Can_be_refr").."\n"
+			.."\n"
+			.."完美格擋時觸發。\n"
+			.."\n"
+			.."成功閃避下列攻擊時觸發：\n"
+			..Dot_nc.." 敵人的近戰或遠程攻擊\n"
+			.."   （砲手、收割者、狙擊手除外），\n"
+			..Dot_nc.." 控制敵人的攻擊\n"
+			.."   （瘟疫獵犬撲擊、陷阱兵網、突變者抓取）。",
 	},
 	--[+ Passive 11 - Regained Posture +]--	26.03.2026
 	["loc_talent_broker_passive_stamina_on_successful_dodge_desc"] = { -- stamina: +10%, +colors
@@ -850,6 +1135,13 @@ local scum_localizations = {
 			.."Срабатывает при успешном уклонении от:\n"
 			..Dot_nc.." Атак врагов в ближнем или дальнем бою (кроме стрельбы пулемётчика, жнеца, снайпера),\n"
 			..Dot_nc.." Атак обездвиживающих врагов (прыжок чумной гончей, сетка скаба-ловца, захват мутанта).",
+		["zh-tw"] = Dot_green.." 成功閃避時獲得 {stamina:%s} "..CKWord("耐力", "Stamina_rgb_tw").."。\n"
+			.."\n"
+			.."成功閃避下列攻擊時觸發：\n"
+			..Dot_nc.." 敵人的近戰或遠程攻擊\n"
+			.."   （砲手、收割者、狙擊手除外），\n"
+			..Dot_nc.." 控制敵人的攻擊\n"
+			.."   （瘟疫獵犬撲擊、陷阱兵網、突變者抓取）。",
 	},
 	--[+ Passive 12 - Tis but a Scratch +]--	26.03.2026
 	["loc_talent_broker_passive_replenish_toughness_on_ranged_toughness_damage_desc"] = { -- toughness: 30%, duration: 3, +colors
@@ -863,6 +1155,14 @@ local scum_localizations = {
 			..Dot_green.." "..CNumb("10%", "pc_10_rgb").." "..CKWord("стойкости", "stoikosti_rgb_ru").." в секунду в течение {duration:%s} секунд, вплоть до {toughness:%s}.\n"
 			.."\n"
 			..Dot_nc.." Потеря всей "..CKWord("стойкости", "stoikosti_rgb_ru").." отменяет эффект.\n"
+			.."\n"
+			..CPhrs("Can_be_refr"),
+		["zh-tw"] = "在"..CKWord("韌性", "Toughness_rgb_tw").."高於 "..CNumb("0", "n_0_rgb").." 時，"
+			.."受到遠程"..CKWord("韌性傷害", "Tghns_dmg_rgb_tw").."會恢復：\n"
+			..Dot_green.." 每秒 "..CNumb("10%", "pc_10_rgb").." "..CKWord("韌性", "Toughness_rgb_tw").."，"
+			.."持續 {duration:%s} 秒，最高 {toughness:%s}。\n"
+			.."\n"
+			..Dot_nc.." 失去所有"..CKWord("韌性", "Toughness_rgb_tw").."會取消此效果。\n"
 			.."\n"
 			..CPhrs("Can_be_refr"),
 	},
@@ -887,6 +1187,13 @@ local scum_localizations = {
 			..Dot_nc.." До "..CNumb("+", "n_plus_rgb")..CNumb("50%", "n_50_rgb").." к "..CKWord("силе", "sile_rgb_ru")..".\n"
 			.."\n"
 			..Dot_red.." Обычные удары в ближнем бою снимают все заряды.",
+		["zh-tw"] = "背刺每層提供：\n"
+			..Dot_green.." {power:%s} 近戰"..CKWord("威力", "Strength_rgb_tw").."。\n"
+			.."\n"
+			..Dot_nc.." 可疊加 {stacks:%s} 層。\n"
+			..Dot_nc.." 最高 "..CNumb("+", "n_plus_rgb")..CNumb("50%", "n_50_rgb").." 近戰"..CKWord("威力", "Strength_rgb_tw").."。\n"
+			.."\n"
+			..Dot_red.." 一般近戰命中會改為移除所有層數。",
 	},
 	--[+ Passive 15 - Sample Collector +]--	26.03.2026
 	["loc_talent_broker_passive_stimm_cd_on_kill_desc"] = { -- restore: 1%, restore_toxined: 2%, +colors
@@ -908,6 +1215,14 @@ local scum_localizations = {
 			..CPhrs("Can_proc_mult"),
 			-- .."\n"
 			-- ..Dot_nc.." Этот талант срабатывает только после окончания действия "..CKWord("Особого стима Картеля", "Cartel_Stimm_rgb_ru")..".",
+		["zh-tw"] = "以任何攻擊擊殺敵人時，縮短"
+			..CKWord("卡特爾特製興奮劑", "Cartel_Stimm_rgb_tw").."剩餘"..CKWord("冷卻", "Cd_rgb_tw").."。\n"
+			.."\n"
+			.."每次擊殺的縮短量：\n"
+			..Dot_green.." 任意攻擊： "..CNumb("-", "n_minus_rgb").."{restore:%s}。\n"
+			..Dot_green.." "..CKWord("化學毒素", "Chem_Tox_rgb_tw").."跳傷： "..CNumb("-", "n_minus_rgb").."{restore_toxined:%s}。\n"
+			.."\n"
+			..CPhrs("Can_proc_mult"),
 	},
 	--[+ Passive 16 - Jittery +]--	26.03.2026
 	["loc_talent_broker_passive_improved_dodges_at_full_stamina_desc"] = { -- stamina: 75%, dodge_cooldown_reset_modifier: +40%, +colors
@@ -921,6 +1236,11 @@ local scum_localizations = {
 			.."\n"
 			..Dot_green.." Применяется после обычного уклонения.\n"
 			..Dot_red.." Не применяется после уклонения с подкатом.",
+		["zh-tw"] = CKWord("耐力", "Stamina_rgb_tw").."高於 {stamina:%s} 時：\n"
+			..Dot_green.." {dodge_cooldown_reset_modifier:%s} 閃避恢復速度。\n"
+			.."\n"
+			..Dot_green.." 會在一般閃避後套用。\n"
+			..Dot_red.." 不會在滑步閃避後套用。",
 	},
 	--[+ Passive 17 - Long Lasting +]--	26.03.2026
 	["loc_talent_broker_passive_stimm_increased_duration_desc"] = { -- duration_increase: +5, +colors
@@ -934,6 +1254,17 @@ local scum_localizations = {
 			..Dot_nc.." Увеличивает длительность только стимов, применённых к вам.\n"
 			.."\n"
 			..Dot_red.." Не увеличивает "..CNumb("8", "n_8_rgb").."-секундную длительность "..CKWord("Мед стима", "Med_Stimm_rgb_ru")..".",
+		["zh-tw"] = Dot_green.." "..CKWord("敏捷興奮劑", "Celerity_Stimm_rgb_tw").."、"
+			..CKWord("戰鬥興奮劑", "Combat_Stimm_rgb_tw").."、"
+			..CKWord("專注興奮劑", "Conc_Stimm_rgb_tw").."與"
+			..CKWord("卡特爾特製興奮劑", "Cartel_Stimm_rgb_tw")
+			.."的基礎持續時間 {duration_increase:%s} 秒。\n"
+			..Dot_nc.." 從 "..CNumb("15", "n_15_rgb").." 秒提高至 "..CNumb("20", "n_20_rgb").." 秒。\n"
+			.."\n"
+			..Dot_nc.." 只會提高套用在你身上的興奮劑持續時間。\n"
+			.."\n"
+			..Dot_red.." 不會提高"..CKWord("醫療興奮劑", "Med_Stimm_rgb_tw")
+			.."的 "..CNumb("8", "n_8_rgb").." 秒持續時間。",
 	},
 	--[+ Passive 18 - Blessed Stimms +]--	26.03.2026
 	["loc_talent_broker_passive_stimm_cleanse_on_kill_desc"] = { -- cleanse_amount: 1%, cleanse_threshold: 50%, +colors
@@ -949,11 +1280,20 @@ local scum_localizations = {
 			..Dot_green.." Лечит {cleanse_threshold:%s} "..CKWord("урона от порчи", "porchi_urona_rgb_ru").." до следующего сегмента "..CKWord("здоровья", "zdorovia_rgb_ru")..".\n"
 			.."\n"
 			..CPhrs("Can_proc_mult"),
+		["zh-tw"] = "受興奮劑影響時，擊殺會清除：\n"
+			..Dot_green.." {cleanse_amount:%s} "..CKWord("腐敗", "Corruption_rgb_tw").."。\n"
+			.."\n"
+			..Dot_green.." 治療 {cleanse_threshold:%s} "..CKWord("腐敗傷害", "Corruptdmg_rgb_tw")
+			.."，直到下一個"..CKWord("生命值", "Health_rgb_tw").."分段。\n"
+			.."\n"
+			..CPhrs("Can_proc_mult"),
 	},
 	--[+ Passive 19 - Swift Endurance +]--	26.03.2026
 	["loc_talent_broker_passive_stamina_grants_atk_speed_desc"] = { -- attack_speed_increase: +2%, +colors
 		en = Dot_green.." {attack_speed_increase:%s} Melee Attack Speed for each current "..CKWord("Stamina", "Stamina_rgb")..".",
 		ru = Dot_green.." {attack_speed_increase:%s} к скорости атак ближнего боя за каждую единицу текущей "..CKWord("выносливости", "vynoslivosti_rgb_ru")..".",
+		["zh-tw"] = Dot_green.." 目前每有一格"..CKWord("耐力", "Stamina_rgb_tw")
+			.."，獲得 {attack_speed_increase:%s} 近戰攻擊速度。",
 	},
 	--[+ Passive 20 - Punching Above One's Weight +]--	26.03.2026
 	["loc_talent_broker_passive_damage_vs_elites_monsters_desc"] = { -- multiplier: +15%, +colors
@@ -963,6 +1303,12 @@ local scum_localizations = {
 		ru = Dot_green.." {multiplier:%s} к "..CKWord("урону", "uronu_rgb_ru").." по элитным врагам и чудовищам.\n"
 			.."\n"
 			..Dot_nc.." Типы элитных врагов и чудовищ: Зверь Нургла, Отродье Хаоса, Чумной огрин, бастион, берсерк, демонхост, жнец, загонщик, крушитель, палач, плазмомётчик, пулемётчики, радист, скабы с дробовиками.",
+		["zh-tw"] = Dot_green.." 對精英與巨獸造成 {multiplier:%s} "..CKWord("傷害", "Damage_rgb_tw").."。\n"
+			.."\n"
+			..Dot_nc.." 具有精英或巨獸標籤的品種：納垢巨獸、"
+			.."堡壘、混沌魔物、粉碎者、惡魔宿主、砲手、"
+			.."大槌、群主、瘟疫歐格林、電漿槍手、"
+			.."通訊兵、狂怒者、收割者、霰彈兵。",
 	},
 	--[+ Passive 21 - Hive City Brawler +]--	26.03.2026
 	["loc_talent_broker_passive_dr_damage_tradeoff_on_stamina_desc"] = { -- damage_increase: 20%, damage_reduction: 20%, +colors
@@ -972,6 +1318,11 @@ local scum_localizations = {
 		ru = Dot_green.." До "..CNumb("+", "n_plus_rgb").."{damage_increase:%s} к "..CKWord("урону", "uronu_rgb_ru").." ближнего боя в зависимости от потраченной "..CKWord("выносливости", "vynoslivosti_rgb_ru")..".\n"
 			.."\n"
 			..Dot_green.." До "..CNumb("+", "n_plus_rgb").."{damage_reduction:%s} к "..CKWord("снижению урона", "snu_ur_stoikosti_rgb_ru").." в зависимости от оставшейся "..CKWord("выносливости", "vynoslivosti_rgb_ru")..".",
+		["zh-tw"] = Dot_green.." 依消耗的"..CKWord("耐力", "Stamina_rgb_tw")
+			.."，最高獲得 "..CNumb("+", "n_plus_rgb").."{damage_increase:%s} 近戰"..CKWord("傷害", "Damage_rgb_tw").."。\n"
+			.."\n"
+			..Dot_green.." 依可用的"..CKWord("耐力", "Stamina_rgb_tw")
+			.."，最高獲得 "..CNumb("+", "n_plus_rgb").."{damage_reduction:%s} "..CKWord("傷害", "Damage_rgb_tw").."減免。",
 	},
 	--[+ Passive 22 - Cheap Shots +]--	26.03.2026
 	["loc_talent_broker_passive_damage_vs_heavy_staggered_desc_02"] = { -- power_light: +10%, power_heavy: +15%, +colors
@@ -983,6 +1334,12 @@ local scum_localizations = {
 		ru = Dot_green.." {power_light:%s} к "..CKWord("силе", "sile_rgb_ru").." против "..CKWord("ошеломлённых", "oshelomlennyh_rgb_ru").." врагов.\n"
 			.."\n"
 			..Dot_green.." {power_heavy:%s} к "..CKWord("силе", "sile_rgb_ru").." против средне и сильно "..CKWord("ошеломлённых", "oshelomlennyh_rgb_ru").." врагов.\n"
+			.."\n"
+			..CNote("Pwr_note"),
+		["zh-tw"] = Dot_green.." 對"..CKWord("踉蹌", "Staggered_rgb_tw").."敵人造成 {power_light:%s} "..CKWord("威力", "Strength_rgb_tw").."。\n"
+			.."\n"
+			..Dot_green.." 對中度與重度"..CKWord("踉蹌", "Staggered_rgb_tw")
+			.."敵人造成 {power_heavy:%s} "..CKWord("威力", "Strength_rgb_tw").."。\n"
 			.."\n"
 			..CNote("Pwr_note"),
 	},
@@ -1002,6 +1359,13 @@ local scum_localizations = {
 			..Dot_nc.." До "..CNumb("+", "n_plus_rgb")..CNumb("50%", "pc_50_rgb").." к "..CKWord("рассечению", "rassecheniu_rgb_ru")..".\n"
 			.."\n"
 			..CPhrs("Can_proc_mult"),
+		["zh-tw"] = "近戰擊殺會使每層提供 {duration:%s} 秒：\n"
+			..Dot_green.." {multiplier:%s} 近戰"..CKWord("順劈攻擊", "Cleave_rgb_tw").."。\n"
+			.."\n"
+			..Dot_nc.." 可疊加 {max_stacks:%s} 層。\n"
+			..Dot_nc.." 最高 "..CNumb("+", "n_plus_rgb")..CNumb("50%", "pc_50_rgb").." 近戰"..CKWord("順劈攻擊", "Cleave_rgb_tw").."。\n"
+			.."\n"
+			..CPhrs("Can_proc_mult"),
 	},
 	--[+ Passive 24 - Coated Weaponry +]--	26.03.2026
 	["loc_talent_broker_passive_melee_attacks_apply_toxin_desc"] = { -- stacks: 1, toxin: Chem Toxin, +colors
@@ -1011,6 +1375,10 @@ local scum_localizations = {
 		ru = Dot_green.." {stacks:%s} заряд "..CKWord("Хим-токсина", "Chem_Toxa_rgb_ru").." накладывается на врагов "..CKWord("критическими ударами", "krit_udarami_rgb_ru").." в ближнем бою.\n"
 			.."\n"
 			..CPhrs("Can_appl_thr_shldsb"),
+		["zh-tw"] = Dot_green.." 近戰"..CKWord("暴擊打擊", "Crit_strikes_rgb_tw")
+			.."會對敵人施加 {stacks:%s} 層"..CKWord("化學毒素", "Chem_Tox_rgb_tw").."。\n"
+			.."\n"
+			..CPhrs("Can_appl_thr_shldsb"),
 	},
 	--[+ Passive 25 - Ammo Jack +]--	26.03.2026
 	["loc_talent_broker_passive_extended_mag_desc"] = { -- clip_size: +15%, +colors
@@ -1018,6 +1386,8 @@ local scum_localizations = {
 			..Dot_nc.." Rounded up.",
 		ru = Dot_green.." {clip_size:%s} к ёмкости магазина.\n"
 			..Dot_nc.." Округляется в большую сторону.",
+		["zh-tw"] = Dot_green.." {clip_size:%s} 彈匣容量。\n"
+			..Dot_nc.." 無條件進位。",
 	},
 	--[+ Passive 26 - Pickpocket +]--	26.03.2026
 	["loc_talent_broker_passive_low_ammo_regen_desc_04"] = { -- ammo_threshold: 20%, +colors
@@ -1025,10 +1395,13 @@ local scum_localizations = {
 			..Dot_green.." {ammo_threshold:%s} of Max Ammo.",
 		ru = "При запасе боеприпасов ниже {ammo_threshold:%s}, убийство элитных врагов или специалистов атакой ближнего боя восстанавливает запас боеприпасов до:\n"
 			..Dot_green.." {ammo_threshold:%s} от максимального запаса.",
+		["zh-tw"] = "目前備用彈藥低於 {ammo_threshold:%s} 時，\n"
+			.."以近戰攻擊擊殺精英或專家敵人會將備用彈藥設為：\n"
+			..Dot_green.." 最大彈藥的 {ammo_threshold:%s}。",
 	},
 	--[+ Passive 27 - Hyper-Critical +]--	26.03.2026
 	["loc_talent_broker_passive_melee_crit_instakill_desc"] = { -- threshold: 2, +colors
-		en = CKWord("Critical Strikes", "Crit_strikes_rgb").." instantly kill Human Sized Enemies if their current "..CKWord("Health", "Health_rgb").." is less than {threshold:%s} times the amount of "..CKWord("Damage", "Damage_rgb").." of the "..CKWord("Critical Strikes", "Crit_strikes_rgb")..".\n"
+		en = CKWord("Critical", "Critical_rgb").." Melee Attacks instantly kill Human Sized Enemies if their current "..CKWord("Health", "Health_rgb").." is less than {threshold:%s} times the amount of "..CKWord("Damage", "Damage_rgb").." of the "..CKWord("Critical Strikes", "Crit_strikes_rgb")..".\n"
 			.."\n"
 			..Dot_nc.." ["..CKWord("Crit Damage", "Crt_dmg_r_rgb").."] x {threshold:%s}] "..CNumb(">", "n_greater_rgb").." ["..CKWord("Health", "Health_rgb").."]\n"
 			.."\n"
@@ -1038,11 +1411,21 @@ local scum_localizations = {
 			.."["..CKWord("Крит. урон", "Krt_uron_rgb_ru").." x {threshold:%s}] "..CNumb(">", "n_greater_rgb").." ["..CKWord("Здоровье", "Zdorovie_rgb_ru").."]\n"
 			.."\n"
 			..Dot_nc.." Типы врагов НЕ человеческого размера: Зверь Нургла, Отродье Хаоса, Чумной огрин, бастион, демонхост, жнец, загонщик, капитаны/близнецы, крушитель.",
+		["zh-tw"] = CKWord("暴擊打擊", "Crit_strike_rgb_tw").."會立即擊殺人類體型敵人，\n"
+			.."前提是敵人目前"..CKWord("生命", "Health_rgb_tw").."低於該次"..CKWord("暴擊打擊", "Crit_strike_rgb_tw").."的"..CKWord("傷害", "Damage_rgb_tw").." x {threshold:%s}。\n"
+			.."\n"
+			..Dot_nc.." ["..CKWord("暴擊傷害", "Crit_dmg_r_rgb_tw").." x {threshold:%s}] "..CNumb(">", "n_greater_rgb").." ["..CKWord("生命", "Health_rgb_tw").."]\n"
+			.."\n"
+			..Dot_nc.." 不視為「人類體型」的敵人：\n"
+			.."   "..Dot_nc.." 納垢巨獸、堡壘、隊長/雙子、\n"
+			.."   "..Dot_nc.." 混沌魔物、碾壓者、惡魔宿主、\n"
+			.."   "..Dot_nc.." 獸群領主、瘟疫歐格林、收割者。",
 	},
 	--[+ Passive 28 - The Sweet Spot +]--	26.03.2026
 	["loc_talent_broker_passive_increased_weakspot_damage_desc"] = { -- weakspot_damage: +25%, +colors
 		en = Dot_green.." {weakspot_damage:%s} "..CKWord("Weakspot Damage", "Weakspot_dmg_rgb")..".",
 		ru = Dot_green.." {weakspot_damage:%s} к "..CKWord("урону по уязвимым местам", "u_mestam_uronu_rgb_ru")..".",
+		["zh-tw"] = Dot_green.." {weakspot_damage:%s} "..CKWord("弱點傷害", "Weakspot_dmg_rgb_tw").."。",
 	},
 	--[+ Passive 29 - Unload +]--	26.03.2026
 	["loc_talent_broker_passive_damage_on_reload_desc"] = { -- damage: +2%, duration: 7, ammo_per_stack: 10%, damage_per_stack: +2%, +colors
@@ -1060,6 +1443,16 @@ local scum_localizations = {
 			.."Каждые {ammo_per_stack:%s} потраченных боеприпасов из магазина за время действия дают дополнительно:\n"
 			..Dot_green.." {damage_per_stack:%s} дальнобойного "..CKWord("урона", "urona_rgb_ru")..".\n"
 			..Dot_nc.." Округляется в меньшую сторону\n"
+			.."\n"
+			..CPhrs("Can_be_refr"),
+		["zh-tw"] = "裝填你的遠程武器後，\n"
+			.."獲得 {duration:%s} 秒：\n"
+			..Dot_green.." {damage:%s} 遠程"..CKWord("傷害", "Damage_rgb_tw").."。\n"
+			.."\n"
+			.."效果期間每消耗彈匣 {ammo_per_stack:%s}，\n"
+			.."額外獲得：\n"
+			..Dot_green.." {damage_per_stack:%s} 遠程"..CKWord("傷害", "Damage_rgb_tw").."。\n"
+			..Dot_nc.." 無條件捨去。\n"
 			.."\n"
 			..CPhrs("Can_be_refr"),
 	},
@@ -1081,6 +1474,16 @@ local scum_localizations = {
 			..Dot_nc.." [Избыточный "..CKWord("урон", "uron_rgb_ru").."] "..CNumb("=", "n_equal_rgb").." [Нанесённый "..CKWord("урон", "uron_rgb_ru").."] "..CNumb("-", "n_minus_rgb").." ["..CKWord("Здоровье", "Zdorovie_rgb_ru").." врага оставшееся]\n"
 			.."\n"
 			..Dot_nc.." Длительность усиления обновляется только если новый избыточный "..CKWord("урон", "uron_rgb_ru").." больше предыдущего.",
+		["zh-tw"] = "擊殺時獲得 {duration:%s} 秒增益，\n"
+			.."使下次近戰攻擊附加固定"..CKWord("傷害", "Damage_rgb_tw").."。\n"
+			.."\n"
+			.."固定"..CKWord("傷害", "Damage_rgb_tw").."等於：\n"
+			..Dot_green.." 你過量"..CKWord("傷害", "Damage_rgb_tw").."的 {percentage:%s}。\n"
+			.."\n"
+			..Dot_nc.." [過量"..CKWord("傷害", "Damage_rgb_tw").."] "..CNumb("=", "n_equal_rgb").." [造成的"..CKWord("傷害", "Damage_rgb_tw").."] "..CNumb("-", "n_minus_rgb").." [敵人剩餘"..CKWord("生命", "Health_rgb_tw").."]。\n"
+			.."\n"
+			..Dot_nc.." 只有新的過量"..CKWord("傷害", "Damage_rgb_tw").."高於前一次時，\n"
+			.."   才會刷新增益持續時間。",
 	},
 	--[+ Passive 31 - Street Tough +]--	26.03.2026
 	["loc_talent_broker_passive_knockback_on_taking_melee_damage_desc_02"] = { -- movement_speed: +10%, duration: 3, cooldown: 8, +colors
@@ -1092,6 +1495,12 @@ local scum_localizations = {
 			..Dot_green.." {movement_speed:%s} к скорости движения.\n"
 			.."\n"
 			..Dot_nc.." Срабатывает раз в {cooldown:%s} секунд.",
+		["zh-tw"] = "受到近戰"..CKWord("傷害", "Damage_rgb_tw").."時，\n"
+			.."擊退你周圍所有附近敵人，\n"
+			.."並獲得 {duration:%s} 秒：\n"
+			..Dot_green.." {movement_speed:%s} 移動速度。\n"
+			.."\n"
+			..Dot_nc.." 每 {cooldown:%s} 秒只能觸發一次。",
 	},
 	--[+ Passive 32 - Battering Momentum +]--	26.03.2026
 	["loc_talent_broker_passive_cleave_on_cleave_desc"] = { -- min_targets: 3, multiplier: +50%, +colors
@@ -1099,11 +1508,15 @@ local scum_localizations = {
 			..Dot_green.." {multiplier:%s} "..CKWord("Cleave", "Cleave_rgb").." for your next Melee Attack.",
 		ru = "Попадание по {min_targets:%s} или более врагам атакой ближнего боя даёт:\n"
 			..Dot_green.." {multiplier:%s} к "..CKWord("рассечению", "rassecheniu_rgb_ru").." врагов для следующей атаки ближнего боя.",
+		["zh-tw"] = "單次近戰攻擊命中 {min_targets:%s} 個以上敵人時，\n"
+			.."獲得：\n"
+			..Dot_green.." 下次近戰攻擊 {multiplier:%s} "..CKWord("順劈攻擊", "Cleave_rgb_tw").."。",
 	},
 	--[+ Passive 33 - Extra Pouches +]--	26.03.2026
 	["loc_talent_broker_passive_increased_blitz_ammo_desc"] = { -- ammo: +1, +colors
 		en = Dot_green.." {ammo:%s} Blitz Charge.",
 		ru = Dot_green.." {ammo:%s} заряд блица.",
+		["zh-tw"] = Dot_green.." {ammo:%s} 閃擊技能充能。",
 	},
 	--[+ Passive 34 - Pocket Toxin +]--	26.03.2026
 	["loc_talent_broker_passive_blitz_inflicts_toxin_desc_02"] = { -- blinder_stacks: 3, missile_launcher_stacks: 6, chem_grenade_stacks: 10, +colors
@@ -1115,11 +1528,19 @@ local scum_localizations = {
 			..Dot_green.." {blinder:%s}: {blinder_stacks:%s} заряда всем целям в радиусе "..CNumb("3.5", "n_3_5_rgb").." метров.\n"
 			..Dot_green.." {missile_launcher:%s}: {missile_launcher_stacks:%s} зарядов всем целям в радиусе "..CNumb("7", "n_7_rgb").." метров.\n"
 			..Dot_green.." {chem_grenade:%s}: {chem_grenade_stacks:%s} зарядов всем целям в радиусе "..CNumb("4", "n_4_rgb").." метров.",
+		["zh-tw"] = "閃擊技能爆炸會依你選擇的閃擊技能，\n"
+			.."以不同方式使敵人感染"..CKWord("化學毒素", "Chem_Tox_rgb_tw").."層數：\n"
+			..Dot_green.." {blinder:%s}：對 "..CNumb("3.5", "n_3_5_rgb").." 米半徑內所有目標施加 {blinder_stacks:%s} 層。\n"
+			..Dot_green.." {missile_launcher:%s}：對 "..CNumb("7", "n_7_rgb").." 米半徑內所有目標施加 {missile_launcher_stacks:%s} 層。\n"
+			..Dot_green.." {chem_grenade:%s}：對 "..CNumb("4", "n_4_rgb").." 米半徑內所有目標施加 {chem_grenade_stacks:%s} 層。",
 	},
 	--[+ Passive 35 - Splash Damage +]--	26.03.2026
 	["loc_talent_broker_passive_toxin_spread_on_kills_desc_02"] = { -- max_targets: 10, radius: 4, toxin_stacks: 2, +colors
 		en = "Killing an Elite Enemy with a Melee Attack infects up to {max_targets:%s} enemies within {radius:%s} meters of the target with {toxin_stacks:%s} Stacks of "..CKWord("Chem Toxin", "Chem_Tox_rgb")..".",
 		ru = "Убийсто элитного врага атакой ближнего боя заражает до {max_targets:%s} врагов в радиусе {radius:%s} метров от цели {toxin_stacks:%s} зарядами "..CKWord("Хим-токсина", "Chem_Toxa_rgb_ru")..".",
+		["zh-tw"] = "以近戰攻擊擊殺精英敵人時，\n"
+			.."使目標 {radius:%s} 米內最多 {max_targets:%s} 名敵人\n"
+			.."感染 {toxin_stacks:%s} 層"..CKWord("化學毒素", "Chem_Tox_rgb_tw").."。",
 	},
 	--[+ Passive 36 - Toxic Renewal +]--	26.03.2026
 	["loc_talent_broker_passive_replenish_toughness_while_toxined_enemies_in_proximity_desc"] = { -- toughness_amount: 1%, range: 15, max_enemies: 10, m->meters, +colors
@@ -1131,6 +1552,11 @@ local scum_localizations = {
 			..Dot_green.." {toughness_amount:%s} "..CKWord("стойкости", "stoikosti_rgb_ru").." в секунду.\n"
 			.."\n"
 			..Dot_nc.." Вплоть до {max_enemies:%s}"..CNumb("%", "pc_rgb").." "..CKWord("стойкости", "stoikosti_rgb_ru").." в секунду.",
+		["zh-tw"] = "{range:%s} 米內每有一名感染"..CKWord("化學毒素", "Chem_Tox_rgb_tw").."的敵人，\n"
+			.."你會恢復：\n"
+			..Dot_green.." 每秒 {toughness_amount:%s} "..CKWord("韌性", "Toughness_rgb_tw").."。\n"
+			.."\n"
+			..Dot_nc.." 最多每秒 {max_enemies:%s}"..CNumb("%", "pc_rgb").." "..CKWord("韌性", "Toughness_rgb_tw").."。",
 	},
 	--[+ Passive 37 - Toxin Mania +]--	26.03.2026
 	["loc_talent_broker_damage_after_toxined_enemies_desc"] = { -- damage: +5%, damage_max: +15%, +colors
@@ -1142,6 +1568,11 @@ local scum_localizations = {
 			.."\n"
 			..Dot_nc.." Суммируется "..CNumb("3", "n_3_rgb").." раза.\n"
 			..Dot_nc.." До {damage_max:%s} к "..CKWord("урону", "uronu_rgb_ru")..".",
+		["zh-tw"] = Dot_green.." "..CNumb("12.5", "n_12_5_rgb").." 米內每有一名感染"..CKWord("化學毒素", "Chem_Tox_rgb_tw").."的敵人，\n"
+			.."獲得 {damage:%s} 基礎"..CKWord("傷害", "Damage_rgb_tw").."。\n"
+			.."\n"
+			..Dot_nc.." 可疊加 "..CNumb("3", "n_3_rgb").." 次。\n"
+			..Dot_nc.." 最高 {damage_max:%s} "..CKWord("傷害", "Damage_rgb_tw").."。",
 	},
 	--[+ Passive 38 - Moving Target +]--	26.03.2026
 	["loc_talent_broker_passive_increased_ranged_dodges_desc"] = { -- extra_consecutive_dodges: +1
@@ -1149,6 +1580,8 @@ local scum_localizations = {
 			..Dot_green.." {extra_consecutive_dodges:%s} Effective Dodge.",
 		ru = "Пока у вас в руках оружие дальнего боя вы получаете:\n"
 			..Dot_green.." {extra_consecutive_dodges:%s} уклонение.",
+		["zh-tw"] = "持有遠程武器時，獲得：\n"
+			..Dot_green.." {extra_consecutive_dodges:%s} 有效閃避。",
 	},
 	--[+ Passive 39 - Channelled Devastation +]--	26.03.2026
 	["loc_talent_broker_passive_crit_grants_damage_desc"] = { -- critical_chance: 1%, melee_damage: +0.5%, max_stacks: 30, max_melee_damage: +15%, +colors
@@ -1158,6 +1591,10 @@ local scum_localizations = {
 		ru = "Каждый {critical_chance:%s} вашего текущего "..CKWord("шанса критического удара", "sha_krit_udara_rgb_ru").." даёт заряд {melee_damage:%s} к "..CKWord("урону", "uronu_rgb_ru").." ближнего боя.\n"
 			..Dot_nc.." Суммируется {max_stacks:%s} раз.\n"
 			..Dot_nc.." Вплоть до {max_melee_damage:%s} к "..CKWord("урону", "uronu_rgb_ru").." ближнего боя.",
+		["zh-tw"] = "你目前每有 {critical_chance:%s} "..CKWord("暴擊機率", "Crit_chance_rgb_tw").."，\n"
+			.."就獲得一層 {melee_damage:%s} 近戰"..CKWord("傷害", "Damage_rgb_tw").."。\n"
+			..Dot_nc.." 可疊加 {max_stacks:%s} 次。\n"
+			..Dot_nc.." 最高 {max_melee_damage:%s} 近戰"..CKWord("傷害", "Damage_rgb_tw").."。",
 	},
 	--[+ Passive 40 - Virulent Strain +]--	26.03.2026
 	["loc_talent_broker_passive_toxin_infected_enemies_take_increased_damage_desc"] = { -- damage_taken: +10%, duration: 5, +colors
@@ -1165,6 +1602,9 @@ local scum_localizations = {
 			..Dot_green.." {damage_taken:%s} "..CKWord("Damage", "Damage_rgb").." Taken from all sources.",
 		ru = "Когда вы заражаете врагов "..CKWord("Хим-токсином", "Chem_Toxom_rgb_ru").." они получают на {duration:%s} секунд:\n"
 			..Dot_green.." {damage_taken:%s} к получаемому "..CKWord("урону", "uronu_rgb_ru").." из любых источников.",
+		["zh-tw"] = "當你使敵人感染"..CKWord("化學毒素", "Chem_Tox_rgb_tw").."時，\n"
+			.."敵人獲得 {duration:%s} 秒：\n"
+			..Dot_green.." 來自所有來源的承受"..CKWord("傷害", "Damage_rgb_tw").." {damage_taken:%s}。",
 	},
 	--[+ Passive 41 - Targeted Toxin +]--	26.03.2026
 	["loc_talent_broker_passive_reduced_damage_by_toxined_desc"] = { -- default: -15%, monster: -30%, +colors
@@ -1178,6 +1618,11 @@ local scum_localizations = {
 			.."\n"
 			.."Чудовища наносят:\n"
 			..Dot_green.." {monster:%s} "..CKWord("урона", "urona_rgb_ru")..".",
+		["zh-tw"] = "你感染"..CKWord("化學毒素", "Chem_Tox_rgb_tw").."的敵人造成：\n"
+			..Dot_green.." {default:%s} "..CKWord("傷害", "Damage_rgb_tw").."。\n"
+			.."\n"
+			.."巨獸造成：\n"
+			..Dot_green.." {monster:%s} "..CKWord("傷害", "Damage_rgb_tw").."。",
 	},
 
 
@@ -1188,22 +1633,29 @@ local scum_localizations = {
 			.."\n",
 			ru = Dot_green.." {toughness_amount:%s} "..CKWord("стойкости", "stoikosti_rgb_ru").." восстанавливается при использовании стима."
 			.."\n",
+			["zh-tw"] = Dot_green.." 使用興奮劑時恢復 {toughness_amount:%s} "..CKWord("韌性", "Toughness_rgb_tw").."。"
+			.."\n",
 		},
 		["loc_talent_stat_toughness_replenish_modifier"] = { -- toughness_replenish_modifier: +5%, +colors
 			en = Dot_green.." {toughness_replenish_modifier:%s} "..CKWord("Toughness", "Toughness_rgb").." Replenishment by Melee kills, Talents, and select Weapon Blessings.\n"
 			..CPhrs("Dont_intw_coher_toughn").."\n",
 			ru = Dot_green.." {toughness_replenish_modifier:%s} к восстановлению "..CKWord("стойкости", "stoikosti_rgb_ru").." от убийств в ближнем бою, талантов и благословений оружия.\n"
 			..CPhrs("Dont_intw_coher_toughn").."\n",
+			["zh-tw"] = Dot_green.." 近戰擊殺、天賦與部分武器祝福造成的"..CKWord("韌性", "Toughness_rgb_tw").."恢復 {toughness_replenish_modifier:%s}。\n"
+			..CPhrs("Dont_intw_coher_toughn").."\n",
 		},
 		["loc_talent_stat_damage_taken_multiplier"] = { -- damage_taken_multiplier: -4%, +colors
 			en = Dot_green.." "..CNumb("+", "n_plus_rgb").."{damage_taken_multiplier:%s} "..CKWord("Damage", "Damage_rgb").." Reduction.",
 			ru = Dot_green.." "..CNumb("-", "n_minus_rgb").."{damage_taken_multiplier:%s} к получаемому "..CKWord("урону", "uronu_rgb_ru")..".",
+			["zh-tw"] = Dot_green.." "..CNumb("+", "n_plus_rgb").."{damage_taken_multiplier:%s} "..CKWord("傷害", "Damage_rgb_tw").."減免。",
 		},
 		["loc_talent_buff_toughness_during_stimm"] = { -- toughness_amount: +5%, interval: 1, +colors
 			en = Dot_green.." {toughness_amount:%s} "..CKWord("Toughness", "Toughness_rgb").." replenished per second.\n" -- {interval:%s}
 			..Dot_red.." Disabled while knocked down.",
 			ru = Dot_green.." {toughness_amount:%s} "..CKWord("стойкости", "stoikosti_rgb_ru").." восстанавливается каждую секунду.\n" -- {interval:%s}
 			..Dot_red.." Не работает пока вы сбиты с ног.",
+			["zh-tw"] = Dot_green.." 每秒恢復 {toughness_amount:%s} "..CKWord("韌性", "Toughness_rgb_tw").."。\n" -- {interval:%s}
+			..Dot_red.." 被擊倒時停用。",
 		},
 	--[+ Wildfire I-V / Fury I-II / Vultoprene I-II +]--
 		["loc_talent_stat_power_level"] = { -- power_level: +4%, +colors
@@ -1213,11 +1665,16 @@ local scum_localizations = {
 			ru = Dot_green.." {power_level:%s} к "..CKWord("силе", "sile_rgb_ru").." атак ближнего боя, дальнобойных атак, эффектов урона со временем и взрывов.\n"
 				..CNote("Pwr_note")
 				.."\n",
+			["zh-tw"] = Dot_green.." 近戰與遠程攻擊、持續傷害、爆炸的"..CKWord("威力", "Strength_rgb_tw").." {power_level:%s}。\n"
+				..CNote("Pwr_note")
+				.."\n",
 		},
 		["loc_talent_stat_finesse_modifier_bonus"] = { -- finesse_modifier_bonus: +10%, +colors
 			en = Dot_green.." {finesse_modifier_bonus:%s} "..CKWord("Finesse", "Finesse_rgb")..".\n"
 				..CNote("Fns_note"),
 			ru = Dot_green.." {finesse_modifier_bonus:%s} к "..CKWord("ловкости", "lovkosti_rgb_ru")..".\n"
+				..CNote("Fns_note"),
+			["zh-tw"] = Dot_green.." {finesse_modifier_bonus:%s} "..CKWord("靈巧", "Finesse_rgb_tw").."。\n"
 				..CNote("Fns_note"),
 		},
 		["loc_talent_stat_rending_multiplier"] = { -- rending_multiplier: +5%, +colors
@@ -1225,10 +1682,13 @@ local scum_localizations = {
 				..CNote("Rend_note"),
 			ru = Dot_green.." {rending_multiplier:%s} к "..CKWord("пробиванию", "probivaniu_rgb_ru").." брони.\n"
 				..CNote("Rend_note"),
+			["zh-tw"] = Dot_green.." {rending_multiplier:%s} "..CKWord("撕裂", "Rending_rgb_tw").."。\n"
+				..CNote("Rend_note"),
 		},
 		["loc_talent_stat_critical_strike_chance"] = { -- critical_strike_chance: +5%, +colors
 			en = Dot_green.." {critical_strike_chance:%s} "..CKWord("Critical Strike Chance", "Crt_chnc_r_rgb")..".\n",
 			ru = Dot_green.." {critical_strike_chance:%s} к "..CKWord("шансу критического удара", "sh_krit_udara_rgb_ru")..".",
+			["zh-tw"] = Dot_green.." {critical_strike_chance:%s} "..CKWord("暴擊機率", "Crit_chance_rgb_tw").."。\n",
 		},
 	--[+ Spur I-V +]--
 		["loc_talent_stat_attack_speed"] = { -- attack_speed: +4%, +colors
@@ -1236,6 +1696,8 @@ local scum_localizations = {
 			.."\n",
 			ru = Dot_green.." {attack_speed:%s} к скорости атаки."
 				.."\n",
+			["zh-tw"] = Dot_green.." {attack_speed:%s} 攻擊速度。"
+			.."\n",
 		},
 		["loc_talent_stat_wield_speed"] = { -- wield_speed: +25%, +colors
 			en = Dot_green.." {wield_speed:%s} Swap Speed.\n"
@@ -1244,18 +1706,25 @@ local scum_localizations = {
 			ru = Dot_green.." {wield_speed:%s} к скорости смены оружия и предметов.\n"
 				..Dot_nc.." Этот талант сокращает время затрачиваемое на смену слотов предметов (оружие, гранаты, стимуляторы, медпаки, ящики с боеприпасами, книги и т.д.)."
 			.."\n",
+			["zh-tw"] = Dot_green.." {wield_speed:%s} 切換速度。\n"
+				..Dot_nc.." 這會縮短切換物品欄位時，裝備動作所需的時間（武器、手雷、興奮劑、醫療包、彈藥箱、書籍等）。"
+			.."\n",
 		},
 		["loc_talent_stat_stamina_cost_multiplier"] = { -- stamina_cost_multiplier: -15%, +colors
 			en = Dot_green.." {stamina_cost_multiplier:%s} "..CKWord("Stamina", "Stamina_rgb").." Cost.\n"
 				..Dot_nc.." Includes "..CKWord("Stamina", "Stamina_rgb").." drain by Blocking, Pushing, Sprinting, Jumping while Sprinting, Dodge-cancelling sticky attacks.",
 			ru = Dot_green.." {stamina_cost_multiplier:%s} к затратам "..CKWord("выносливости", "vynoslivosti_rgb_ru")..".\n"
 				..Dot_nc.." Включает затраты "..CKWord("выносливости", "vynoslivosti_rgb_ru").." на блокирование, отталкивание, бег, прыжки во время бега и отмену атак уклонениями.",
+			["zh-tw"] = Dot_green.." {stamina_cost_multiplier:%s} "..CKWord("耐力", "Stamina_rgb_tw").."消耗。\n"
+				..Dot_nc.." 包含格擋、推擊、衝刺、衝刺時跳躍，以及以閃避取消黏著攻擊造成的"..CKWord("耐力", "Stamina_rgb_tw").."消耗。",
 		},
 		["loc_talent_keyword_stun_immune"] = { -- +colors
 			en = "Grants:\n"
 				..Dot_green.." "..CKWord("Stun", "Stun_rgb").." Immunity.",
 			ru =  "Даёт:\n"
 				..Dot_green.." Иммунитет к "..CKWord("ошеломлению", "oshelomleniu_rgb_ru")..".",
+			["zh-tw"] = "賦予：\n"
+				..Dot_green.." "..CKWord("眩暈", "Stun_rgb_tw").."免疫。",
 		},
 		["loc_talent_keyword_slowdown_immune"] = {
 			en = Dot_green.." Slowdown Immunity.\n"
@@ -1266,28 +1735,37 @@ local scum_localizations = {
 				.."\n"
 				..Dot_red.." {#color(255, 35, 5)}СЛОМАНО{#reset()}\n"
 				.."Оба иммунитета не применяются.",
+			["zh-tw"] = Dot_green.." 緩速免疫。\n"
+				.."\n"
+				..Dot_red.." {#color(255, 35, 5)}BUG{#reset()}\n"
+				.."兩種免疫效果都不會套用。",
 		},
 	--[+ Reflex +]--
 		["loc_talent_stat_reload_speed"] = { -- reload_speed: +30%, +colors
 			en = Dot_green.." {reload_speed:%s} Reload Speed.\n",
 			ru = Dot_green.." {reload_speed:%s} к скорости перезарядки.\n",
+			["zh-tw"] = Dot_green.." {reload_speed:%s} 裝填速度。\n",
 		},
 		["loc_talent_stat_recoil_modifier"] = { -- recoil_modifier: -50%, +colors
 			en = Dot_green.." {recoil_modifier:%s} Recoil.",
 			ru = Dot_green.." {recoil_modifier:%s} к отдаче.",
+			["zh-tw"] = Dot_green.." {recoil_modifier:%s} 後座力。",
 		},
 	--[+ Fervor +]--
 		["loc_talent_stat_movement_speed"] = { -- movement_speed: +10%, +colors
 			en = Dot_green.." {movement_speed:%s} Movement Speed.\n",
 			ru = Dot_green.." {movement_speed:%s} к скорости движения.\n",
+			["zh-tw"] = Dot_green.." {movement_speed:%s} 移動速度。\n",
 		},
 		["loc_talent_stat_dodge_distance_modifier"] = { -- dodge_distance_modifier: +5%, +colors
 			en = Dot_green.." {dodge_distance_modifier:%s} Dodge Distance.\n",
 			ru = Dot_green.." {dodge_distance_modifier:%s} к дистанции уклонений.\n",
+			["zh-tw"] = Dot_green.." {dodge_distance_modifier:%s} 閃避距離。\n",
 		},
 		["loc_talent_stat_dodge_speed_multiplier"] = { -- dodge_speed_multiplier: +5%, +colors
 			en = Dot_green.." {dodge_speed_multiplier:%s} Dodge Speed.\n",
 			ru = Dot_green.." {dodge_speed_multiplier:%s} к скорости уклонений.\n",
+			["zh-tw"] = Dot_green.." {dodge_speed_multiplier:%s} 閃避速度。\n",
 		},
 		["loc_talent_stat_dodge_cooldown_reset_modifier"] = { -- dodge_cooldown_reset_modifier: +5%, +colors
 			en = Dot_green.." {dodge_cooldown_reset_modifier:%s} Dodge Recovery Speed.\n"
@@ -1296,11 +1774,15 @@ local scum_localizations = {
 			ru = Dot_green.." {dodge_cooldown_reset_modifier:%s} к скорости восстановления уклонений.\n"
 				..Dot_nc.." Применяется после обычного уклонения.\n"
 				..Dot_red.." Не применяется после уклонения с подкатом.",
+			["zh-tw"] = Dot_green.." {dodge_cooldown_reset_modifier:%s} 閃避恢復速度。\n"
+				..Dot_nc.." 於一般閃避後套用。\n"
+				..Dot_red.." 不會於滑步閃避後套用。",
 		},
 	--[+ Kalma I-V +]--
 		["loc_talent_stat_combat_ability_cooldown_regen_modifier"] = { -- combat_ability_cooldown_regen_modifier: +6.25%, +colors
 			en = Dot_green.." {combat_ability_cooldown_regen_modifier:%s} "..CKWord("Cooldown", "Cd_rgb").." Regeneration.",
 			ru = Dot_green.." {combat_ability_cooldown_regen_modifier:%s} к восстановлению "..CKWord("способности", "sposobnosti_rgb_ru")..".",
+			["zh-tw"] = Dot_green.." {combat_ability_cooldown_regen_modifier:%s} "..CKWord("冷卻", "Cd_rgb_tw").."恢復。",
 		},
 	--[+ Hypex +]--
 		["loc_talent_buff_cooldown_on_melee_kills"] = { -- duration: -4%, cooldown: -4%, +colors
@@ -1310,6 +1792,10 @@ local scum_localizations = {
 			..CPhrs("Can_be_refr"),
 			ru = "Когда активно, убийства в ближнем бою дают на {duration:%s} секунду:\n"
 			..Dot_green.." {cooldown:%s} к восстановлению "..CKWord("боевой способности", "boev_sposobnosti_rgb_ru")..".\n"
+			.."\n"
+			..CPhrs("Can_be_refr"),
+			["zh-tw"] = "啟用時，近戰擊殺會賦予 {duration:%s} 秒：\n"
+			..Dot_green.." {cooldown:%s} "..CKWord("技能冷卻", "Ability_cd_rgb_tw").."恢復。\n"
 			.."\n"
 			..CPhrs("Can_be_refr"),
 		},
@@ -1323,10 +1809,14 @@ local scum_localizations = {
 			..Dot_green.." {cooldown:%s} к восстановлению "..CKWord("боевой способности", "boev_sposobnosti_rgb_ru")..".\n"
 			.."\n"
 			..CPhrs("Can_be_refr"),
+			["zh-tw"] = "啟用時，遠程擊殺會賦予 {duration:%s} 秒：\n"
+			..Dot_green.." {cooldown:%s} "..CKWord("技能冷卻", "Ability_cd_rgb_tw").."恢復。\n"
+			.."\n"
+			..CPhrs("Can_be_refr"),
 		},
 }
 
--- CREATING TEMPLATES -- СОЗДАЁМ ШАБЛОНЫ
+-- Creating templates -- Создаём шаблоны
 local scum_templates = {}
 
 for loc_key, locales in pairs(scum_localizations) do

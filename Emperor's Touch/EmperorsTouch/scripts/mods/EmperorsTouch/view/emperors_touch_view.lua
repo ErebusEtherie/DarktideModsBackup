@@ -1,0 +1,542 @@
+--[[
+    emperors_touch_view.lua
+    History-style view (mimics peril_tracker/scoreboard):
+    "Get Toys" button top-left queries the Lovense API, and the scrollable
+    left grid is populated with the toys from the response.
+--]]
+
+local mod = get_mod("EmperorsTouch")
+
+local ScriptWorld            = mod:original_require("scripts/foundation/utilities/script_world")
+local UIRenderer             = mod:original_require("scripts/managers/ui/ui_renderer")
+local UIWidget               = mod:original_require("scripts/managers/ui/ui_widget")
+local UIWidgetGrid           = mod:original_require("scripts/ui/widget_logic/ui_widget_grid")
+local ViewElementInputLegend = mod:original_require("scripts/ui/view_elements/view_element_input_legend/view_element_input_legend")
+
+local DropdownHelper = mod:io_dofile("EmperorsTouch/scripts/mods/EmperorsTouch/view/dropdown_helper")
+
+local VIEW_NAME = "emperors_touch_view"
+
+local EmperorsTouchView = class("EmperorsTouchView", "BaseView")
+
+DropdownHelper.install(EmperorsTouchView)
+
+-- ===== Helpers =====
+
+local function toy_to_entry(toy)
+    local name     = toy.name or "unknown"
+    local nickname = toy.nickName
+    local title    = name:gsub("^%l", string.upper)
+    if nickname and nickname ~= "" then
+        title = string.format("%s (%s)", nickname, title)
+    end
+
+    -- status is normalized to a string in get_toys; "1"/"true" = connected
+    local status_str = tostring(toy.status or "")
+    local status = (status_str == "1" or status_str == "true") and "Connected" or "Disconnected"
+
+    -- Desktop Lovense Remote doesn't report battery; show "?" not a fake 0
+    local battery = tonumber(toy.battery)
+    local battery_str = battery and (battery .. "%") or "?"
+
+    return {
+        widget_type = "toy_button",
+        title       = title,
+        subtitle    = string.format("Battery: %s  |  %s  |  id: %s",
+            battery_str, status, toy.id or "?"),
+        toy         = toy,
+    }
+end
+
+-- ===== Init =====
+
+EmperorsTouchView.init = function(self, settings_arg)
+    self._definitions   = mod:io_dofile("EmperorsTouch/scripts/mods/EmperorsTouch/view/emperors_touch_view_definitions")
+    self._blueprints    = mod:io_dofile("EmperorsTouch/scripts/mods/EmperorsTouch/view/emperors_touch_view_blueprints")
+    self._view_settings = mod:io_dofile("EmperorsTouch/scripts/mods/EmperorsTouch/view/emperors_touch_view_settings")
+    self._selected_toy       = nil
+    self._entry_widgets      = {}
+    self._entries_grid       = nil
+    self._hook_panel_widgets = {}
+    EmperorsTouchView.super.init(self, self._definitions, settings_arg)
+    self._pass_draw = false
+    self:_setup_offscreen_gui()
+end
+
+EmperorsTouchView._setup_offscreen_gui = function(self)
+    local ui_manager     = Managers.ui
+    local class_name     = self.__class_name
+    local timer_name     = "ui"
+    local world_layer    = 10
+    local world_name     = class_name .. "_ui_offscreen_world"
+    local view_name      = self.view_name
+    self._offscreen_world = ui_manager:create_world(world_name, world_layer, timer_name, view_name)
+    local shading_env    = self._view_settings.shading_environment
+    local viewport_name  = class_name .. "_ui_offscreen_world_viewport"
+    local viewport_type  = "overlay_offscreen"
+    local viewport_layer = 1
+    self._offscreen_viewport = ui_manager:create_viewport(
+        self._offscreen_world, viewport_name, viewport_type, viewport_layer, shading_env
+    )
+    self._offscreen_viewport_name = viewport_name
+    self._ui_offscreen_renderer   = ui_manager:create_renderer(
+        class_name .. "_ui_offscreen_renderer", self._offscreen_world
+    )
+end
+
+-- ===== on_enter =====
+
+EmperorsTouchView.on_enter = function(self)
+    EmperorsTouchView.super.on_enter(self)
+    self:_setup_input_legend()
+    self:_setup_get_toys_button()
+
+    self:_clear_hook_panel()
+
+    -- Show the cached toy list; Get Toys re-polls and refreshes the cache.
+    if #(mod.toys or {}) > 0 then
+        self:_populate_toys(mod.toys)
+    else
+        self:_show_message("Press Get Toys to query connected devices.")
+    end
+end
+
+EmperorsTouchView._setup_input_legend = function(self)
+    self._input_legend_element = self:_add_element(ViewElementInputLegend, "input_legend", 10)
+    for _, leg in ipairs(self._definitions.legend_inputs) do
+        local cb = leg.on_pressed_callback and callback(self, leg.on_pressed_callback)
+        self._input_legend_element:add_entry(leg.display_name, leg.input_action, nil, cb, leg.alignment)
+    end
+end
+
+EmperorsTouchView._setup_get_toys_button = function(self)
+    local button = self._widgets_by_name.get_toys_button
+    if button then
+        button.content.hotspot.pressed_callback = callback(self, "cb_get_toys_pressed")
+    end
+end
+
+-- ===== Toy list =====
+
+EmperorsTouchView._clear_entries = function(self)
+    if self._entry_widgets then
+        for _, w in ipairs(self._entry_widgets) do
+            pcall(function() self:_unregister_widget_name(w.name) end)
+        end
+    end
+    self._entry_widgets = {}
+    self._entries_grid  = nil
+end
+
+EmperorsTouchView._show_message = function(self, text)
+    self:_clear_entries()
+    local def = UIWidget.create_definition({
+        {
+            pass_type = "text",
+            value     = text,
+            style     = {
+                font_type                 = "proxima_nova_bold",
+                font_size                 = 18,
+                text_color                = { 200, 180, 180, 180 },
+                text_horizontal_alignment = "left",
+                text_vertical_alignment   = "top",
+                size                      = { 460, 100 },
+                offset                    = { 0, 0 },
+            },
+        },
+    }, "grid_content_pivot")
+    local widget = self:_create_widget("status_msg_" .. tostring(math.random(1e9)), def)
+    self._entry_widgets = { widget }
+end
+
+-- Dropdown option list of presets, "None" first.
+EmperorsTouchView._preset_options = function(self)
+    local presets = mod:get_presets()
+
+    local ordered = {}
+    for id, p in pairs(presets) do
+        ordered[#ordered + 1] = { id = id, name = p.name or "Preset" }
+    end
+    table.sort(ordered, function(a, b) return a.name < b.name end)
+
+    local options = { { id = "__none", display_name = "None", ignore_localization = true } }
+    for _, item in ipairs(ordered) do
+        options[#options + 1] = { id = item.id, display_name = item.name, ignore_localization = true }
+    end
+    return options
+end
+
+EmperorsTouchView._populate_toys = function(self, toys)
+    self:_clear_entries()
+    self:_clear_hook_panel()
+
+    if #toys == 0 then
+        self:_show_message("Connected, but no toys found.\nPair a toy in the Lovense app, then press Get Toys again.")
+        return
+    end
+
+    local entries = {}
+    for _, toy in ipairs(toys) do
+        entries[#entries + 1] = toy_to_entry(toy)
+    end
+
+    self._entry_widgets = self:_build_entry_widgets(entries, "grid_content_pivot")
+
+    if #self._entry_widgets > 0 then
+        self._entries_grid = UIWidgetGrid:new(
+            self._entry_widgets,
+            self._entry_widgets,
+            self._ui_scenegraph,
+            "background",
+            "down",
+            self._view_settings.grid_spacing,
+            nil,
+            true
+        )
+        self._entries_grid:set_render_scale(self._render_scale)
+
+        local scrollbar = self._widgets_by_name.scrollbar
+        if scrollbar then
+            self._entries_grid:assign_scrollbar(scrollbar, "grid_content_pivot", "background")
+            self._entries_grid:set_scrollbar_progress(0)
+        end
+    end
+end
+
+EmperorsTouchView._build_entry_widgets = function(self, entries, scenegraph_id)
+    local widgets    = {}
+    local defs_cache = {}
+
+    for i, entry in ipairs(entries) do
+        local wtype    = entry.widget_type
+        local template = self._blueprints[wtype]
+        if template then
+            if not defs_cache[wtype] then
+                defs_cache[wtype] = UIWidget.create_definition(
+                    template.pass_template, scenegraph_id, nil, template.size
+                )
+            end
+            local widget = self:_create_widget(scenegraph_id .. "_widget_" .. i, defs_cache[wtype])
+            if template.init then
+                template.init(self, widget, entry, entry.callback_name or "cb_on_toy_pressed")
+            end
+            widgets[#widgets + 1] = widget
+        end
+    end
+
+    return widgets
+end
+
+-- ===== Callbacks =====
+
+EmperorsTouchView.cb_get_toys_pressed = function(self)
+    self:_show_message("Querying toys...")
+
+    mod:get_toys(function(toys, err)
+        -- View may have closed while the request was in flight
+        if self._destroyed or not Managers.ui:view_active(VIEW_NAME) then
+            return
+        end
+        if err then
+            self:_show_message("GetToys failed: " .. tostring(err))
+            return
+        end
+        self:_populate_toys(toys or {})
+    end)
+end
+
+EmperorsTouchView.cb_on_toy_pressed = function(self, widget, entry)
+    self._selected_toy = entry.toy
+
+    -- Mark selection in the list
+    for _, w in ipairs(self._entry_widgets or {}) do
+        if w.content and w.content.hotspot then
+            w.content.is_selected = (w == widget)
+        end
+    end
+
+    self:_build_hook_panel(entry.toy)
+end
+
+-- ===== Right-side hook panel =====
+
+-- Small inline "Invert" checkbox rendered inside a dropdown row, just left
+-- of the dropdown box. Toggles the poll-scale inversion for hook+toy.
+-- Reads/writes content.inverted; calls content.on_invert_toggled(new_state).
+local function invert_checkbox_passes(row_width, value_width)
+    local BOX     = 22
+    local LABEL_W = 60
+    local box_x   = row_width - value_width - BOX - 24
+    local label_x = box_x - LABEL_W - 8
+
+    return {
+        {
+            pass_type  = "hotspot",
+            content_id = "invert_hotspot",
+            style      = {
+                horizontal_alignment = "left",
+                vertical_alignment   = "center",
+                size                 = { LABEL_W + BOX + 16, 36 },
+                offset               = { label_x, 0, 4 },
+            },
+        },
+        {
+            pass_type = "logic",
+            value = function(pass, ui_renderer, style, content)
+                local hotspot = content.invert_hotspot
+                if hotspot and hotspot.on_pressed then
+                    content.inverted = not content.inverted
+                    if content.on_invert_toggled then
+                        content.on_invert_toggled(content.inverted)
+                    end
+                end
+            end,
+        },
+        {
+            pass_type = "text",
+            value     = "Invert",
+            style     = {
+                font_type                 = "proxima_nova_bold",
+                font_size                 = 16,
+                text_color                = { 255, 200, 200, 210 },
+                text_horizontal_alignment = "right",
+                text_vertical_alignment   = "center",
+                horizontal_alignment      = "left",
+                vertical_alignment        = "center",
+                size                      = { LABEL_W, 36 },
+                offset                    = { label_x, 0, 5 },
+            },
+            change_function = function(content, style)
+                local hovered = content.invert_hotspot and content.invert_hotspot.is_hover
+                style.text_color[1] = hovered and 255 or 180
+            end,
+        },
+        {
+            -- box outline
+            pass_type = "rect",
+            style     = {
+                horizontal_alignment = "left",
+                vertical_alignment   = "center",
+                size                 = { BOX, BOX },
+                offset               = { box_x, 0, 5 },
+                color                = { 180, 120, 110, 90 },
+            },
+        },
+        {
+            -- box interior (always drawn, darker)
+            pass_type = "rect",
+            style     = {
+                horizontal_alignment = "left",
+                vertical_alignment   = "center",
+                size                 = { BOX - 4, BOX - 4 },
+                offset               = { box_x + 2, 0, 6 },
+                color                = { 255, 15, 15, 18 },
+            },
+        },
+        {
+            -- checked fill
+            pass_type = "rect",
+            style     = {
+                horizontal_alignment = "left",
+                vertical_alignment   = "center",
+                size                 = { BOX - 10, BOX - 10 },
+                offset               = { box_x + 5, 0, 7 },
+                color                = { 255, 220, 170, 60 },
+            },
+            visibility_function = function(content)
+                return content.inverted
+            end,
+        },
+    }
+end
+
+EmperorsTouchView._clear_hook_panel = function(self)
+    self:close_focused_dropdown()
+
+    for _, w in ipairs(self._hook_panel_widgets or {}) do
+        pcall(function() self:_unregister_widget_name(w.name) end)
+    end
+    self._hook_panel_widgets = {}
+    self._hook_grid          = nil
+
+    local title = self._widgets_by_name.hook_panel_title
+    if title then
+        title.content.text = ""
+    end
+    local scrollbar = self._widgets_by_name.hook_scrollbar
+    if scrollbar then scrollbar.visible = false end
+end
+
+EmperorsTouchView._build_hook_panel = function(self, toy)
+    self:_clear_hook_panel()
+
+    -- Cached copy so dropdown get_functions don't clone settings every frame
+    self._assign_cache = mod:get_assignments()
+
+    local title = self._widgets_by_name.hook_panel_title
+    if title then
+        local name = (toy.nickName and toy.nickName ~= "") and toy.nickName
+            or (toy.name or "toy"):gsub("^%l", string.upper)
+        title.content.text = "Hooks — " .. name
+    end
+
+    local ROW_H     = 44
+    local ROW_GAP   = 8
+    local toy_id    = toy.id
+    local hooks     = mod.HOOKS or {}
+
+    local inversions = mod:get_inversions()
+
+    for i, hook in ipairs(hooks) do
+        local hook_id = hook.id
+        local is_poll = hook.kind == "poll"
+        local entry = {
+            header_text = hook.name,
+            size        = { 960, ROW_H },   -- label gets 960 - value_width; wide enough for long hook names
+            value_width = 320,
+            options     = self:_preset_options(),
+            get_function = function()
+                local by_toy = self._assign_cache[hook_id]
+                return by_toy and by_toy[toy_id] or "__none"
+            end,
+            on_activated = function(new_id)
+                local preset_id = new_id ~= "__none" and new_id or nil
+                self._assign_cache[hook_id] = self._assign_cache[hook_id] or {}
+                self._assign_cache[hook_id][toy_id] = preset_id
+                mod:assign_preset(hook_id, toy_id, preset_id)
+            end,
+            -- Only continuous (poll) hooks have a scale to invert
+            extra_passes = is_poll and invert_checkbox_passes(960, 320) or nil,
+        }
+
+        local widget = DropdownHelper.create(self, "hook_panel_row_" .. i, "hook_grid_content_pivot", entry)
+
+        if is_poll then
+            local content = widget.content
+            content.inverted = inversions[hook_id] and inversions[hook_id][toy_id] or false
+            content.on_invert_toggled = function(inverted)
+                mod:set_inverted(hook_id, toy_id, inverted)
+            end
+        end
+
+        self._hook_panel_widgets[#self._hook_panel_widgets + 1] = widget
+    end
+
+    -- Scrollable grid; rows are drawn via the offscreen renderer so they
+    -- clip to the panel mask. An open dropdown is drawn separately on top
+    -- (draw_with_focus), escaping the mask.
+    if #self._hook_panel_widgets > 0 then
+        self._hook_grid = UIWidgetGrid:new(
+            self._hook_panel_widgets,
+            self._hook_panel_widgets,
+            self._ui_scenegraph,
+            "hook_panel",
+            "down",
+            { 0, ROW_GAP },
+            nil,
+            true
+        )
+        self._hook_grid:set_render_scale(self._render_scale)
+
+        local scrollbar = self._widgets_by_name.hook_scrollbar
+        if scrollbar then
+            local panel_h  = 600
+            local overflow = #self._hook_panel_widgets * (ROW_H + ROW_GAP) > panel_h
+            scrollbar.visible = overflow
+            if overflow then
+                self._hook_grid:assign_scrollbar(scrollbar, "hook_grid_content_pivot", "hook_panel")
+                self._hook_grid:set_scrollbar_progress(0)
+            end
+        end
+    end
+end
+
+EmperorsTouchView.cb_on_back_pressed = function(self)
+    Managers.ui:close_view(VIEW_NAME)
+end
+
+-- ===== Update =====
+
+EmperorsTouchView.update = function(self, dt, t, input_service)
+    if self._entries_grid then
+        self._entries_grid:update(dt, t, input_service)
+    end
+    if self._hook_grid then
+        self._hook_grid:update(dt, t, input_service)
+    end
+    if self._entry_widgets then
+        for _, widget in ipairs(self._entry_widgets) do
+            local hotspot = widget.content and widget.content.hotspot
+            if hotspot and hotspot.is_focused then
+                hotspot.is_selected = true
+            end
+        end
+    end
+    for _, widget in ipairs(self._hook_panel_widgets or {}) do
+        DropdownHelper.update(self, widget, input_service, dt, t)
+    end
+    DropdownHelper.handle_outside_click(self, input_service)
+    return EmperorsTouchView.super.update(self, dt, t, input_service)
+end
+
+-- ===== Draw =====
+
+EmperorsTouchView.draw = function(self, dt, t, input_service, layer)
+    DropdownHelper.draw_with_focus(self, dt, t, input_service, function(effective_input)
+        self:_draw_elements(dt, t, self._ui_renderer, self._render_settings, effective_input)
+
+        if self._entry_widgets and #self._entry_widgets > 0 then
+            local grid_interaction = self._widgets_by_name.grid_interaction
+            self:_draw_grid(self._entries_grid, self._entry_widgets, grid_interaction, dt, t, effective_input)
+        end
+
+        if self._hook_panel_widgets and #self._hook_panel_widgets > 0 then
+            local hook_interaction = self._widgets_by_name.hook_grid_interaction
+            self:_draw_grid(self._hook_grid, self._hook_panel_widgets, hook_interaction, dt, t, effective_input)
+        end
+
+        EmperorsTouchView.super.draw(self, dt, t, effective_input, layer)
+    end)
+end
+
+EmperorsTouchView._draw_grid = function(self, grid, widgets, interaction_widget, dt, t, input_service)
+    local render_settings = self._render_settings
+    local ui_renderer     = self._ui_offscreen_renderer
+    local ui_scenegraph   = self._ui_scenegraph
+
+    UIRenderer.begin_pass(ui_renderer, ui_scenegraph, input_service, dt, render_settings)
+    for _, widget in ipairs(widgets) do
+        -- widget.visible == false: hidden (e.g. the focused dropdown, drawn
+        -- separately on top by draw_with_focus)
+        local visible = widget.visible ~= false and (not grid or grid:is_widget_visible(widget))
+        if visible then
+            UIWidget.draw(widget, ui_renderer)
+        end
+    end
+    UIRenderer.end_pass(ui_renderer)
+end
+
+-- ===== on_exit =====
+
+EmperorsTouchView.on_exit = function(self)
+    self._destroyed = true
+
+    if self._input_legend_element then
+        self:_remove_element("input_legend")
+        self._input_legend_element = nil
+    end
+
+    if self._ui_offscreen_renderer then
+        Managers.ui:destroy_renderer(self.__class_name .. "_ui_offscreen_renderer")
+        ScriptWorld.destroy_viewport(self._offscreen_world, self._offscreen_viewport_name)
+        Managers.ui:destroy_world(self._offscreen_world)
+        self._ui_offscreen_renderer   = nil
+        self._offscreen_viewport      = nil
+        self._offscreen_viewport_name = nil
+        self._offscreen_world         = nil
+    end
+
+    EmperorsTouchView.super.on_exit(self)
+end
+
+return EmperorsTouchView

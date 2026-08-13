@@ -5,6 +5,7 @@ local Vo = require("scripts/utilities/vo")
 local ChatManager = require("scripts/managers/chat/chat_manager")
 local ChatManagerConstants = require("scripts/foundation/managers/chat/chat_manager_constants")
 local PlayerCharacterSoundEventAliases = require("scripts/settings/sound/player_character_sound_event_aliases")
+local CompanionVisualLoadout = require("scripts/utilities/companion_visual_loadout")
 
 local rawget, _G, type, pairs, os, string, tonumber, math = rawget, _G, type, pairs, os, string, tonumber, math
 local WwiseWorld = rawget(_G, "WwiseWorld")
@@ -172,6 +173,48 @@ local function _should_mute_player_nonverbal_sound_event(event_name)
 
     if PLAYER_NONVERBAL_SOUND_EVENT_PATHS[event_name] then
         return true
+    end
+
+    return false
+end
+
+local function _should_mute_companion_servo_skull_sound_alias(sound_alias)
+    if type(sound_alias) ~= "string" or sound_alias == "" then
+        return false
+    end
+
+    local S = mod._zipit2_settings or {}
+
+    if sound_alias == "companion_servoskull_empowered_loop" then
+        return S.mute_companion_servo_skull_empowered_sounds == true
+    end
+
+    if sound_alias == "companion_servo_skull_charge_shoot" then
+        return S.mute_companion_servo_skull_charged_shooting_sounds == true
+    end
+
+    return false
+end
+
+local function _should_mute_companion_servo_skull_sound_event(event_name)
+    if type(event_name) ~= "string" or event_name == "" then
+        return false
+    end
+
+    local S = mod._zipit2_settings or {}
+
+    if S.mute_companion_servo_skull_empowered_sounds == true then
+        if event_name == "wwise/events/weapon/play_servoskull_empowered" or
+            event_name == "wwise/events/weapon/play_servoskull_empowered_husk" then
+            return true
+        end
+    end
+
+    if S.mute_companion_servo_skull_charged_shooting_sounds == true then
+        if event_name == "wwise/events/weapon/play_servoskull_weapon_lasgun_charge" or
+            event_name == "wwise/events/weapon/play_servoskull_weapon_lasgun_charge_husk" then
+            return true
+        end
     end
 
     return false
@@ -586,6 +629,35 @@ mod.zipit2_register_audio_hooks = mod.zipit2_register_audio_hooks or function()
         return func(self, tag_id, replier_unit, reply_name)
     end)
 
+    mod:hook(CompanionVisualLoadout, "trigger_gear_sound",
+        function(func, unit, source_id, sound_alias, profile_properties_wwise_switch)
+            if not mod:is_enabled() then
+                return func(unit, source_id, sound_alias, profile_properties_wwise_switch)
+            end
+
+            if _should_mute_companion_servo_skull_sound_alias(sound_alias) then
+                return
+            end
+
+            return func(unit, source_id, sound_alias, profile_properties_wwise_switch)
+        end)
+
+    mod:hook(
+        CompanionVisualLoadout,
+        "trigger_looping_gear_sound",
+        function(func, unit, source_id, sound_alias, profile_properties_wwise_switch)
+            if not mod:is_enabled() then
+                return func(unit, source_id, sound_alias, profile_properties_wwise_switch)
+            end
+
+            if _should_mute_companion_servo_skull_sound_alias(sound_alias) then
+                return
+            end
+
+            return func(unit, source_id, sound_alias, profile_properties_wwise_switch)
+        end
+    )
+
     if WwiseWorld and type(WwiseWorld.trigger_resource_event) == "function" then
         mod:hook(WwiseWorld, "trigger_resource_event", function(func, wwise_world, event_name, ...)
             if not mod:is_enabled() then
@@ -593,6 +665,10 @@ mod.zipit2_register_audio_hooks = mod.zipit2_register_audio_hooks or function()
             end
 
             if _should_mute_player_nonverbal_sound_event(event_name) then
+                return
+            end
+
+            if _should_mute_companion_servo_skull_sound_event(event_name) then
                 return
             end
 

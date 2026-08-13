@@ -21,6 +21,8 @@ local previewed_items = {}
 Selected_purchase_offer = {}
 current_commodores_offers = {}
 
+-- 1 = Penance, 2 = Commisary, 3 = Commodore's Vestures, 4 = Hestia's Blessings
+
 mod.on_all_mods_loaded = function()
 	mod.get_wishlist()
 end
@@ -44,6 +46,31 @@ mod:hook_safe(CLASS.InventoryView, "on_exit", function(self, element)
 	Selected_purchase_offer = {}
 	current_commodores_offers = {}
 end)
+
+-- Keep cosmetic icons loaded when scrolling past (don't unload/reload)
+-- gear_item widgets use 3D render target icons which are expensive to regenerate
+mod:hook(
+	CLASS.ViewElementGrid,
+	"_on_present_grid_layout_changed",
+	function(original_func, self, layout, content_blueprints, ...)
+		if content_blueprints and content_blueprints.gear_item then
+			content_blueprints.gear_item.unload_icon = function() end
+		end
+		return original_func(self, layout, content_blueprints, ...)
+	end
+)
+
+mod.is_unobtainable = function(item)
+	if not item then
+		return false
+	end
+
+	if item.source == nil or (item.source == "none" and item.always_owned == false) then
+		return true
+	end
+
+	return false
+end
 
 mod.get_wishlist = function()
 	local CCVI = get_mod("character_cosmetics_view_improved")
@@ -218,7 +245,7 @@ mod:hook_safe(
 			self._previewed_item
 			and self._previewed_item.__locked
 			and self._previewed_item.__locked == true
-			and self._previewed_item.__master_item.source == 3
+			and self._previewed_item.__master_item.source == "premium_store"
 		then
 			widgets_by_name.wishlist_button.content.visible = true
 		else
@@ -362,8 +389,6 @@ mod:hook_safe(CLASS.InventoryCosmeticsView, "_preview_element", function(self, e
 	-- find if item is on wishlist
 	local item_on_wishlist = false
 	local widgets_by_name = self._widgets_by_name
-
-	dbg_previewed_item = self._previewed_item
 
 	if self._previewed_item and self._previewed_item.__master_item then
 		local previewed_item = self._previewed_item
@@ -849,6 +874,8 @@ InventoryCosmeticsView.cb_on_store_pressed = function(self)
 			Category_index = 6
 		elseif archetype_name == "broker" then
 			Category_index = 7
+		elseif archetype_name == "cryptic" then
+			Category_index = 8
 		end
 
 		local ui_manager = Managers.ui
@@ -864,66 +891,152 @@ InventoryCosmeticsView.cb_on_store_pressed = function(self)
 end
 
 local Archetypes = require("scripts/settings/archetype/archetypes")
+local category_button = table.clone(ButtonPassTemplates.menu_panel_button)
 
+category_button[1].style = {
+	on_hover_sound = nil,
+	on_pressed_sound = nil,
+	on_released_sound = nil,
+	on_hover_sound = UISoundEvents.tab_secondary_button_hovered,
+	on_pressed_sound = UISoundEvents.tab_secondary_button_pressed,
+}
+local CATEGORY_LAYOUT = {
+	{
+		display_name = "loc_premium_store_category_title_catalogue",
+		sub_category_ids = nil,
+		template = nil,
+		template = category_button,
+		sub_category_ids = {
+			"featured",
+			"veteran",
+			"zealot",
+			"psyker",
+			"ogryn",
+		},
+	},
+	{
+		display_name = "loc_premium_store_category_title_dlc",
+		sub_category_ids = nil,
+		template = nil,
+		template = category_button,
+		sub_category_ids = {
+			"cryptic",
+			"broker",
+			"adamant",
+		},
+	},
+}
 local STORE_LAYOUT = {
 	{
 		display_name = "loc_premium_store_category_title_featured",
+		end_template = nil,
+		id = "featured",
 		storefront = "premium_store_featured",
 		telemetry_name = "featured",
 		template = nil,
 		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 	},
 	{
 		display_name = "loc_premium_store_category_skins_title_veteran",
+		end_template = nil,
+		id = "veteran",
 		storefront = "premium_store_skins_veteran",
 		telemetry_name = "veteran",
 		template = nil,
 		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 	},
 	{
 		display_name = "loc_premium_store_category_skins_title_zealot",
+		end_template = nil,
+		id = "zealot",
 		storefront = "premium_store_skins_zealot",
 		telemetry_name = "zealot",
 		template = nil,
 		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 	},
 	{
 		display_name = "loc_premium_store_category_skins_title_psyker",
+		end_template = nil,
+		id = "psyker",
 		storefront = "premium_store_skins_psyker",
 		telemetry_name = "psyker",
 		template = nil,
 		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 	},
 	{
 		display_name = "loc_premium_store_category_skins_title_ogryn",
+		end_template = nil,
+		id = "ogryn",
 		storefront = "premium_store_skins_ogryn",
 		telemetry_name = "ogryn",
 		template = nil,
 		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 	},
 	{
 		display_name = "loc_premium_store_category_skins_title_adamant",
+		end_template = nil,
+		id = "adamant",
 		require_archetype_ownership = nil,
 		storefront = "premium_store_skins_adamant",
 		telemetry_name = "adamant",
 		template = nil,
 		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 		require_archetype_ownership = Archetypes.adamant,
 	},
 	{
 		display_name = "loc_premium_store_category_skins_title_broker",
+		end_template = nil,
+		id = "broker",
 		require_archetype_ownership = nil,
 		storefront = "premium_store_skins_broker",
 		telemetry_name = "broker",
 		template = nil,
-		template = ButtonPassTemplates.terminal_tab_menu_button,
+		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
 		require_archetype_ownership = Archetypes.broker,
 	},
+	{
+		display_name = "loc_premium_store_category_skins_title_cryptic",
+		end_template = nil,
+		id = "cryptic",
+		require_archetype_ownership = nil,
+		storefront = "premium_store_skins_cryptic",
+		telemetry_name = "cryptic",
+		template = nil,
+		template = ButtonPassTemplates.terminal_tab_menu_with_divider_button,
+		end_template = ButtonPassTemplates.terminal_tab_menu_button,
+		require_archetype_ownership = Archetypes.cryptic,
+	},
 }
+local STORE_LAYOUT_BY_ID = {}
+
+for i = 1, #STORE_LAYOUT do
+	local store_layout = STORE_LAYOUT[i]
+
+	store_layout.index = i
+	STORE_LAYOUT_BY_ID[store_layout.id] = store_layout
+end
+
+for i = 1, #CATEGORY_LAYOUT do
+	local category_layout = CATEGORY_LAYOUT[i]
+
+	for ii = 1, #category_layout.sub_category_ids do
+		local sub_category_id = category_layout.sub_category_ids[ii]
+
+		STORE_LAYOUT_BY_ID[sub_category_id].category_index = i
+		STORE_LAYOUT_BY_ID[sub_category_id].index_in_category = ii
+	end
+end
 
 local opened_store = false
-StoreView._on_page_index_selected = function(self, page_index)
-	local category_index = self._selected_category_index
+StoreView._on_page_index_selected = function(self, page_index, select_element)
+	local category_index = self._selected_sub_category_index
 	local category_layout = STORE_LAYOUT[category_index]
 	local category_name = category_layout.telemetry_name
 	local category_pages_layout_data = self._category_pages_layout_data
@@ -936,6 +1049,25 @@ StoreView._on_page_index_selected = function(self, page_index)
 
 	if not page_layout then
 		return
+	end
+
+	-- Item search: find the purchase offer and navigate/select
+	if not select_element and Selected_purchase_offer and not opened_store then
+		opened_store = true
+		for i = 1, #category_pages_layout_data do
+			local page_elements = category_pages_layout_data[i].elements
+			for j = 1, #page_elements do
+				local page_element = page_elements[j]
+				if page_element.offer and page_element.offer.offerId == Selected_purchase_offer.offerId then
+					if i == page_index then
+						select_element = page_element
+					else
+						self:_on_page_index_selected(i, page_element)
+						return
+					end
+				end
+			end
+		end
 	end
 
 	local previous_page_index = self._selected_page_index
@@ -988,29 +1120,25 @@ StoreView._on_page_index_selected = function(self, page_index)
 			promise = Promise.resolved()
 		end
 
-		promise:next(callback(self, "_show_grid_entries", page_index, previous_page_index), function()
-			return
-		end)
-	end)
-
-	if Selected_purchase_offer and not opened_store then
-		opened_store = true
-		for i = 1, #self._category_pages_layout_data do
-			local page_elements = self._category_pages_layout_data[i].elements
-			for j = 1, #page_elements do
-				local page_element = page_elements[j]
-				if page_element.offer and page_element.offer.offerId == Selected_purchase_offer.offerId then
-					self:_on_page_index_selected(i)
-					self:_set_selected_grid_index(page_element.index)
-					StoreView.cb_on_grid_entry_left_pressed(self, nil, page_element)
+		promise
+			:next(callback(self, "_show_grid_entries", page_index, previous_page_index), function()
+				return
+			end)
+			:next(function()
+				if select_element then
+					self:_set_selected_grid_index(select_element.index)
+					StoreView.cb_on_grid_entry_left_pressed(self, nil, select_element)
 				end
-			end
-		end
-	end
+			end)
+	end)
 end
 
 StoreView.on_exit = function(self)
 	self:_clear_telemetry_name()
+
+	if not self._options_voice_fx then
+		Wwise.set_state("options_voice_fx", "off")
+	end
 
 	if self._world_spawner then
 		self._world_spawner:release_listener()
@@ -1037,8 +1165,18 @@ StoreView.on_exit = function(self)
 		self._wallet_promise:cancel()
 	end
 
+	if self._dlc_promise and self._dlc_promise:is_pending() then
+		self._dlc_promise:cancel()
+
+		self._dlc_promise = nil
+	end
+
 	self:_destroy_offscreen_gui()
+	self:_destroy_current_grid()
 	self:_unload_url_textures()
+
+	self._store_elements = nil
+
 	StoreView.super.on_exit(self)
 
 	if self._hub_interaction then
@@ -1057,19 +1195,19 @@ StoreView._initialize_opening_page = function(self)
 	local store_category_index = 1
 
 	-- Go to selected item's category
-	if Selected_purchase_offer then
+	if Selected_purchase_offer and Selected_purchase_offer.offerId and Category_index then
 		store_category_index = Category_index
 	end
 
 	local path = {
-		category_index = store_category_index,
+		sub_category_index = store_category_index,
 		page_index = 1,
 	}
 
 	if self._context.target_storefront then
 		for i = 1, #STORE_LAYOUT do
 			if STORE_LAYOUT[i].storefront == self._context.target_storefront then
-				path.category_index = i
+				path.sub_category_index = i
 			end
 		end
 	end
@@ -1095,6 +1233,8 @@ mod.grab_current_commodores_items = function(self, archetype)
 		storefront = "premium_store_skins_adamant"
 	elseif archetype == "broker" or (archetype == nil and archetype_name == "broker") then
 		storefront = "premium_store_skins_broker"
+	elseif archetype == "cryptic" or (archetype == nil and archetype_name == "cryptic") then
+		storefront = "premium_store_skins_cryptic"
 	end
 
 	local store_service = Managers.data_service.store
@@ -1209,6 +1349,12 @@ mod.list_premium_cosmetics = function(self)
 					local item = self._inventory_items[i]
 					if item then
 						local forcurrentbreed = false
+						local master_item = item.__master_item or item
+						if item.__master_item then
+							master_item = item.__master_item
+						else
+							master_item = item
+						end
 
 						if item.breeds then
 							for x, breed in pairs(item.breeds) do
@@ -1228,16 +1374,21 @@ mod.list_premium_cosmetics = function(self)
 
 							if forcurrentbreed then
 								-- Remove incorrect background prisoner garbs
-								if string.find(item.__master_item.display_name, "prisoner") then
+								if string.find(master_item.display_name, "prisoner") then
 									if
-										item.__master_item.crimes
-										and #item.__master_item.crimes > 0
-										and profile.lore
-										and profile.lore.backstory
-										and profile.lore.backstory.crime
+										master_item.crimes
+											and #master_item.crimes > 0
+											and profile.lore
+											and profile.lore.backstory
+											and profile.lore.backstory.crime
+										or item.crimes
+											and #item.crimes > 0
+											and profile.lore
+											and profile.lore.backstory
+											and profile.lore.backstory.crime
 									then
 										valid = false
-										for i, crime in pairs(item.__master_item.crimes) do
+										for i, crime in pairs(master_item.crimes) do
 											if profile.lore.backstory.crime == crime then
 												valid = true
 											end
@@ -1254,7 +1405,7 @@ mod.list_premium_cosmetics = function(self)
 
 									-- find if item is on wishlist
 									local item_on_wishlist = false
-									local previewed_item_name = item.__master_item.dev_name
+									local previewed_item_name = master_item.dev_name or ""
 									if wishlisted_items ~= nil and not table.is_empty(wishlisted_items) then
 										for i, item1 in pairs(wishlisted_items) do
 											if item1 and item1.dev_name == previewed_item_name then
@@ -1265,7 +1416,7 @@ mod.list_premium_cosmetics = function(self)
 
 									-- remove purchased items from wishlist
 									if item_on_wishlist then
-										mod.remove_item_from_wishlist(item.__master_item)
+										mod.remove_item_from_wishlist(master_item)
 									end
 
 									if is_new then
@@ -1273,7 +1424,7 @@ mod.list_premium_cosmetics = function(self)
 											and callback(self._parent, "remove_new_item_mark")
 									end
 
-									unlocked_items[#unlocked_items + 1] = item.__master_item.name
+									unlocked_items[#unlocked_items + 1] = master_item.name
 									layout[#layout + 1] = {
 										widget_type = "gear_item",
 										sort_data = item,
@@ -1304,6 +1455,13 @@ mod.list_premium_cosmetics = function(self)
 					if item then
 						local continue = true
 
+						local master_item = item.__master_item or item
+						if item.__master_item then
+							master_item = item.__master_item
+						else
+							master_item = item
+						end
+
 						local gear_id = item.gear_id
 						local is_new = self._context
 							and self._context.new_items_gear_ids
@@ -1323,13 +1481,16 @@ mod.list_premium_cosmetics = function(self)
 
 						-- Filter out unknown sources
 						if not mod:get("show_unobtainable") then
-							if item.source == nil or item.source < 1 then
+							if mod.is_unobtainable(item) then
 								continue = false
 							end
 						end
 
 						-- Filter out "NONE" commodore filter
-						if self._commodores_toggle == "loc_VPCC_show_no_commodores" and item.source == 3 then
+						if
+							self._commodores_toggle == "loc_VPCC_show_no_commodores"
+							and item.source == "premium_store"
+						then
 							continue = false
 						end
 
@@ -1337,8 +1498,8 @@ mod.list_premium_cosmetics = function(self)
 						local purchase_offer = nil
 						purchase_offer = mod.get_item_in_current_commodores(self, gear_id, item.name)
 						-- if the source isn't "commodores vestures" yet the item is available in store - set the correct source...
-						if purchase_offer and item.source ~= 3 then
-							item.source = 3
+						if purchase_offer and item.source ~= "premium_store" then
+							item.source = "premium_store"
 						end
 
 						if purchase_offer then
@@ -1363,7 +1524,7 @@ mod.list_premium_cosmetics = function(self)
 						-- show only available
 						if
 							self._commodores_toggle == "loc_VPCC_show_available_commodores"
-							and item.source == 3
+							and item.source == "premium_store"
 							and not purchase_offer
 						then
 							continue = false
@@ -1373,7 +1534,7 @@ mod.list_premium_cosmetics = function(self)
 						local item_on_wishlist = false
 						local widgets_by_name = self._widgets_by_name
 
-						local previewed_item_name = item.__master_item.dev_name
+						local previewed_item_name = master_item.dev_name
 						if wishlisted_items ~= nil and not table.is_empty(wishlisted_items) then
 							for i, item1 in pairs(wishlisted_items) do
 								if item1 and item1.dev_name == previewed_item_name then
@@ -1384,13 +1545,13 @@ mod.list_premium_cosmetics = function(self)
 
 						-- remove purchased items from wishlist
 						if item_on_wishlist and item.__locked and item.__locked == false then
-							mod.remove_item_from_wishlist(item.__master_item)
+							mod.remove_item_from_wishlist(master_item)
 						end
 
-						-- show only wishlisted 
+						-- show only wishlisted
 						if
 							self._commodores_toggle == "loc_VPCC_show_wishlisted_commodores"
-							and item.source == 3
+							and item.source == "premium_store"
 							and not item_on_wishlist
 						then
 							continue = false
@@ -1413,20 +1574,20 @@ mod.list_premium_cosmetics = function(self)
 				-- Add locked items to layout, grouped by source
 				for source, items in pairs(locked_items) do
 					-- 1 = Penance, 2 = Commisary, 3 = Commodore's Vestures, 4 = Hestia's Blessings
-					local item_sort_group = 5
+					local item_sort_group = 3
 
-					if source == 1 then
+					if source == "penance" then
 						item_sort_group = 3
-					elseif source == 2 then
+					elseif source == "credits_store" then
 						item_sort_group = 3
-					elseif source == 3 then
+					elseif source == "premium_store" then
 						item_sort_group = 5
 						-- Add divider
 						layout[#layout + 1] = {
 							widget_type = "divider",
 							sort_group = 4,
 						}
-					elseif source == 4 then
+					elseif source == "penance_track" then
 						item_sort_group = 3
 					end
 
@@ -1469,6 +1630,12 @@ mod.list_premium_cosmetics = function(self)
 					local item = self._inventory_items[i]
 					if item then
 						local forcurrentbreed = false
+						local master_item = item.__master_item or item
+						if item.__master_item then
+							master_item = item.__master_item
+						else
+							master_item = item
+						end
 
 						if item.breeds then
 							for x, breed in pairs(item.breeds) do
@@ -1486,7 +1653,7 @@ mod.list_premium_cosmetics = function(self)
 							end
 							local valid = true
 
-							if forcurrentbreed then
+							if forcurrentbreed and master_item then
 								local gear_id = item.gear_id
 								local is_new = self._context
 									and self._context.new_items_gear_ids
@@ -1498,7 +1665,7 @@ mod.list_premium_cosmetics = function(self)
 								end
 
 								if valid then
-									unlocked_items[#unlocked_items + 1] = item.__master_item.name
+									unlocked_items[#unlocked_items + 1] = master_item.name
 									layout[#layout + 1] = {
 										widget_type = WIDGET_TYPE_BY_SLOT[selected_slot_name],
 										sort_data = item,
@@ -1535,6 +1702,12 @@ mod.list_premium_cosmetics = function(self)
 
 					if item then
 						local forcurrentbreed = false
+						local master_item = item.__master_item or item
+						if item.__master_item then
+							master_item = item.__master_item
+						else
+							master_item = item
+						end
 
 						if item.breeds then
 							for x, breed in pairs(item.breeds) do
@@ -1552,7 +1725,7 @@ mod.list_premium_cosmetics = function(self)
 							end
 							local valid = true
 
-							if forcurrentbreed then
+							if forcurrentbreed and master_item then
 								for x, unlocked_item_name in pairs(unlocked_items) do
 									if item.name == unlocked_item_name then
 										continue = false
@@ -1561,7 +1734,7 @@ mod.list_premium_cosmetics = function(self)
 
 								-- Filter out unknown sources
 								if not mod:get("show_unobtainable") then
-									if item.source == nil or item.source < 1 then
+									if mod.is_unobtainable(item) then
 										continue = false
 									end
 								end

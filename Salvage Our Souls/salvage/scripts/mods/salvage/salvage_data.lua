@@ -1,18 +1,15 @@
 -- salvage_data.lua
 local mod = get_mod("salvage")
-
 local player_dropped_remnants_widget = {
 setting_id = "mark_player_dropped_remnants",
 type = "checkbox",
 default_value = true,
 }
-
 local player_drop_warning_widget = {
 setting_id = "player_drop_warning",
 type = "checkbox",
 default_value = false,
 }
-
 local fallen_comrades_widget = {
 setting_id = "mark_fallen_comrades",
 type = "dropdown",
@@ -26,21 +23,28 @@ options = {
 { text = "fallen_marker_all", value = "all" },
 },
 }
-
 local early_evacuation_warning_widget = {
 setting_id = "warn_early_evacuation",
 type = "checkbox",
 default_value = true,
 tooltip = "warn_early_evacuation_tooltip",
 }
-
+local last_sanctuary_warning_widget = {
+setting_id = "last_sanctuary_warning",
+type = "checkbox",
+default_value = true,
+}
 local reliquary_widget = {
 setting_id = "enable_reliquaries",
 type = "checkbox",
-default_value = true,
+default_value = false,
 tooltip = "enable_reliquaries_tooltip",
 }
-
+local mark_reliquaries_widget = {
+setting_id = "mark_reliquaries_within_100m",
+type = "checkbox",
+default_value = true,
+}
 local salvage_widget = {
 setting_id = "enable_salvage",
 type = "checkbox",
@@ -78,7 +82,6 @@ default_value = false,
 },
 },
 }
-
 local tech_remnants_widget = {
 setting_id = "enable_tech_remnants",
 type = "checkbox",
@@ -116,7 +119,6 @@ default_value = true,
 },
 },
 }
-
 local exit_widget = {
 setting_id = "use_exit_icon",
 type = "checkbox",
@@ -147,17 +149,19 @@ tooltip = "field_of_view_tooltip",
 },
 },
 }
-
 return {
 name = mod:localize("mod_name"),
 description = mod:localize("mod_description"),
 is_togglable = true,
+allow_rehooking = true,
 options = {
 widgets = {
 player_dropped_remnants_widget,
 player_drop_warning_widget,
 early_evacuation_warning_widget,
+last_sanctuary_warning_widget,
 reliquary_widget,
+mark_reliquaries_widget,
 salvage_widget,
 tech_remnants_widget,
 exit_widget,

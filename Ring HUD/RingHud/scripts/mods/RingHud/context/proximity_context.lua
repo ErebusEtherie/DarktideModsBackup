@@ -8,9 +8,6 @@ local ProximitySystem                      = {}
 -- System State & Constants
 -------------------------------------------------------------------------------
 
--- New mapping for proximity items to their corresponding values.
--- This replaces the old _item_configs and _proximity_types tables.
--- Performance: A single table lookup is very efficient.
 local ITEM_VALUES                          = {
     -- Healing (Value: 1-2)
     medical_crate_pocketable = { healing = 1, crate = true },
@@ -403,7 +400,6 @@ function ProximitySystem.update(dt)
     _scan_existing_interaction_markers()
 
     -- Reset new mod-level variables at the start of each scan.
-    -- Performance: This is a fast operation with negligible impact.
     mod.prox_healing = 0
     mod.prox_ammo = 0
     mod.prox_stimm = false

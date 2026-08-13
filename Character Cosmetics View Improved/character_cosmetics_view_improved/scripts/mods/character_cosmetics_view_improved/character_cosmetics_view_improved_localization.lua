@@ -1,5 +1,5 @@
 local mod = get_mod("character_cosmetics_view_improved")
-mod.version = "4.6.10"
+mod.version = "4.7.03"
 mod:info("Character Cosmetics View Improved is installed, using version: " .. tostring(mod.version))
 
 local colours = {

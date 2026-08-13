@@ -18,16 +18,24 @@ local function get_center_offset(compass_element, position, effective_rotation)
 	return math_abs((target_angle_degrees - effective_rotation + 540) % 360 - 180)
 end
 
--- Helper to consider a registry for marked expedition targets
 local function consider_registry(registry, navigation_handler, compass_element, effective_rotation, local_slot, selected)
 	for id, position_box in pairs(registry or {}) do
 		if position_box then
-			local marked_by_player_slot = navigation_handler:player_slot_by_level_marked(id)
-			if marked_by_player_slot then
+			local marked_slots, num_marked = navigation_handler:player_slots_by_level_marked(id)
+			if num_marked and num_marked > 0 then
 				local position = position_box:unbox()
 				local distance = compass_element:_get_distance_to_objective(position)
 				local center_offset = get_center_offset(compass_element, position, effective_rotation)
-				local same_slot = (local_slot ~= nil) and (marked_by_player_slot == local_slot)
+				local same_slot = (local_slot ~= nil) and (marked_slots[local_slot] ~= nil)
+				local marked_by_player_slot = local_slot
+				if not same_slot then
+					marked_by_player_slot = nil
+					for slot in pairs(marked_slots) do
+						if not marked_by_player_slot or slot < marked_by_player_slot then
+							marked_by_player_slot = slot
+						end
+					end
+				end
 				if not selected.target
 					or center_offset < selected.center_offset
 					or (center_offset == selected.center_offset and same_slot and not selected.same_slot)
@@ -102,6 +110,53 @@ Targeting.get_extra_opportunities_target = function(compass_element)
 		   return nil
 	   end
 	return target
+end
+
+Targeting.get_closest_unmarked_opportunity = function(compass_element)
+	if not compass_element then
+		return nil
+	end
+
+	local navigation_handler = compass_element and compass_element._navigation_handler
+	if not navigation_handler or not navigation_handler.get_registered_opportunities then
+		return nil
+	end
+
+	if navigation_handler.is_active and not navigation_handler:is_active() then
+		return nil
+	end
+
+	local opportunities = navigation_handler:get_registered_opportunities()
+	if not opportunities then
+		return nil
+	end
+
+	local closest_opportunity = nil
+	local closest_distance = math_huge
+
+	for opportunity_id, position_box in pairs(opportunities) do
+		local _, num_marked = navigation_handler:player_slots_by_level_marked(opportunity_id)
+		if not (num_marked and num_marked > 0) then
+			if not navigation_handler:is_level_completed(opportunity_id) then
+				local position = position_box:unbox()
+				if position then
+					local distance = compass_element:_get_distance_to_objective(position)
+					if type(distance) == "number" and distance == distance then
+						if distance < closest_distance then
+							closest_distance = distance
+							closest_opportunity = {
+								position = position_box,
+								distance = distance,
+								is_unmarked_opportunity = true,
+							}
+						end
+					end
+				end
+			end
+		end
+	end
+
+	return closest_opportunity
 end
 
 return Targeting

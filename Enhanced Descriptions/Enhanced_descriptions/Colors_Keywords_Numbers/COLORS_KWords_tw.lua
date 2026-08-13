@@ -50,12 +50,14 @@ local CONFIG = {
 
 		Crit_hit = "暴擊命中",
 		Crit_hits = "暴擊命中",
+		Crtcll_strk = "暴擊",
 		Crt_hit_chnc = "暴擊命中機率",
 		Crt_hit_col = "暴擊傷害",
 		Crit_hit_m_dmg = "近戰暴擊傷害", -- Melee Crit Damage
 		Crit_hit_r_dmg = "遠程暴擊傷害", -- Ranged Crit Damage
 
 		Crit_strike = "暴擊打擊",
+		Crit_strikes = "暴擊",
 		Crt_chnc_r = "暴擊打擊機率",
 		Crt_strk_dmg = "暴擊打擊傷害",
 
@@ -125,6 +127,7 @@ local CONFIG = {
 	},
 	toughness_text_colour = {
 		TDR = "韌性傷害減免",
+		Tghns_dmg = "韌性傷害",
 		Tghns_dmg_red = "韌性傷害減免",
 		Toughness = "韌性",
 		Toughness_m = "最大韌性",
@@ -213,13 +216,13 @@ local CONFIG = {
 	},
 	-- Arbitres
 	class_arbites_text_colour = {
-		cls_arb = "仲裁官",
-		cls_arb2 = "仲裁官",
+		cls_arb = "法務官",
+		cls_arb2 = "法務官",
 	},
 	-- Hive Scum
 	class_scum_text_colour = {
-		cls_scm = "蜂巢渣滓",
-		cls_scm2 = "蜂巢渣滓",
+		cls_scm = "巢都敗類",
+		cls_scm2 = "巢都敗類",
 	},
 	chemtox_text_colour = {
 		Chem_Tox = "化學毒素",
@@ -245,10 +248,11 @@ local CONFIG = {
 		shock_gren = "眩暈風暴手雷",
 		shock_gren1 = "眩暈手雷",
 		Stun_gren = "眩暈手榴彈",
+		zealous = "熱忱",
 		shroudf = "隱秘領域",
 		momentum = "勢能",
 		-- Arbites
-		Arbites_gren = "仲裁手榴彈",
+		Arbites_gren = "法務官手榴彈",
 		BreakZLine = "突破防線",
 		-- Psyker
 		Assail = "攻擊",
@@ -280,6 +284,7 @@ local CONFIG = {
 		Frag_gren = "破片手榴彈",
 		Fragm_gren = "破片手榴彈",
 		frag_gr = "破片手榴彈",
+		shfrag_gr = "粉碎者破片手雷",
 		infiltr = "滲透",
 		krak_gr = "穿甲手雷",
 		Rangd_stnc = "遠程姿態",
@@ -289,7 +294,7 @@ local CONFIG = {
 		survivalist = "生存專家",
 		voiceoc = "發號施令",
 		volley_fire = "火力齊射",
-		weapsec = "武器專家",
+		weapspec = "武器專家",
 		-- Ogryn
 		Att_Seeker = "注意力尋求者",
 		big_box = "巨量傷害盒",
@@ -335,7 +340,7 @@ local CONFIG = {
 	},
 }
 
--- Основная функция для создания цветных ключевых слов
+-- 建立彩色關鍵字的主要函式
 local function create_colored_keywords()
 	local result = {}
 

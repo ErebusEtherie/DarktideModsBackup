@@ -12,6 +12,12 @@ local ENEMY_TAG_ALIASES = {
     seen_netgunner_flee = "renegade_netgunner",
 }
 
+local MUTANT_HARDCODED_SOUND_EVENTS = {
+    "wwise/events/minions/play_enemy_mutant_charger_charge_growl",
+    "wwise/events/minions/play_enemy_mutant_charger_smash_human",
+    "wwise/events/minions/play_enemy_mutant_charger_smash_ogryn",
+}
+
 local function _breed_root_path(breed_name)
     return ("scripts/settings/breed/breeds/%s_breed"):format(breed_name)
 end
@@ -161,7 +167,44 @@ local function _push_group_lookup_aliases(group_lookup, group_key, aliases)
     end
 end
 
--- Performance Impact: Moderate (runs only once during initial mod setup).
+local function _add_group_sound_event(group, event_name)
+    local sound_events = group and group.sound_events
+
+    if type(sound_events) ~= "table" then
+        return
+    end
+
+    local seen = {}
+    local sound_event_count = #sound_events
+
+    for i = 1, sound_event_count do
+        seen[sound_events[i]] = true
+    end
+
+    _push_unique_string(sound_events, sound_event_count, seen, event_name)
+    table.sort(sound_events)
+end
+
+local function _add_hardcoded_breed_sound_event(breed_groups, breed_sound_event_to_groups, breed_member_to_group,
+                                                breed_name, event_name)
+    local group_key = breed_member_to_group[breed_name]
+
+    if type(group_key) ~= "string" or group_key == "" then
+        return
+    end
+
+    local event_groups = breed_sound_event_to_groups[event_name]
+
+    if not event_groups then
+        event_groups = {}
+        breed_sound_event_to_groups[event_name] = event_groups
+    end
+
+    event_groups[group_key] = true
+
+    _add_group_sound_event(breed_groups[group_key], event_name)
+end
+
 mod.zipit2_build_breeds = function(D)
     do
         local breed_groups = {}
@@ -284,16 +327,26 @@ mod.zipit2_build_breeds = function(D)
             end
         end
 
-        -- Ensure the hardcoded daemonhost ambience event is mapped, as it may not exist in the breed's _sounds.lua resource.
-        local dh_group_key = breed_member_to_group["chaos_daemonhost"]
-        if dh_group_key then
-            local dh_ambience_event = "wwise/events/minions/play_enemy_daemonhost_ambience_idle"
-            local dh_event_groups = breed_sound_event_to_groups[dh_ambience_event]
-            if not dh_event_groups then
-                dh_event_groups = {}
-                breed_sound_event_to_groups[dh_ambience_event] = dh_event_groups
-            end
-            dh_event_groups[dh_group_key] = true
+        -- Ensure hardcoded effect-template events are mapped, as they may not exist in the breed's _sounds.lua resource.
+        _add_hardcoded_breed_sound_event(
+            breed_groups,
+            breed_sound_event_to_groups,
+            breed_member_to_group,
+            "chaos_daemonhost",
+            "wwise/events/minions/play_enemy_daemonhost_ambience_idle"
+        )
+
+        -- These mutant sounds are triggered outside cultist_mutant_sounds.lua, so they have to be
+        -- mapped manually. Do not block the matching charge stop event: it is needed to terminate
+        -- any loop that started before the setting changed.
+        for i = 1, #MUTANT_HARDCODED_SOUND_EVENTS do
+            _add_hardcoded_breed_sound_event(
+                breed_groups,
+                breed_sound_event_to_groups,
+                breed_member_to_group,
+                "cultist_mutant",
+                MUTANT_HARDCODED_SOUND_EVENTS[i]
+            )
         end
 
         local breed_keys = mod.sorted_list_from_set(breed_classes_set)

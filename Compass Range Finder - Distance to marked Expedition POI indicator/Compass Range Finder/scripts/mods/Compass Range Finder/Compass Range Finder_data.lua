@@ -45,6 +45,13 @@ return {
 						title = "mod_compass_range_finder_vertical_position_title",
 						tooltip = "mod_compass_range_finder_vertical_position_description",
 					},
+					{
+						setting_id = "show_closest_unmarked_opportunity",
+						type = "checkbox",
+						default_value = true,
+						title = "mod_compass_range_finder_show_unmarked_title",
+						tooltip = "mod_compass_range_finder_show_unmarked_description",
+					},
 				},
 			},
 		},

@@ -1,3 +1,4 @@
+---@class DMFMod
 local dmf = get_mod("DMF")
 
 local _widgets_by_name
@@ -946,6 +947,11 @@ DMFOptionsView._update_settings_content_widgets = function (self, dt, t, input_s
       if update then
         update(self, widget, input_service, dt, t)
       end
+
+      -- Allows text_input widgets to stop typing with escape, without closing the entire mod options menu
+      if widget.content.is_writing then
+        self._selected_settings_widget = widget
+      end
     end
 
     if selected_settings_widget and self._close_selected_setting then
@@ -1059,6 +1065,52 @@ DMFOptionsView._handling_keybinding = function (self)
   return self._handling_keybind or self._close_keybind_popup_duration ~= nil
 end
 
+DMFOptionsView._present_keybind_popup_grid = function (self, display_name, value, cancel_keys)
+  local popup = self._keybind_popup
+  local definitions = popup._definitions
+  local grid_scenegraph = definitions.scenegraph_definition.text_box
+  local grid_size = grid_scenegraph.size
+  local layout = {
+    {
+      widget_type = "header",
+      text = display_name,
+    },
+    {
+      widget_type = "dynamic_spacing",
+      size = {
+        grid_size[1],
+        15,
+      },
+    },
+  }
+
+  if cancel_keys then
+    local cancel_key = cancel_keys[1]
+    local description_text = Localize("loc_setting_keybinding_press_new_button", true, {
+      cancel_input = InputUtils.key_axis_locale(cancel_key),
+    })
+
+    layout[#layout + 1] = {
+      widget_type = "description",
+      text = description_text,
+    }
+    layout[#layout + 1] = {
+      widget_type = "dynamic_spacing",
+      size = {
+        grid_size[1],
+        10,
+      },
+    }
+  end
+
+  layout[#layout + 1] = {
+    widget_type = "value",
+    text = value and InputUtils.localized_string_from_key_info(value) or self:_localize("loc_keybind_unassigned"),
+  }
+
+  popup._text_grid:present_grid_layout(layout, definitions.grid_blueprints, nil, nil, nil, nil, callback(popup, "cb_on_grid_layout_changed"), nil)
+end
+
 DMFOptionsView.show_keybind_popup = function (self, widget, entry)
   if not self:_handling_keybinding() then
     self._active_keybind_entry = entry
@@ -1067,23 +1119,10 @@ DMFOptionsView.show_keybind_popup = function (self, widget, entry)
     local reference_name = "keybind_popup"
     self._keybind_popup = self:_add_element(ViewElementKeybindPopup, reference_name, layer)
     local display_name = entry.display_name or self:_localize("loc_settings_option_unavailable")
-
-    self._keybind_popup:set_action_text(display_name)
-
-    if entry.cancel_keys then
-      local input_text = entry.cancel_keys[1]
-      local description_text = Localize("loc_setting_keybinding_press_new_button", true, {
-        cancel_input = InputUtils.key_axis_locale(input_text)
-      })
-
-      self._keybind_popup:set_description_text(description_text)
-    end
-
     local value = entry:get_function()
     local devices = entry.devices
-    local value_text = value and InputUtils.localized_string_from_key_info(value) or self:_localize("loc_keybind_unassigned")
 
-    self._keybind_popup:set_value_text(value_text)
+    self:_present_keybind_popup_grid(display_name, value, entry.cancel_keys)
     Managers.input:start_key_watch(devices)
 
     self._handling_keybind = true

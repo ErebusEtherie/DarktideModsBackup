@@ -20,9 +20,12 @@ local InventoryCosmeticsViewDefinitions =
 	require("scripts/ui/views/inventory_cosmetics_view/inventory_cosmetics_view_definitions")
 
 local ViewElementBase = require("scripts/ui/view_elements/view_element_base")
+local Promise = require("scripts/foundation/utilities/promise")
+local Archetypes = require("scripts/settings/archetype/archetypes")
 
 local PENANCE_TRACK_ID = "dec942ce-b6ba-439c-95e2-022c5d71394d"
 local commisary_cache
+local commisary_cache_promise
 local hestias_rewards_cache = {}
 local current_penance_points = 0
 
@@ -39,6 +42,7 @@ end)
 mod:hook_safe(CLASS.InventoryCosmeticsView, "on_exit", function(self)
 	-- clear cache
 	commisary_cache = nil
+	commisary_cache_promise = nil
 	hestias_rewards_cache = {}
 end)
 
@@ -52,6 +56,7 @@ end)
 mod:hook_safe(CLASS.InventoryWeaponCosmeticsView, "on_exit", function(self)
 	-- clear cache
 	commisary_cache = nil
+	commisary_cache_promise = nil
 	hestias_rewards_cache = {}
 end)
 
@@ -208,13 +213,13 @@ mod.display_obtained_cosmetic_view = function(self)
 
 	remove_obtained_from_elements(self)
 
-	if selected_item_source == 1 then
+	if selected_item_source == "penance" then
 		mod.display_penances_inventory_view(self, selected_item)
-	elseif selected_item_source == 2 then
+	elseif selected_item_source == "credits_store" then
 		mod.display_commisary_inventory_view(self, selected_item)
-	elseif selected_item_source == 3 then
+	elseif selected_item_source == "premium_store" then
 		mod.display_commodores_vestures(self, selected_item)
-	elseif selected_item_source == 4 then
+	elseif selected_item_source == "penance_track" then
 		mod.display_hestias_blessings_inventory_view(self, selected_item)
 	else
 		mod.fetch_unknown_item_source_text(self, selected_item, 0)
@@ -269,19 +274,19 @@ mod.display_obtained_weapon_cosmetic_view = function(self, real_item)
 			real_item.__master_item
 			and real_item.__master_item.name == "content/items/weapons/player/trinkets/trinket_17b"
 		then
-			real_item.__master_item.source = 1
-			source = 1
+			real_item.__master_item.source = "penance"
+			source = "penance"
 		end
 
 		remove_obtained_from_elements(self)
 
-		if source == 1 then
+		if source == "penance" then
 			mod.display_penances_weapon_view(self, real_item)
-		elseif source == 2 then
+		elseif source == "credits_store" then
 			mod.display_commisary_weapon_view(self, real_item)
-		elseif source == 3 then
+		elseif source == "premium_store" then
 			mod.display_commodores_vestures_weapon_view(self, real_item)
-		elseif source == 4 then
+		elseif source == "penance_track" then
 			mod.display_hestias_blessings_weapon_view(self, real_item)
 		else
 			mod.fetch_unknown_item_source_text(self, real_item, 1)
@@ -355,10 +360,9 @@ mod.display_commisary_inventory_view = function(self, selected_item)
 	local selected_slot_name = selected_slot.name
 	local selected_item_sku_name = selected_item.display_name
 	local selected_item_cost = 0
+	local offer_found = false
 
-	if commisary_cache ~= nil then
-		local offers = commisary_cache.offers
-
+	local function _display_offer(offers)
 		for i = 1, #offers do
 			local offer = offers[i]
 			local offer_sku_name = offer.sku.name
@@ -368,20 +372,28 @@ mod.display_commisary_inventory_view = function(self, selected_item)
 				local text = Localize("loc_cosmetics_vendor_view_title")
 					.. mod:localize("ordo_docket_amount_text"):gsub("!content", mod.format_number(selected_item_cost))
 
-				-- add new widgets...
 				local obtained_desc = string.upper(Localize("loc_item_source_obtained_title"))
 				mod.create_text_widget(self, InventoryViewDefinitions.big_header_text_pass, obtained_desc, -70)
 				mod.create_text_widget(self, InventoryViewDefinitions.big_body_text_pass, text, -40)
-				break
+				offer_found = true
 			end
 		end
 
-		-- if no cost was found, should be set as a redacted item
-		if selected_item_cost and selected_item_cost == 0 or selected_item_cost == nil then
+		if not offer_found or selected_item_cost and selected_item_cost == 0 or selected_item_cost == nil then
 			mod.fetch_unknown_item_source_text(self, selected_item, 0)
 		end
+	end
+
+	if commisary_cache ~= nil then
+		_display_offer(commisary_cache.offers)
 	else
-		mod.cache_commissary_cosmetics(self)
+		mod.cache_commissary_cosmetics(self):next(function(cache)
+			if cache then
+				_display_offer(cache.offers)
+			else
+				mod.fetch_unknown_item_source_text(self, selected_item, 0)
+			end
+		end)
 	end
 end
 
@@ -569,40 +581,47 @@ end
 ---@param selected_item any The selected item from the _preview_element function.
 ------------------------------------------------------------------------------------------------------
 mod.display_commisary_weapon_view = function(self, selected_item)
-	mod.cache_commissary_cosmetics(self)
+	if not selected_item then
+		return
+	end
 
-	local item_name = selected_item.display_name
+	local item_name = selected_item.display_name or selected_item.__master_item.display_name or nil
 	local selected_item_cost = 0
+	local offer_found = false
 
-	if commisary_cache ~= nil then
-		local offers = commisary_cache.offers
-
+	local function _display_offer(offers)
 		for i = 1, #offers do
 			local offer = offers[i]
 			local offer_sku_name = offer.sku.name
 
-			-- offer found
 			if item_name == offer_sku_name then
 				selected_item_cost = offer.price.amount.amount
 
 				local text = Localize("loc_cosmetics_vendor_view_title")
 					.. mod:localize("ordo_docket_amount_text"):gsub("!content", mod.format_number(selected_item_cost))
 
-				-- add new widgets...
 				local obtained_desc = string.upper(Localize("loc_item_source_obtained_title"))
 				mod.create_text_widget(self, InventoryViewDefinitions.big_header_text_pass, obtained_desc, -70)
 				mod.create_text_widget(self, InventoryViewDefinitions.big_body_text_pass, text, -40)
-
-				break
+				offer_found = true
 			end
 		end
 
-		-- if no cost was found, should be set as a redacted item
-		if selected_item_cost == 0 then
+		if not offer_found or (selected_item_cost and selected_item_cost == 0) or selected_item_cost == nil then
 			mod.fetch_unknown_item_source_text(self, selected_item, 1)
 		end
+	end
+
+	if commisary_cache ~= nil then
+		_display_offer(commisary_cache.offers)
 	else
-		mod.cache_commissary_cosmetics(self)
+		mod.cache_commissary_cosmetics(self):next(function(cache)
+			if cache then
+				_display_offer(cache.offers)
+			else
+				mod.fetch_unknown_item_source_text(self, selected_item, 1)
+			end
+		end)
 	end
 end
 
@@ -612,6 +631,10 @@ end
 ------------------------------------------------------------------------------------------------------
 mod.display_penances_weapon_view = function(self, selected_item)
 	local penance_list = {}
+
+	if not selected_item then
+		return
+	end
 
 	local item_penance = AchievementUIHelper.get_acheivement_by_reward_item(selected_item)
 
@@ -652,11 +675,13 @@ mod.display_penances_weapon_view = function(self, selected_item)
 
 			if has_progress_bar then
 				progress, goal = type.get_progress(achievement_definition, player)
-			end
 
-			--if is_completed and progress < goal then
-			--	progress = goal
-			--end
+				if is_completed then
+					if progress < goal then
+						progress = goal
+					end
+				end
+			end
 
 			penance_list[#penance_list + 1] = {
 				widget_type = "penance_list_item",
@@ -682,9 +707,12 @@ mod.display_penances_weapon_view = function(self, selected_item)
 
 					if sub_has_progress_bar then
 						sub_progress, sub_goal = sub_type.get_progress(sub_achievement_definition, sub_player)
-					end
-					if sub_is_completed and sub_progress < sub_goal then
-						sub_progress = sub_goal
+
+						if sub_is_completed then
+							if sub_progress < sub_goal then
+								sub_progress = sub_goal
+							end
+						end
 					end
 
 					penance_list[#penance_list + 1] = {
@@ -761,6 +789,10 @@ mod.display_hestias_blessings_weapon_view = function(self, selected_item)
 	local item_name = nil
 	local item = nil
 
+	if not selected_item then
+		return
+	end
+
 	if selected_item and selected_item.__master_item and selected_item.__master_item.name then
 		item_name = selected_item.__master_item.name
 		item = selected_item.__master_item
@@ -809,6 +841,10 @@ mod.display_hestias_blessings_weapon_view = function(self, selected_item)
 end
 
 mod.fetch_unknown_item_source_text = function(self, selected_item, source)
+	if not selected_item then
+		return
+	end
+
 	local obtained_desc = string.upper(Localize("loc_item_source_obtained_title"))
 	local name = selected_item.name:lower()
 
@@ -899,6 +935,36 @@ mod.fetch_unknown_item_source_text = function(self, selected_item, source)
 				"content/items/characters/player/human/backpacks/empty_backpack",
 				"content/items/animations/end_of_round/end_of_round_adamant_001",
 				"content/items/characters/companion/companion_dog/gear_full/companion_dog_set_03_var_01",
+				"content/items/characters/player/human/gear_head/cryptic_headgear_10_var_04",
+				"content/items/characters/player/human/gear_head/cryptic_headgear_10_var_01",
+				"content/items/characters/player/human/gear_head/cryptic_headgear_10_var_02",
+				"content/items/characters/player/human/gear_head/cryptic_headgear_10_var_03",
+				"content/items/characters/companion/companion_servo_skull/gear_full/cryptic_servo_skull_scanning_var_01",
+				"content/items/characters/player/human/gear_upperbody/cryptic_upperbody_b_var_04",
+				"content/items/characters/player/human/gear_upperbody/cryptic_upperbody_b_var_01",
+				"content/items/characters/player/human/gear_upperbody/cryptic_upperbody_b_var_02",
+				"content/items/characters/player/human/gear_upperbody/cryptic_upperbody_b_var_03",
+				"content/items/characters/player/human/gear_lowerbody/cryptic_lowerbody_b_var_04",
+				"content/items/characters/player/human/gear_lowerbody/cryptic_lowerbody_b_var_01",
+				"content/items/characters/player/human/gear_lowerbody/cryptic_lowerbody_b_var_02",
+				"content/items/characters/player/human/gear_lowerbody/cryptic_lowerbody_b_var_03",
+				"content/items/characters/player/human/backpacks/cryptic_backpack_d_var_01",
+				"content/items/titles/penances/title_achievement_103",
+				"content/items/animations/emotes/emote_cryptic_unique_001",
+				"content/items/characters/player/human/gear_head/broker_headgear_15_var_03",
+				"content/items/characters/player/human/gear_head/broker_headgear_15_var_02",
+				"content/items/characters/player/human/gear_head/broker_headgear_15_var_01",
+				"content/items/characters/player/human/gear_head/broker_headgear_15_var_04",
+				"content/items/characters/player/human/gear_upperbody/broker_upperbody_progression_a_var_03",
+				"content/items/characters/player/human/gear_upperbody/broker_upperbody_progression_a_var_02",
+				"content/items/characters/player/human/gear_upperbody/broker_upperbody_progression_a_var_01",
+				"content/items/characters/player/human/gear_upperbody/broker_upperbody_progression_a_var_04",
+				"content/items/characters/player/human/gear_lowerbody/broker_lowerbody_progression_a_var_03",
+				"content/items/characters/player/human/gear_lowerbody/broker_lowerbody_progression_a_var_02",
+				"content/items/characters/player/human/gear_lowerbody/broker_lowerbody_progression_a_var_01",
+				"content/items/characters/player/human/gear_lowerbody/broker_lowerbody_progression_a_var_04",
+				"content/items/animations/end_of_round/end_of_round_broker_003",
+				"content/items/animations/end_of_round/end_of_round_cryptic_001",
 			},
 		},
 		{ -- Pre-order
@@ -1001,9 +1067,58 @@ mod.fetch_unknown_item_source_text = function(self, selected_item, source)
 			desc_key = "live_event_deadside_patrol",
 			extra_names = { "content/items/2d/portrait_frames/events_play_expeditions" },
 		},
+		{ -- Warhammer Skulls 2023
+			patterns = { "_skulls_" },
+			desc_key = "skulls_2023",
+			extra_names = {
+				"content/items/characters/player/ogryn/gear_head/ogryn_skulls_headgear_01",
+				"content/items/2d/portrait_frames/events_skulls_01",
+			},
+		},
+		{ -- Warhammer Fest 2023
+			patterns = { "wh_fest" },
+			desc_key = "fest_2023",
+			extra_names = { "content/items/characters/player/ogryn/gear_head/ogryn_wh_fest_headgear_01" },
+		},
+		{ -- Skitarii
+			patterns = { "dlc_cryptic_deluxe" },
+			desc_key = "cryptic_deluxe",
+			extra_names = {},
+		},
+		{ -- hive scum
+			patterns = { "dlc_broker_deluxe" },
+			desc_key = "broker_deluxe",
+			extra_names = {},
+		},
+		{ -- Live event: Nurgle's Might
+			patterns = {},
+			desc_key = "live_event_nurgles_might",
+			extra_names = { "content/items/2d/insignias/insignia_event_elite_army" },
+		},
+		{ -- Catch for commissary that should exist but dont
+			patterns = { "credits_store" },
+			desc_key = "unknown_commissary",
+			extra_names = {},
+		},
+		{ -- Catch for hestias that should exist but dont
+			patterns = { "penance_track" },
+			desc_key = "unknown_hestias",
+			extra_names = {},
+		},
+		{ -- Catch for penances that should exist but dont
+			patterns = { "penance" },
+			desc_key = "unknown_penance",
+			extra_names = {},
+		},
+		{ -- live_event_heretical_artefacts
+			patterns = {},
+			desc_key = "live_event_heretical_artefacts",
+			extra_names = { "content/items/2d/portrait_frames/portrait_frame_event_leftover" },
+		},
 	}
 
 	local found = false
+
 	for _, entry in ipairs(special_sources) do
 		for _, pat in ipairs(entry.patterns) do
 			if string.find(name, pat, 1, true) then
@@ -1014,12 +1129,22 @@ mod.fetch_unknown_item_source_text = function(self, selected_item, source)
 
 		if not found and entry.extra_names then
 			for _, ename in ipairs(entry.extra_names) do
-				if selected_item.name == ename then
+				if selected_item.name and selected_item.name == ename then
 					found = entry
 					break
 				end
 			end
 		end
+
+		if not found then
+			for _, pat in ipairs(entry.patterns) do
+				if selected_item.source and string.find(selected_item.source, pat, 1, true) then
+					found = entry
+					break
+				end
+			end
+		end
+
 		if found then
 			break
 		end
@@ -1136,17 +1261,59 @@ end
 --- Caches cosmetic items of the commisary rewards.
 ------------------------------------------------------------------------------------------------------
 mod.cache_commissary_cosmetics = function(self)
-	if commisary_cache == nil then
-		Managers.data_service.store:get_credits_cosmetics_store():next(function(data)
-			Managers.data_service.store:get_credits_weapon_cosmetics_store():next(function(data2)
-				for k, v in pairs(data2.offers) do
-					table.insert(data.offers, v)
-				end
-
-				commisary_cache = data
-			end)
-		end)
+	if commisary_cache then
+		return Promise.resolved(commisary_cache)
 	end
+
+	if commisary_cache_promise then
+		return commisary_cache_promise
+	end
+
+	local all_promises = {}
+	local store_service = Managers.data_service.store
+
+	for archetype_name, _ in pairs(Archetypes) do
+		local cosmetics_promise = store_service:get_credits_cosmetics_store(archetype_name):catch(function(error)
+			mod:error("Failed to cache commissary cosmetics store for %s: %s", archetype_name, tostring(error))
+			return { offers = {} }
+		end)
+		all_promises[#all_promises + 1] = cosmetics_promise
+
+		local weapon_cosmetics_promise = store_service
+			:get_credits_weapon_cosmetics_store(archetype_name)
+			:catch(function(error)
+				mod:error(
+					"Failed to cache commissary weapon cosmetics store for %s: %s",
+					archetype_name,
+					tostring(error)
+				)
+				return { offers = {} }
+			end)
+		all_promises[#all_promises + 1] = weapon_cosmetics_promise
+	end
+
+	commisary_cache_promise = Promise.all(unpack(all_promises))
+		:next(function(results)
+			local combined_offers = {}
+			for i = 1, #results do
+				local offers = results[i].offers
+				if offers then
+					for j = 1, #offers do
+						combined_offers[#combined_offers + 1] = offers[j]
+					end
+				end
+			end
+			commisary_cache = { offers = combined_offers }
+
+			return commisary_cache
+		end)
+		:catch(function(error)
+			mod:error("Failed to cache commissary store: " .. tostring(error))
+			commisary_cache_promise = nil
+			return nil
+		end)
+
+	return commisary_cache_promise
 end
 
 ------------------------------------------------------------------------------------------------------

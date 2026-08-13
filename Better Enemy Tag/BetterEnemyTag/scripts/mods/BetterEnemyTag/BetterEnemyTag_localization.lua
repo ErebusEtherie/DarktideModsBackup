@@ -1,3 +1,4 @@
+---@class BetterEnemyTagMod:DMFMod
 local mod = get_mod("BetterEnemyTag")
 
 local localization = {
@@ -9,9 +10,9 @@ local localization = {
 		en = "Make Enemy Tags Look Better",
 		["zh-cn"] = "让标签再次伟大",
 	},
-	display_settings = {
-		en = "Display Settings",
-		["zh-cn"] = "显示设置",
+	general_settings = {
+		en = "General Settings",
+		["zh-cn"] = "一般设置",
 	},
 	reduce_screen_margin = {
 		en = "Reduce Screen Margin",
@@ -46,8 +47,8 @@ local localization = {
 		["zh-cn"] = "隐藏屏幕边缘外的敌人标签",
 	},
 	opacity_normal = {
-		en = "Enemy Tag Opacity",
-		["zh-cn"] = "敌人标签不透明度",
+		en = "Tag Opacity",
+		["zh-cn"] = "标签不透明度",
 	},
 	fade_when_aim = {
 		en = "Fade When Aim",
@@ -57,17 +58,49 @@ local localization = {
 		en = "Opacity",
 		["zh-cn"] = "不透明度",
 	},
+	sync_outline_color = {
+		en = "Match Outline to Tag Color",
+		["zh-cn"] = "轮廓颜色跟随标记",
+	},
+	normal_tag_icon_settings = {
+		en = "Normal Tag Icon",
+		["zh-cn"] = "普通标签图标",
+	},
+	veteran_tag_icon_settings = {
+		en = "Focus Target Tag Icon",
+		["zh-cn"] = "聚焦目标标签图标",
+	},
+	companion_tag_icon_settings = {
+		en = "Cyber-Mastiff Tag Icon",
+		["zh-cn"] = "智能獒犬标签图标",
+	},
+	servo_skull_tag_icon_settings = {
+		en = "Servo-Skull Tag Icon",
+		["zh-cn"] = "伺服颅骨标签图标",
+	},
+	tag_icon = {
+		en = "Tag Icon",
+		["zh-cn"] = "标签图标",
+	},
+	use_slot_color = {
+		en = "Use Player Slot Color",
+		["zh-cn"] = "使用玩家槽位颜色",
+	},
 	normal_tag_color = {
 		en = "Normal Tag Color",
 		["zh-cn"] = "普通标签颜色",
 	},
 	veteran_tag_color = {
-		en = "Veteran Focus Target Tag Color",
-		["zh-cn"] = "老兵聚焦目标标签颜色",
+		en = "Focus Target Tag Color",
+		["zh-cn"] = "聚焦目标标签颜色",
 	},
 	companion_tag_color = {
-		en = "Arbites Companion Tag Color",
-		["zh-cn"] = "法务官伙伴标签颜色",
+		en = "Cyber-Mastiff Tag Color",
+		["zh-cn"] = "智能獒犬标签颜色",
+	},
+	servo_skull_tag_color = {
+		en = "Servo-Skull Tag Color",
+		["zh-cn"] = "伺服颅骨标签颜色",
 	},
 	override_tag_color = {
 		en = "Override Tag Color",
@@ -84,6 +117,110 @@ local localization = {
 	blue = {
 		en = "Blue",
 		["zh-cn"] = "蓝色",
+	},
+	normal_tag_settings = {
+		en = "Normal Tag Settings",
+		["zh-cn"] = "普通标签设置",
+	},
+	veteran_tag_settings = {
+		en = "Focus Target Tag Settings",
+		["zh-cn"] = "聚焦目标标签设置",
+	},
+	companion_tag_settings = {
+		en = "Cyber-Mastiff Tag Settings",
+		["zh-cn"] = "智能獒犬标签设置",
+	},
+	servo_skull_tag_settings = {
+		en = "Servo-Skull Tag Settings",
+		["zh-cn"] = "伺服颅骨标签设置",
+	},
+	override_tag_settings = {
+		en = "Override Tag Settings",
+		["zh-cn"] = "覆盖标签设置",
+	},
+	teammate_normal_tag_color = {
+		en = "Teammate Normal Tag Color",
+		["zh-cn"] = "队友普通标签颜色",
+	},
+	teammate_veteran_tag_color = {
+		en = "Teammate Focus Target Tag Color",
+		["zh-cn"] = "队友聚焦目标标签颜色",
+	},
+	teammate_companion_tag_color = {
+		en = "Teammate Cyber-Mastiff Tag Color",
+		["zh-cn"] = "队友智能獒犬标签颜色",
+	},
+	teammate_servo_skull_tag_color = {
+		en = "Teammate Servo-Skull Tag Color",
+		["zh-cn"] = "队友伺服颅骨标签颜色",
+	},
+	default = {
+		en = "Default",
+		["zh-cn"] = "默认值",
+	},
+	Skull = {
+		en = "Skull",
+		["zh-cn"] = "颅骨",
+	},
+	Priority_Skull = {
+		en = "Priority Skull",
+		["zh-cn"] = "插剑颅骨",
+	},
+	Cracked_Skull = {
+		en = "Cracked Skull",
+		["zh-cn"] = "破碎颅骨",
+	},
+	Auric_Skull = {
+		en = "Auric Skull",
+		["zh-cn"] = "锐金颅骨",
+	},
+	Servo_Skull = {
+		en = "Servo-Skull",
+		["zh-cn"] = "伺服颅骨",
+	},
+	Cyber_Mastiff = {
+		en = "Cyber-Mastiff",
+		["zh-cn"] = "智能獒犬",
+	},
+	Eagle = {
+		en = "Eagle",
+		["zh-cn"] = "鹰",
+	},
+	Exclamation = {
+		en = "Exclamation",
+		["zh-cn"] = "感叹号",
+	},
+	Attention = {
+		en = "Attention",
+		["zh-cn"] = "注意",
+	},
+	Radar = {
+		en = "Radar",
+		["zh-cn"] = "雷达",
+	},
+	Circle = {
+		en = "Circle",
+		["zh-cn"] = "圆",
+	},
+	Rhombus_1 = {
+		en = "Rhombus 1",
+		["zh-cn"] = "四边形 1",
+	},
+	Rhombus_2 = {
+		en = "Rhombus 2",
+		["zh-cn"] = "四边形 2",
+	},
+	Rhombus_3 = {
+		en = "Rhombus 3",
+		["zh-cn"] = "四边形 3",
+	},
+	Target_1 = {
+		en = "Target 1",
+		["zh-cn"] = "目标 1",
+	},
+	Target_2 = {
+		en = "Target 2",
+		["zh-cn"] = "目标 2",
 	},
 }
 

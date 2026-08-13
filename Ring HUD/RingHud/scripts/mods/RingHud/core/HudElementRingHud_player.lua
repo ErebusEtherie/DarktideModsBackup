@@ -7,6 +7,7 @@ if not mod then return end
 local RingHudState       = mod:io_dofile("RingHud/scripts/mods/RingHud/core/RingHud_state_player")
 local Definitions        = mod:io_dofile("RingHud/scripts/mods/RingHud/core/RingHud_definitions_player")
 local PlayerUnitStatus   = require("scripts/utilities/attack/player_unit_status")
+local UIWidget           = require("scripts/managers/ui/ui_widget")
 
 local PerilFeature       = mod:io_dofile("RingHud/scripts/mods/RingHud/features/peril_feature")
 local DodgeFeature       = mod:io_dofile("RingHud/scripts/mods/RingHud/features/dodge_feature")
@@ -26,34 +27,23 @@ local U                  = mod:io_dofile("RingHud/scripts/mods/RingHud/systems/u
 
 mod:io_dofile("RingHud/scripts/mods/RingHud/context/wield_context")
 
-local math_abs             = math.abs
-local math_max             = math.max
-local tonumber             = tonumber
-local apply_shake_offset   = U.apply_shake_to_style_offset
+local math_max                         = math.max
+local tonumber                         = tonumber
 
--- PERFORMANCE: Pre-generate string keys to prevent constant string allocations/concatenations every frame
-local MAX_PREGEN           = 30
-local STR_DODGE_BAR        = {}
-local STR_CHARGE_SEG       = {}
-local STR_CHARGE_SEG_EDGE  = {}
-local STR_GRENADE_SEG      = {}
-local STR_GRENADE_SEG_EDGE = {}
-local STR_AMMO_MULTI       = {}
-local STR_TALENT_SEG       = {}
-local STR_ADAMANT_SEG      = {}
-local STR_ADAMANT_SEG_EDGE = {}
-
-for i = 1, MAX_PREGEN do
-    STR_DODGE_BAR[i]        = "dodge_bar_" .. i
-    STR_CHARGE_SEG[i]       = "charge_seg_" .. i
-    STR_CHARGE_SEG_EDGE[i]  = "charge_seg_edge_" .. i
-    STR_GRENADE_SEG[i]      = "grenade_segment_" .. i
-    STR_GRENADE_SEG_EDGE[i] = "grenade_segment_edge_" .. i
-    STR_AMMO_MULTI[i]       = "ammo_clip_filled_multi_" .. i
-    STR_TALENT_SEG[i]       = "talent_seg_" .. i
-    STR_ADAMANT_SEG[i]      = "talent_adamant_seg_" .. i
-    STR_ADAMANT_SEG_EDGE[i] = "talent_adamant_seg_" .. i .. "_edge"
-end
+-- Shared context table reused every frame by feature modules for layout/shake to avoid table generation GC overhead
+local _shared_layout_context           = {
+    apply_shake = false,
+    dx = 0,
+    dy = 0,
+    user_bias_px = 0,
+    n_user_bias_px = 0,
+    text_bias_px = 0,
+    text_bias_comb = 0,
+    n_text_bias_comb = 0,
+    bias_1_5 = 0,
+    stimm_timer_base_x = 0,
+    stimm_timer_base_y = 0
+}
 
 -- ## 2. CLASS DEFINITION ##
 local HudElementRingHud_player         = class("HudElementRingHud_player", "HudElementBase")
@@ -63,18 +53,11 @@ local HudElementRingHud_player         = class("HudElementRingHud_player", "HudE
 HudElementRingHud_player.init          = function(self, parent, draw_layer, start_scale)
     HudElementRingHud_player.super.init(self, parent, draw_layer, start_scale, Definitions)
 
-    self._remaining_efficient_dodges             = 0
     self._stamina_bar_latched_on                 = false
-    self._previous_health_fraction               = -1
-    self._previous_corruption_fraction           = -1
-    self._previous_dmg_effective_length          = -1
-    self._previous_peril_fraction                = -1
-    self._current_peril_color_argb               = { 200, 138, 201, 38 }
     self._ammo_clip_has_latched_data             = false
     self._ammo_clip_latched_low                  = false
     self._latched_current_clip_ammo              = 0
     self._latched_max_clip_ammo                  = 0
-    self._prev_reserve_frac_for_bump             = nil
     self._was_ability_on_cooldown_for_timer_text = false
     self._force_ammo_data_refresh                = false
     self._last_logged_utd_state                  = {}
@@ -180,15 +163,17 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
         end
     end
 
-    if math_abs(hud_state.health_data.current_fraction - self._previous_health_fraction) > 0.001 or
-        math_abs(hud_state.health_data.corruption_fraction - self._previous_corruption_fraction) > 0.001
-    then
+    if hud_state.triggers and hud_state.triggers.recent_health_change then
         if mod.thv_player_recent_change_bump then
             mod.thv_player_recent_change_bump()
         end
     end
-    self._previous_health_fraction     = hud_state.health_data.current_fraction
-    self._previous_corruption_fraction = hud_state.health_data.corruption_fraction
+
+    if hud_state.triggers and hud_state.triggers.recent_ammo_reserve_change then
+        if mod.ammo_vis_player_recent_change_bump then
+            mod.ammo_vis_player_recent_change_bump()
+        end
+    end
 
     if hud_state.stimm_item_name and hud_state.stimm_item_name ~= self._previous_stimm_item_name then
         self._pocketable_pickup_visibility_timer = self._pocketable_pickup_visibility_duration
@@ -231,26 +216,6 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
         end
     end
 
-    if settings.ammo_reserve_dropdown ~= "ammo_reserve_disabled" then
-        local max_reserve = tonumber(ad.max_reserve) or 0
-        local cur_reserve = tonumber(ad.current_reserve) or 0
-
-        if max_reserve > 0 then
-            local reserve_frac = math.min(cur_reserve / max_reserve, 1.0)
-            local prev         = self._prev_reserve_frac_for_bump
-            if prev ~= nil and math_abs(reserve_frac - prev) > 0.001 then
-                if mod.ammo_vis_player_recent_change_bump then
-                    mod.ammo_vis_player_recent_change_bump()
-                end
-            end
-            self._prev_reserve_frac_for_bump = reserve_frac
-        else
-            self._prev_reserve_frac_for_bump = nil
-        end
-    else
-        self._prev_reserve_frac_for_bump = nil
-    end
-
     local hotkey_active_override = mod.show_all_hud_hotkey_active or false
     local vis_mode               = settings.ads_visibility_dropdown
     if vis_mode == "ads_vis_hotkey" and ads_active then
@@ -281,13 +246,6 @@ HudElementRingHud_player.update        = function(self, dt, t, ui_renderer, rend
     if PocketableFeature.update then PocketableFeature.update(widgets, hud_state, hotkey_active_override) end
 
     TalentFeature.update(widgets.talent_bar, hud_state, hotkey_active_override)
-
-    if not hud_state.player_extensions then
-        self._previous_health_fraction      = -1
-        self._previous_corruption_fraction  = -1
-        self._previous_dmg_effective_length = -1
-        self._prev_reserve_frac_for_bump    = nil
-    end
 end
 
 -- ## 4. DRAWING ##
@@ -316,332 +274,49 @@ HudElementRingHud_player._draw_widgets = function(self, dt, t, input_service, ui
     local n_text_bias_comb   = -text_bias_comb
     local bias_1_5           = user_bias_px * 1.5
 
-    -- -------------- PERIL BAR + TEXT --------------
-    do
-        local pb = widgets.peril_bar
-        if pb and pb.style then
-            local changed = false
-            if pb.style.peril_bar then
-                if apply_shake_offset(pb.style.peril_bar, 0, 0, 1, apply_shake, dx, dy,
-                        n_user_bias_px, user_bias_px) then
-                    changed = true
-                end
-            end
-            if pb.style.peril_edge then
-                if apply_shake_offset(pb.style.peril_edge, 0, 0, 1, apply_shake, dx, dy,
-                        n_user_bias_px, user_bias_px) then
-                    changed = true
-                end
-            end
-            if pb.style.peril_other_edge then
-                if apply_shake_offset(pb.style.peril_other_edge, 0, 0, 1, apply_shake, dx, dy,
-                        n_user_bias_px, user_bias_px) then
-                    changed = true
-                end
-            end
-            if changed then pb.dirty = true end
-        end
+    -- Populate the shared context table
+    local ctx                = _shared_layout_context
+    ctx.apply_shake          = apply_shake
+    ctx.dx, ctx.dy           = dx, dy
+    ctx.user_bias_px         = user_bias_px
+    ctx.n_user_bias_px       = n_user_bias_px
+    ctx.text_bias_px         = text_bias_px
+    ctx.text_bias_comb       = text_bias_comb
+    ctx.n_text_bias_comb     = n_text_bias_comb
+    ctx.bias_1_5             = bias_1_5
+    ctx.stimm_timer_base_x   = stimm_timer_base_x
+    ctx.stimm_timer_base_y   = stimm_timer_base_y
+
+    if PerilFeature.apply_layout then PerilFeature.apply_layout(widgets.peril_bar, widgets.peril_text_display_widget, ctx) end
+    if DodgeFeature.apply_layout then DodgeFeature.apply_layout(widgets.dodge_bar, ctx) end
+    if StaminaFeature.apply_layout then StaminaFeature.apply_layout(widgets.stamina_bar, ctx) end
+    if ChargeFeature.apply_layout then ChargeFeature.apply_layout(widgets.charge_bar, ctx) end
+    if ToughnessHpFeature.apply_layout then ToughnessHpFeature.apply_layout(widgets, ctx) end
+    if GrenadesFeature.apply_layout then GrenadesFeature.apply_layout(widgets.grenade_bar, ctx) end
+    if AmmoClipFeature.apply_layout then
+        AmmoClipFeature.apply_layout(
+            widgets.ammo_clip_bar,
+            widgets.ammo_clip_text_display_widget,
+            ctx
+        )
     end
+    if AmmoReserveFeature.apply_layout then AmmoReserveFeature.apply_layout(widgets.ammo_reserve_display_widget, ctx) end
+    if TalentFeature.apply_layout then TalentFeature.apply_layout(widgets.talent_bar, ctx) end
+    if AbilityFeature.apply_layout then AbilityFeature.apply_layout(widgets.ability_timer, ctx) end
+    if PocketableFeature.apply_layout then PocketableFeature.apply_layout(widgets, ctx) end
 
-    -- -------------- DODGE --------------
-    do
-        local db = widgets.dodge_bar
-        if db and db.style then
-            local changed = false
-            for i = 1, (mod.MAX_DODGE_SEGMENTS or 6) do
-                local st = db.style[STR_DODGE_BAR[i]]
-                if st and apply_shake_offset(st, 0, 0, 1, apply_shake, dx, dy,
-                        user_bias_px, n_user_bias_px) then
-                    changed = true
-                end
-            end
-            if changed then db.dirty = true end
-        end
-    end
-
-    -- -------------- STAMINA --------------
-    do
-        local sb = widgets.stamina_bar
-        if sb and sb.style then
-            local changed = false
-            if sb.style.stamina_bar and
-                apply_shake_offset(sb.style.stamina_bar, 0, 0, 1, apply_shake, dx, dy,
-                    n_user_bias_px, n_user_bias_px) then
-                changed = true
-            end
-            if sb.style.stamina_edge and
-                apply_shake_offset(sb.style.stamina_edge, 0, 0, 2, apply_shake, dx, dy,
-                    n_user_bias_px, n_user_bias_px) then
-                changed = true
-            end
-            if changed then sb.dirty = true end
-        end
-    end
-
-    -- -------------- CHARGE --------------
-    do
-        local cb = widgets.charge_bar
-        if cb and cb.style then
-            local changed = false
-
-            -- Legacy 2-segment bar (still used for non-dual-shivs)
-            if cb.style.charge_bar_1 and apply_shake_offset(
-                    cb.style.charge_bar_1, 0, 0, 1, apply_shake, dx, dy, user_bias_px, user_bias_px
-                ) then
-                changed = true
-            end
-            if cb.style.charge_bar_1_edge and apply_shake_offset(
-                    cb.style.charge_bar_1_edge, 0, 0, 2, apply_shake, dx, dy, user_bias_px, user_bias_px
-                ) then
-                changed = true
-            end
-            if cb.style.charge_bar_2 and apply_shake_offset(
-                    cb.style.charge_bar_2, 0, 0, 2, apply_shake, dx, dy, user_bias_px, user_bias_px
-                ) then
-                changed = true
-            end
-            if cb.style.charge_bar_2_edge and apply_shake_offset(
-                    cb.style.charge_bar_2_edge, 0, 0, 3, apply_shake, dx, dy, user_bias_px, user_bias_px
-                ) then
-                changed = true
-            end
-
-            -- New: segmented dual-shivs passes (if present)
-            local max_segments = mod.MAX_CHARGE_SEGMENTS or 6
-            for i = 1, max_segments do
-                local st  = cb.style[STR_CHARGE_SEG[i]]
-                local ste = cb.style[STR_CHARGE_SEG_EDGE[i]]
-
-                if st and apply_shake_offset(
-                        st, 0, 0, 2, apply_shake, dx, dy, user_bias_px, user_bias_px
-                    ) then
-                    changed = true
-                end
-                if ste and apply_shake_offset(
-                        ste, 0, 0, 3, apply_shake, dx, dy, user_bias_px, user_bias_px
-                    ) then
-                    changed = true
-                end
-            end
-
-            if changed then cb.dirty = true end
-        end
-    end
-
-    -- -------------- TOUGHNESS / HP RING (3 layers) --------------
-    do
-        local tcor = widgets.toughness_bar_corruption
-        if tcor and tcor.style and tcor.style.corruption_segment then
-            if apply_shake_offset(tcor.style.corruption_segment, 0, 0, 0, apply_shake, dx, dy,
-                    0, bias_1_5) then
-                tcor.dirty = true
-            end
-            if tcor.style.corruption_segment_edge and
-                apply_shake_offset(tcor.style.corruption_segment_edge, 0, 0, 1, apply_shake, dx, dy,
-                    0, bias_1_5) then
-                tcor.dirty = true
-            end
-        end
-
-        local thp = widgets.toughness_bar_health
-        if thp and thp.style and thp.style.health_segment then
-            if apply_shake_offset(thp.style.health_segment, 0, 0, 1, apply_shake, dx, dy,
-                    0, bias_1_5) then
-                thp.dirty = true
-            end
-            if thp.style.health_segment_edge and
-                apply_shake_offset(thp.style.health_segment_edge, 0, 0, 2, apply_shake, dx, dy,
-                    0, bias_1_5) then
-                thp.dirty = true
-            end
-        end
-
-        local tdm = widgets.toughness_bar_damage
-        if tdm and tdm.style and tdm.style.damage_segment then
-            if apply_shake_offset(tdm.style.damage_segment, 0, 0, 2, apply_shake, dx, dy,
-                    0, bias_1_5) then
-                tdm.dirty = true
-            end
-            if tdm.style.damage_segment_edge and
-                apply_shake_offset(tdm.style.damage_segment_edge, 0, 0, 3, apply_shake, dx, dy,
-                    0, bias_1_5) then
-                tdm.dirty = true
+    -- Inline visibility-aware draw loop (skips widget.visible==false widgets entirely,
+    -- saving 1 FFI call + Lua pass-loop per hidden widget vs HudElementBase._draw_widgets).
+    local active_widgets = self._widgets
+    if active_widgets then
+        local _draw = UIWidget.draw
+        for i = 1, #active_widgets do
+            local w = active_widgets[i]
+            if w and w.visible ~= false then
+                _draw(w, ui_renderer)
             end
         end
     end
-
-    -- -------------- GRENADES --------------
-    do
-        local gb = widgets.grenade_bar
-        if gb and gb.style then
-            local changed = false
-            for i = 1, (mod.MAX_GRENADE_SEGMENTS_DISPLAY or 14) do
-                local st  = gb.style[STR_GRENADE_SEG[i]]
-                local ste = gb.style[STR_GRENADE_SEG_EDGE[i]]
-                if st and apply_shake_offset(st, 0, 0, 1, apply_shake, dx, dy,
-                        0, user_bias_px) then
-                    changed = true
-                end
-                if ste and apply_shake_offset(ste, 0, 0, 2, apply_shake, dx, dy,
-                        0, user_bias_px) then
-                    changed = true
-                end
-            end
-            if changed then gb.dirty = true end
-        end
-    end
-
-    -- -------------- AMMO CLIP BAR --------------
-    do
-        local acb = widgets.ammo_clip_bar
-        if acb and acb.style then
-            local changed = false
-            if acb.style.ammo_clip_unfilled_background and apply_shake_offset(
-                    acb.style.ammo_clip_unfilled_background, 0, 0, 0, apply_shake, dx, dy, n_user_bias_px, n_user_bias_px
-                ) then
-                changed = true
-            end
-            if acb.style.ammo_clip_filled_single and apply_shake_offset(
-                    acb.style.ammo_clip_filled_single, 0, 0, 1, apply_shake, dx, dy, n_user_bias_px, n_user_bias_px
-                ) then
-                changed = true
-            end
-            for i = 1, (mod.MAX_AMMO_CLIP_LOW_COUNT_DISPLAY or 5) do
-                local st = acb.style[STR_AMMO_MULTI[i]]
-                if st and apply_shake_offset(st, 0, 0, 1, apply_shake, dx, dy,
-                        n_user_bias_px, n_user_bias_px) then
-                    changed = true
-                end
-            end
-            if changed then acb.dirty = true end
-        end
-    end
-
-    -- -------------- TALENT BAR --------------
-    do
-        local tb = widgets.talent_bar
-        if tb and tb.style then
-            local changed = false
-
-            if tb.style.talent_bar and apply_shake_offset(
-                    tb.style.talent_bar, 0, 0, 1, apply_shake, dx, dy, user_bias_px, n_user_bias_px
-                ) then
-                changed = true
-            end
-            if tb.style.talent_bar_edge and apply_shake_offset(
-                    tb.style.talent_bar_edge, 0, 0, 2, apply_shake, dx, dy, user_bias_px, n_user_bias_px
-                ) then
-                changed = true
-            end
-
-            -- Psyker segmented passes (so shake/bias affects them too)
-            for i = 1, 3 do
-                local st = tb.style[STR_TALENT_SEG[i]]
-                if st and apply_shake_offset(
-                        st, 0, 0, 1, apply_shake, dx, dy, user_bias_px, n_user_bias_px
-                    ) then
-                    changed = true
-                end
-            end
-
-            -- Adamant segmented passes (base + notch edge)
-            for i = 1, 4 do
-                local st  = tb.style[STR_ADAMANT_SEG[i]]
-                local ste = tb.style[STR_ADAMANT_SEG_EDGE[i]]
-
-                if st and apply_shake_offset(
-                        st, 0, 0, 1, apply_shake, dx, dy, user_bias_px, n_user_bias_px
-                    ) then
-                    changed = true
-                end
-                if ste and apply_shake_offset(
-                        ste, 0, 0, 2, apply_shake, dx, dy, user_bias_px, n_user_bias_px
-                    ) then
-                    changed = true
-                end
-            end
-
-            if changed then tb.dirty = true end
-        end
-    end
-
-    -- -------------- STIMM / CRATE ICONS --------------
-    do
-        local stw = widgets.stimm_indicator_widget
-        if stw and stw.style then
-            local changed = false
-            if stw.style.stimm_icon then
-                if apply_shake_offset(stw.style.stimm_icon, 0, 0, 0, apply_shake, dx, dy,
-                        user_bias_px, n_user_bias_px) then
-                    changed = true
-                end
-            end
-
-            if stw.style.stimm_timer_text then
-                if apply_shake_offset(stw.style.stimm_timer_text, stimm_timer_base_x, stimm_timer_base_y, 1, apply_shake, dx, dy,
-                        text_bias_comb, n_text_bias_comb) then
-                    changed = true
-                end
-            end
-
-            if changed then stw.dirty = true end
-        end
-
-        local cw = widgets.crate_indicator_widget
-        if cw and cw.style and cw.style.crate_icon then
-            if apply_shake_offset(cw.style.crate_icon, 0, 0, 0, apply_shake, dx, dy,
-                    user_bias_px, n_user_bias_px) then
-                cw.dirty = true
-            end
-        end
-    end
-
-    -- -------------- TEXT WIDGETS --------------
-    do
-        local pt = widgets.peril_text_display_widget
-        if pt and pt.style and pt.style.percent_text_style then
-            if apply_shake_offset(pt.style.percent_text_style, 0, 0, 2, apply_shake, dx, dy,
-                    n_text_bias_comb, text_bias_comb) then
-                pt.dirty = true
-            end
-        end
-
-        local at = widgets.ability_timer
-        if at and at.style and at.style.ability_text then
-            local base_x = Definitions.text_offset
-            local base_y = Definitions.offset_correction
-            if apply_shake_offset(at.style.ability_text, base_x, base_y, 2, apply_shake, dx, dy,
-                    text_bias_comb, text_bias_comb) then
-                at.dirty = true
-            end
-        end
-
-        local ar = widgets.ammo_reserve_display_widget
-        if ar and ar.style and ar.style.reserve_text_style then
-            if apply_shake_offset(ar.style.reserve_text_style, 0, 0, 2, apply_shake, dx, dy,
-                    n_text_bias_comb, n_text_bias_comb) then
-                ar.dirty = true
-            end
-        end
-
-        local act = widgets.ammo_clip_text_display_widget
-        if act and act.style and act.style.ammo_clip_text_style then
-            if apply_shake_offset(act.style.ammo_clip_text_style, 0, 0, 1, apply_shake, dx, dy,
-                    n_text_bias_comb, 0) then
-                act.dirty = true
-            end
-        end
-
-        local ht = widgets.health_text_display_widget
-        if ht and ht.style and ht.style.health_text_style then
-            if apply_shake_offset(ht.style.health_text_style, 0, 0, 1, apply_shake, dx, dy,
-                    0, bias_1_5 + text_bias_px) then
-                ht.dirty = true
-            end
-        end
-    end
-
-    HudElementRingHud_player.super._draw_widgets(self, dt, t, input_service, ui_renderer, render_settings)
 end
 
 function HudElementRingHud_player:draw(dt, t, ui_renderer, render_settings, input_service)
@@ -654,13 +329,14 @@ function HudElementRingHud_player:draw(dt, t, ui_renderer, render_settings, inpu
     end
 
     local ads_active = self._ads_active -- cached
-    local force_show = (self._force_show_active == true)
+    local force_show = self._force_show_active == true
     local vis_mode   = mod._settings.ads_visibility_dropdown
 
     local hide_hud   = false
     if not force_show then
-        if (vis_mode == "ads_vis_hide_in_ads" and ads_active) or
-            (vis_mode == "ads_vis_hide_outside_ads" and not ads_active) then
+        if (vis_mode == "ads_vis_hide_in_ads" and ads_active)
+            or (vis_mode == "ads_vis_hide_outside_ads" and not ads_active)
+        then
             hide_hud = true
         end
     end
@@ -668,8 +344,8 @@ function HudElementRingHud_player:draw(dt, t, ui_renderer, render_settings, inpu
     local saved_alphas = nil
     if hide_hud then
         local clip_mode = mod._settings.ammo_clip_dropdown
-        local clip_ads_exception = ads_active and
-            (clip_mode == "ammo_clip_bar_ads" or clip_mode == "ammo_clip_bar_forecast_ads")
+        local clip_ads_exception = ads_active
+            and (clip_mode == "ammo_clip_bar_ads" or clip_mode == "ammo_clip_bar_forecast_ads")
 
         if not clip_ads_exception then
             return

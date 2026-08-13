@@ -51,14 +51,14 @@ local _create_definition = function(template, scenegraph_id)
 				--style.size[1] = scaled_bar_width + 10 + 1 * fs.hb_padding_scale
 				--style.size[2] = scaled_bar_height + 6 + 1 * fs.hb_padding_scale
 			end,
-			visibility_function = function(content)
-				if content.hb_built and fs.frame_type ~= "" then
+		visibility_function = function(content)
+				if content.hb_built and fs.hb_enable_bar and fs.frame_type ~= "" then
 					return true
 				else
 					return false
 				end
 			end,
-		}, -- MAX HEALTH
+		}, -- METAL FRAME (back plate)
 		{
 			pass_type = "rect",
 			style_id = "health_max",
@@ -80,7 +80,7 @@ local _create_definition = function(template, scenegraph_id)
 				style.size[2] = scaled_bar_height
 			end,
 			visibility_function = function(content)
-				if content.hb_built then
+				if content.hb_built and fs.hb_enable_bar then
 					return true
 				else
 					return false
@@ -116,6 +116,7 @@ local _create_definition = function(template, scenegraph_id)
 			visibility_function = function(content)
 				if
 					content.hb_built
+					and fs.hb_enable_bar
 					and fs.hb_toggle_ghostbar
 					and content.health_fraction
 					and content.health_ghost_fraction
@@ -152,7 +153,7 @@ local _create_definition = function(template, scenegraph_id)
 			end,
 
 			visibility_function = function(content)
-				if content.hb_built then
+				if content.hb_built and fs.hb_enable_bar then
 					return true
 				else
 					return false
@@ -186,6 +187,7 @@ local _create_definition = function(template, scenegraph_id)
 			visibility_function = function(content)
 				if
 					content.hb_built
+					and fs.hb_enable_bar
 					and fs.toughness_enabled
 					and (content.current_toughness and content.current_toughness > 0)
 				then
@@ -224,7 +226,8 @@ local _create_definition = function(template, scenegraph_id)
 
 			visibility_function = function(content)
 				if
-					fs.toughness_electric
+					fs.hb_enable_bar
+					and fs.toughness_electric
 					and content.hb_built
 					and fs.toughness_enabled
 					and (content.current_toughness and content.current_toughness > 0)
@@ -266,7 +269,8 @@ local _create_definition = function(template, scenegraph_id)
 
 			visibility_function = function(content)
 				if
-					fs.toughness_electric
+					fs.hb_enable_bar
+					and fs.toughness_electric
 					and content.hb_built
 					and fs.toughness_enabled
 					and (content.current_toughness and content.current_toughness > 0)
@@ -296,12 +300,17 @@ local _create_definition = function(template, scenegraph_id)
 
 				local scaled_bar_width = content.scaled_bar_width or 0
 				local scaled_toughness_width = scaled_bar_width * toughness_fraction
+				local scale = content.scale or 1
+				local scaled_bar_height = content.scaled_bar_height or style.default_size[2]
 
 				style.offset[1] = -scaled_bar_width * 0.5 + scaled_toughness_width
+				style.size[2] = scaled_bar_height
+				style.size[1] = 2 * scale
 			end,
 			visibility_function = function(content)
 				if
-					fs.hb_endcaps_enabled
+					fs.hb_enable_bar
+					and fs.hb_endcaps_enabled
 					and content.hb_built
 					and fs.toughness_enabled
 					and (content.current_toughness and content.current_toughness > 0)
@@ -331,16 +340,23 @@ local _create_definition = function(template, scenegraph_id)
 
 				local scaled_bar_width = content.scaled_bar_width or 0
 				local scaled_health_width = scaled_bar_width * health_fraction
+				local scale = content.scale or 1
+				local scaled_bar_height = content.scaled_bar_height or style.default_size[2]
 
 				style.offset[1] = -scaled_bar_width * 0.5 + scaled_health_width
+				style.size[2] = scaled_bar_height
+				style.size[1] = 2 * scale
 			end,
 			visibility_function = function(content)
 				if
-					fs.hb_endcaps_enabled
-						and content.hb_built
-						and (content.health_fraction and content.health_fraction < 1)
-						and (fs.toughness_enabled and (content.current_toughness and content.current_toughness <= 0))
-					or not fs.toughness_enabled
+					fs.hb_enable_bar
+					and (
+						(fs.hb_endcaps_enabled
+							and content.hb_built
+							and (content.health_fraction and content.health_fraction < 1)
+							and (fs.toughness_enabled and (content.current_toughness and content.current_toughness <= 0)))
+						or not fs.toughness_enabled
+					)
 				then
 					return true
 				else
@@ -363,7 +379,7 @@ local _create_definition = function(template, scenegraph_id)
 				default_alpha = 200,
 			},
 			visibility_function = function(content)
-				if content.hb_built and fs.healthbar_segments_enable then
+				if content.hb_built and fs.hb_enable_bar and fs.healthbar_segments_enable then
 					return true
 				else
 					return false
@@ -386,7 +402,7 @@ local _create_definition = function(template, scenegraph_id)
 				default_alpha = 200,
 			},
 			visibility_function = function(content)
-				if content.hb_built and fs.healthbar_segments_enable then
+				if content.hb_built and fs.hb_enable_bar and fs.healthbar_segments_enable then
 					return true
 				else
 					return false
@@ -408,7 +424,7 @@ local _create_definition = function(template, scenegraph_id)
 				default_alpha = 200,
 			},
 			visibility_function = function(content)
-				if content.hb_built and fs.healthbar_segments_enable then
+				if content.hb_built and fs.hb_enable_bar and fs.healthbar_segments_enable then
 					return true
 				else
 					return false
@@ -433,7 +449,7 @@ local _create_definition = function(template, scenegraph_id)
 				default_alpha = 200,
 			},
 			visibility_function = function(content)
-				if content.hb_built then
+				if content.hb_built and fs.hb_enable_bar then
 					return true
 				else
 					return false
@@ -455,7 +471,7 @@ local _create_definition = function(template, scenegraph_id)
 				default_alpha = 100,
 			},
 			visibility_function = function(content)
-				if content.hb_built then
+				if content.hb_built and fs.hb_enable_bar then
 					return true
 				else
 					return false
@@ -487,7 +503,7 @@ local _create_definition = function(template, scenegraph_id)
 				},
 			},
 			visibility_function = function(content)
-				return content.hb_built and content.icon_enabled
+				return content.hb_built and fs.hb_enable_bar and content.icon_enabled
 			end,
 		},
 		{ -- icon glow
@@ -513,7 +529,7 @@ local _create_definition = function(template, scenegraph_id)
 				},
 			},
 			visibility_function = function(content)
-				return content.hb_built and content.icon_enabled and content.glow_enabled
+				return content.hb_built and fs.hb_enable_bar and content.icon_enabled and content.glow_enabled
 			end,
 		},
 		-- ELITE ICON
@@ -523,7 +539,7 @@ local _create_definition = function(template, scenegraph_id)
 			value = "content/ui/materials/hud/interactions/icons/enemy_priority",
 			style = icon_style,
 			visibility_function = function(content)
-				return content.hb_built and content.icon_enabled and content.icon_elite
+				return content.hb_built and fs.hb_enable_bar and content.icon_enabled and content.icon_elite
 			end,
 		}, -- BOSS ICON
 		{
@@ -532,7 +548,7 @@ local _create_definition = function(template, scenegraph_id)
 			value = "content/ui/materials/icons/difficulty/flat/difficulty_skull_damnation",
 			style = icon_style,
 			visibility_function = function(content)
-				return content.hb_built and content.icon_enabled and content.icon_boss
+				return content.hb_built and fs.hb_enable_bar and content.icon_enabled and content.icon_boss
 			end,
 		},
 		{ -- DAEMONHOST ICON
@@ -541,7 +557,7 @@ local _create_definition = function(template, scenegraph_id)
 			value = "content/ui/materials/hud/icons/speaker",
 			style = icon_style,
 			visibility_function = function(content)
-				return content.hb_built and content.icon_enabled and content.icon_witch
+				return content.hb_built and fs.hb_enable_bar and content.icon_enabled and content.icon_witch
 			end,
 		},
 		{ -- CAPTAIN ICON
@@ -550,7 +566,7 @@ local _create_definition = function(template, scenegraph_id)
 			value = "content/ui/materials/icons/difficulty/flat/difficulty_skull_auric",
 			style = icon_style,
 			visibility_function = function(content)
-				return content.hb_built and content.icon_enabled and content.icon_captain
+				return content.hb_built and fs.hb_enable_bar and content.icon_enabled and content.icon_captain
 			end,
 		},
 		{ -- Ranged elites
@@ -559,7 +575,7 @@ local _create_definition = function(template, scenegraph_id)
 			value = "content/ui/materials/icons/circumstances/assault_01",
 			style = icon_style,
 			visibility_function = function(content)
-				return content.hb_built and content.icon_enabled and content.icon_elite_ranged
+				return content.hb_built and fs.hb_enable_bar and content.icon_enabled and content.icon_elite_ranged
 			end,
 		},
 		{ -- specialists
@@ -568,7 +584,16 @@ local _create_definition = function(template, scenegraph_id)
 			value = "content/ui/materials/icons/difficulty/flat/difficulty_skull_uprising",
 			style = icon_style,
 			visibility_function = function(content)
-				return content.hb_built and content.icon_enabled and content.icon_special
+				return content.hb_built and fs.hb_enable_bar and content.icon_enabled and content.icon_special
+			end,
+		},
+		{ -- shield
+			pass_type = "texture",
+			style_id = "icon_shield",
+			value = "content/ui/materials/hud/interactions/icons/void_shield",
+			style = icon_style,
+			visibility_function = function(content)
+				return content.hb_built and fs.hb_enable_bar and content.icon_enabled and content.icon_shield
 			end,
 		},
 		{ -- disablers
@@ -577,7 +602,7 @@ local _create_definition = function(template, scenegraph_id)
 			value = "content/ui/materials/icons/generic/exclamation_mark",
 			style = icon_style,
 			visibility_function = function(content)
-				return content.hb_built and content.icon_enabled and content.icon_disabler
+				return content.hb_built and fs.hb_enable_bar and content.icon_enabled and content.icon_disabler
 			end,
 		},
 		{ -- snipers
@@ -586,7 +611,7 @@ local _create_definition = function(template, scenegraph_id)
 			value = "content/ui/materials/icons/weapons/actions/ads",
 			style = icon_style,
 			visibility_function = function(content)
-				return content.hb_built and content.icon_enabled and content.icon_sniper
+				return content.hb_built and fs.hb_enable_bar and content.icon_enabled and content.icon_sniper
 			end,
 		}, -- header text
 		{
@@ -612,7 +637,7 @@ local _create_definition = function(template, scenegraph_id)
 				drop_shadow = true,
 			},
 			visibility_function = function(content)
-				if content.hb_built then
+				if content.hb_built and fs.hb_enable_text then
 					return true
 				else
 					return false
@@ -643,7 +668,7 @@ local _create_definition = function(template, scenegraph_id)
 				default_alpha = 255,
 			},
 			visibility_function = function(content)
-				if content.hb_built then
+				if content.hb_built and fs.hb_enable_text then
 					return true
 				else
 					return false
@@ -674,7 +699,7 @@ local _create_definition = function(template, scenegraph_id)
 				default_alpha = 255,
 			},
 			visibility_function = function(content)
-				if content.hb_built then
+				if content.hb_built and fs.hb_enable_text then
 					return true
 				else
 					return false

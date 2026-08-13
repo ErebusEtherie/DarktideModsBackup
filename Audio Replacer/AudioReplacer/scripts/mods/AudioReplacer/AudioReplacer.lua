@@ -1,6 +1,7 @@
 local mod = get_mod("AudioReplacer")
-local Audio
+local SimpleAudio
 local silent = {}
+local AttackingUnitResolver = require("scripts/utilities/attack/attacking_unit_resolver")
 
 local warp_explosion_audio = {
 	"player/warp_explosion_1.opus",
@@ -12,9 +13,9 @@ local warp_explosion_audio = {
 }
 
 local warp_critical_audio = {
-    "player/warp_critical_1.opus",
+	"player/warp_critical_1.opus",
 }
-	
+
 local mutant_footstep_audio = {
 	"mutant/footstep_1.opus",
 	"mutant/footstep_2.opus",
@@ -38,7 +39,7 @@ local stub_revolver_audio = {
 }
 
 local shotgun_fire_audio = {
-    "weapons/shotgun_fire_1.opus",
+	"weapons/shotgun_fire_1.opus",
 	"weapons/shotgun_fire_2.opus",
 	"weapons/shotgun_fire_3.opus",
 	"weapons/shotgun_fire_4.opus",
@@ -48,7 +49,7 @@ local shotgun_fire_audio = {
 }
 
 local shotgun_reload_audio = {
-    "weapons/shotgun_reload_1.opus",
+	"weapons/shotgun_reload_1.opus",
 	"weapons/shotgun_reload_2.opus",
 	"weapons/shotgun_reload_3.opus",
 	"weapons/shotgun_reload_4.opus",
@@ -59,20 +60,20 @@ local shotgun_reload_audio = {
 }
 
 local shotgun_special_audio = {
-    "weapons/shotgun_special_1.opus",
+	"weapons/shotgun_special_1.opus",
 	"weapons/shotgun_special_2.opus",
 }
 
 local shotgun_forward_audio = {
-    "weapons/shotgun_forward_1.opus",
+	"weapons/shotgun_forward_1.opus",
 }
 
 local shotgun_back_audio = {
-    "weapons/shotgun_back_1.opus",
+	"weapons/shotgun_back_1.opus",
 }
 
 local ogryn_insert_audio = {
-    "weapons/ogryn_insert_1.opus",
+	"weapons/ogryn_insert_1.opus",
 	"weapons/ogryn_insert_2.opus",
 	"weapons/ogryn_insert_3.opus",
 	"weapons/ogryn_insert_4.opus",
@@ -82,7 +83,7 @@ local ogryn_insert_audio = {
 }
 
 local ogryn_open_audio = {
-    "weapons/ogryn_open_1.opus",
+	"weapons/ogryn_open_1.opus",
 	"weapons/ogryn_open_2.opus",
 	"weapons/ogryn_open_3.opus",
 	"weapons/ogryn_open_4.opus",
@@ -92,19 +93,19 @@ local ogryn_open_audio = {
 }
 
 local rumbler_shot_audio = {
-    "weapons/rumbler_shot_1.opus",
+	"weapons/rumbler_shot_1.opus",
 }
 
 local gauntlet_shot_audio = {
-    "weapons/gauntlet_shot_1.opus",
+	"weapons/gauntlet_shot_1.opus",
 }
 
 local explosion_echo_audio = {
-    "weapons/explosion_echo.opus",
+	"weapons/explosion_echo.opus",
 }
 
 local force_block_audio = {
-    "weapons/force_block_1.opus",
+	"weapons/force_block_1.opus",
 	"weapons/force_block_2.opus",
 	"weapons/force_block_3.opus",
 	"weapons/force_block_4.opus",
@@ -240,14 +241,14 @@ local player_bigfrag_audio = {
 
 local player_ogryn_blunt_audio = {
 	"player/ogryn_blunt_1.opus",
-    "player/ogryn_blunt_2.opus",
+	"player/ogryn_blunt_2.opus",
 	"player/ogryn_blunt_3.opus",
 	"player/ogryn_blunt_4.opus",
 	"player/ogryn_blunt_5.opus",
 }
 
 local player_psyker_gaze_audio = {
-    "player/psyker_gaze_1.opus",
+	"player/psyker_gaze_1.opus",
 }
 
 local forcesword_charge_audio = {
@@ -305,15 +306,11 @@ local pox_hound_group_audio = {
 }
 
 local pox_hound_maul_audio = {
-    "pox_hound/maul_1.opus",
+	"pox_hound/maul_1.opus",
 }
 
 local flamer_flame_audio = {
 	"pox_hound/hurt_6.opus",
-}
-
-local pox_bomber_tick_audio = {
-	"pox_bomber/tick_1.opus",
 }
 
 local pox_bomber_wind_up_audio = {
@@ -325,7 +322,7 @@ local pox_bomber_explosion_audio = {
 }
 
 local enemy_killed_audio = {
-    "player/enemy_killed_1.opus",
+	"player/enemy_killed_1.opus",
 	"player/enemy_killed_2.opus",
 	"player/enemy_killed_3.opus",
 	"player/enemy_killed_4.opus",
@@ -335,12 +332,12 @@ local enemy_killed_audio = {
 }
 
 local ogryn_barrage_audio = {
-    "player/ogryn_barrage_1.opus",
+	"player/ogryn_barrage_1.opus",
 	"player/ogryn_barrage_2.opus",
 }
 
 local zealot_dash_audio = {
-    "player/zealot_dash_1.opus",
+	"player/zealot_dash_1.opus",
 	"player/zealot_dash_2.opus",
 	"player/zealot_dash_3.opus",
 	"player/zealot_dash_4.opus",
@@ -352,11 +349,11 @@ local zealot_dash_audio = {
 }
 
 local arby_stance_audio = {
-    "player/arby_stance_1.opus",
+	"player/arby_stance_1.opus",
 }
 
 local arby_charge_audio = {
-    "player/arby_charge_1.opus",
+	"player/arby_charge_1.opus",
 	"player/arby_charge_2.opus",
 	"player/arby_charge_3.opus",
 	"player/arby_charge_4.opus",
@@ -364,15 +361,15 @@ local arby_charge_audio = {
 }
 
 local arby_shieldblast_audio = {
-    "weapons/shieldblast_1.opus",
+	"weapons/shieldblast_1.opus",
 }
 
 local radio_operator_audio = {
-    "radio_operator/radio_stinger_1.opus",
+	"radio_operator/radio_stinger_1.opus",
 }
 
 local horde_warning_audio = {
-    "horde/horde_warning_1.opus",
+	"horde/horde_warning_1.opus",
 	"horde/horde_warning_2.opus",
 	"horde/horde_warning_3.opus",
 	"horde/horde_warning_4.opus",
@@ -381,30 +378,30 @@ local horde_warning_audio = {
 }
 
 local dog_breath_audio = {
-    "player/dog_breath_1.opus",
+	"player/dog_breath_1.opus",
 	"player/dog_breath_2.opus",
 	"player/dog_breath_3.opus",
 	"player/dog_breath_4.opus",
 }
 
 local dog_attack_audio = {
-    "player/dog_attack_1.opus",
+	"player/dog_attack_1.opus",
 	"player/dog_attack_2.opus",
 	"player/dog_attack_3.opus",
 }
 
 local dog_jump_audio = {
-    "player/dog_jump_1.opus",
+	"player/dog_jump_1.opus",
 	"player/dog_jump_2.opus",
 	"player/dog_jump_3.opus",
 }
 
 local ranged_warning_audio = {
-    "player/ranged_warning_1.opus",
+	"player/ranged_warning_1.opus",
 }
 
 local reaper_death_audio = {
-    "reaper/death_1.opus",
+	"reaper/death_1.opus",
 	"reaper/death_2.opus",
 	"reaper/death_3.opus",
 	"reaper/death_4.opus",
@@ -413,7 +410,7 @@ local reaper_death_audio = {
 }
 
 local reaper_attack_audio = {
-    "reaper/attack_1.opus",
+	"reaper/attack_1.opus",
 	"reaper/attack_2.opus",
 	"reaper/attack_3.opus",
 	"reaper/attack_4.opus",
@@ -556,6 +553,48 @@ local paul_recharge_audio = {
 	"weapons/paul_recharge_1.opus",
 }
 
+local claw_equip_audio = {
+	"weapons/claw_equip.opus",
+}
+
+local claw_attack_audio = {
+	"weapons/claw_attack.opus",
+}
+
+local precision_stance_start_audio = {
+	"player/precision_start_1.opus",
+}
+
+local precision_stance_end_audio = {
+	"player/precision_end_1.opus",
+}
+
+local precision_stance_target_killed_audio = {
+	"player/precision_kill_1.opus",
+}
+
+local backstab_audio = {
+	"player/backstab_1.opus",
+	"player/backstab_2.opus",
+	"player/backstab_3.opus",
+	"player/backstab_4.opus",
+	"player/backstab_5.opus",
+}
+
+local laser_shot_audio = {
+	"weapons/laser_shot_1.opus",
+	"weapons/laser_shot_2.opus",
+	"weapons/laser_shot_3.opus",
+	"weapons/laser_shot_4.opus",
+	"weapons/laser_shot_5.opus",
+}
+
+local laser_bigshot_audio = {
+	"weapons/laser_bigshot_1.opus",
+	"weapons/laser_bigshot_2.opus",
+	"weapons/laser_bigshot_3.opus",
+}
+
 local enemies = {
 	"cultist_mutant",
 	"chaos_hound",
@@ -579,6 +618,7 @@ local ongoing_sound_replacements = {
 	play_syringe_broker_stop = "play_syringe_broker_start",
 	play_player_ability_veteran_killshot_stance_off = "play_player_ability_veteran_killshot_stance_on",
 	play_zealot_ability_invisible_off = "play_zealot_ability_invisible_on",
+	stop_ability_active_cryptic_precision_stance = "play_ability_active_cryptic_precision_stance",
 }
 
 local enemy_sound_replacements = {
@@ -596,7 +636,7 @@ local enemy_sound_replacements = {
 		play_hud_player_states_mutant_charger_downed_husk = mutant_grab_audio,
 		play_mutant_charger_idle_shout_long = mutant_breath_audio,
 		play_mutant_charger_idle_shout_short = mutant_breath_audio,
-		play_minion_special_mutant_charger_spawn = mutant_spawn_audio
+		play_minion_special_mutant_charger_spawn = mutant_spawn_audio,
 	},
 	chaos_hound = {
 		play_enemy_chaos_hound_vce_leap = pox_hound_jump_audio,
@@ -605,7 +645,7 @@ local enemy_sound_replacements = {
 		--sfx_growl_probability = pox_hound_bark_audio,
 		play_enemy_chaos_hound_vce_bark = pox_hound_bark_audio,
 		play_chaos_hound_spawn_stinger_circumstance = pox_hound_group_audio,
-		play_enemy_chaos_hound_bite = pox_hound_maul_audio
+		play_enemy_chaos_hound_bite = pox_hound_maul_audio,
 	},
 	player = {
 		play_player_combat_experience_catapulted = player_yeet_audio,
@@ -696,23 +736,30 @@ local enemy_sound_replacements = {
 		play_toughness_break = toughness_break_audio,
 		play_player_ability_broker_rage_hit = rampage_onhit_audio,
 		play_ogryn_powermaul_1h_spark = paul_recharge_audio,
+		play_chord_claw_equip = claw_equip_audio,
+		play_chord_claw_swing = claw_attack_audio,
+		play_ability_active_cryptic_precision_stance = precision_stance_start_audio,
+		stop_ability_active_cryptic_precision_stance = precision_stance_end_audio,
+		play_ability_cryptic_precision_stance_target_killed = precision_stance_target_killed_audio,
+		play_indicator_backstab_melee = backstab_audio,
+		play_weapon_lasgun_p1_m2 = laser_shot_audio,
+		play_weapon_lasgun_p1_m3 = laser_bigshot_audio,
 	},
 	cultist_flamer = {
-		play_minion_flamethrower_green_start = flamer_flame_audio
+		play_minion_flamethrower_green_start = flamer_flame_audio,
 	},
 	renegade_netgunner = {
-		play_weapon_netgunner_wind_up = netgunner_attack_audio
+		play_weapon_netgunner_wind_up = netgunner_attack_audio,
 	},
 	pox_bomber = {
-		play_enemy_combat_poxwalker_bomber_beep_loop = pox_bomber_tick_audio,
 		play_minion_poxwalker_bomber_wind_up = pox_bomber_wind_up_audio,
 		play_explosion_bomber = pox_bomber_explosion_audio,
 	},
 	renegade_radio_operator = {
-	    play_enemy_radio_operator_stinger = radio_operator_audio
-    },
+		play_enemy_radio_operator_stinger = radio_operator_audio,
+	},
 	adamant_dog = {
-	    play_adamant_dog_vce_breath_loop_01 = dog_breath_audio,
+		play_adamant_dog_vce_breath_loop_01 = dog_breath_audio,
 		play_companion_bite_flesh = dog_attack_audio,
 		play_adamant_dog_vce_attack_01 = dog_jump_audio,
 		play_player_ability_adamant_dog_explosion = dog_explosion_audio,
@@ -839,6 +886,14 @@ local options_categories = {
 	play_toughness_break = "toughness_break",
 	play_player_ability_broker_rage_hit = "ganger_rage_onhit",
 	play_ogryn_powermaul_1h_spark = "paul_recharge",
+	play_chord_claw_equip = "chord_claw",
+	play_chord_claw_swing = "chord_claw",
+	play_ability_active_cryptic_precision_stance = "precision_stance",
+	stop_ability_active_cryptic_precision_stance = "precision_stance",
+	play_ability_cryptic_precision_stance_target_killed = "precision_stance_kill",
+	play_indicator_backstab_melee = "backstab_audio",
+	play_weapon_lasgun_p1_m2 = "light_lasgun",
+	play_weapon_lasgun_p1_m3 = "heavy_lasgun",
 
 	-- DOG
 	play_enemy_chaos_hound_vce_leap = "chaos_hound_jump",
@@ -854,28 +909,27 @@ local options_categories = {
 
 	-- NETGUNNER
 	play_weapon_netgunner_wind_up = "renegade_netgunner_attack",
-	
+
 	-- POX BOMBER
 	play_minion_poxwalker_bomber_wind_up = "pox_bomber_wind_up",
-	play_enemy_combat_poxwalker_bomber_beep_loop = "pox_bomber_tick",
 	play_explosion_bomber = "pox_bomber_explosion",
-	
+
 	-- RADIO OPERATOR
 	play_enemy_radio_operator_stinger = "renegade_radio_operator_stinger",
-	
+
 	-- HORDE WARNING
 	play_signal_horde_poxwalkers_2d = "horde_incoming_warning",
 	play_minion_horde_poxwalker_ambush_2d = "horde_incoming_warning",
-	
+
 	-- REAPER
 	play_enemy_chaos_ogryn_heavy_gunner__death_vce = "chaos_ogryn_gunner_death",
 	play_enemy_chaos_ogryn_heavy_gunner__hurt_vce = "chaos_ogryn_gunner_hurt",
 	play_chaos_ogryn_heavy_gunner_into_aim = "chaos_ogryn_gunner_attack",
 	play_enemy_chaos_ogryn_heavy_gunner__melee_attack_vce = "chaos_ogryn_gunner_melee",
-	
+
 	-- PLASMA GUNNER
 	play_minion_plasmapistol_charge = "renegade_plasma_gunner_charge",
-	
+
 	-- RENEGADE GRENADIER
 	play_minion_grenadier_fire_grenade_fuse = "renegade_grenadier_fuse",
 	play_explosion_grenade_flame_minion = "renegade_grenadier_explosion",
@@ -883,14 +937,13 @@ local options_categories = {
 	play_traitor_guard_grenadier_pull_sprint = "renegade_grenadier_ready",
 }
 
-
 local get_sound = function(sound_table)
 	local random_sound = sound_table[math.random(1, #sound_table)]
 	return random_sound
 end
 
 local VOLUME_OVERRIDE = {
-    play_stub_revolver_p1_m2 = 40,
+	play_stub_revolver_p1_m2 = 40,
 	play_ability_ogryn_charge_start = 200,
 	play_ogryn_ability_taunt = 200,
 	play_ability_psyker_protectorate_shield_husk = 80,
@@ -913,7 +966,7 @@ local VOLUME_OVERRIDE = {
 	play_2h_forcesword_ability_charge_3 = 0,
 	play_minion_plasmapistol_charge = 25,
 	play_psyker_warp_charge_overload_start = 100,
-	play_warp_charge_build_up_critical = 10,
+	play_warp_charge_build_up_critical = 5,
 	play_player_ability_broker_rage_start = 30,
 	play_player_ability_broker_rage_stop = 30,
 	play_player_ability_broker_focus_start = 70,
@@ -924,25 +977,191 @@ local VOLUME_OVERRIDE = {
 	play_syringe_broker_stop = 70,
 	play_toughness_break = 200,
 	play_player_ability_broker_rage_hit = 100,
-	play_ogryn_powermaul_1h_spark = 80
+	play_ogryn_powermaul_1h_spark = 80,
+	play_ability_active_cryptic_precision_stance = 50,
+	play_weapon_shotgun_human_reload_insert_ammo = 30,
+	play_syringe_heal_self = 70,
+	play_weapon_lasgun_p1_m2 = 70,
+	play_weapon_lasgun_p1_m3 = 70,
 }
 
 local ongoing_sounds = {}
+mod.SOURCE_ID_TO_UNIT_LOOKUP = mod:persistent_table("SOURCE_ID_TO_UNIT_LOOKUP", {})
 
-local replace_audio = function(sound_table, position_or_unit_or_id, source_file) 
-	local sound = get_sound(sound_table)
-	if position_or_unit_or_id and type(position_or_unit_or_id) == "number" then
-		position_or_unit_or_id = nil
+local _player_pos_vec = Vector3.zero()
+local _pos_vec = Vector3.zero()
+
+-- Check unit is alive
+local function detect_alive(unit)
+	if unit and HEALTH_ALIVE[unit] and Unit.alive(unit) then
+		return true
 	end
+	return false
+end
+
+-- Return position and rotation of the player.
+-- Takes into account the rotation and position of the camera
+-- More accurate for first person.
+local function player_position_rotation()
+	local player = Managers.player and Managers.player:local_player_safe(1)
+
+	if not player then
+		return Vector3.zero(), Quaternion.identity()
+	end
+
+	local listener_pose = Managers.state.camera:listener_pose(player.viewport_name)
+	local listener_position = listener_pose and Matrix4x4.translation(listener_pose) or Vector3.zero()
+	local listener_rotation = listener_pose and Matrix4x4.rotation(listener_pose) or Quaternion.identity()
+
+	return listener_position, listener_rotation
+end
+
+-- Return absolute vector3 position of the player
+-- Just the world position of the player unit, less accurate than above
+local function get_player_position()
+	local local_player = Managers.player:local_player(1)
+	if not local_player then
+		return
+	end
+
+	local player_unit = local_player.player_unit
+	if not player_unit or not detect_alive(player_unit) then
+		return
+	end
+
+	local wp = Unit.world_position(player_unit, 1, _player_pos_vec)
+	local current_pos = wp and Vector3(wp.x, wp.y, wp.z) or nil
+
+	return current_pos
+end
+
+-- Return the absolute vector3 position of a unit
+local function get_position(pos_or_unit)
+	if not pos_or_unit then
+		return nil
+	end
+
+	if type(pos_or_unit) == "userdata" and Unit.alive(pos_or_unit) then
+		local wp = Unit.world_position(pos_or_unit, 1, _pos_vec)
+		return wp and Vector3(wp.x, wp.y, wp.z) or nil
+	elseif Vector3.is_valid(pos_or_unit) then
+		return pos_or_unit
+	end
+
+	return nil
+end
+
+-- Return the unit from a unit/source id
+local function get_unit_from_id(unit_id)
+	local unit = nil
+
+	-- Try to grab from our source id to unit lookup table
+	if mod.SOURCE_ID_TO_UNIT_LOOKUP[unit_id] then
+		unit = mod.SOURCE_ID_TO_UNIT_LOOKUP[unit_id]
+	end
+
+	-- If not found, try finding the unit from the unit spawner directly
+	if not unit then
+		unit = Managers.state.unit_spawner:unit(unit_id, true)
+	end
+
+	return unit
+end
+
+-- Return the player from a unit object
+local function player_from_unit(unit)
+	local player_unit_spawn = Managers.state and Managers.state.player_unit_spawn
+	return player_unit_spawn and unit and player_unit_spawn:owner(unit) or nil
+end
+
+-- Return the player object the passed unit belongs to
+local function resolved_player(unit)
+	if not unit or not ALIVE[unit] then
+		return nil
+	end
+
+	local resolved_unit = AttackingUnitResolver.resolve(unit)
+	if resolved_unit and ALIVE[resolved_unit] then
+		local resolved_player = player_from_unit(resolved_unit)
+
+		if resolved_player then
+			return resolved_player
+		end
+	end
+
+	local resolved_player = player_from_unit(unit)
+	if resolved_player then
+		return resolved_player
+	end
+	return nil
+end
+
+local min_distance = 0 -- The minimum distance at which the sound can be heard
+local max_distance = 50 -- The maximum distance at which the sound can be heard
+local decay = 0 -- The rate at which the volume decays over distance, note that this severely reduces the ACTUAL hearing distance. e.g. a value of 0.01 pretty much halfs the effective "max distance", seems like a bug with SimpleAudio's spatial distance calculation... Hence why I set it to 0, so it'll scale nicer between min and max distances. :)
+
+local replace_audio = function(sound_table, position_or_unit_or_id, source_file)
+	--mod:echo("TRYING TO REPLACE AUDIO " .. source_file)
+
+	if not position_or_unit_or_id or not source_file then
+		--mod:echo(
+		--	"FAILED: no pos or source. "
+		--		.. "\npos or unit: "
+		--		.. tostring(position_or_unit_or_id)
+		--		.. "\nsource_file = "
+		--		.. tostring(source_file)
+		--)
+	end
+
+	-- if position_or_unit_or_id is a unit id, then convert to a unit or position.
+	if type(position_or_unit_or_id) == "number" then
+		local source_id = position_or_unit_or_id
+		position_or_unit_or_id = get_unit_from_id(source_id)
+	end
+
+	local position_or_unit = position_or_unit_or_id
+
+	local sound = get_sound(sound_table)
+
+	if not sound then
+		--mod:echo("FAILED: No sound")
+		return
+	end
+
+	--mod:echo("PROCESSING: " .. sound .. " with " .. source_file)
+
+	local pos = get_position(position_or_unit)
+
 	if ongoing_sound_replacements[source_file] then
 		if ongoing_sounds[ongoing_sound_replacements[source_file]] then
-			Audio.stop_file(ongoing_sounds[ongoing_sound_replacements[source_file]])
+			SimpleAudio.stop_file(ongoing_sounds[ongoing_sound_replacements[source_file]])
 			ongoing_sounds[source_file] = nil
 		end
 	end
-	local volume = VOLUME_OVERRIDE[source_file] or 100		
-	ongoing_sounds[source_file] = Audio.play_file(sound, {audio_type = "sfx",volume = volume, track_status = function() ongoing_sounds[source_file] = nil end}, position_or_unit_or_id, 0.02, 8, 80)
-	return false
+
+	local volume = VOLUME_OVERRIDE[source_file] or 100
+
+	-- If sound is super close to the player, play in the 2D space.
+	-- Implemented to make weapon sounds not have positional audio
+	-- If you want a setting to toggle this, just add the mod:get("setting_name") to the if statement here.
+	if pos then
+		local player_pos, player_rotation = player_position_rotation() -- Try to get more accurate player position (accounts for rotation position)
+		if not player_pos then
+			player_pos = get_player_position() -- get absolute position if not
+		end
+
+		if player_pos and Vector3.distance(pos, player_pos) < 1 then
+			pos = nil
+		end
+	end
+
+	ongoing_sounds[source_file] = SimpleAudio.play_file(sound, {
+		audio_type = "sfx",
+		volume = volume,
+		on_finished = function() -- adjusted as SimpleAudio expects the "on_finished" event.
+			ongoing_sounds[source_file] = nil
+		end,
+	}, pos, 0.0, min_distance, max_distance)
 end
 
 local enemy_wwise_path = "wwise/events/minions/"
@@ -1055,11 +1274,18 @@ local override_paths = {
 	play_zealot_ability_invisible_off = "wwise/events/player/",
 	play_toughness_break = "wwise/events/player/",
 	play_player_ability_broker_rage_hit = "wwise/events/player/",
-	play_ogryn_powermaul_1h_spark = "wwise/events/weapon/"
+	play_ogryn_powermaul_1h_spark = "wwise/events/weapon/",
+	play_chord_claw_equip = "wwise/events/weapon/",
+	play_chord_claw_swing = "wwise/events/weapon/",
+	play_ability_active_cryptic_precision_stance = "wwise/events/player/",
+	stop_ability_active_cryptic_precision_stance = "wwise/events/player/",
+	play_ability_cryptic_precision_stance_target_killed = "wwise/events/player/",
+	play_indicator_backstab_melee = "wwise/events/player/",
+	play_weapon_lasgun_p1_m2 = "wwise/events/weapon/",
+	play_weapon_lasgun_p1_m3 = "wwise/events/weapon/",
 	--play_minion_flamethrower_green_start = "wwise/events/weapon/"
 }
 
-local SOURCE_ID_TO_UNIT_LOOKUP = {}
 local CUSTOM_COOLDOWNS = {
 	play_ability_zealot_bolstering_prayer = 10,
 	play_explosion_grenade_flame = 10,
@@ -1072,60 +1298,107 @@ local CUSTOM_COOLDOWNS = {
 	play_adamant_dog_vce_breath_loop_01 = 3,
 	play_adamant_dog_vce_attack_01 = 2,
 	play_enemy_mutant_charger_smash_ogryn = 3,
-	play_warp_charge_build_up_critical = 3,
+	play_warp_charge_build_up_critical = 5,
 	play_psyker_warp_charge_overload_start = 3,
 	play_player_ability_adamant_charge = 3,
 	play_player_ability_broker_rage_start = 10,
+	play_2h_forcesword_ability_charge_1 = 2,
 }
 
 local CURRENT_COOLDOWNS = {}
+
+mod.get_time = function()
+	local tm = Managers and Managers.time
+	local fallback = os.clock() or 0
+	if tm then
+		if tm:has_timer("gameplay") then
+			return tm:time("gameplay") or fallback
+		end
+		if tm:has_timer("ui") then
+			return tm:time("ui") or fallback
+		end
+		if tm:has_timer("main") then
+			return tm:time("main") or fallback
+		end
+	end
+	return fallback
+end
+
 mod.on_all_mods_loaded = function()
-	Audio = get_mod("Audio")
+	SimpleAudio = get_mod("SimpleAudio")
+
+	-- Add sounds to our map for non-units (weapons, etc)
 	mod:hook(WwiseWorld, "make_manual_source", function(func, wwise_world, unit, ...)
 		local source_id = func(wwise_world, unit, ...)
-		SOURCE_ID_TO_UNIT_LOOKUP[source_id] = unit
-		return source_id
+		if source_id then
+			mod.SOURCE_ID_TO_UNIT_LOOKUP[source_id] = unit
+			return source_id
+		end
 	end)
 
-	for i=1, #enemies do
+	-- Add sounds to our map for Units (grenades, enemies etc)
+	mod:hook(WwiseWorld, "make_auto_source", function(func, wwise_world, unit_or_position_or_id, ...)
+		local source_id = func(wwise_world, unit_or_position_or_id, ...)
+		if source_id then
+			mod.SOURCE_ID_TO_UNIT_LOOKUP[source_id] = unit_or_position_or_id
+			return source_id
+		end
+	end)
+
+	for i = 1, #enemies do
 		local enemy_name = enemies[i]
 		local enabled_setting_name = enemy_name .. "_enabled"
+
 		if mod:get(enabled_setting_name) then
 			local sound_replacements = enemy_sound_replacements[enemy_name]
+
 			if sound_replacements then
 				for source_file, replacement_table in pairs(sound_replacements) do
 					if not options_categories[source_file] or mod:get(options_categories[source_file]) then
 						local path = (override_paths[source_file] or enemy_wwise_path or "")
-						path = path .. source_file
-						Audio.hook_sound(path, function(sound_type, sound_name, delta, position_or_unit_or_id, optional_a, optional_b)
-							local t = Managers.time:time("main")
-							local cooldown = CUSTOM_COOLDOWNS[source_file]
-							if cooldown then
-								local current_cooldown = CURRENT_COOLDOWNS[source_file]
-								if current_cooldown and t < current_cooldown then
-									return true
-								elseif not current_cooldown then
-									CURRENT_COOLDOWNS[source_file] = t + cooldown
-								elseif current_cooldown and t >= current_cooldown then
-									CURRENT_COOLDOWNS[source_file] = t + cooldown
-								end
-							end
 
-							--print(sound_type, sound_name, delta, position_or_unit_or_id, #replacement_table, optional_a, optional_b)
-							if position_or_unit_or_id and type(position_or_unit_or_id) == "number" or optional_a and type(optional_a) == "number" then
-								local unit = SOURCE_ID_TO_UNIT_LOOKUP[position_or_unit_or_id or optional_a]
-								if unit then
-									position_or_unit_or_id = unit
+						path = path .. source_file
+						
+						SimpleAudio.hook_sound(
+							path,
+							function(sound_type, sound_name, delta, position_or_unit_or_id, optional_a, optional_b)
+								--mod:echo(
+								--	"\n\nSTART REPLACE: "
+								--		.. tostring(sound_name)
+								--		.. " - "
+								--		.. tostring(sound_type)
+								--		.. " - "
+								--		.. tostring(position_or_unit_or_id)
+								--		.. " - "
+								--		.. tostring(#replacement_table)
+								--		.. " - "
+								--		.. tostring(delta)
+								--)
+
+								local t = mod.get_time()
+								local cooldown = CUSTOM_COOLDOWNS[source_file]
+
+								if cooldown then
+									local current_cooldown = CURRENT_COOLDOWNS[source_file]
+									if current_cooldown and t < current_cooldown then
+										return true
+									elseif not current_cooldown then
+										CURRENT_COOLDOWNS[source_file] = t + cooldown
+									elseif current_cooldown and t >= current_cooldown then
+										CURRENT_COOLDOWNS[source_file] = t + cooldown
+									end
 								end
+
+								if #replacement_table > 0 and (delta == nil or delta > 0.2) then
+									replace_audio(replacement_table, position_or_unit_or_id, source_file)
+									-- return false -- Was causing the crashes with psyker dome ending
+								elseif #replacement_table == 0 then
+									return false
+								end
+
+								return true
 							end
-							if #replacement_table > 0 and (delta == nil or delta > 0.2) then
-								local should_replace = replace_audio(replacement_table, position_or_unit_or_id, source_file)
-								return should_replace
-							elseif #replacement_table == 0 then
-								return false
-							end
-							return true
-						end)
+						)
 					end
 				end
 			end

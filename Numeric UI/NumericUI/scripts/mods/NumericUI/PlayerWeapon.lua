@@ -11,17 +11,16 @@ local backups = mod:persistent_table("player_weapon_hud_backups")
 local UIRenderer = require("scripts/managers/ui/ui_renderer")
 local UIWidget = require("scripts/managers/ui/ui_widget")
 local UIHudSettings = require("scripts/settings/ui/ui_hud_settings")
-local HudElementTeamPlayerPanelSettings = require(
-	"scripts/ui/hud/elements/team_player_panel/hud_element_team_player_panel_settings"
-)
+local HudElementTeamPlayerPanelSettings =
+	require("scripts/ui/hud/elements/team_player_panel/hud_element_team_player_panel_settings")
 
 --Init global vars for mod: "show_munitions_gained"
-local prev_clip_ammo_char_len = 0        -- Tells where ammo icon should be generated
-local prev_font_size = nil               -- checks to see if the font was changed in some way
-local prev_grenade_charges = 0           --Keeps track of grenade amount in the previous loop.
-local grenade_gained_display_t = 0       --keeps track of how long the grenade gained widget has been displayed
-local grenade_gained_amount = 0          --Keeps track of the amount of grenades gained
-local ammo_gained_cumulative = false     --When true, will use a single widget to show multiple ammo increments
+local prev_clip_ammo_char_len = 0 -- Tells where ammo icon should be generated
+local prev_font_size = nil -- checks to see if the font was changed in some way
+local prev_grenade_charges = 0 --Keeps track of grenade amount in the previous loop.
+local grenade_gained_display_t = 0 --keeps track of how long the grenade gained widget has been displayed
+local grenade_gained_amount = 0 --Keeps track of the amount of grenades gained
+local ammo_gained_cumulative = false --When true, will use a single widget to show multiple ammo increments
 local ammo_gained_available_widgets = {} --List of non-active ammo-gained widgets (for non-cumulative display)
 local ammo_gained_active_widgets = {}
 local ammo_gained_data = {
@@ -34,6 +33,18 @@ local ammo_gained_data = {
 	alpha_multiplier = 1,
 }
 
+-- reusable scratch storage for Ammo.clips_in_use (fully overwritten on every call)
+local _clips_in_use_scratch = {}
+-- "ammo_text_" .. i built once instead of every frame
+local _ammo_text_widget_names = {}
+
+-- must match the default_value entries in NumericUI_data.lua; the offset settings
+-- are applied as deltas from these defaults so that untouched (saved) defaults
+-- keep the max ammo text at its original position next to the clip counter
+local AMMO_TEXT_FONT_SIZE_DEFAULT = 16
+local AMMO_TEXT_OFFSET_X_DEFAULT = 80
+local AMMO_TEXT_OFFSET_Y_DEFAULT = -16
+
 local directional_magnitude = 200
 for i = 1, 4 do
 	directional_magnitude = directional_magnitude * -1
@@ -41,14 +52,12 @@ for i = 1, 4 do
 	table.insert(ammo_gained_available_widgets, table.clone(ammo_gained_data))
 	ammo_gained_available_widgets[i].widget_name = "ammo_gained_" .. i
 	ammo_gained_available_widgets[i].offset_mod[1] = ammo_gained_data.offset_mod[1] + 5 * (i / directional_magnitude)
-	ammo_gained_available_widgets[i].offset_mod[2] = math.abs(
-		ammo_gained_data.offset_mod[2] + (i / directional_magnitude)
-	)
+	ammo_gained_available_widgets[i].offset_mod[2] =
+		math.abs(ammo_gained_data.offset_mod[2] + (i / directional_magnitude))
 	ammo_gained_available_widgets[i].offset_slow_mod[1] = ammo_gained_data.offset_slow_mod[1]
 		+ 5 * (i / directional_magnitude)
-	ammo_gained_available_widgets[i].offset_slow_mod[2] = math.abs(
-		ammo_gained_data.offset_slow_mod[2] + (i / directional_magnitude)
-	)
+	ammo_gained_available_widgets[i].offset_slow_mod[2] =
+		math.abs(ammo_gained_data.offset_slow_mod[2] + (i / directional_magnitude))
 end
 
 mod:hook_require(PLAYER_WEAPON_HUD_DEF_PATH, function(instance)
@@ -287,7 +296,6 @@ mod:hook_safe("HudElementPlayerWeapon", "update", function(self, _dt, _t, ui_ren
 			if not max_reserve or max_reserve <= 0 then
 				return
 			end
-			local _clips_in_use_scratch = {}
 			local any_clip_in_use = Ammo.clips_in_use(slot_component, _clips_in_use_scratch)
 
 			if not any_clip_in_use then
@@ -307,8 +315,24 @@ mod:hook_safe("HudElementPlayerWeapon", "update", function(self, _dt, _t, ui_ren
 			local ammo_icon_offset_x = 0
 			local ammo_icon_offset_y = 0
 
+			local show_max_ammo_text = mod:get("max_ammo_text")
+			local show_max_ammo_as_percent = mod:get("show_max_ammo_as_percent")
+
+			local max_ammo_font_size, max_ammo_offset_x, max_ammo_offset_y
+			if show_max_ammo_text then
+				max_ammo_font_size = mod:get("ammo_text_font_size") or AMMO_TEXT_FONT_SIZE_DEFAULT
+				max_ammo_offset_x = mod:get("ammo_text_offset_x") or AMMO_TEXT_OFFSET_X_DEFAULT
+				max_ammo_offset_y = mod:get("ammo_text_offset_y") or AMMO_TEXT_OFFSET_Y_DEFAULT
+			end
+
 			for i = 1, NetworkConstants.clips_in_use.max_size do
-				local ammo_text_widget = self._widgets_by_name["ammo_text_" .. i]
+				local widget_name = _ammo_text_widget_names[i]
+				if not widget_name then
+					widget_name = "ammo_text_" .. i
+					_ammo_text_widget_names[i] = widget_name
+				end
+
+				local ammo_text_widget = self._widgets_by_name[widget_name]
 				local max_clip = Ammo.max_ammo_in_clips(slot_component, i) or 0
 				local current_clip = Ammo.current_ammo_in_clips(slot_component, i) or 0
 
@@ -326,20 +350,59 @@ mod:hook_safe("HudElementPlayerWeapon", "update", function(self, _dt, _t, ui_ren
 				if ammo_text_widget then
 					local content = ammo_text_widget.content
 					local style = ammo_text_widget.style
-					ammo_text_widget.content.max_ammo = ""
 
-					if mod:get("max_ammo_text") and max_reserve then
-						local display_text = ""
-						if mod:get("show_max_ammo_as_percent") then
-							display_text = string.format("%d%%", math.min(total_current_ammo / total_max_ammo * 100, 100))
-						else
-							display_text = string.format("/%d", max_reserve)
+					if show_max_ammo_text and max_reserve then
+						local max_ammo_style = style.max_ammo
+						local base_y = style.ammo_amount_4.offset[2]
+
+						-- only touch the style when a setting or the clip counter position changes
+						if
+							max_ammo_style._numericui_font_size ~= max_ammo_font_size
+							or max_ammo_style._numericui_offset_x ~= max_ammo_offset_x
+							or max_ammo_style._numericui_offset_y ~= max_ammo_offset_y
+							or max_ammo_style._numericui_base_y ~= base_y
+						then
+							max_ammo_style._numericui_font_size = max_ammo_font_size
+							max_ammo_style._numericui_offset_x = max_ammo_offset_x
+							max_ammo_style._numericui_offset_y = max_ammo_offset_y
+							max_ammo_style._numericui_base_y = base_y
+							max_ammo_style.font_size = max_ammo_font_size
+							max_ammo_style.default_font_size = max_ammo_font_size
+							max_ammo_style.focused_font_size = max_ammo_font_size
+							max_ammo_style.drop_shadow = true
+							-- anchor from the default font size so changing the font size
+							-- only resizes the text instead of also moving it
+							max_ammo_style.offset[1] = AMMO_TEXT_FONT_SIZE_DEFAULT * 2
+								+ (max_ammo_offset_x - AMMO_TEXT_OFFSET_X_DEFAULT)
+							max_ammo_style.offset[2] = base_y
+								+ AMMO_TEXT_FONT_SIZE_DEFAULT * 1.1
+								+ (max_ammo_offset_y - AMMO_TEXT_OFFSET_Y_DEFAULT)
+							ammo_text_widget.dirty = true
 						end
-						content.max_ammo = display_text
 
-						style.max_ammo.offset[1] = 0 + style.max_ammo.font_size * 2
-						style.max_ammo.offset[2] = (style.ammo_amount_4.offset[2]) + (style.max_ammo.font_size * 1.1)
-						style.max_ammo.drop_shadow = true
+						local max_ammo_value
+						if show_max_ammo_as_percent then
+							max_ammo_value = math.floor(math.min(total_current_ammo / total_max_ammo * 100, 100))
+						else
+							max_ammo_value = max_reserve
+						end
+
+						-- only rebuild the string when the displayed value changes
+						if content._numericui_max_ammo_value ~= max_ammo_value then
+							content._numericui_max_ammo_value = max_ammo_value
+
+							if show_max_ammo_as_percent then
+								content.max_ammo = string.format("%d%%", max_ammo_value)
+							else
+								content.max_ammo = string.format("/%d", max_ammo_value)
+							end
+
+							ammo_text_widget.dirty = true
+						end
+					elseif content.max_ammo ~= "" then
+						content._numericui_max_ammo_value = nil
+						content.max_ammo = ""
+						ammo_text_widget.dirty = true
 					end
 				end
 			end
@@ -390,7 +453,10 @@ mod:hook_safe("HudElementPlayerWeapon", "update", function(self, _dt, _t, ui_ren
 
 			if mod:get("show_munitions_gained") then --this one checks for ammo gained
 				local total_ammo = self._total_ammo
-				local prev_ammo = self._prev_ammo or 0
+				-- a fresh element (mission start or HUD recreation after a settings
+				-- change) has no previous value yet; treat the current total as the
+				-- baseline so the full ammo pool is not reported as gained
+				local prev_ammo = self._prev_ammo or total_ammo
 
 				if ammo_gained_cumulative then
 					local ammo_gained_widget = self._widgets_by_name.ammo_gained_1
@@ -411,9 +477,8 @@ mod:hook_safe("HudElementPlayerWeapon", "update", function(self, _dt, _t, ui_ren
 						else
 							widget_data = table.remove(ammo_gained_active_widgets, 1) -- If more than 4 widgets are already being shown, we reset and use the oldest one.
 							widget_data.alpha_multiplier = 1
-							self._widgets_by_name[widget_data.widget_name].style.ammo_gained.offset = table.clone(
-								widget_data.offset
-							)
+							self._widgets_by_name[widget_data.widget_name].style.ammo_gained.offset =
+								table.clone(widget_data.offset)
 						end
 
 						widget_data.display_t = _dt
@@ -441,7 +506,7 @@ mod:hook_safe("HudElementPlayerWeapon", "update", function(self, _dt, _t, ui_ren
 				self._prev_ammo = total_ammo
 			end
 		end
-	elseif mod:get("show_munitions_gained") and uses_ammo then --This one checks for grenades gained
+	elseif mod:get("show_munitions_gained") and uses_ammo and not self._uses_weapon_special_charges then --This one checks for grenades gained
 		local grenade_gained_widget = self._widgets_by_name.grenade_gained
 		local total_ammo = self._total_ammo
 

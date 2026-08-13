@@ -272,3 +272,33 @@ Added the following hooks:
 
 Ogryn Power Maul Recharge Sfx
 
+
+1.24
+
+MOD HAS BEEN PORTED TO SIMPLEAUDIO, NOW REQUIRES SAID MOD TO WORK.
+
+Fixed Vector3 error from Skitarii update, Thanks Alf!
+
+Added the following hooks:
+
+Skitarius Chord Claw Equip/Attack
+Skitarius Advanced Combat Doctrine Start/Stop
+Skitarius Advanced Combat Doctrine Target Killed
+Player Melee Backstab SFX
+
+
+1.25
+
+Massive systems overhaul for positioning & sources, Thanks Alf!
+
+Cleaned up some settings options and made various default sound tweaks.
+
+
+1.26
+
+Fixed errors related to positioning and 2D sounds, Thanks Alf!
+
+Added the following hooks:
+
+Light Lasgun Firing SFX
+Heavy Lasgun Firing SFX

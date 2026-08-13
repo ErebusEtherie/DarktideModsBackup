@@ -66,26 +66,48 @@ local DATA = {
     options = {
         widgets = {
             {
-                setting_id      = "show_all_hud_hotkey",
-                type            = "keybind",
-                default_value   = {},
-                tooltip         = "show_all_hud_hotkey_tooltip",
-                keybind_trigger = "held",
-                keybind_type    = "function_call",
-                function_name   = "handle_show_all_hud_hotkey_state",
-            },
-            {
-                setting_id      = "trigger_detection_range",
-                type            = "numeric",
-                default_value   = 15,
-                range           = { 5, 25 },
-                decimals_number = 0,
-                tooltip         = "trigger_detection_tooltip",
-            },
-            {
-                setting_id    = "minimal_objective_feed_enabled",
-                type          = "checkbox",
-                default_value = true,
+                setting_id  = "top_supergroup",
+                type        = "group",
+                sub_widgets = {
+                    {
+                        setting_id  = "top_group",
+                        type        = "group",
+                        sub_widgets = {
+                            {
+                                setting_id      = "show_all_hud_hotkey",
+                                type            = "keybind",
+                                default_value   = {},
+                                tooltip         = "show_all_hud_hotkey_tooltip",
+                                keybind_trigger = "held",
+                                keybind_type    = "function_call",
+                                function_name   = "handle_show_all_hud_hotkey_state",
+                            },
+                            {
+                                setting_id = "minimal_objective_feed_enabled", type = "checkbox", default_value = true,
+                            },
+                            {
+                                setting_id      = "trigger_detection_range",
+                                type            = "numeric",
+                                default_value   = 15,
+                                range           = { 5, 25 },
+                                decimals_number = 0,
+                                tooltip         = "trigger_detection_tooltip",
+                            },
+                        },
+                    },
+                    ------------------------------------------------------------------
+                    -- Vanilla HUD Visibility
+                    ------------------------------------------------------------------
+                    {
+                        setting_id  = "default_hud_visibility_settings",
+                        type        = "group",
+                        sub_widgets = {
+                            { setting_id = "hide_default_player",  type = "checkbox", default_value = false },
+                            { setting_id = "hide_default_ability", type = "checkbox", default_value = false },
+                            { setting_id = "hide_default_weapons", type = "checkbox", default_value = false },
+                        }
+                    },
+                },
             },
             ------------------------------------------------------------------
             -- Layout
@@ -99,38 +121,82 @@ local DATA = {
                         type        = "group",
                         sub_widgets = {
                             {
-                                setting_id    = "crosshair_shake_dropdown",
-                                type          = "dropdown",
-                                default_value = "crosshair_shake_always",
-                                tooltip       = "crosshair_shake_dropdown_tooltip",
-                                options       = {
-                                    { text = "crosshair_shake_always",   value = "crosshair_shake_always" },
-                                    { text = "crosshair_shake_ads",      value = "crosshair_shake_ads" },
-                                    { text = "crosshair_shake_disabled", value = "crosshair_shake_disabled" },
-                                },
-                            },
-                            {
                                 setting_id      = "player_hud_offset_x",
+                                localize        = false,
+                                title           = mod:localize("glossary_x"),
+                                text            = mod:localize("glossary_x"),
                                 type            = "numeric",
                                 default_value   = 0,
                                 range           = { -1400, 1400 },
                                 decimals_number = 0,
+                                step_size_value = 5,
                             },
                             {
                                 setting_id      = "player_hud_offset_y",
+                                localize        = false,
+                                title           = mod:localize("glossary_y"),
+                                text            = mod:localize("glossary_y"),
                                 type            = "numeric",
                                 default_value   = 0,
                                 range           = { -1000, 1000 },
                                 decimals_number = 0,
+                                step_size_value = 5,
+                            },
+                            {
+                                setting_id    = "crosshair_shake_dropdown",
+                                type          = "dropdown",
+                                default_value = "crosshair_shake_always",
+                                options       = {
+                                    { text = "glossary_on",         value = "crosshair_shake_always" },
+                                    { text = "crosshair_shake_ads", value = "crosshair_shake_ads" },
+                                    { text = "glossary_off",        value = "crosshair_shake_disabled" },
+                                },
                             },
                         }
                     },
+                    {
+                        setting_id  = "text_settings",
+                        type        = "group",
+                        sub_widgets = {
+                            {
+                                setting_id      = "player_hud_text_offset",
+                                type            = "numeric",
+                                default_value   = 0,
+                                range           = { -100, 100 },
+                                decimals_number = 0,
+                            },
+                            {
+                                setting_id      = "player_hud_text_size",
+                                type            = "numeric",
+                                default_value   = 18,
+                                range           = { 10, 40 },
+                                decimals_number = 0,
+                            },
+                            {
+                                setting_id    = "player_hud_font",
+                                title         = mod:localize("player_hud_font"),
+                                type          = "dropdown",
+                                default_value = "proxima_nova_bold",
+                                options       = _get_font_options(),
+                                localize      = false,
+                            },
+                        },
+                    },
+                },
+            },
+            {
+                setting_id  = "size_supergroup",
+                type        = "group",
+                sub_widgets = {
                     {
                         setting_id  = "layout_settings",
                         type        = "group",
                         sub_widgets = {
                             {
                                 setting_id      = "ring_scale",
+                                localize        = false,
+                                title           = mod:localize("glossary_hud_scale"),
+                                text            = mod:localize("glossary_hud_scale"),
                                 type            = "numeric",
                                 default_value   = 1.0,
                                 range           = { 0.5, 2.0 },
@@ -141,7 +207,6 @@ local DATA = {
                                 type          = "numeric",
                                 default_value = 0,
                                 range         = { 0, 200 },
-                                tooltip       = "ring_offset_bias_tooltip",
                             },
                             {
                                 setting_id    = "scanner_offset_bias_override",
@@ -152,60 +217,29 @@ local DATA = {
                         },
                     },
                     {
-                        setting_id  = "text_settings",
-                        type        = "group",
-                        sub_widgets = {
-                            {
-                                setting_id    = "player_hud_font",
-                                title         = mod:localize("player_hud_font"),
-                                type          = "dropdown",
-                                default_value = "proxima_nova_bold",
-                                tooltip       = mod:localize("player_hud_font_tooltip"),
-                                options       = _get_font_options(),
-                                localize      = false,
-                            },
-                            {
-                                setting_id      = "player_hud_text_size",
-                                type            = "numeric",
-                                default_value   = 18,
-                                range           = { 10, 40 },
-                                decimals_number = 0,
-                            },
-                            {
-                                setting_id      = "player_hud_text_offset",
-                                type            = "numeric",
-                                default_value   = 0,
-                                range           = { -100, 100 },
-                                decimals_number = 0,
-                                tooltip         = "player_hud_text_offset_tooltip",
-                            },
-                        },
-                    },
-
-                    ------------------------------------------------------------------
-                    -- ADS behaviour
-                    ------------------------------------------------------------------
-                    {
                         setting_id  = "ads_settings",
                         type        = "group",
                         sub_widgets = {
+                            {
+                                setting_id      = "ads_scale_override",
+                                localize        = false,
+                                title           = mod:localize("glossary_hud_scale"),
+                                text            = mod:localize("glossary_hud_scale"),
+                                type            = "numeric",
+                                default_value   = 1.0,
+                                range           = { 0.5, 2.0 },
+                                decimals_number = 1,
+                            },
                             {
                                 setting_id    = "ads_visibility_dropdown",
                                 type          = "dropdown",
                                 default_value = "ads_vis_normal",
                                 options       = {
-                                    { text = "ads_vis_normal",           value = "ads_vis_normal" },
+                                    { text = "glossary_default",         value = "ads_vis_normal" },
                                     { text = "ads_vis_hide_in_ads",      value = "ads_vis_hide_in_ads" },
                                     { text = "ads_vis_hide_outside_ads", value = "ads_vis_hide_outside_ads" },
                                     { text = "ads_vis_hotkey",           value = "ads_vis_hotkey" },
                                 },
-                            },
-                            {
-                                setting_id      = "ads_scale_override",
-                                type            = "numeric",
-                                default_value   = 1.0,
-                                range           = { 0.5, 2.0 },
-                                decimals_number = 1,
                             },
                             {
                                 setting_id    = "ads_offset_bias_override",
@@ -213,7 +247,7 @@ local DATA = {
                                 default_value = 0,
                                 range         = { 0, 200 },
                             },
-                        }
+                        },
                     },
                 },
             },
@@ -229,6 +263,21 @@ local DATA = {
                         type        = "group",
                         sub_widgets = {
                             {
+                                setting_id    = "dodge_viz_threshold",
+                                type          = "numeric",
+                                default_value = 1,
+                                range         = { -1, 8 },
+                                tooltip       = "dodge_viz_tooltip",
+                            },
+                            {
+                                setting_id      = "stamina_viz_threshold",
+                                type            = "numeric",
+                                default_value   = 0.10,
+                                range           = { -0.01, 1.00 },
+                                decimals_number = 2,
+                                tooltip         = "stamina_viz_tooltip",
+                            },
+                            {
                                 setting_id    = "toughness_bar_dropdown",
                                 type          = "dropdown",
                                 default_value = "toughness_bar_auto_hp",
@@ -240,23 +289,8 @@ local DATA = {
                                     { text = "toughness_bar_always_hp",          value = "toughness_bar_always_hp" },
                                     { text = "toughness_bar_always_text_always", value = "toughness_bar_always_text_always" },
                                     { text = "toughness_bar_always",             value = "toughness_bar_always" },
-                                    { text = "toughness_bar_disabled",           value = "toughness_bar_disabled" },
+                                    { text = "glossary_off",                     value = "toughness_bar_disabled" },
                                 }
-                            },
-                            {
-                                setting_id      = "stamina_viz_threshold",
-                                type            = "numeric",
-                                default_value   = 0.10,
-                                range           = { -0.01, 1.00 },
-                                decimals_number = 2,
-                                tooltip         = "stamina_viz_tooltip",
-                            },
-                            {
-                                setting_id    = "dodge_viz_threshold",
-                                type          = "numeric",
-                                default_value = 1,
-                                range         = { -1, 8 },
-                                tooltip       = "dodge_viz_tooltip",
                             },
                         }
                     },
@@ -269,16 +303,15 @@ local DATA = {
                         type        = "group",
                         sub_widgets = {
                             {
-                                setting_id    = "timer_cd_dropdown",
+                                setting_id    = "timer_sound_enabled",
                                 type          = "dropdown",
-                                default_value = "single",
-                                tooltip       = "timer_cd_dropdown_tooltip",
+                                default_value = "zealot",
+                                tooltip       = "timer_sound_tooltip",
                                 options       = {
-                                    { text = "timer_cd_disabled",       value = "disabled" },
-                                    { text = "timer_cd_single",         value = "single" },
-                                    { text = "timer_cd_pips_single",    value = "pips_single" },
-                                    { text = "timer_cd_count_single",   value = "count_single" },
-                                    { text = "timer_cd_single_colored", value = "single_colored" },
+                                    { text = "glossary_default",         value = "default" },   -- vanilla Darktide ability-ready sound
+                                    { text = "timer_sound_zealot",       value = "zealot" },    -- zealot bolstering prayer
+                                    { text = "timer_sound_blunt_shield", value = "shield" },    -- blunt shield sound
+                                    { text = "timer_sound_item_tier3",   value = "item_tier3" } -- emperor's gift
                                 },
                             },
                             {
@@ -287,21 +320,22 @@ local DATA = {
                                 default_value = "all",
                                 tooltip       = "timer_buff_dropdown_tooltip",
                                 options       = {
-                                    { text = "timer_buff_disabled",     value = "disabled" },
+                                    { text = "glossary_off",            value = "disabled" },
                                     { text = "timer_buff_ability_only", value = "ability" },
                                     { text = "timer_buff_all",          value = "all" },
                                 },
                             },
                             {
-                                setting_id    = "timer_sound_enabled",
+                                setting_id    = "timer_cd_dropdown",
                                 type          = "dropdown",
-                                default_value = "zealot",
-                                tooltip       = "timer_sound_tooltip",
+                                default_value = "single",
+                                tooltip       = "timer_cd_dropdown_tooltip",
                                 options       = {
-                                    { text = "timer_sound_default",      value = "default" },   -- vanilla Darktide ability-ready sound
-                                    { text = "timer_sound_zealot",       value = "zealot" },    -- zealot bolstering prayer
-                                    { text = "timer_sound_blunt_shield", value = "shield" },    -- blunt shield sound
-                                    { text = "timer_sound_item_tier3",   value = "item_tier3" } -- emperor's gift
+                                    { text = "glossary_off",            value = "disabled" },
+                                    { text = "timer_cd_single",         value = "single" },
+                                    { text = "timer_cd_pips_single",    value = "pips_single" },
+                                    { text = "timer_cd_count_single",   value = "count_single" },
+                                    { text = "timer_cd_single_colored", value = "single_colored" },
                                 },
                             },
                         }
@@ -313,12 +347,25 @@ local DATA = {
                 type        = "group",
                 sub_widgets = {
                     ------------------------------------------------------------------
+                    -- Charge
+                    ------------------------------------------------------------------
+                    {
+                        setting_id  = "charge_settings",
+                        type        = "group",
+                        sub_widgets = {
+                            { setting_id = "charge_perilous_enabled", type = "checkbox", default_value = true },
+                            { setting_id = "charge_kills_enabled",    type = "checkbox", default_value = true },
+                            { setting_id = "charge_other_enabled",    type = "checkbox", default_value = true },
+                        }
+                    },
+                    ------------------------------------------------------------------
                     -- Peril
                     ------------------------------------------------------------------
                     {
                         setting_id  = "peril_settings",
                         type        = "group",
                         sub_widgets = {
+                            { setting_id = "peril_label_enabled",     type = "checkbox", default_value = true },
                             {
                                 setting_id    = "peril_bar_dropdown",
                                 type          = "dropdown",
@@ -327,46 +374,10 @@ local DATA = {
                                 options       = {
                                     { text = "peril_lightning_enabled", value = "peril_lightning_enabled" },
                                     { text = "peril_bar_enabled",       value = "peril_bar_enabled" },
-                                    { text = "peril_bar_disabled",      value = "peril_bar_disabled" },
+                                    { text = "glossary_off",            value = "peril_bar_disabled" },
                                 }
                             },
-                            {
-                                setting_id    = "peril_label_enabled",
-                                type          = "checkbox",
-                                default_value = true,
-                                tooltip       = "peril_label_enabled_tooltip",
-                            },
-                            {
-                                setting_id    = "peril_crosshair_enabled",
-                                type          = "checkbox",
-                                default_value = false,
-                                tooltip       = "peril_crosshair_tooltip",
-                            },
-                        }
-                    },
-
-                    ------------------------------------------------------------------
-                    -- Charge
-                    ------------------------------------------------------------------
-                    {
-                        setting_id  = "charge_settings",
-                        type        = "group",
-                        sub_widgets = {
-                            {
-                                setting_id    = "charge_perilous_enabled",
-                                type          = "checkbox",
-                                default_value = true,
-                            },
-                            {
-                                setting_id    = "charge_kills_enabled",
-                                type          = "checkbox",
-                                default_value = true,
-                            },
-                            {
-                                setting_id    = "charge_other_enabled",
-                                type          = "checkbox",
-                                default_value = true,
-                            },
+                            { setting_id = "peril_crosshair_enabled", type = "checkbox", default_value = false, tooltip = "peril_crosshair_tooltip" },
                         }
                     },
                 },
@@ -382,6 +393,19 @@ local DATA = {
                         setting_id  = "munitions_settings",
                         type        = "group",
                         sub_widgets = {
+                            {
+                                setting_id    = "grenade_bar_dropdown",
+                                type          = "dropdown",
+                                default_value = "grenade_hide_full_compact",
+                                tooltip       = "grenade_bar_dropdown_tooltip",
+                                options       = {
+                                    { text = "grenade_hide_full_compact",  value = "grenade_hide_full_compact" },
+                                    { text = "grenade_hide_full",          value = "grenade_hide_full" },
+                                    { text = "grenade_hide_empty_compact", value = "grenade_hide_empty_compact" },
+                                    { text = "grenade_hide_empty",         value = "grenade_hide_empty" },
+                                    { text = "glossary_off",               value = "grenade_disabled" },
+                                },
+                            },
                             {
                                 setting_id    = "ammo_clip_dropdown",
                                 type          = "dropdown",
@@ -400,7 +424,7 @@ local DATA = {
                                     { text = "ammo_clip_forecast_always",     value = "ammo_clip_forecast_always" },
                                     { text = "ammo_clip_bar_forecast_ads",    value = "ammo_clip_bar_forecast_ads" },
                                     { text = "ammo_clip_bar_ads",             value = "ammo_clip_bar_ads" },
-                                    { text = "ammo_clip_disabled",            value = "ammo_clip_disabled" },
+                                    { text = "glossary_off",                  value = "ammo_clip_disabled" },
                                 },
                             },
                             {
@@ -417,20 +441,7 @@ local DATA = {
                                     { text = "ammo_reserve_actual_always",   value = "ammo_reserve_actual_always" },
                                     { text = "ammo_reserve_forecast_always", value = "ammo_reserve_forecast_always" },
                                     { text = "ammo_total_percent_always",    value = "ammo_total_percent_always" },
-                                    { text = "ammo_reserve_disabled",        value = "ammo_reserve_disabled" },
-                                },
-                            },
-                            {
-                                setting_id    = "grenade_bar_dropdown",
-                                type          = "dropdown",
-                                default_value = "grenade_hide_full_compact",
-                                tooltip       = "grenade_bar_dropdown_tooltip",
-                                options       = {
-                                    { text = "grenade_hide_full_compact",  value = "grenade_hide_full_compact" },
-                                    { text = "grenade_hide_full",          value = "grenade_hide_full" },
-                                    { text = "grenade_hide_empty_compact", value = "grenade_hide_empty_compact" },
-                                    { text = "grenade_hide_empty",         value = "grenade_hide_empty" },
-                                    { text = "grenade_disabled",           value = "grenade_disabled" },
+                                    { text = "glossary_off",                 value = "ammo_reserve_disabled" },
                                 },
                             },
                         }
@@ -448,23 +459,13 @@ local DATA = {
                                 type          = "dropdown",
                                 default_value = "pocketable_contextual",
                                 options       = {
-                                    { text = "pocketable_contextual", value = "pocketable_contextual" },
-                                    { text = "pocketable_always",     value = "pocketable_always" },
-                                    { text = "pocketable_disabled",   value = "pocketable_disabled" },
+                                    { text = "glossary_dynamic", value = "pocketable_contextual" },
+                                    { text = "glossary_on",      value = "pocketable_always" },
+                                    { text = "glossary_off",     value = "pocketable_disabled" },
                                 }
                             },
-                            {
-                                setting_id    = "medical_crate_color",
-                                type          = "dropdown",
-                                default_value = "HEALTH_GREEN",
-                                options       = _palette_options(),
-                            },
-                            {
-                                setting_id    = "ammo_cache_color",
-                                type          = "dropdown",
-                                default_value = "SPEED_BLUE",
-                                options       = _palette_options(),
-                            },
+                            { setting_id = "ammo_cache_color",    type = "dropdown", default_value = "SPEED_BLUE",   options = _palette_options() },
+                            { setting_id = "medical_crate_color", type = "dropdown", default_value = "HEALTH_GREEN", options = _palette_options() },
                         }
                     },
                 },
@@ -486,7 +487,7 @@ local DATA = {
                                 default_value = "team_hud_floating_thin",
                                 tooltip       = "team_hud_mode_tooltip",
                                 options       = {
-                                    { text = "team_hud_disabled",         value = "team_hud_disabled" },
+                                    { text = "glossary_default",          value = "team_hud_disabled" },
                                     { text = "team_hud_docked",           value = "team_hud_docked" },
                                     { text = "team_hud_floating",         value = "team_hud_floating" },
                                     { text = "team_hud_floating_docked",  value = "team_hud_floating_docked" },
@@ -496,6 +497,9 @@ local DATA = {
                             },
                             {
                                 setting_id      = "team_tiles_scale",
+                                localize        = false,
+                                title           = mod:localize("glossary_hud_scale"),
+                                text            = mod:localize("glossary_hud_scale"),
                                 type            = "numeric",
                                 default_value   = 0.8,
                                 range           = { 0.5, 2.0 },
@@ -506,7 +510,7 @@ local DATA = {
                                 type          = "dropdown",
                                 default_value = "team_hp_bar_context_text_off",
                                 options       = {
-                                    { text = "team_hp_disabled",                 value = "team_hp_disabled" },
+                                    { text = "glossary_off",                     value = "team_hp_disabled" },
                                     { text = "team_hp_bar_always_text_off",      value = "team_hp_bar_always_text_off" },
                                     { text = "team_hp_bar_always_text_context",  value = "team_hp_bar_always_text_context" },
                                     { text = "team_hp_bar_context_text_off",     value = "team_hp_bar_context_text_off" },
@@ -522,6 +526,28 @@ local DATA = {
                         tooltip     = "team_docked_position_tooltip",
                         sub_widgets = {
                             {
+                                setting_id      = "team_hud_offset_x",
+                                localize        = false,
+                                title           = mod:localize("glossary_x"),
+                                text            = mod:localize("glossary_x"),
+                                type            = "numeric",
+                                default_value   = 0,
+                                range           = { -800, 800 },
+                                decimals_number = 0,
+                                step_size_value = 5,
+                            },
+                            {
+                                setting_id      = "team_hud_offset_y",
+                                localize        = false,
+                                title           = mod:localize("glossary_y"),
+                                text            = mod:localize("glossary_y"),
+                                type            = "numeric",
+                                default_value   = 0,
+                                range           = { -800, 800 },
+                                decimals_number = 0,
+                                step_size_value = 5,
+                            },
+                            {
                                 setting_id    = "team_docked_axis",
                                 type          = "dropdown",
                                 default_value = "vertical",
@@ -529,20 +555,6 @@ local DATA = {
                                     { text = "team_docked_axis_vertical",   value = "vertical" },
                                     { text = "team_docked_axis_horizontal", value = "horizontal" },
                                 },
-                            },
-                            {
-                                setting_id      = "team_hud_offset_x",
-                                type            = "numeric",
-                                default_value   = 0,
-                                range           = { -800, 800 },
-                                decimals_number = 0,
-                            },
-                            {
-                                setting_id      = "team_hud_offset_y",
-                                type            = "numeric",
-                                default_value   = 0,
-                                range           = { -800, 800 },
-                                decimals_number = 0,
                             },
                         },
                     },
@@ -558,26 +570,14 @@ local DATA = {
                                 type          = "dropdown",
                                 default_value = "name0_icon1_status1",
                                 options       = {
-                                    { text = "name0_icon1_status1", value = "name0_icon1_status1" }, -- nameplate no name, archetype icon big, status icons special
-                                    { text = "name0_icon1_status0", value = "name0_icon1_status0" }, -- nameplate no name, archetype icon big, status icons DT default
+                                    { text = "glossary_off",        value = "name0_icon0_status0" }, -- nameplate no name, archetype icon in name, status icons DT default
                                     { text = "name0_icon0_status1", value = "name0_icon0_status1" }, -- nameplate no name, archetype icon in name, status icons special
-                                    { text = "name0_icon0_status0", value = "name0_icon0_status0" }, -- nameplate no name, archetype icon in name, status icons DT default
-                                    { text = "name1_icon1_status1", value = "name1_icon1_status1" }, -- nameplate shortname, archetype icon big, status icons special
-                                    { text = "name1_icon1_status0", value = "name1_icon1_status0" }, -- nameplate shortname, archetype icon big, status icons DT default
-                                    { text = "name1_icon0_status1", value = "name1_icon0_status1" }, -- nameplate shortname, archetype icon in name, status icons special
                                     { text = "name1_icon0_status0", value = "name1_icon0_status0" }, -- nameplate shortname, archetype icon in name, status icons DT default
-                                },
-                            },
-                            {
-                                setting_id    = "team_munitions",
-                                type          = "dropdown",
-                                default_value = "team_munitions_ammo_context_cd_enabled",
-                                options       = {
-                                    { text = "team_munitions_disabled",                 value = "team_munitions_disabled" },
-                                    { text = "team_munitions_ammo_context_cd_disabled", value = "team_munitions_ammo_context_cd_disabled" },
-                                    { text = "team_munitions_ammo_always_cd_enabled",   value = "team_munitions_ammo_always_cd_enabled" },
-                                    { text = "team_munitions_ammo_context_cd_enabled",  value = "team_munitions_ammo_context_cd_enabled" },
-                                    { text = "team_munitions_ammo_always_cd_always",    value = "team_munitions_ammo_always_cd_always" },
+                                    { text = "name0_icon1_status0", value = "name0_icon1_status0" }, -- nameplate no name, archetype icon big, status icons DT default
+                                    { text = "name1_icon0_status1", value = "name1_icon0_status1" }, -- nameplate shortname, archetype icon in name, status icons special
+                                    { text = "name0_icon1_status1", value = "name0_icon1_status1" }, -- nameplate no name, archetype icon big, status icons special
+                                    { text = "name1_icon1_status0", value = "name1_icon1_status0" }, -- nameplate shortname, archetype icon big, status icons DT default
+                                    { text = "name1_icon1_status1", value = "name1_icon1_status1" }, -- nameplate shortname, archetype icon big, status icons special
                                 },
                             },
                             {
@@ -585,30 +585,24 @@ local DATA = {
                                 type          = "dropdown",
                                 default_value = "team_pockets_context",
                                 options       = {
-                                    { text = "team_pockets_disabled", value = "team_pockets_disabled" },
-                                    { text = "team_pockets_always",   value = "team_pockets_always" },
-                                    { text = "team_pockets_context",  value = "team_pockets_context" },
+                                    { text = "glossary_off",     value = "team_pockets_disabled" },
+                                    { text = "glossary_on",      value = "team_pockets_always" },
+                                    { text = "glossary_dynamic", value = "team_pockets_context" },
+                                },
+                            },
+                            {
+                                setting_id    = "team_munitions",
+                                type          = "dropdown",
+                                default_value = "team_munitions_ammo_context_cd_enabled",
+                                options       = {
+                                    { text = "glossary_off",                            value = "team_munitions_disabled" },
+                                    { text = "team_munitions_ammo_context_cd_disabled", value = "team_munitions_ammo_context_cd_disabled" },
+                                    { text = "team_munitions_ammo_always_cd_enabled",   value = "team_munitions_ammo_always_cd_enabled" },
+                                    { text = "team_munitions_ammo_context_cd_enabled",  value = "team_munitions_ammo_context_cd_enabled" },
+                                    { text = "team_munitions_ammo_always_cd_always",    value = "team_munitions_ammo_always_cd_always" },
                                 },
                             },
                         },
-                    },
-                },
-            },
-            {
-                setting_id  = "vanilla_supergroup",
-                type        = "group",
-                sub_widgets = {
-                    ------------------------------------------------------------------
-                    -- Vanilla HUD Visibility
-                    ------------------------------------------------------------------
-                    {
-                        setting_id  = "default_hud_visibility_settings",
-                        type        = "group",
-                        sub_widgets = {
-                            { setting_id = "hide_default_ability", type = "checkbox", default_value = false },
-                            { setting_id = "hide_default_weapons", type = "checkbox", default_value = false },
-                            { setting_id = "hide_default_player",  type = "checkbox", default_value = false },
-                        }
                     },
                 },
             },

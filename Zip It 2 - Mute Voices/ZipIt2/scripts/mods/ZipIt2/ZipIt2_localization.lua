@@ -40,7 +40,7 @@ return {
         en = "female"
     },
 
-    major_npc_briefings_name = {
+    major_npc_briefings_name = { -- loc_game_mode_expedition_menu_tutorial_skip_button_label "Skip Briefing"
         en = "Briefings",
     },
     major_npc_chatter_name = {

@@ -8,9 +8,6 @@ local WM                          = mod:io_dofile("RingHud/scripts/mods/RingHud/
 local RingHud_state_team          = mod:io_dofile("RingHud/scripts/mods/RingHud/core/RingHud_state_team")
 local Apply                       = mod:io_dofile("RingHud/scripts/mods/RingHud/team/markers/apply")
 
-local Edge                        = (mod.team_edge_stack or mod:io_dofile("RingHud/scripts/mods/RingHud/systems/edge_stack"))
-mod.team_edge_stack               = Edge -- ensure it's published under mod.*
-
 local UIResolution                = require("scripts/managers/ui/ui_resolution")
 
 -- ############################################
@@ -88,25 +85,17 @@ template.fade_settings = {
 local function _apply_offset_compensation(widget_def, factor)
     local style = widget_def and widget_def.style
     if not style then return end
+
     for _, st in pairs(style) do
         local off = st and st.offset
-        if off and type(off[1]) == "number" and type(off[2]) == "number" then
+        local material_values = st and st.material_values
+        local keep_material_offset = material_values and material_values.SizeThicknessOutline
+
+        if not keep_material_offset and off and type(off[1]) == "number" and type(off[2]) == "number" then
             off[1] = off[1] * factor
             off[2] = off[2] * factor
         end
     end
-end
-
--- Distance to scale helper (match engine’s marker scale behavior)
-local function _distance_scale(dist, ss)
-    local dmin, dmax = ss.distance_min or 0, ss.distance_max or 1
-    local sf, st = ss.scale_from or 1, ss.scale_to or 1
-    local t = 0
-    if dmax > dmin then
-        t = math.clamp((dist - dmin) / (dmax - dmin), 0, 1)
-    end
-    -- Close (t=0) -> st; Far (t=1) -> sf
-    return (st + (sf - st) * t)
 end
 
 -- (Engine looks for this exact field name in the template)
@@ -131,9 +120,7 @@ function template.on_enter(widget, marker, tpl)
     marker.draw = false
     widget.alpha_multiplier = 1
     widget.visible = true
-    -- ensure per-marker base offsets are captured next update
-    marker._edge_stack_bases = nil
-    marker._edge_stack_last = { 0, 0 }
+    marker._state_accum = 0
 end
 
 function template.on_exit(widget, marker, tpl)
@@ -148,6 +135,7 @@ local function _peer_id_for_player(player)
         local val = player:peer_id()
         if val ~= nil then return tostring(val) end
     end
+
     local pid = rawget(player, "peer_id")
     if type(pid) == "string" or type(pid) == "number" then
         return tostring(pid)
@@ -166,11 +154,12 @@ local function _peer_id_for_player(player)
     return nil
 end
 
--- Main per-frame update — thin orchestrator:
---  1) capture bases (once) + ensure per-frame reset
---  2) build/apply RingHud_state_team (engine clamp stays on)
---  3) APPLY EDGE PUSH LAST (so Apply.apply_all can’t overwrite it)
-local _build_opts_pool = { player = false, force_show = false, t = 0, peer_id = false }
+local _build_opts_pool = {
+    player = false,
+    force_show = false,
+    t = 0,
+    peer_id = false
+}
 
 local function _hash_state(vm)
     local hash = 0
@@ -186,8 +175,14 @@ local function _hash_state(vm)
         hash = hash + (hp.cor_frac or 0) * 10000
         hash = hash + (hp.wounds or 0) * 97
         hash = hash + (hp.bars_enabled and 13 or 0)
+
         local ts = hp.tough_state
-        hash = hash + (ts == "ok" and 1 or ts == "broken" and 2 or ts == "overshield" and 3 or 0) * 41
+        hash = hash + (
+            ts == "ok" and 1
+            or ts == "broken" and 2
+            or ts == "overshield" and 3
+            or 0
+        ) * 41
     end
 
     local ct = vm.counters
@@ -201,43 +196,48 @@ local function _hash_state(vm)
     local st = vm.status
     if st then
         hash = hash + (st.show_icon and 23 or 0)
+
         local sk = st.kind
-        hash = hash + (sk == "netted" and 1 or sk == "hogtied" and 2
-            or sk == "knocked_down" and 3 or sk == "ledge_hanging" and 4
-            or sk == "dead" and 5 or sk == "pounced" and 6 or 0) * 67
+        hash = hash + (
+            sk == "netted" and 1
+            or sk == "hogtied" and 2
+            or sk == "knocked_down" and 3
+            or sk == "ledge_hanging" and 4
+            or sk == "dead" and 5
+            or sk == "pounced" and 6
+            or 0
+        ) * 67
     end
 
-    local as = vm.assist
-    if as then
-        hash = hash + (as.show and 29 or 0)
-        hash = hash + (as.amount or 0) * 1000
-        hash = hash + (as.respawn_digits and tonumber(as.respawn_digits) or 0) * 71
+    local assist = vm.assist
+    if assist then
+        hash = hash + (assist.show and 29 or 0)
+        hash = hash + (assist.amount or 0) * 1000
+        hash = hash + (assist.respawn_digits and tonumber(assist.respawn_digits) or 0) * 71
     end
 
-    local pk = vm.pockets
-    if pk then
-        hash = hash + (pk.stimm_enabled and 37 or 0)
-        hash = hash + (pk.crate_enabled and 43 or 0)
-        local si = pk.stimm_icon
-        if si then hash = hash + #si * 11 end
-        local ci = pk.crate_icon
-        if ci then hash = hash + #ci * 13 end
+    local pockets = vm.pockets
+    if pockets then
+        hash = hash + (pockets.stimm_enabled and 37 or 0)
+        hash = hash + (pockets.crate_enabled and 43 or 0)
+
+        local stimm_icon = pockets.stimm_icon
+        if stimm_icon then
+            hash = hash + #stimm_icon * 11
+        end
+
+        local crate_icon = pockets.crate_icon
+        if crate_icon then
+            hash = hash + #crate_icon * 13
+        end
     end
 
     return hash
 end
 
-function template.update_function(parent, ui_renderer, widget, marker, tpl, dt, t)
-    marker._update_timer = (marker._update_timer or 0) + dt
-    local throttle_interval = 0.15
-    if marker.is_clamped then
-        throttle_interval = 0.25 -- 4 FPS for edge-clamped teammates
-    end
-    if marker._update_timer < throttle_interval then
-        return -- Skip this frame
-    end
-    marker._update_timer = 0
+local STATE_THROTTLE_RATE = 1 / 30 -- ~33ms
 
+function template.update_function(parent, ui_renderer, widget, marker, tpl, dt, t)
     local unit = marker.unit
     if not (unit and Unit.alive(unit)) then
         marker.remove = true
@@ -248,90 +248,66 @@ function template.update_function(parent, ui_renderer, widget, marker, tpl, dt, 
         marker.draw = true
     end
 
-    -- 1) bases + per-frame reset (do this BEFORE Apply touches any styles)
     _refresh_screen_margins_if_needed()
-    Edge.reset_if_needed() -- uses mod._edge_stack_frame_id internally
-    Edge.ensure_bases(marker, widget.style)
 
-    -- 2) Build view-model + apply to widget
-    local player_opt
-    do
+    local did_apply = false
+
+    -- Throttle the heavy Data & Apply step
+    marker._state_accum = (marker._state_accum or 0) + dt
+    if marker._state_accum >= STATE_THROTTLE_RATE then
+        marker._state_accum = 0
+
+        local player_opt
         if marker.data and marker.data.player then
             player_opt = marker.data.player
         else
-            local pm = Managers.player
-            if pm and pm.player_by_unit then
-                player_opt = pm:player_by_unit(unit)
+            local player_manager = Managers.player
+            if player_manager and player_manager.player_by_unit then
+                player_opt = player_manager:player_by_unit(unit)
             end
         end
-    end
 
-    local pid                   = _peer_id_for_player(player_opt)
+        local peer_id = _peer_id_for_player(player_opt)
 
-    _build_opts_pool.player     = player_opt
-    _build_opts_pool.force_show = ((mod.show_all_hud_hotkey_active == true) and (_mode() ~= "team_hud_disabled"))
-    _build_opts_pool.t          = t
-    _build_opts_pool.peer_id    = pid
+        _build_opts_pool.player = player_opt
+        _build_opts_pool.force_show =
+            mod.show_all_hud_hotkey_active == true
+            and _mode() ~= "team_hud_disabled"
+        _build_opts_pool.t = t
+        _build_opts_pool.peer_id = peer_id
 
-    local vm                    = RingHud_state_team.build(unit, marker, _build_opts_pool)
+        local vm = RingHud_state_team.build(unit, marker, _build_opts_pool)
 
-    if not (vm and vm.ok) then
-        marker.remove = true
-        return
-    end
+        if not (vm and vm.ok) then
+            marker.remove = true
+            return
+        end
 
-    local state_hash = _hash_state(vm)
-    marker._last_state_hash = marker._last_state_hash or -1
+        local state_hash = _hash_state(vm)
+        marker._last_state_hash = marker._last_state_hash or -1
 
-    local did_apply = false
-    if state_hash ~= marker._last_state_hash then
-        marker._last_state_hash = state_hash
-        Apply.apply_all(widget, marker, vm, {
-            unit           = unit,
-            screen_margins = template.screen_margins,
-        })
-        did_apply = true
+        if state_hash ~= marker._last_state_hash then
+            marker._last_state_hash = state_hash
+
+            Apply.apply_all(widget, marker, vm, {
+                unit = unit,
+                screen_margins = template.screen_margins,
+            })
+
+            did_apply = true
+        end
     end
 
     -- Freeze distance scaling while clamped (vanilla pattern).
     do
-        local content       = widget.content
-        local is_clamped    = content and content.is_clamped or false
+        local content = widget.content
+        local is_clamped = content and content.is_clamped or false
+
         marker.ignore_scale = is_clamped
-        marker.is_clamped   = is_clamped -- allow Edge.update_push to infer edge when clamped
+
         if content then
             content.scale = is_clamped and 1 or (marker.scale or 1)
         end
-    end
-
-    -- 3) APPLY EDGE PUSH LAST (style-offset only; container stays clamped)
-    do
-        -- Our style offsets were compensated by 1/s at create time, so push in the same space.
-        local s           = (mod._settings and mod._settings.team_tiles_scale) or 1
-        local style_space = (s ~= 1) and (1 / s) or 1
-
-        -- Distance factor: if clamped, freeze at 1; else compute from distance.
-        local content     = widget.content
-        local is_clamped  = content and content.is_clamped or false
-        local dist        = (content and content.distance) or template.scale_settings.distance_min or 0
-        local dscale      = is_clamped and 1 or _distance_scale(dist, template.scale_settings)
-        if dscale <= 0 then dscale = 1 end
-
-        local base_w = C.MARKER_SIZE_BASE[1]
-        local base_h = C.MARKER_SIZE_BASE[2]
-
-        -- Target on-screen gaps ~90% of a scaled tile (screen space)
-        local step_screen_x = base_w * s * 0.90
-        local step_screen_y = base_h * s * 0.90
-
-        -- Use *inverse* distance scale so the on-screen gap stays constant when not clamped.
-        local factor = 1 / dscale
-
-        -- Convert to style space: multiply by our 1/s compensation and the distance factor
-        local STEP_X = math.floor(step_screen_x * style_space * factor + 0.5)
-        local STEP_Y = math.floor(step_screen_y * style_space * factor + 0.5)
-
-        local edge_changed = Edge.update_push(widget, marker, widget.style, STEP_X, STEP_Y, template.screen_margins)
     end
 
     if did_apply then

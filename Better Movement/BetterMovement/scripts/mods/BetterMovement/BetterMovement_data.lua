@@ -111,11 +111,6 @@ return {
                         type          = "checkbox",
                         default_value = true,
                     },
-                    {
-                        setting_id    = "luggable_keep_push",
-                        type          = "checkbox",
-                        default_value = true,
-                    },
                 }
             }
         }

@@ -1,4 +1,5 @@
 local mod = get_mod("Radar")
+local UIFontSettings = require("scripts/managers/ui/ui_font_settings")
 local UIWidget = require("scripts/managers/ui/ui_widget")
 
 local string_format = string.format
@@ -33,6 +34,9 @@ local WidgetVisibility = {
     has_icon = function(content)
         return content.icon ~= nil and content.icon ~= ""
     end,
+    has_glyph_icon = function(content)
+        return content.glyph_icon ~= nil and content.glyph_icon ~= ""
+    end,
     has_overlay_icon = function(content)
         return content.overlay_icon ~= nil and content.overlay_icon ~= ""
     end,
@@ -41,6 +45,12 @@ local WidgetVisibility = {
     end,
     has_arrow_icon = function(content)
         return content.arrow_icon ~= nil and content.arrow_icon ~= ""
+    end,
+    has_marked_ring = function(content)
+        return content.marked_ring ~= nil and content.marked_ring ~= ""
+    end,
+    has_radius_icon = function(content)
+        return content.radius_icon ~= nil and content.radius_icon ~= ""
     end,
     has_background_material = function(content)
         return content.background_material ~= nil and content.background_material ~= ""
@@ -216,6 +226,41 @@ local function _marker_definition()
     return UIWidget.create_definition({
         {
             pass_type = "texture",
+            value_id = "radius_icon",
+            style_id = "radius_icon",
+            style = {
+                hdr = true,
+                vertical_alignment = "top",
+                horizontal_alignment = "left",
+                offset = { 0, 0, 8 },
+                size = { 16, 16 },
+                color = _white_widget_color(),
+            },
+            visibility_function = WidgetVisibility.has_radius_icon,
+        },
+        {
+            pass_type = "texture",
+            value_id = "marked_ring",
+            style_id = "marked_ring",
+            style = {
+                hdr = true,
+                vertical_alignment = "top",
+                horizontal_alignment = "left",
+                offset = { 0, 0, 9 },
+                size = { 23, 23 },
+                material_values = {
+                    display_mode = 1,
+                    part_1_color = { 0, 0, 0, 0 },
+                    part_2_color = { 0, 0, 0, 0 },
+                    part_3_color = { 0, 0, 0, 0 },
+                    part_4_color = { 0, 0, 0, 0 },
+                },
+                color = _white_widget_color(),
+            },
+            visibility_function = WidgetVisibility.has_marked_ring,
+        },
+        {
+            pass_type = "texture",
             value_id = "icon",
             style_id = "icon",
             style = {
@@ -226,6 +271,25 @@ local function _marker_definition()
                 color = _white_widget_color(),
             },
             visibility_function = WidgetVisibility.has_icon,
+        },
+        {
+            pass_type = "text",
+            value = "<glyph_icon>",
+            value_id = "glyph_icon",
+            style_id = "glyph_icon",
+            style = {
+                drop_shadow = false,
+                font_size = 16,
+                font_type = UIFontSettings.hud_body.font_type,
+                vertical_alignment = "top",
+                horizontal_alignment = "left",
+                text_horizontal_alignment = "center",
+                text_vertical_alignment = "center",
+                offset = { 0, 0, 10 },
+                size = { 16, 16 },
+                text_color = _white_widget_color(),
+            },
+            visibility_function = WidgetVisibility.has_glyph_icon,
         },
         {
             pass_type = "texture",
@@ -299,7 +363,13 @@ local function _clear_overview_scale_widget(widget)
 end
 
 local function _clear_marker_widget(widget)
+    widget.content.radius_icon = nil
+    widget.content.radius_icon_size = nil
+    widget.content.marked_ring = nil
+    widget.content.marked_ring_slots_mask = nil
+    widget.content.marked_ring_size = nil
     widget.content.icon = nil
+    widget.content.glyph_icon = ""
     widget.content.overlay_icon = nil
     widget.content.title_icon = nil
     widget.content.arrow_icon = nil
