@@ -3,8 +3,8 @@ local mod = get_mod("true_level")
 mod._info = {
     title = "True Level",
     author = "Zombine",
-    date = "2026/08/11",
-    version = "1.10.2",
+    date = "2026/08/17",
+    version = "1.10.3",
 }
 mod:info("Version " .. mod._info.version)
 
@@ -274,8 +274,8 @@ mod.replace_level = function(text, true_levels, reference, need_adding)
     local levels_text = _concat_levels(reference)
 
     if need_adding and levels_text ~= "" then
-        text = text .. " - " ..  _concat_levels(reference)
-    else
+        text = text .. " - " .. levels_text
+    elseif levels_text == "" or not string.find(text, levels_text, 1, true) then
         text = text:gsub("%d+" .. suffix, levels_text)
     end
 

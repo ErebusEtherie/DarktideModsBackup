@@ -20,7 +20,7 @@ return function(deps, opts)
             local key = keys.key_for(id)
 
             if key and entry then
-                local value, status, bytes = envelope.encode_one(entry.version, entry.builder)
+                local value, status, bytes, err = envelope.encode_one(entry.version, entry.builder)
 
                 map[key] = value
                 report[#report + 1] = {
@@ -28,6 +28,7 @@ return function(deps, opts)
                     key    = key,
                     status = status,
                     bytes  = bytes,
+                    error  = err,
                 }
             end
         end

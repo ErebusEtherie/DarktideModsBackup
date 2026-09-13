@@ -108,9 +108,8 @@ local SCRIM = {
 local FILTER = {
 	anchor = "corner_top_left",
 	width = 330,
-	top = 90,
+	top = 60,
 	pad = 22,
-	header_height = 66,
 	group_height = 34,
 	row_height = 30,
 	box_size = 18,
@@ -120,6 +119,30 @@ local FILTER = {
 	slide_rate = 9,
 	z = 300,
 	side_none = "none",
+	tab_bar_height = 34,
+	tab_pad = 14,
+	row_pad = 18,
+	bottom_margin = 122,
+	scroll_step = 54,
+	bar_width = 5,
+	bar_inset = 6,
+	canvas_height = 1080,
+}
+
+local FILTER_TABS = {
+	{
+		key = "filters",
+		mod_loc = "tab_filters",
+	},
+	{
+		key = "exclusions",
+		mod_loc = "tab_exclusions",
+	},
+}
+
+local EXCLUDE_MISSION_TYPES = {
+	expeditions = true,
+	horde = true,
 }
 
 local FILTER_CATEGORIES = {
@@ -282,6 +305,11 @@ local SIDE_ICONS = {
 	side_mission_tome = "content/ui/materials/icons/pocketables/hud/small/party_scripture",
 }
 
+local EXCLUDE_SIDES = {
+	"side_mission_grimoire",
+	"side_mission_tome",
+}
+
 local ARCHIVE_URL = "https://darktide.dpdns.org/v1/live"
 local ARCHIVE_REFRESH_SECONDS = 600
 local ARCHIVE_RETRY_BASE = 15
@@ -317,6 +345,7 @@ return {
 	CONDITION_ICONS = CONDITION_ICONS,
 	CONDITION_TAGS = CONDITION_TAGS,
 	SIDE_ICONS = SIDE_ICONS,
+	EXCLUDE_SIDES = EXCLUDE_SIDES,
 	BOOKMARK_ICON = BOOKMARK_ICON,
 	GRID_COLS = GRID_COLS,
 	GRID_ROWS = GRID_ROWS,
@@ -355,6 +384,8 @@ return {
 	FILTER = FILTER,
 	FILTER_CATEGORIES = FILTER_CATEGORIES,
 	FILTER_CONDITIONS = FILTER_CONDITIONS,
+	FILTER_TABS = FILTER_TABS,
+	EXCLUDE_MISSION_TYPES = EXCLUDE_MISSION_TYPES,
 	ARCHIVE_URL = ARCHIVE_URL,
 	ARCHIVE_REFRESH_SECONDS = ARCHIVE_REFRESH_SECONDS,
 	ARCHIVE_RETRY_BASE = ARCHIVE_RETRY_BASE,

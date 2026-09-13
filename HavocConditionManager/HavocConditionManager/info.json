@@ -1,0 +1,19 @@
+{
+  "name": "Havoc Condition Manager",
+  "description": "Havoc, Auric and event conditions, compatible environments and native-capacity spawn multipliers.",
+  "version": "2.4.10",
+  "author": "GDS local project; based on Solo Play UI by deluxghost",
+  "dependencies": {
+    "required": [
+      "SoloPlay"
+    ]
+  },
+  "localization": {
+    "zh-cn": {
+      "name": "浩劫词条管理器"
+    },
+    "zh-tw": {
+      "name": "浩劫詞條管理器"
+    }
+  }
+}

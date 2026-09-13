@@ -1,0 +1,1 @@
+Original 16 x 16 RGBA checker fixture generated for these examples; may be reused with this package. No third-party media. Select the matching entry to test SimpleAssets loading; see ASSETS.en.md / ASSETS.zh-CN.md.

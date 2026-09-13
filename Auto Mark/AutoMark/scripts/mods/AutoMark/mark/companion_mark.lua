@@ -124,7 +124,7 @@ end
 
 local cancel_interval = 0
 function mod:auto_cancel_companion_mark(dt, t)
-    if not mod_settings.toggle_mod or not mod_settings.companion_cancel_mark or context.class_name ~= "adamant" or not context.has_companion then
+    if not mod_settings.companion_cancel_mark or context.class_name ~= "adamant" or not context.has_companion then
         return
     end
 
@@ -149,6 +149,10 @@ function mod:auto_cancel_companion_mark(dt, t)
         return
     end
 
+    if not tag_context.pounce_start_time then
+        return
+    end
+
     local unit_data_extension = ScriptUnit_extension(marked_unit, "unit_data_system")
     local breed_data = unit_data_extension and unit_data_extension._breed
     local breed_name = breed_data and breed_data.name
@@ -164,18 +168,18 @@ function mod:auto_cancel_companion_mark(dt, t)
         distance_threshold = mod_settings.companion_distance_threshold
     end
 
-    if health_threshold > 0 and tag_context.pounce_start_time then
+    if health_threshold > 0 then
         local health_percent = Health.current_health_percent(marked_unit)
         if health_percent < health_threshold then
             mod:print_debug("cancel companion mark due to health threshold, health_percent:", health_percent)
-            tag_context.canceled_units[marked_unit] = math.huge
+            tag_context.canceled_units[marked_unit] = t + 3
             cancel_interval = CANCEL_INTERVAL
             mod:cancel_mark(marked_tag._id)
             return
         end
     end
 
-    if time_threshold > 0 and tag_context.pounce_start_time then
+    if time_threshold > 0 then
         local elapsed_time = t - tag_context.pounce_start_time
         if elapsed_time > time_threshold then
             mod:print_debug("cancel companion mark due to time threshold, elapsed_time:", elapsed_time)
@@ -186,37 +190,37 @@ function mod:auto_cancel_companion_mark(dt, t)
         end
     end
 
-    if distance_threshold > 0 and tag_context.pounce_start_time then
-        repeat
-            local companion_spawner_extension = context.companion_spawner_extension
-            local companion_units = companion_spawner_extension and companion_spawner_extension:companion_units()
-            local companion_unit = companion_units and companion_units[1]
-            if not companion_unit then
-                break
-            end
+    if distance_threshold > 0 then
+        local companion_spawner_extension = context.companion_spawner_extension
+        local companion_units = companion_spawner_extension and companion_spawner_extension:companion_units()
+        local companion_unit = companion_units and companion_units[1]
+        if not companion_unit then
+            goto exit
+        end
 
-            local player = context.player
-            local player_unit = player and player.player_unit
-            if not player_unit then
-                break
-            end
+        local player = context.player
+        local player_unit = player and player.player_unit
+        if not player_unit then
+            goto exit
+        end
 
-            local POSITION_LOOKUP = POSITION_LOOKUP
-            local companion_position = POSITION_LOOKUP[companion_unit] or Unit_world_position(companion_unit, 1)
-            local player_position = POSITION_LOOKUP[player_unit] or Unit_world_position(player_unit, 1)
-            if not companion_position or not player_position then
-                break
-            end
+        local POSITION_LOOKUP = POSITION_LOOKUP
+        local companion_position = POSITION_LOOKUP[companion_unit] or Unit_world_position(companion_unit, 1)
+        local player_position = POSITION_LOOKUP[player_unit] or Unit_world_position(player_unit, 1)
+        if not companion_position or not player_position then
+            goto exit
+        end
 
-            local distance_squared = Vector3_distance_squared(companion_position, player_position)
-            if distance_squared > distance_threshold * distance_threshold then
-                mod:print_debug("cancel companion mark due to distance threshold, distance squared:", distance_squared)
-                tag_context.canceled_units[marked_unit] = t + 3
-                cancel_interval = CANCEL_INTERVAL
-                mod:cancel_mark(marked_tag._id)
-                return
-            end
-        until true
+        local distance_squared = Vector3_distance_squared(companion_position, player_position)
+        if distance_squared > distance_threshold * distance_threshold then
+            mod:print_debug("cancel companion mark due to distance threshold, distance squared:", distance_squared)
+            tag_context.canceled_units[marked_unit] = t + 3
+            cancel_interval = CANCEL_INTERVAL
+            mod:cancel_mark(marked_tag._id)
+            return
+        end
+
+        ::exit::
     end
 end
 
@@ -240,26 +244,4 @@ mod:hook_safe(CLASS.OutlineSystem, "remove_outline",
 mod:hook_safe(CLASS.OutlineSystem, "on_remove_extension",
     function(self, unit, extension_name)
         mark_context.execution_order_units[unit] = nil
-    end)
-
--- Hook for Companion Dog Attack Info
-mod:hook_safe(CLASS.AttackReportManager, "add_attack_result",
-    function(self, damage_profile, attacked_unit, attacking_unit, attack_direction, hit_world_position, hit_weakspot, damage, attack_result, attack_type, damage_efficiency, is_critical_strike)
-        local player = context.player
-        local player_unit = player and player.player_unit
-        if not mod_settings.companion_cancel_mark
-            or attack_type ~= "companion_dog"
-            or attacking_unit ~= player_unit
-        then
-            return
-        end
-
-        local tag_context = mark_context[TAG_NAMES.COMPANION_TAG]
-        local marked_tag = tag_context.tag
-        if marked_tag
-            and marked_tag._target_unit == attacked_unit
-            and tag_context.pounce_start_time == nil
-        then
-            tag_context.pounce_start_time = mod:get_latest_fixed_time()
-        end
     end)

@@ -123,6 +123,7 @@ local DEFAULTS = {
 	fury_damage_reference = 100,
 
 	enable_mission_summary = true,
+	skip_mission_recap = false,
 	wipe_history_confirmation = "unconfirmed",
 
 	enable_colored_breed_kills = false,

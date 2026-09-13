@@ -1,36 +1,5 @@
 local mod = get_mod("ImprovedHavocTags")
 
-local function readable(text)
-    local readable_string = ""
-    local tokens = string.split(text, "_")
-    for i, token in ipairs(tokens) do
-        local first_letter = string.sub(token, 1, 1)
-        token = string.format("%s%s", string.upper(first_letter), string.sub(token, 2))
-        readable_string = string.trim(string.format("%s %s", readable_string, token))
-    end
-    return readable_string
-end
-
-local color_options = {}
-if Color and Color.list then
-    for _, color_name in ipairs(Color.list) do
-        local localized_name = mod:localize(color_name)
-        table.insert(color_options, { 
-            text = color_name,
-            value = color_name,
-            localized_text = localized_name
-        })
-    end
-    
-    table.sort(color_options, function(a, b)
-        return a.text < b.text
-    end)
-end
-
-local function get_color_options()
-    return table.clone(color_options)
-end
-
 return {
     name = mod:localize("mod_name"),
     description = mod:localize("mod_description"),
@@ -38,120 +7,127 @@ return {
     options = {
         widgets = {
 			{
+				setting_id = "revert_to_original_names",
+				type = "checkbox",
+				default_value = false,  -- false = use custom names, true = use original game names
+				title = "revert_to_original_names_title",
+				tooltip = "revert_to_original_names_tooltip",
+			},
+            {
                 setting_id = "increased_difficulty",
-                type = "dropdown",
-                default_value = "white",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 255, 255, 255},  -- white
+                has_alpha = true,
             },
-			{
+            {
                 setting_id = "highest_difficulty",
-                type = "dropdown",
-                default_value = "white",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 255, 255, 255},  -- white
+                has_alpha = true,
             },
             {
                 setting_id = "bolstering_enemies",
-                type = "dropdown",
-                default_value = "item_rarity_5",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 208, 136, 48},  -- item_rarity_5
+                has_alpha = true,
             },
             {
                 setting_id = "encroaching_garden",
-                type = "dropdown",
-				tooltip = "encroaching_garden_tooltip",
-                default_value = "blue_violet",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 138, 43, 226},  -- blue_violet
+                has_alpha = true,
+                tooltip = "encroaching_garden_tooltip",
             },
             {
                 setting_id = "enraged",
-                type = "dropdown",
-				tooltip = "enraged_tooltip",
-                default_value = "ui_red_light",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 255, 54, 36},  -- ui_red_light
+                has_alpha = true,
+                tooltip = "enraged_tooltip",
             },
             {
                 setting_id = "chaos_ritual",
-                type = "dropdown",
-                default_value = "lime",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 0, 255, 0},  -- lime
+                has_alpha = true,
             },
             {
                 setting_id = "armored_infected",
-                type = "dropdown",
-                default_value = "steel_blue",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 70, 130, 180},  -- steel_blue
+                has_alpha = true,
             },
-			{
+            {
                 setting_id = "enemies_corrupted",
-                type = "dropdown",
-                default_value = "olive",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 128, 128, 0},  -- olive
+                has_alpha = true,
             },
-			{
+            {
                 setting_id = "enemies_parasite_headshot",
-                type = "dropdown",
-                default_value = "light_salmon",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 255, 160, 122},  -- light_salmon
+                has_alpha = true,
             },
-			{
+            {
                 setting_id = "tougher_skin",
-                type = "dropdown",
-                default_value = "citadel_ogryn_camo",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 157, 169, 75},  -- citadel_ogryn_camo
+                has_alpha = true,
             },
-			{
+            {
                 setting_id = "rotten_armor",
-                type = "dropdown",
-                default_value = "citadel_nurgling_green",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 132, 156, 99},  -- citadel_nurgling_green
+                has_alpha = true,
             },
-			{
+            {
                 setting_id = "stimmed_minions",
-                type = "dropdown",
-                default_value = "citadel_dorn_yellow",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 255, 242, 0},  -- citadel_dorn_yellow
+                has_alpha = true,
             },
-			{
+            {
                 setting_id = "ember",
-                type = "dropdown",
-                default_value = "sienna",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 160, 82, 45},  -- sienna
+                has_alpha = true,
             },
             {
                 setting_id = "toxic_gas",
-                type = "dropdown",
-                default_value = "yellow_green",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 154, 205, 50},  -- yellow_green
+                has_alpha = true,
             },
-			{
+            {
                 setting_id = "toxic_gas_cultist_grenadier",
-                type = "dropdown",
-                default_value = "yellow_green",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 154, 205, 50},  -- yellow_green
+                has_alpha = true,
             },
             {
                 setting_id = "ventilation_purge",
-                type = "dropdown",
-                default_value = "gray",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 128, 128, 128},  -- gray
+                has_alpha = true,
             },
-			{
+            {
                 setting_id = "ventilation_purge_with_snipers",
-                type = "dropdown",
-                default_value = "gray",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 128, 128, 128},  -- gray
+                has_alpha = true,
             },
             {
                 setting_id = "darkness",
-                type = "dropdown",
-                default_value = "citadel_nuln_oil",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 20, 16, 14},  -- citadel_nuln_oil
+                has_alpha = true,
             },
-			{
+            {
                 setting_id = "darkness_hunting_grounds",
-                type = "dropdown",
-                default_value = "citadel_nuln_oil",
-                options = get_color_options()
+                type = "color",
+                default_value = {255, 20, 16, 14},  -- citadel_nuln_oil
+                has_alpha = true,
             },
         }
     }

@@ -1,0 +1,17 @@
+{
+    "name": "BrokerStimTimer",
+    "author": "IndicaBunny",
+    "version": "2.8",
+    "homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/654",
+    "source": "https://github.com/MaddyMarv/BrokerStimTimer-aka-Hive-Scum-Stim-Timer-",
+    "funding": {
+        "kofi": "https://ko-fi.com/indicabunny"
+    },
+    "description": "Moveable on-screen timer for Broker stim duration and cooldown.",
+    "dependencies": {
+        "required": [],
+        "self_after": [],
+        "self_before": []
+    },
+    "localization": {}
+}

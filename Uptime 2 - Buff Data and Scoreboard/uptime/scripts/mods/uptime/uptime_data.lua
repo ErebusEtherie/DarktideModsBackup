@@ -80,6 +80,15 @@ return {
                             { text = "loc_track_damage_view_tactical_end", value = "view_tactical_end" },
                         },
                     },
+                    {
+                        setting_id = "end_view_scoreboard_position",
+                        type = "dropdown",
+                        default_value = "down",
+                        options = {
+                            { text = "loc_end_view_scoreboard_position_down", value = "down" },
+                            { text = "loc_end_view_scoreboard_position_up",   value = "up" },
+                        },
+                    },
                 },
             },
         },

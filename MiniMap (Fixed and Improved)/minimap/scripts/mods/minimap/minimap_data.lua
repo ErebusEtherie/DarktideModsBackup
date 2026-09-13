@@ -12,28 +12,44 @@ table.sort(color_presets, function(a,b) return a.name < b.name end)
 local function create_color_group(setting_prefix, default_r, default_g, default_b)
     return {
         setting_id = setting_prefix,
-        type = "group",
-        sub_widgets = {
+        type = "color",
+        default_value = { 255, default_r, default_g, default_b },
+        title = setting_prefix,
+    }
+end
 
+local function create_enemy_category_group(category_id, group_id, filter_default, default_color, limit_default, limit_max)
+    return {
+        setting_id = group_id,
+        type = "group",
+        tab = mod:localize("tab_enemy_radar"),
+        sub_widgets = {
             {
-                setting_id = setting_prefix .. "_r",
-                type = "numeric",
-                default_value = default_r,
-                range = {0, 255},
+                setting_id = "enemy_radar_filter_" .. category_id,
+                type = "checkbox",
+                default_value = filter_default,
+                title = "title_enable_radar",
             },
             {
-                setting_id = setting_prefix .. "_g",
-                type = "numeric",
-                default_value = default_g,
-                range = {0, 255},
+                setting_id = "color_" .. category_id,
+                type = "color",
+                default_value = default_color,
+                title = "title_color",
             },
             {
-                setting_id = setting_prefix .. "_b",
+                setting_id = "enemy_radar_limit_" .. category_id,
                 type = "numeric",
-                default_value = default_b,
-                range = {0, 255},
+                default_value = limit_default,
+                range = { 0, limit_max or 50 },
+                title = "limit_category",
             },
-        }
+            {
+                setting_id = "enemy_name_filter_" .. category_id,
+                type = "checkbox",
+                default_value = false,
+                title = "show_name_category",
+            },
+        },
     }
 end
 
@@ -91,22 +107,10 @@ return {
                     },
 
                     {
-                        setting_id = "minimap_background_color_r",
-                        type = "numeric",
-                        default_value = 180,
-                        range = {0, 255},
-                    },
-                    {
-                        setting_id = "minimap_background_color_g",
-                        type = "numeric",
-                        default_value = 180,
-                        range = {0, 255},
-                    },
-                    {
-                        setting_id = "minimap_background_color_b",
-                        type = "numeric",
-                        default_value = 180,
-                        range = {0, 255},
+                        setting_id = "minimap_background_color",
+                        type = "color",
+                        default_value = { 255, 180, 180, 180 },
+                        title = "minimap_background_color",
                     },
                     {
                         setting_id = "minimap_background_opacity",
@@ -267,33 +271,15 @@ return {
                             },
                             {
                                 setting_id = "distance_marker_vertical_arrow_color",
-                                type = "group",
-                                sub_widgets = {
-                                    {
-                                        setting_id = "distance_marker_vertical_arrow_color_r",
-                                        type = "numeric",
-                                        default_value = 255,
-                                        range = {0, 255},
-                                    },
-                                    {
-                                        setting_id = "distance_marker_vertical_arrow_color_g",
-                                        type = "numeric",
-                                        default_value = 255,
-                                        range = {0, 255},
-                                    },
-                                    {
-                                        setting_id = "distance_marker_vertical_arrow_color_b",
-                                        type = "numeric",
-                                        default_value = 255,
-                                        range = {0, 255},
-                                    },
-                                    {
-                                        setting_id = "distance_marker_vertical_arrow_opacity",
-                                        type = "numeric",
-                                        default_value = 255,
-                                        range = {0, 255},
-                                    },
-                                },
+                                type = "color",
+                                default_value = { 255, 255, 255, 255 },
+                                title = "distance_marker_vertical_arrow_color",
+                            },
+                            {
+                                setting_id = "distance_marker_vertical_arrow_opacity",
+                                type = "numeric",
+                                default_value = 255,
+                                range = {0, 255},
                             },
                         },
                     },
@@ -366,7 +352,7 @@ return {
                 },
             },
             {
-                setting_id = "enemy_radar",
+                setting_id = "enemy_radar_settings",
                 type = "group",
                 tab = mod:localize("tab_enemy_radar"),
                 sub_widgets = {
@@ -382,7 +368,6 @@ return {
                         range = {5.0, 100.0},
                         decimals_number = 1,
                     },
-
                     {
                         setting_id = "enemy_radar_priority_mode",
                         type = "dropdown",
@@ -390,6 +375,65 @@ return {
                         options = {
                             {text = "enemy_radar_priority_mode_threat", value = "threat"},
                             {text = "enemy_radar_priority_mode_distance", value = "distance"},
+                        },
+                    },
+                    {
+                        setting_id = "enemy_name_filter_only_pinged",
+                        type = "checkbox",
+                        default_value = false,
+                    },
+                    {
+                        setting_id = "enemy_radar_melee_ring",
+                        type = "group",
+                        sub_widgets = {
+                            {
+                                setting_id = "enemy_radar_melee_ring_enabled",
+                                type = "checkbox",
+                                default_value = true,
+                            },
+                            {
+                                setting_id = "enemy_radar_melee_range",
+                                type = "numeric",
+                                default_value = 2.5,
+                                range = {1, 5},
+                                decimals_number = 1,
+                            },
+                            {
+                                setting_id = "enemy_radar_melee_ring_color",
+                                type = "color",
+                                default_value = { 255, 165, 165, 165 },
+                                title = "enemy_radar_melee_ring_color",
+                            },
+                            {
+                                setting_id = "enemy_radar_melee_ring_opacity",
+                                type = "numeric",
+                                default_value = 40,
+                                range = {0, 255},
+                            },
+                        },
+                    },
+                    {
+                        setting_id = "enemy_radar_vertical_distance",
+                        type = "group",
+                        sub_widgets = {
+                            {
+                                setting_id = "enemy_radar_vertical_distance_enabled",
+                                type = "checkbox",
+                                default_value = true,
+                            },
+                            {
+                                setting_id = "enemy_radar_vertical_distance_threshold",
+                                type = "numeric",
+                                default_value = 2.5,
+                                range = {0.5, 10.0},
+                                decimals_number = 1,
+                            },
+                            {
+                                setting_id = "enemy_radar_vertical_distance_transparency",
+                                type = "numeric",
+                                default_value = 180,
+                                range = {0, 255},
+                            },
                         },
                     },
                     {
@@ -422,276 +466,18 @@ return {
                             },
                         },
                     },
-                    {
-                        setting_id = "enemy_radar_vertical_distance",
-                        type = "group",
-                        sub_widgets = {
-                            {
-                                setting_id = "enemy_radar_vertical_distance_enabled",
-                                type = "checkbox",
-                                default_value = true,
-                            },
-                            {
-                                setting_id = "enemy_radar_vertical_distance_threshold",
-                                type = "numeric",
-                                default_value = 2.5,
-                                range = {0.5, 10.0},
-                                decimals_number = 1,
-                            },
-                            {
-                                setting_id = "enemy_radar_vertical_distance_transparency",
-                                type = "numeric",
-                                default_value = 180,
-                                range = {0, 255},
-                            },
-                        },
-                    },
-                    {
-                        setting_id = "enemy_radar_filters",
-                        type = "group",
-                        sub_widgets = {
-                            {
-                                setting_id = "enemy_radar_filter_boss",
-                                type = "checkbox",
-                                default_value = true,
-                            },
-                            {
-                                setting_id = "enemy_radar_filter_disabler",
-                                type = "checkbox",
-                                default_value = true,
-                            },
-                            {
-                                setting_id = "enemy_radar_filter_sniper",
-                                type = "checkbox",
-                                default_value = true,
-                            },
-                            {
-                                setting_id = "enemy_radar_filter_special",
-                                type = "checkbox",
-                                default_value = true,
-                            },
-                            {
-                                setting_id = "enemy_radar_filter_shield",
-                                type = "checkbox",
-                                default_value = true,
-                            },
-                            {
-                                setting_id = "enemy_radar_filter_ranged_elite",
-                                type = "checkbox",
-                                default_value = true,
-                            },
-                            {
-                                setting_id = "enemy_radar_filter_melee_elite",
-                                type = "checkbox",
-                                default_value = true,
-                            },
-                            {
-                                setting_id = "enemy_radar_filter_horde",
-                                type = "checkbox",
-                                default_value = false,
-                            },
-                            {
-                                setting_id = "enemy_radar_filter_roamer",
-                                type = "checkbox",
-                                default_value = false,
-                            },
-                        },
-                    },
-                    {
-                        setting_id = "enemy_radar_limits",
-                        type = "group",
-                        sub_widgets = {
-                            {
-                                setting_id = "enemy_radar_limit_boss",
-                                type = "numeric",
-                                default_value = 5,
-                                range = {0, 20},
-                            },
-                            {
-                                setting_id = "enemy_radar_limit_disabler",
-                                type = "numeric",
-                                default_value = 10,
-                                range = {0, 50},
-                            },
-                            {
-                                setting_id = "enemy_radar_limit_sniper",
-                                type = "numeric",
-                                default_value = 10,
-                                range = {0, 50},
-                            },
-                            {
-                                setting_id = "enemy_radar_limit_special",
-                                type = "numeric",
-                                default_value = 10,
-                                range = {0, 50},
-                            },
-                            {
-                                setting_id = "enemy_radar_limit_shield",
-                                type = "numeric",
-                                default_value = 10,
-                                range = {0, 50},
-                            },
-                            {
-                                setting_id = "enemy_radar_limit_ranged_elite",
-                                type = "numeric",
-                                default_value = 10,
-                                range = {0, 50},
-                            },
-                            {
-                                setting_id = "enemy_radar_limit_melee_elite",
-                                type = "numeric",
-                                default_value = 10,
-                                range = {0, 50},
-                            },
-                            {
-                                setting_id = "enemy_radar_limit_horde",
-                                type = "numeric",
-                                default_value = 5,
-                                range = {0, 50},
-                            },
-                            {
-                                setting_id = "enemy_radar_limit_roamer",
-                                type = "numeric",
-                                default_value = 5,
-                                range = {0, 50},
-                            },
-                        },
-                    },
-                    {
-                        setting_id = "enemy_radar_melee_ring",
-                        type = "group",
-                        sub_widgets = {
-                            {
-                                setting_id = "enemy_radar_melee_ring_enabled",
-                                type = "checkbox",
-                                default_value = true,
-                            },
-                            {
-                                setting_id = "enemy_radar_melee_range",
-                                type = "numeric",
-                                default_value = 2.5,
-                                range = {1, 5},
-                                decimals_number = 1,
-                            },
-
-                            {
-                                setting_id = "enemy_radar_melee_ring_color_r",
-                                type = "numeric",
-                                default_value = 180,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "enemy_radar_melee_ring_color_g",
-                                type = "numeric",
-                                default_value = 180,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "enemy_radar_melee_ring_color_b",
-                                type = "numeric",
-                                default_value = 180,
-                                range = {0, 255},
-                            },
-                            {
-                                setting_id = "enemy_radar_melee_ring_opacity",
-                                type = "numeric",
-                                default_value = 40,
-                                range = {0, 255},
-                            },
-                        },
-                    },
                 },
             },
-            {
-                setting_id = "enemy_colors",
-                type = "group",
-                tab = mod:localize("tab_enemy_radar"),
-                sub_widgets = {
-                    {
-                        setting_id = "enemy_colors_specials",
-                        type = "group",
-                        sub_widgets = {
-                            create_color_group("color_chaos_hound", 180, 0, 255),
-                            create_color_group("color_renegade_netgunner", 180, 0, 255),
-                            create_color_group("color_renegade_sniper", 255, 0, 150),
-                            create_color_group("color_flamer", 100, 255, 100),
-                            create_color_group("color_grenadier", 100, 255, 100),
-                            create_color_group("color_chaos_poxwalker_bomber", 100, 255, 100),
-                        },
-                    },
-                    {
-                        setting_id = "enemy_colors_elites",
-                        type = "group",
-                        sub_widgets = {
-                            create_color_group("color_executor", 255, 220, 0),
-                            create_color_group("color_berzerker", 255, 220, 0),
-                            create_color_group("color_renegade_plasma_gunner", 255, 120, 0),
-                            create_color_group("color_chaos_ogryn_bulwark", 0, 200, 255),
-                        },
-                    },
-                    {
-                        setting_id = "enemy_colors_generic",
-                        type = "group",
-                        sub_widgets = {
-                            create_color_group("color_boss", 255, 0, 0),
-                            create_color_group("color_disabler", 200, 0, 255),
-                            create_color_group("color_sniper", 255, 0, 150),
-                            create_color_group("color_shield", 100, 150, 255),
-                            create_color_group("color_ranged_elite", 255, 100, 0),
-                            create_color_group("color_melee_elite", 255, 165, 0),
-                            create_color_group("color_special", 255, 0, 255),
-                            create_color_group("color_horde", 150, 150, 150),
-                            create_color_group("color_roamer", 180, 180, 180),
-                        },
-                    },
-                    {
-                        setting_id = "enemy_name_filters",
-                        type = "group",
-                        sub_widgets = {
-                            {
-                                setting_id = "enemy_name_filter_only_pinged",
-                                type = "checkbox",
-                                default_value = false,
-                            },
-                            {
-                                setting_id = "enemy_name_filter_boss",
-                                type = "checkbox",
-                                default_value = false,
-                            },
-                            {
-                                setting_id = "enemy_name_filter_disabler",
-                                type = "checkbox",
-                                default_value = false,
-                            },
-                            {
-                                setting_id = "enemy_name_filter_sniper",
-                                type = "checkbox",
-                                default_value = false,
-                            },
-                            {
-                                setting_id = "enemy_name_filter_special",
-                                type = "checkbox",
-                                default_value = false,
-                            },
-                            {
-                                setting_id = "enemy_name_filter_shield",
-                                type = "checkbox",
-                                default_value = false,
-                            },
-                            {
-                                setting_id = "enemy_name_filter_ranged_elite",
-                                type = "checkbox",
-                                default_value = false,
-                            },
-                            {
-                                setting_id = "enemy_name_filter_melee_elite",
-                                type = "checkbox",
-                                default_value = false,
-                            },
-                        },
-                    },
-                },
-            },
+            create_enemy_category_group("human_boss", "group_human_bosses", true, { 255, 255, 50, 100 }, 5, 20),
+            create_enemy_category_group("monster", "group_monsters", true, { 255, 255, 0, 0 }, 5, 20),
+            create_enemy_category_group("disabler", "group_disablers", true, { 255, 0, 255, 0 }, 10, 50),
+            create_enemy_category_group("ranged_special", "group_ranged_specials", true, { 255, 0, 255, 255 }, 10, 50),
+            create_enemy_category_group("poxburster", "group_poxbursters", true, { 255, 255, 255, 0 }, 10, 50),
+            create_enemy_category_group("ranged_elite", "group_ranged_elites", true, { 255, 0, 0, 255 }, 10, 50),
+            create_enemy_category_group("crushers_maulers", "group_crushers_maulers", true, { 255, 255, 80, 0 }, 10, 50),
+            create_enemy_category_group("melee_elite", "group_melee_elites", true, { 255, 81, 53, 146 }, 10, 50),
+            create_enemy_category_group("shooters", "group_shooters", false, { 255, 245, 245, 135 }, 10, 50),
+            create_enemy_category_group("chaff", "group_chaff", false, { 255, 105, 55, 20 }, 10, 50),
             {
                 setting_id = "strike_map_dimensions",
                 type = "group",

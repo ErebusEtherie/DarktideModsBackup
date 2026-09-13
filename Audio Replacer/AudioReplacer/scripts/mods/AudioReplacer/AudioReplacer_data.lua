@@ -284,7 +284,19 @@ mod_data.options = {
 			type        = "group",
 			sub_widgets = {
 				{
-					setting_id    = "weapon_enabled",
+					setting_id    = "dual_stub_pistols",
+					type          = "checkbox",
+					default_value = false,
+					sub_widgets   = { --[[...]] } -- optional
+				},
+				{
+					setting_id    = "dual_stub_pistols_special",
+					type          = "checkbox",
+					default_value = false,
+					sub_widgets   = { --[[...]] } -- optional
+				},
+				{
+					setting_id    = "heavy_stubber",
 					type          = "checkbox",
 					default_value = false,
 					sub_widgets   = { --[[...]] } -- optional
@@ -709,12 +721,6 @@ mod_data.options = {
 			setting_id  = "horde_ambush_settings",
 			type        = "group",
 			sub_widgets = {
-				{
-					setting_id    = "horde_ambush_enabled",
-					type          = "checkbox",
-					default_value = false,
-					sub_widgets   = { --[[...]] } -- optional
-				},
 				{
 					setting_id    = "horde_incoming_warning",
 					type          = "checkbox",

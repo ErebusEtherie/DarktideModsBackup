@@ -2,31 +2,88 @@ local mod = get_mod("AutoLoot")
 
 local Pickups = require("scripts/settings/pickup/pickups")
 
+-- ───────────────────── ❀ ─────────────────────
+--  Press State
+-- ───────────────────── ❀ ─────────────────────
+
 local pickup = false
 local pickup_unit = nil
 local cooldown = 0.0
 
--- Every conditional pickup is armed here and stays pending until the value it
--- affects changes, which is the server confirming the pickup landed. Keyed by
--- category, so a watch on one category never displaces a watch on another.
--- Each entry is { value = <recorded value>, expiry = <seconds remaining> }.
 local pending = {}
 local arm_kind = nil
 local arm_value = nil
 
--- Backstop for a pickup that never lands, such as a teammate taking the bag
--- first. Without it a pending watch would block that category permanently.
 local CONFIRM_TIMEOUT = 2.0
 
--- Unit the mod has already forced a press for. One press per unit.
 local pressed_unit = nil
 
--- Floor for the post-press cooldown. fixed_update can run twice against one
--- input sample, so a shorter delay lets the same press fire twice.
 local MIN_PRESS_COOLDOWN = 0.1
 
--- hud_description mapped to pickup name. A held stimm reports the same name
--- through swap_pickup_name, so both sides of a swap share one namespace.
+-- ───────────────────── ❀ ─────────────────────
+--  Aim Gate
+-- ───────────────────── ❀ ─────────────────────
+
+local AIM_TURN_COS = math.cos(0.07)
+
+local press_locked = false
+local locked_fx, locked_fy, locked_fz = 0, 0, 0
+local aim_fx, aim_fy, aim_fz = 0, 0, 0
+local settled_unit = nil
+local settled_for = 0.0
+
+local function read_aim(unit_data_extension)
+    local ok, eye, forward = pcall(function()
+        local first_person = unit_data_extension:read_component("first_person")
+
+        return first_person.position, Vector3.normalize(Quaternion.forward(first_person.rotation))
+    end)
+
+    if ok and eye and forward then
+        return eye, forward
+    end
+
+    return nil, nil
+end
+
+local function aim_offset(eye, forward, target_unit)
+    if not eye or not forward or not target_unit or not ALIVE[target_unit] then
+        return nil
+    end
+
+    local ok, offset = pcall(function()
+        local boxed, pose, extents = pcall(Unit.box, target_unit)
+        local centre, reach
+
+        if boxed and pose and extents then
+            centre = Matrix4x4.translation(pose)
+            reach = math.min(extents.x, extents.y, extents.z)
+        else
+            centre = Unit.world_position(target_unit, 1)
+            reach = 0.0
+        end
+
+        local to_target = centre - eye
+        local along = Vector3.dot(forward, to_target)
+
+        if along <= 0 then
+            return math.huge
+        end
+
+        return math.max(0, Vector3.length(to_target - forward * along) - reach)
+    end)
+
+    if ok and type(offset) == "number" and offset == offset then
+        return offset
+    end
+
+    return nil
+end
+
+-- ───────────────────── ❀ ─────────────────────
+--  Stimm Names
+-- ───────────────────── ❀ ─────────────────────
+
 local STIMM_PICKUP_BY_HUD = {
     ["loc_pickup_pocketable_01"] = "syringe_corruption_pocketable",
     ["loc_pickup_syringe_pocketable_02"] = "syringe_ability_boost_pocketable",
@@ -34,8 +91,6 @@ local STIMM_PICKUP_BY_HUD = {
     ["loc_pickup_syringe_pocketable_04"] = "syringe_speed_boost_pocketable",
 }
 
--- Pickup name mapped to the key used to build option ids. Internal names do
--- not match in-game ones: power_boost is Combat, ability_boost Concentration.
 local STIMM_SETTING_BY_PICKUP = {
     syringe_corruption_pocketable = "med",
     syringe_power_boost_pocketable = "combat",
@@ -43,12 +98,13 @@ local STIMM_SETTING_BY_PICKUP = {
     syringe_speed_boost_pocketable = "celerity",
 }
 
--- Numeric settings feed straight into arithmetic, so a malformed stored
--- value would throw every frame. optional_floor clamps low values.
+-- ───────────────────── ❀ ─────────────────────
+--  Settings & Ammo
+-- ───────────────────── ❀ ─────────────────────
+
 local function get_number(setting_id, fallback, optional_floor)
     local value = mod:get(setting_id)
 
-    -- NaN check.
     if type(value) ~= "number" or value ~= value then
         value = fallback
     end
@@ -60,17 +116,9 @@ local function get_number(setting_id, fallback, optional_floor)
     return value
 end
 
--- Fractions of the maximum ammo reserve restored by each pickup, matching the
--- values in the game files. Used only when the pickup definition cannot be
--- read, so a future rename degrades to correct unmodified behaviour.
 local FALLBACK_CLIP_FRACTION = 0.15
 local FALLBACK_BAG_FRACTION = 0.50
 
--- Havoc scales ammo pickups through a modifier held on the game mode extension,
--- which is absent outside Havoc and on Havoc missions without the modifier. The
--- server copies the value into the difficulty manager, but that copy never
--- happens on a client, so the extension is the only route that works for
--- everyone. Several links in the chain are missing outside a mission.
 local function read_ammo_pickup_modifier()
     local ok, modifier = pcall(function()
         local game_mode_manager = Managers.state and Managers.state.game_mode
@@ -87,8 +135,6 @@ local function read_ammo_pickup_modifier()
     return 1
 end
 
--- Fraction of the maximum reserve a pickup restores, from the game's pickup
--- definition, with the recorded fallback covering a future field rename.
 local function pickup_reserve_fraction(pickup_name, fallback_fraction)
     local pickup_settings = Pickups.by_name[pickup_name]
     local fraction = pickup_settings and pickup_settings.ammunition_percentage
@@ -100,10 +146,6 @@ local function pickup_reserve_fraction(pickup_name, fallback_fraction)
     return fraction
 end
 
--- Whether the full pickup fits into the reserve with nothing lost. Mirrors the
--- game's own grant: the amount is the pickup's fraction of the maximum reserve,
--- scaled by the Havoc modifier and rounded up, and it lands in the reserve
--- alone, so the clip plays no part in whether anything overflows.
 local function ammo_pickup_fits(pickup_name, fallback_fraction, modifier, curr_reserve, max_reserve)
     local fraction = pickup_reserve_fraction(pickup_name, fallback_fraction)
     local amount = math.ceil(fraction * modifier * max_reserve)
@@ -111,21 +153,19 @@ local function ammo_pickup_fits(pickup_name, fallback_fraction, modifier, curr_r
     return max_reserve - curr_reserve >= amount
 end
 
--- Reserve fill level the fit check corresponds to, for the mission start
--- report. Rounding the granted amount up to whole rounds moves the real
--- boundary by at most one round per weapon, so this is the idealized figure.
 local function automatic_threshold(pickup_name, fallback_fraction, modifier)
     local fraction = pickup_reserve_fraction(pickup_name, fallback_fraction)
 
     return math.max(0, math.min(1, 1 - fraction * modifier))
 end
 
--- Menu order and default preset. 1 is the highest priority.
+-- ───────────────────── ❀ ─────────────────────
+--  Class Stimms
+-- ───────────────────── ❀ ─────────────────────
+
 local STIMM_KEYS = { "med", "combat", "celerity", "concentration" }
 local STIMM_DEFAULT_RANK = { med = 1, combat = 2, celerity = 3, concentration = 4 }
 
--- Internal archetype name, or nil when no profile is readable. Availability
--- differs between hub, mission, and loading, hence the pcall.
 local function get_class_name()
     local ok, name = pcall(function()
         local player = Managers.player:local_player_safe(1)
@@ -138,11 +178,8 @@ local function get_class_name()
     return nil
 end
 
--- Distinguishes a programmatic load from a user edit in on_setting_changed.
 local syncing_settings = false
 
--- Copies a class store into the visible controls, seeding an untouched one
--- with the defaults. A nil class loads the defaults directly.
 local function sync_menu_from_store(class)
     syncing_settings = true
     for _, key in ipairs(STIMM_KEYS) do
@@ -172,10 +209,9 @@ local function sync_menu_from_store(class)
     syncing_settings = false
 end
 
--- Class whose store the visible controls currently mirror.
 local menu_class = nil
+local unclassed_edits = {}
 
--- Re-points the visible controls when the played class has changed.
 local function refresh_menu_class()
     if not mod:get("per_class_stimms") then
         menu_class = nil
@@ -184,6 +220,10 @@ local function refresh_menu_class()
     local class = get_class_name()
     if class and class ~= menu_class then
         menu_class = class
+        for setting_id, value in pairs(unclassed_edits) do
+            mod:set(setting_id .. "_" .. class, value)
+            unclassed_edits[setting_id] = nil
+        end
         sync_menu_from_store(class)
     end
 end
@@ -198,25 +238,28 @@ function mod.on_setting_changed(setting_id)
             menu_class = nil
             refresh_menu_class()
         else
-            -- Class stores are kept and restored when re-enabled.
             menu_class = nil
             sync_menu_from_store(nil)
         end
         return
     end
 
-    -- Edits belong to the class the controls mirror, so menu_class is
-    -- preferred over a live read that may briefly fail.
     if mod:get("per_class_stimms") then
-        local class = menu_class or get_class_name()
-        if class and (setting_id:find("^stimm_.+_enabled$") or setting_id:find("^stimm_.+_rank$")) then
-            mod:set(setting_id .. "_" .. class, mod:get(setting_id))
+        if setting_id:find("^stimm_.+_enabled$") or setting_id:find("^stimm_.+_rank$") then
+            local class = menu_class or get_class_name()
+            if class then
+                mod:set(setting_id .. "_" .. class, mod:get(setting_id))
+            else
+                unclassed_edits[setting_id] = mod:get(setting_id)
+            end
         end
     end
 end
 
--- Game modes that never carry an ammo modifier. Anything unlisted is treated as
--- a mission, so a future combat mode reports thresholds without a mod update.
+-- ───────────────────── ❀ ─────────────────────
+--  Threshold Report
+-- ───────────────────── ❀ ─────────────────────
+
 local NON_MISSION_GAME_MODES = {
     default = true,
     hub = true,
@@ -226,8 +269,6 @@ local NON_MISSION_GAME_MODES = {
     training_grounds = true,
 }
 
--- Whole numbers read as 85 rather than 85.0, while an unusual modifier that
--- lands between whole percentages keeps one decimal.
 local function format_percent(fraction)
     return (string.format("%.1f", fraction * 100):gsub("%.0$", ""))
 end
@@ -252,9 +293,6 @@ local function in_mission()
     return ok and result == true
 end
 
--- Reports the thresholds actually in force for the mission just entered, since
--- the automatic values are never shown in the options menu. Chat output reaches
--- the local player only, and DMF replays it once the chat window exists.
 local function announce_thresholds()
     if not mod:get("auto_ammo_thresholds") or not mod:get("show_auto_ammo_threshold_notifications") then
         return
@@ -273,16 +311,17 @@ local function announce_thresholds()
         format_percent(automatic_threshold("large_clip", FALLBACK_BAG_FRACTION, modifier)))
 end
 
--- on_enter runs once per mission and after the Havoc extension is built, so the
--- modifier is readable by the time the thresholds are reported.
 mod:hook_require("scripts/game_states/game/gameplay_sub_states/gameplay_state_run", function(instance)
     mod:hook_safe(instance, "on_enter", function()
         announce_thresholds()
     end)
 end)
 
+-- ───────────────────── ❀ ─────────────────────
+--  Class Refresh
+-- ───────────────────── ❀ ─────────────────────
+
 function mod.on_game_state_changed(status, state_name)
-    -- Covers character switches, which always pass through a state change.
     if status == "enter" then
         refresh_menu_class()
     end
@@ -292,7 +331,6 @@ function mod.on_enabled()
     refresh_menu_class()
 end
 
--- The class store is authoritative even if the menu sync has not caught up.
 local function stimm_enabled(key)
     if mod:get("per_class_stimms") then
         local class = get_class_name()
@@ -319,11 +357,11 @@ local function stimm_rank(key)
     return get_number("stimm_" .. key .. "_rank", STIMM_DEFAULT_RANK[key])
 end
 
--- Reads the gameplay simulation rather than the HUD, so it still works with
--- the HUD hidden.
+-- ───────────────────── ❀ ─────────────────────
+--  Interactor
+-- ───────────────────── ❀ ─────────────────────
+
 local function get_interactor_extension()
-    -- local_player_safe returns nil before the connection is up. local_player
-    -- crashes in the same situation.
     local player = Managers.player:local_player_safe(1)
     if not player then
         return nil
@@ -335,7 +373,6 @@ local function get_interactor_extension()
     return ScriptUnit.has_extension(player_unit, "interactor_system")
 end
 
--- Current target read fresh at input time, not the flag set in mod.update.
 local function get_live_target_unit()
     local interactor_extension = get_interactor_extension()
     if not interactor_extension then
@@ -344,20 +381,20 @@ local function get_live_target_unit()
     return interactor_extension:target_unit()
 end
 
+-- ───────────────────── ❀ ─────────────────────
+--  Forced Press
+-- ───────────────────── ❀ ─────────────────────
+
 mod:hook("InputService", "_get", function(func, self, action_name)
     if cooldown <= 0 and pickup and action_name == "interact_pressed" then
-        -- Units compare by identity, so two identical items in one crate
-        -- never match each other.
         local live_unit = get_live_target_unit()
 
-        -- Without the latch the press repeats while the interaction resolves
-        -- and can land on whatever the reticle snaps to next.
         if live_unit ~= nil and live_unit == pickup_unit and live_unit ~= pressed_unit then
             pressed_unit = live_unit
             cooldown = MIN_PRESS_COOLDOWN
+            press_locked = true
+            locked_fx, locked_fy, locked_fz = aim_fx, aim_fy, aim_fz
 
-            -- Arm the confirmation watch for the approved category. The value
-            -- was read during the approving frame, before the pickup applied.
             if arm_kind then
                 pending[arm_kind] = { value = arm_value, expiry = CONFIRM_TIMEOUT }
             end
@@ -370,11 +407,10 @@ mod:hook("InputService", "_get", function(func, self, action_name)
     return func(self, action_name)
 end)
 
--- Reserve ammo state for the first ammo-using weapon, or nil when none is
--- equipped. Everything ammo-related works on the reserve alone, because a
--- pickup only ever fills the reserve while firing only drains the clip, so the
--- reserve is the only pool a pickup can overflow and the only value that
--- changes when one lands.
+-- ───────────────────── ❀ ─────────────────────
+--  Watched Values
+-- ───────────────────── ❀ ─────────────────────
+
 local function get_current_ammo(unit_data_extension, weapon_slot_configuration)
     for slot in pairs(weapon_slot_configuration) do
         local wieldable_component = unit_data_extension:read_component(slot)
@@ -386,10 +422,6 @@ local function get_current_ammo(unit_data_extension, weapon_slot_configuration)
     return nil, nil
 end
 
--- Snapshot of every value a forced pickup can change, taken once per frame.
--- The value recorded when a press was forced is compared against this on later
--- frames, so a category stays blocked until the server has actually applied the
--- previous pickup. false stands in for nil so an absent value still compares.
 local function read_watch_values(unit_data_extension, weapon_slot_configuration, pocketable_template, stimm_template)
     local ammo_reserve = get_current_ammo(unit_data_extension, weapon_slot_configuration)
 
@@ -401,18 +433,18 @@ local function read_watch_values(unit_data_extension, weapon_slot_configuration,
     }
 end
 
+-- ───────────────────── ❀ ─────────────────────
+--  Frame Pass
+-- ───────────────────── ❀ ─────────────────────
+
 function mod.update(dt)
     if cooldown > 0 then
         cooldown = cooldown - dt
     end
 
-    -- Arming lasts only for the frame that approved it. The input hook runs
-    -- between updates, so a stale arm must never survive into the next frame.
     arm_kind = nil
     arm_value = nil
 
-    -- Clearing a field during a pairs traversal is safe, so expired watches are
-    -- dropped in place.
     for kind, watch in pairs(pending) do
         watch.expiry = watch.expiry - dt
         if watch.expiry <= 0 then
@@ -426,17 +458,42 @@ function mod.update(dt)
     local interactor_extension = get_interactor_extension()
     local target_unit = interactor_extension and interactor_extension:target_unit() or nil
 
-    -- Latch clears once the pressed unit stops being the target, which covers
-    -- both a completed pickup and the player looking away.
     if pressed_unit ~= nil and target_unit ~= pressed_unit then
         pressed_unit = nil
     end
 
-    if not interactor_extension or not target_unit then
+    if target_unit ~= settled_unit then
+        settled_unit = target_unit
+        settled_for = 0.0
+    else
+        settled_for = settled_for + dt
+    end
+
+    local player = interactor_extension and Managers.player:local_player_safe(1)
+    local player_unit = player and player.player_unit
+    local unit_data_extension = player_unit and ScriptUnit.extension(player_unit, "unit_data_system")
+    local eye, forward
+
+    if unit_data_extension then
+        eye, forward = read_aim(unit_data_extension)
+    end
+
+    if forward then
+        aim_fx, aim_fy, aim_fz = forward.x, forward.y, forward.z
+    end
+
+    if press_locked then
+        if target_unit == nil then
+            press_locked = false
+        elseif forward and aim_fx * locked_fx + aim_fy * locked_fy + aim_fz * locked_fz < AIM_TURN_COS then
+            press_locked = false
+        end
+    end
+
+    if not interactor_extension or not target_unit or not unit_data_extension then
         return
     end
 
-    -- InteractorExtension only reads the interact input while waiting_to_interact.
     if interactor_extension:is_interacting() then
         return
     end
@@ -451,21 +508,12 @@ function mod.update(dt)
         pickup_unit = target_unit
     end
 
-    -- Approves a pickup and records the value whose change will confirm it, so
-    -- a second pickup behind the first is not taken on a count, slot, or charge
-    -- total that has not updated yet.
     local function approve_watched(kind, value)
         approve()
         arm_kind = kind
         arm_value = value
     end
 
-    local player = Managers.player:local_player_safe(1)
-    if not player then
-        return
-    end
-    local player_unit = player.player_unit
-    local unit_data_extension = ScriptUnit.extension(player_unit, "unit_data_system")
     local visual_loadout_extension = ScriptUnit.extension(player_unit, "visual_loadout_system")
     local pocketable_template = visual_loadout_extension:weapon_template_from_slot("slot_pocketable")
     local weapon_slot_configuration = visual_loadout_extension:slot_configuration_by_type("weapon")
@@ -473,14 +521,25 @@ function mod.update(dt)
 
     local watch_values = read_watch_values(unit_data_extension, weapon_slot_configuration, pocketable_template, stimm_template)
 
-    -- A pending watch clears as soon as the value it tracks changes, which is
-    -- the confirmation that the pickup applied. This unblocks sooner than a
-    -- fixed delay on a good connection and waits longer on a poor one.
     for kind, watch in pairs(pending) do
         if watch_values[kind] ~= watch.value then
             pending[kind] = nil
         end
     end
+
+    if press_locked or settled_for < get_number("press_delay_seconds", 0, 0) then
+        return
+    end
+
+    local offset = aim_offset(eye, forward, target_unit)
+
+    if offset and offset > get_number("aim_limit", 60, 1) / 100 then
+        return
+    end
+
+    -- ───────────────────── ❀ ─────────────────────
+    --  Category Walk
+    -- ───────────────────── ❀ ─────────────────────
 
     if mod:get("open_chests") and (hud_description == "loc_chest") then
         approve()
@@ -502,9 +561,6 @@ function mod.update(dt)
         return
     end
 
-    -- Live event collectibles. Matched by pickup group instead of localization
-    -- string, so future event items in the rewards group need no mod update.
-    -- has_data keeps the lookup off targets that are not pickups.
     if mod:get("pickup_event_items") and Unit.has_data(target_unit, "pickup_type") then
         local pickup_name = Unit.get_data(target_unit, "pickup_type")
         local pickup_settings = pickup_name and Pickups.by_name[pickup_name]
@@ -524,14 +580,8 @@ function mod.update(dt)
         return
     end
 
-    -- Only reached for a stimm the player can take. An unavailable one, such
-    -- as a street stimm against a Cartel-locked Hive Scum, is a focus target
-    -- rather than a real target and returns above.
     local ground_pickup = STIMM_PICKUP_BY_HUD[hud_description]
     if ground_pickup then
-        -- The previous stimm has not been confirmed into the slot yet, so a
-        -- rank comparison here would read the slot as it was before that
-        -- pickup and could swap a just-taken stimm straight back out.
         if pending.stimm then
             return
         end
@@ -541,13 +591,10 @@ function mod.update(dt)
 
             if stimm_enabled(ground_key) then
                 if not stimm_template then
-                    -- Empty slot: grab any enabled stimm, priority ignored.
                     approve_watched("stimm", watch_values.stimm)
                     return
                 end
 
-                -- Slot occupied: swap only on a strictly better rank, lower
-                -- being better. An unrecognised held stimm ranks below all.
                 local held_pickup = stimm_template.swap_pickup_name
                 local held_key = held_pickup and STIMM_SETTING_BY_PICKUP[held_pickup]
                 local ground_rank = stimm_rank(ground_key)
@@ -560,34 +607,25 @@ function mod.update(dt)
             end
         end
 
-        -- Recognised stimm, so do not fall through to the checks below.
         return
     end
 
+    -- ───────────────────── ❀ ─────────────────────
+    --  Gated Pickups
+    -- ───────────────────── ❀ ─────────────────────
 
-    -- Below here the categories are threshold gated. Everything above
-    -- matches on hud_description alone.
     local is_small_clip = hud_description == "loc_pickup_consumable_small_clip_01"
     local is_large_bag = hud_description == "loc_pickup_consumable_large_clip_01"
 
     if mod:get("pickup_ammo") and (is_small_clip or is_large_bag) and not pending.ammo then
-        -- nil when the equipped weapon uses no ammo, such as a psyker staff.
         local curr_reserve, max_reserve = get_current_ammo(unit_data_extension, weapon_slot_configuration)
 
         if max_reserve and max_reserve > 0 then
-            -- Read once and shared by both sizes. The modifier is fixed for the
-            -- mission, and only one of the two branches below can match anyway.
             local automatic = mod:get("auto_ammo_thresholds") == true
             local modifier = automatic and read_ammo_pickup_modifier() or 1
 
-            -- Sliders measure reserve fill, matching the pool a pickup
-            -- actually restores. Loaded rounds play no part.
             local reserve_fill = curr_reserve / max_reserve
 
-            -- Both sizes arm the watch. A small clip raises the same reserve a
-            -- large bag is judged against, so taking one without waiting for
-            -- confirmation leaves the bag behind it measured against the
-            -- pre-pickup reserve.
             if is_small_clip then
                 local take
                 if automatic then
@@ -618,10 +656,7 @@ function mod.update(dt)
         end
     end
 
-
     if mod:get("pickup_grenades") and not pending.grenades and (hud_description == "loc_pickup_consumable_small_grenade_01" or hud_description == "loc_pickup_consumable_large_grenade_01") then
-        -- grenade_ability exists on every player unit, so num_charges is
-        -- always a number here.
         local num_charges = watch_values.grenades
         if num_charges <= get_number("grenades_threshold", 1) then
             approve_watched("grenades", num_charges)

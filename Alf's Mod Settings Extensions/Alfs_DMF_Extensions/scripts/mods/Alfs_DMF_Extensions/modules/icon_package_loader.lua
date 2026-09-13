@@ -1,7 +1,5 @@
 local mod = get_mod("Alfs_DMF_Extensions")
 
-mod._required_icon_packages = mod._required_icon_packages or {}
-
 mod._required_icon_packages = {
 	-- Core menu and profile surfaces, broad UI atlas coverage
 	"packages/ui/views/main_menu_view/main_menu_view",
@@ -136,7 +134,6 @@ mod._required_icon_packages = {
 	"content/levels/ui/expedition/world",
 }
 
-local _loaded_package_ids = {}
 PACKAGE_REF = "AlfsDMFExtensions"
 
 local function _package_is_available(package_name)
@@ -165,8 +162,6 @@ local function _package_is_loaded(package_name)
 
 	return ok and is_loaded or false
 end
-
-local loaded_packages = {}
 
 local function _load_package_list(package_list)
 	local managers = Managers
@@ -211,7 +206,6 @@ mod._ensure_icon_packages_loaded = function()
 		return false
 	end
 
-	dbg_1 = mod._required_icon_packages
 	_load_package_list(mod._required_icon_packages)
 
 	return _all_packages_loaded(mod._required_icon_packages)

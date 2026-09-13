@@ -16,6 +16,7 @@ local INFERNO_FIRE_PARTICLES = {
 
 local settings_cache = {}
 local inferno_fire_units = setmetatable({}, { __mode = "k" })
+local activation_message_pending = false
 
 local function get_setting(setting_id)
     if settings_cache[setting_id] == nil then
@@ -71,6 +72,22 @@ end
 
 local function normalized_dawn_active()
     return get_setting("normalize_dawn") and dawn_active()
+end
+
+local function activation_message_id()
+    if darkness_active() and get_setting("power_interruption_mode") ~= "off" then
+        if normal_darkness_environment_active() then
+            return "power_interruption_standard_lighting_active"
+        end
+
+        return "power_interruption_atmospheric_lighting_active"
+    elseif normalized_dawn_active() then
+        return "dawn_standard_environment_active"
+    elseif normalized_inferno_active() then
+        return "inferno_standard_environment_active"
+    elseif get_setting("remove_ventilation_purge_fog") and ventilation_purge_active() then
+        return "ventilation_purge_fog_removed"
+    end
 end
 
 mod:hook(LightControllerExtension, "set_enabled", function(func, self, is_enabled, is_deterministic)
@@ -137,4 +154,28 @@ end)
 
 mod.on_setting_changed = function(setting_id)
     settings_cache[setting_id] = nil
+end
+
+mod.on_game_state_changed = function(status, state_name)
+    if state_name == "StateGameplay" then
+        activation_message_pending = status == "enter"
+    end
+end
+
+mod.update = function()
+    if not activation_message_pending or not mod:is_enabled() then
+        return
+    end
+
+    -- Circumstance state is initialized after StateGameplay is entered.
+    if not (Managers.state and Managers.state.circumstance) then
+        return
+    end
+
+    activation_message_pending = false
+
+    local message_id = activation_message_id()
+    if message_id and get_setting("chat_notification") then
+        mod:echo_localized(message_id)
+    end
 end

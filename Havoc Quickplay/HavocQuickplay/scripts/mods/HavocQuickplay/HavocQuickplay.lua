@@ -1,7 +1,7 @@
 local mod = get_mod("HavocQuickplay")
 local TaskbarFlash = require("scripts/utilities/taskbar_flash")
 
-mod.VERSION = "2.10.1"
+mod.VERSION = "2.13.0"
 
 mod.C = {
 	MAX_HAVOC_RANK      = 40,

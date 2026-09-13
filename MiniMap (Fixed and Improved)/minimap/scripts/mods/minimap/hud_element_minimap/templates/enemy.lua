@@ -94,43 +94,22 @@ template.update_function = function(widget, marker, x, y, vertical_distance, ran
 
     local marker_icon_style = marker.widget and marker.widget.style and marker.widget.style.icon
     if marker_icon_style and marker_icon_style.color then
-        local color = marker_icon_style.color
-        if type(color) == "table" and #color >= 3 then
-            color = { color[1], color[2], color[3], alpha }
-        end
-        apply_color_to_texture(icon, color)
-    elseif marker.unit then
-        if minimap_mod and minimap_mod.get_breed_color_fallback then
-            local success, breed_color = pcall(minimap_mod.get_breed_color_fallback, marker.unit)
-            if success and breed_color and type(breed_color) == "table" and #breed_color >= 3 then
-                local color = { alpha, breed_color[1], breed_color[2], breed_color[3] }
-                apply_color_to_texture(icon, color)
-            else
-                if not icon.color or (type(icon.color) == "table" and icon.color[4] ~= alpha) then
-                    icon.color = Color.dark_red(alpha, true)
-                else
-                    if type(icon.color) == "table" and #icon.color >= 4 then
-                        icon.color[4] = alpha
-                    end
-                end
-            end
+        local mc = marker_icon_style.color
+        if type(mc) == "table" and #mc >= 4 then
+            apply_color_to_texture(icon, { alpha, mc[2], mc[3], mc[4] })
         else
-            if not icon.color or (type(icon.color) == "table" and icon.color[4] ~= alpha) then
-                icon.color = Color.dark_red(alpha, true)
-            else
-                if type(icon.color) == "table" and #icon.color >= 4 then
-                    icon.color[4] = alpha
-                end
-            end
+            apply_color_to_texture(icon, mc)
         end
     else
-        if not icon.color or (type(icon.color) == "table" and icon.color[4] ~= alpha) then
-            icon.color = Color.dark_red(alpha, true)
-        else
-            if type(icon.color) == "table" and #icon.color >= 4 then
-                icon.color[4] = alpha
-            end
+        local breed_type = marker.breed_type or "roamer"
+        local category_color = settings.enemy_colors and settings.enemy_colors[breed_type]
+        if not category_color and minimap_mod and minimap_mod.get_category_color then
+            category_color = minimap_mod.get_category_color(breed_type)
         end
+        if not category_color then
+            category_color = { 255, 255, 255, 255 }
+        end
+        apply_color_to_texture(icon, { alpha, category_color[2], category_color[3], category_color[4] })
     end
 
     local distance_text_style = widget.style.distance_text
@@ -196,15 +175,16 @@ template.update_function = function(widget, marker, x, y, vertical_distance, ran
 
         if show_type then
             local category_name = "Enemy"
-            if marker.breed_type == "boss" then category_name = "Boss"
+            if marker.breed_type == "human_boss" then category_name = "Boss"
+            elseif marker.breed_type == "monster" then category_name = "Monster"
             elseif marker.breed_type == "disabler" then category_name = "Disabler"
-            elseif marker.breed_type == "sniper" then category_name = "Sniper"
-            elseif marker.breed_type == "shield" then category_name = "Shield"
+            elseif marker.breed_type == "ranged_special" then category_name = "Special"
+            elseif marker.breed_type == "poxburster" then category_name = "Burster"
             elseif marker.breed_type == "ranged_elite" then category_name = "Ranged Elite"
+            elseif marker.breed_type == "crushers_maulers" then category_name = "Crusher/Mauler"
             elseif marker.breed_type == "melee_elite" then category_name = "Melee Elite"
-            elseif marker.breed_type == "special" then category_name = "Special"
-            elseif marker.breed_type == "horde" then category_name = "Horde"
-            elseif marker.breed_type == "roamer" then category_name = "Roamer"
+            elseif marker.breed_type == "shooters" then category_name = "Shooter"
+            elseif marker.breed_type == "chaff" then category_name = "Chaff"
             end
             widget.content.cluster_text = string.format("%s x%d", category_name, marker.cluster_count)
         else

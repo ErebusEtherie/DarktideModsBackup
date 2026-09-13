@@ -1,0 +1,17 @@
+{
+    "name": "Shorten Usernames",
+    "author": "IndicaBunny",
+    "version": "1.7",
+    "homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/641",
+    "source": "https://github.com/MaddyMarv/Shorten-Usernames",
+    "funding": {
+        "kofi": "https://ko-fi.com/indicabunny"
+    },
+    "description": "Shortens long player and character names on your HUD with customizable character limits and truncation styles.",
+    "dependencies": {
+        "required": [],
+        "self_after": [],
+        "self_before": []
+    },
+    "localization": {}
+}

@@ -1,8 +1,8 @@
+-- Grace options. The Melee Attacks and Repeat Special Attack groups appear
+-- only when the optional GracefulSwinging.lua is installed beside this file.
+
 local mod = get_mod("Grace")
 
--- The Melee Attacks group ships only when the optional GracefulSwinging.lua
--- file sits in this mod's scripts folder. The check is a raw quiet file
--- open, so an absent module leaves no options behind and prints nothing.
 local _attacks_present = (function()
 	local io_lib = Mods and Mods.lua and Mods.lua.io
 
@@ -21,12 +21,19 @@ local _attacks_present = (function()
 	return false
 end)()
 
+-- ───────────────────── ❀ ─────────────────────
+--  The options tree
+-- ───────────────────── ❀ ─────────────────────
+
 local options = {
 	name = mod:localize("mod_name"),
 	description = mod:localize("mod_description"),
 	is_togglable = true,
 	options = {
 		widgets = {
+			-- ───────────────────── ❀ ─────────────────────
+			--  Base
+			-- ───────────────────── ❀ ─────────────────────
 			{
 				setting_id  = "group_vanilla",
 				type        = "group",
@@ -62,20 +69,35 @@ local options = {
 							},
 						},
 					},
+					{
+						setting_id  = "group_grace_base",
+						type        = "group",
+						sub_widgets = {
+							{
+								setting_id    = "sprint_perseverance",
+								type          = "checkbox",
+								default_value = false,
+							},
+							{
+								setting_id    = "toggle_undo_hold",
+								type          = "checkbox",
+								default_value = false,
+							},
+						},
+					},
 				},
 			},
+			-- ───────────────────── ❀ ─────────────────────
+			--  Sprint
+			-- ───────────────────── ❀ ─────────────────────
 			{
 				setting_id  = "group_sprint",
 				type        = "group",
 				sub_widgets = {
 					{
-						setting_id      = "sprint_toggle_keybind",
-						type            = "keybind",
-						default_value   = {},
-						keybind_global  = false,
-						keybind_trigger = "pressed",
-						keybind_type    = "function_call",
-						function_name   = "_kb_toggle_sprint",
+						setting_id    = "sprint_enabled",
+						type          = "checkbox",
+						default_value = false,
 					},
 					{
 						setting_id      = "sprint_hold_keybind",
@@ -87,19 +109,13 @@ local options = {
 						function_name   = "_kb_hold_sprint",
 					},
 					{
-						setting_id    = "sprint_enabled",
-						type          = "checkbox",
-						default_value = false,
-					},
-					{
-						setting_id    = "sprint_perseverance",
-						type          = "checkbox",
-						default_value = false,
-					},
-					{
-						setting_id    = "sprint_fire_wait",
-						type          = "checkbox",
-						default_value = false,
+						setting_id      = "sprint_toggle_keybind",
+						type            = "keybind",
+						default_value   = {},
+						keybind_global  = false,
+						keybind_trigger = "held",
+						keybind_type    = "function_call",
+						function_name   = "_kb_toggle_sprint",
 					},
 					{
 						setting_id    = "sprint_reload_wait",
@@ -115,20 +131,24 @@ local options = {
 						keybind_type    = "function_call",
 						function_name   = "_kb_hold_reload_swap",
 					},
+					{
+						setting_id    = "sprint_melee_charge",
+						type          = "checkbox",
+						default_value = false,
+					},
 				},
 			},
+			-- ───────────────────── ❀ ─────────────────────
+			--  Slide
+			-- ───────────────────── ❀ ─────────────────────
 			{
 				setting_id  = "group_slide",
 				type        = "group",
 				sub_widgets = {
 					{
-						setting_id      = "slide_toggle_keybind",
-						type            = "keybind",
-						default_value   = {},
-						keybind_global  = false,
-						keybind_trigger = "pressed",
-						keybind_type    = "function_call",
-						function_name   = "_kb_toggle_slide",
+						setting_id    = "slide_always_on",
+						type          = "checkbox",
+						default_value = false,
 					},
 					{
 						setting_id      = "slide_hold_keybind",
@@ -140,9 +160,13 @@ local options = {
 						function_name   = "_kb_hold_slide",
 					},
 					{
-						setting_id    = "slide_always_on",
-						type          = "checkbox",
-						default_value = false,
+						setting_id      = "slide_toggle_keybind",
+						type            = "keybind",
+						default_value   = {},
+						keybind_global  = false,
+						keybind_trigger = "held",
+						keybind_type    = "function_call",
+						function_name   = "_kb_toggle_slide",
 					},
 					{
 						setting_id    = "slide_once_per_sprint",
@@ -163,12 +187,29 @@ local options = {
 						range           = { 0, 3 },
 						decimals_number = 2,
 					},
+					{
+						setting_id    = "sprint_charge_slide",
+						type          = "checkbox",
+						default_value = false,
+					},
 				},
 			},
+			-- ───────────────────── ❀ ─────────────────────
+			--  Dodge
+			-- ───────────────────── ❀ ─────────────────────
 			{
 				setting_id  = "group_dodge",
 				type        = "group",
 				sub_widgets = {
+					{
+						setting_id      = "dodge_slide_keybind",
+						type            = "keybind",
+						default_value   = {},
+						keybind_global  = false,
+						keybind_trigger = "pressed",
+						keybind_type    = "function_call",
+						function_name   = "_kb_dodge_slide",
+					},
 					{
 						setting_id    = "dodge_keep_sprint",
 						type          = "checkbox",
@@ -178,6 +219,26 @@ local options = {
 						setting_id    = "dodge_slide",
 						type          = "checkbox",
 						default_value = false,
+					},
+					{
+						setting_id    = "dodge_slide_diagonal",
+						type          = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id    = "dodge_easy_slide",
+						type          = "checkbox",
+						default_value = false,
+					},
+					{
+						setting_id    = "dodge_hold",
+						type          = "dropdown",
+						default_value = "off",
+						options       = {
+							{ text = "dodge_hold_off",   value = "off" },
+							{ text = "dodge_hold_slide", value = "slide" },
+							{ text = "dodge_hold_keep",  value = "keep" },
+						},
 					},
 					{
 						setting_id    = "jump_block",
@@ -191,6 +252,9 @@ local options = {
 					},
 				},
 			},
+			-- ───────────────────── ❀ ─────────────────────
+			--  Vault
+			-- ───────────────────── ❀ ─────────────────────
 			{
 				setting_id  = "group_vault",
 				type        = "group",
@@ -231,6 +295,9 @@ local options = {
 					},
 				},
 			},
+			-- ───────────────────── ❀ ─────────────────────
+			--  Swing
+			-- ───────────────────── ❀ ─────────────────────
 			{
 				setting_id  = "group_swing",
 				type        = "group",
@@ -247,7 +314,7 @@ local options = {
 					{
 						setting_id    = "swing_grace_ms",
 						type          = "numeric",
-						default_value = 85,
+						default_value = 100,
 						range         = { 0, 500 },
 					},
 					{
@@ -262,6 +329,9 @@ local options = {
 					},
 				},
 			},
+			-- ───────────────────── ❀ ─────────────────────
+			--  Classes
+			-- ───────────────────── ❀ ─────────────────────
 			{
 				setting_id  = "group_class",
 				type        = "group",
@@ -326,6 +396,9 @@ local options = {
 					},
 				},
 			},
+			-- ───────────────────── ❀ ─────────────────────
+			--  Debug
+			-- ───────────────────── ❀ ─────────────────────
 			{
 				setting_id  = "group_debug",
 				type        = "group",
@@ -360,6 +433,9 @@ local options = {
 						type          = "checkbox",
 						default_value = false,
 					},
+					-- ───────────────────── ❀ ─────────────────────
+					--  Repeat Special Attack
+					-- ───────────────────── ❀ ─────────────────────
 					{
 						setting_id    = "debug_class",
 						type          = "checkbox",
@@ -370,6 +446,10 @@ local options = {
 		},
 	},
 }
+
+-- ───────────────────── ❀ ─────────────────────
+--  The optional module groups
+-- ───────────────────── ❀ ─────────────────────
 
 if _attacks_present then
 	local keybind = function(id, trigger, handler)
@@ -391,14 +471,30 @@ if _attacks_present then
 
 		if group.setting_id == "group_swing" then
 			group.sub_widgets[#group.sub_widgets + 1] = {
+				setting_id  = "group_special_repeat",
+				type        = "group",
+				sub_widgets = {
+					-- ───────────────────── ❀ ─────────────────────
+					--  Melee Attacks
+					-- ───────────────────── ❀ ─────────────────────
+					{
+						setting_id    = "special_repeat",
+						type          = "checkbox",
+						default_value = false,
+					},
+				},
+			}
+			group.sub_widgets[#group.sub_widgets + 1] = {
 				setting_id  = "group_attacks",
 				type        = "group",
 				sub_widgets = {
+					keybind("attacks_invert_keybind", "held", "_kb_attacks_invert"),
 					keybind("attacks_light_toggle_keybind", "pressed", "_kb_attacks_light_toggle"),
 					keybind("attacks_light_hold_keybind", "held", "_kb_attacks_light_hold"),
 					keybind("attacks_heavy_toggle_keybind", "pressed", "_kb_attacks_heavy_toggle"),
 					keybind("attacks_heavy_hold_keybind", "held", "_kb_attacks_heavy_hold"),
-					keybind("attacks_invert_keybind", "held", "_kb_attacks_invert"),
+					keybind("attacks_push_toggle_keybind", "pressed", "_kb_attacks_push_toggle"),
+					keybind("attacks_push_hold_keybind", "held", "_kb_attacks_push_hold"),
 				},
 			}
 		elseif group.setting_id == "group_debug" then

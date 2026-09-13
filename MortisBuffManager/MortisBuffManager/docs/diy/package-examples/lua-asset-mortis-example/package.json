@@ -1,0 +1,39 @@
+{
+  "format": "Darktide.DIY.Package",
+  "version": 2,
+  "id": "lua-asset-mortis-example",
+  "package_version": "1.0.0",
+  "name": {
+    "en": "Resource loading example",
+    "zh-cn": "资源加载示例",
+    "zh-tw": "資源載入範例"
+  },
+  "description": {
+    "en": "Load an original test texture and log the result. No combat changes or HUD.",
+    "zh-cn": "加载测试贴图并记录结果，不改变战斗属性或添加 HUD。",
+    "zh-tw": "載入測試貼圖並記錄結果，不改變戰鬥屬性或新增 HUD。"
+  },
+  "kind": "mortis",
+  "api": {
+    "major": 1,
+    "min_minor": 1
+  },
+  "definitions": "definitions.json",
+  "entrypoint": "lua/main.lua",
+  "files": [
+    "definitions.json",
+    "lua/main.lua",
+    "resources/badge.png",
+    "resources/README.txt"
+  ],
+  "assets": [
+    {
+      "id": "badge",
+      "type": "texture",
+      "path": "resources/badge.png"
+    }
+  ],
+  "capabilities": [
+    "assets.v1"
+  ]
+}

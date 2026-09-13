@@ -100,7 +100,11 @@ add("heal_station_used", "row_heal_station_used", {
 add("coherency_efficiency", "row_coherency_efficiency", {
 	setting = "show_coherency_efficiency",
 	update = "update_coherency",
-	normalize = true,
+	decimals = 0,
+	suffix = "%",
+})
+add("combat_ability_uses", "row_combat_ability_uses", {
+	setting = "show_combat_ability_uses",
 })
 
 add("damage_dealt", "row_damage_dealt", {

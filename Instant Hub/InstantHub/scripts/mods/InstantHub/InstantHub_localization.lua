@@ -6,27 +6,78 @@ return {
 		en = "Preloads and retains Mourningstar, Meat Grinder, and current operative resources so much of the local package work can happen before transitions. Backend, host, and network synchronization still determine the remaining load time.",
 	},
 	hub_caching = {
-		en = "Mourningstar Caching",
+		en = "Keep Mourningstar Loaded",
 	},
 	hub_caching_description = {
-		en = "Keeps Mourningstar level, theme, UI, HUD, game-mode, and player/companion resources in memory after leaving the hub. This speeds up returns but adds roughly 500 MB-1 GB of memory use. Current operative resources also stay warm while this or Psykanium preloading is enabled. Disable if missions stutter or crash.",
+		en = "Keep Mourningstar assets loaded after leaving. Uses roughly 500 MB-1 GB of extra memory.",
 	},
 	show_notifications = {
-		en = "Show Notifications",
+		en = "Status Notifications",
 	},
 	show_notifications_description = {
-		en = "Shows brief messages when Mourningstar or Meat Grinder preloading starts or finishes and when either destination is ready. This setting does not affect loading behavior.",
+		en = "Show preload, server reservation, and destination-ready messages.",
 	},
 	preload_hub = {
-		en = "Preload Hub at Character Select",
+		en = "Preload Mourningstar",
 	},
 	preload_hub_description = {
-		en = "Preloads Mourningstar level, UI, HUD, game-mode, and player/companion packages after backend sync, then preloads the selected operative at character select. This moves local package work ahead of the first hub transition and uses roughly 500 MB-1 GB plus operative resources. It runs again after returning to character select when needed.",
+		en = "Preload Mourningstar at character select to shorten the first visit. Uses roughly 500 MB-1 GB of extra memory.",
+	},
+	reserve_hub_server = {
+		en = "Reserve Mourningstar Server",
+	},
+	reserve_hub_server_description = {
+		en = "Reserve a Mourningstar server during character select. If it is not ready, Play uses normal loading.",
+	},
+	preconnect_hub_server = {
+		en = "Preconnect to Mourningstar",
+	},
+	preconnect_hub_server_description = {
+		en = "Requires server reservation and starts the selected operative's session before Play. Switching operative or party reconnects.",
+	},
+	mourningstar_region = {
+		en = "Mourningstar Server Region",
+	},
+	mourningstar_region_description = {
+		en = "Choose a region for early server reservation. Auto measures all regions. Changes apply next login.",
+	},
+	mourningstar_region_auto = {
+		en = "Auto (One Ping Round)",
+	},
+	mourningstar_region_afr_south = {
+		en = "Africa South",
+	},
+	mourningstar_region_ap_central = {
+		en = "Asia Pacific Central",
+	},
+	mourningstar_region_ap_north = {
+		en = "Asia Pacific North",
+	},
+	mourningstar_region_ap_south = {
+		en = "Asia Pacific South",
+	},
+	mourningstar_region_eu = {
+		en = "Europe",
+	},
+	mourningstar_region_hk = {
+		en = "Hong Kong",
+	},
+	mourningstar_region_mei = {
+		en = "Middle East",
+	},
+	mourningstar_region_sa = {
+		en = "South America",
+	},
+	mourningstar_region_us_east = {
+		en = "US East",
+	},
+	mourningstar_region_us_west = {
+		en = "US West",
 	},
 	preload_psychanium = {
-		en = "Preload Psychanium / Meat Grinder",
+		en = "Preload Meat Grinder",
 	},
 	preload_psychanium_description = {
-		en = "Preloads Meat Grinder level, theme, UI, HUD, game-mode, and breed packages, normally after Mourningstar enters gameplay. It can also start when enabled during gameplay or when Meat Grinder is selected. Packages and current operative resources stay warm while enabled. Uses additional memory and cannot skip host or network setup.",
+		en = "Preload Meat Grinder in the background and keep its assets loaded. Uses extra memory.",
 	},
 }

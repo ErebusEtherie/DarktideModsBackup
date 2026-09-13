@@ -134,6 +134,7 @@ mod.get_rows_in_groups = function(self, loaded_rows)
 	add_row("revived_rescued")
 	add_row("team_saves")
 	add_row("coherency_efficiency")
+	add_row("combat_ability_uses")
 	add_row("ammo_collected")
 	if self:get("split_resources_collected") then
 		add_row("plasteel")

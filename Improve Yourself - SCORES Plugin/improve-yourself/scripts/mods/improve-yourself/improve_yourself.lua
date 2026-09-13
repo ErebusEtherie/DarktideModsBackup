@@ -1,9 +1,129 @@
 local mod = get_mod("improve-yourself")
 
-mod.version = "1.0.0"
+mod.version = "1.1.2"
 mod.damage_source_tracker = mod:io_dofile("improve-yourself/scripts/mods/improve-yourself/integrations/damage_source_tracker")
 mod.collector_manager = mod:io_dofile("improve-yourself/scripts/mods/improve-yourself/integrations/collector_manager")
 mod.visual_constants = mod:io_dofile("improve-yourself/scripts/mods/improve-yourself/views/shared/improve_yourself_visual_constants")
+
+-- Custom board definitions are also loaded inside Scores-owned views. Never
+-- let a temporarily unavailable DMF localization lookup place nil into a text
+-- pass: Gui2.slug_text requires an actual string. Reuse the same localization
+-- source as a direct language-aware fallback, then fall back to English and
+-- finally to the key itself. This affects only Improve Yourself text helpers;
+-- it does not replace or hook Darktide's global localization manager.
+local iy_localization_entries = mod:io_dofile("improve-yourself/scripts/mods/improve-yourself/improve_yourself_localization") or {}
+
+function mod:safe_localize(key, ...)
+    local ok, localized = pcall(self.localize, self, key, ...)
+    if ok and type(localized) == "string" then
+        return localized
+    end
+
+    local language = "en"
+    if Application and type(Application.user_setting) == "function" then
+        local language_ok, language_id = pcall(Application.user_setting, "language_id")
+        if language_ok and type(language_id) == "string" then
+            language = language_id
+        end
+    end
+
+    local entry = iy_localization_entries[key]
+    local fallback = type(entry) == "table" and (entry[language] or entry.en) or nil
+    if type(fallback) ~= "string" then
+        return tostring(key or "")
+    end
+
+    local format_ok, formatted = pcall(string.format, fallback, ...)
+    return format_ok and formatted or fallback
+end
+
+-- Damage-source rows deliberately persist compact English identifiers so
+-- History data remains portable when the game language changes. Translate
+-- only at display time, including entries saved by earlier releases.
+local damage_source_localization = {
+    ["Falling"] = "iy_source_falling",
+    ["Corruption"] = "iy_source_corruption",
+    ["Warp"] = "iy_source_warp",
+    ["Overheat"] = "iy_source_overheat",
+    ["Netted"] = "iy_source_netted",
+    ["Untracked"] = "iy_source_untracked",
+    ["Self Damage"] = "iy_source_self_damage",
+    ["Armored Hound"] = "iy_source_armored_hound",
+    ["Beast of Nurgle"] = "iy_source_beast_of_nurgle",
+    ["Hound"] = "iy_source_hound",
+    ["Mutated Poxwalker"] = "iy_source_mutated_poxwalker",
+    ["Groaner"] = "iy_source_groaner",
+    ["Bulwark"] = "iy_source_bulwark",
+    ["Crusher"] = "iy_source_crusher",
+    ["Reaper"] = "iy_source_reaper",
+    ["Houndmaster"] = "iy_source_houndmaster",
+    ["Plague Ogryn"] = "iy_source_plague_ogryn",
+    ["Poxwalker"] = "iy_source_poxwalker",
+    ["Poxburster"] = "iy_source_poxburster",
+    ["Chaos Spawn"] = "iy_source_chaos_spawn",
+    ["Shotgunner"] = "iy_source_shotgunner",
+    ["Rager"] = "iy_source_rager",
+    ["Captain"] = "iy_source_captain",
+    ["Flamer"] = "iy_source_flamer",
+    ["Bomber"] = "iy_source_bomber",
+    ["Gunner"] = "iy_source_gunner",
+    ["Bruiser"] = "iy_source_bruiser",
+    ["Mutant"] = "iy_source_mutant",
+    ["Mauler"] = "iy_source_mauler",
+    ["Shooter"] = "iy_source_shooter",
+    ["Sniper"] = "iy_source_sniper",
+    ["Pox Gas"] = "iy_source_pox_gas",
+    ["Barrel Fire"] = "iy_source_barrel_fire",
+    ["Barrel Explosion"] = "iy_source_barrel_explosion",
+    ["Flamer Fire"] = "iy_source_flamer_fire",
+    ["Beast Slime"] = "iy_source_beast_slime",
+    ["Ground Slam"] = "iy_source_ground_slam",
+    ["Explosion"] = "iy_source_explosion",
+    ["Area Effect"] = "iy_source_area_effect",
+    ["Ranged Attack"] = "iy_source_ranged_attack",
+    ["Melee Attack"] = "iy_source_melee_attack",
+    ["Other"] = "iy_source_other",
+}
+
+function mod:localize_damage_source_text(value)
+    local translated = {}
+    for part in string.gmatch(tostring(value or ""), "[^,]+") do
+        local label = part:gsub("^%s+", ""):gsub("%s+$", "")
+        local key = damage_source_localization[label]
+        translated[#translated + 1] = key and self:safe_localize(key) or label
+    end
+    return table.concat(translated, ", ")
+end
+
+function mod:utf8_character_count(value)
+    local text = tostring(value or "")
+    local count = 0
+    local byte_index = 1
+    while byte_index <= #text do
+        local lead = string.byte(text, byte_index)
+        local width = lead and (lead < 0x80 and 1 or lead < 0xE0 and 2 or lead < 0xF0 and 3 or 4) or 1
+        byte_index = byte_index + width
+        count = count + 1
+    end
+    return count
+end
+
+function mod:utf8_truncate(value, max_characters, suffix)
+    local text = tostring(value or "")
+    local maximum = math.max(0, tonumber(max_characters) or 0)
+    if self:utf8_character_count(text) <= maximum then
+        return text
+    end
+    local byte_index = 1
+    local characters = 0
+    while byte_index <= #text and characters < maximum do
+        local lead = string.byte(text, byte_index)
+        local width = lead and (lead < 0x80 and 1 or lead < 0xE0 and 2 or lead < 0xF0 and 3 or 4) or 1
+        byte_index = byte_index + width
+        characters = characters + 1
+    end
+    return string.sub(text, 1, byte_index - 1) .. tostring(suffix or "")
+end
 
 -- Scores owns metric visibility. Improve Yourself reads these settings but
 -- never changes them. Mandatory rows have no Scores toggle and remain active.
@@ -189,6 +309,12 @@ end
 mod.build_live_scoreboard_entry = live_scoreboard_entry
 
 function mod.update(dt)
+    -- The synthetic end-view suppresses normal UI input; poll its Escape
+    -- shortcut from the mod lifecycle so its close path always remains live.
+    if mod.poll_eom_test then
+        mod.poll_eom_test()
+    end
+
     if mod.damage_source_tracker then
         mod.damage_source_tracker:poll_automatic_damage_diagnostic()
     end
@@ -233,15 +359,18 @@ function mod.on_all_mods_loaded()
     load_visual_renderer()
     mod:io_dofile("improve-yourself/scripts/mods/improve-yourself/integrations/scores_end_host")
     mod:io_dofile("improve-yourself/scripts/mods/improve-yourself/integrations/scores_history_host")
+    mod:io_dofile("improve-yourself/scripts/mods/improve-yourself/integrations/eom_test")
 
     scoreboard:add_global_localize_strings({
         loc_improve_yourself_show_bars = {
             en = "Show bars",
             de = "Balken anzeigen",
+            ["zh-cn"] = "显示条形图",
         },
         loc_improve_yourself_show_numbers = {
             en = "Show numbers",
             de = "Zahlen anzeigen",
+            ["zh-cn"] = "显示数字",
         },
     })
 end

@@ -4,6 +4,10 @@ local Danger = mod:original_require("scripts/utilities/danger")
 local UISettings = mod:original_require("scripts/settings/ui/ui_settings")
 local ViewElementProfilePresetsSettings = mod:original_require("scripts/ui/view_elements/view_element_profile_presets/view_element_profile_presets_settings")
 
+local function L(key, ...)
+    return mod:safe_localize(key, ...)
+end
+
 local CUSTOM_ICON_PATHS = {
     "content/ui/materials/icons/item_types/ranged_weapons",
     "content/ui/materials/icons/circumstances/assault_01",
@@ -145,39 +149,39 @@ end
 local metric_sections = {
     {
         widget = "section_defense",
-        text = "Defense",
+        text = L("iy_section_defense"),
         direction = "lower",
         metrics = {
-            {widget = "damage_taken", text = "Damage taken", source = "damage_taken", icon_index = 14},
-            {widget = "times_downed", text = "Times downed", source = "times_downed", icon_index = 60},
-            {widget = "times_disabled", text = "Times disabled", source = "times_disabled", icon_index = 32},
-            {widget = "deaths", text = "Deaths", source = "deaths", icon_index = 15},
+            {widget = "damage_taken", text = L("iy_metric_damage_taken"), short_text = L("iy_metric_damage_taken"), source = "damage_taken", icon_index = 14},
+            {widget = "times_downed", text = L("iy_metric_times_downed"), short_text = L("iy_counter_downed"), source = "times_downed", icon_index = 60},
+            {widget = "times_disabled", text = L("iy_metric_times_disabled"), short_text = L("iy_counter_disabled"), source = "times_disabled", icon_index = 32},
+            {widget = "deaths", text = L("iy_metric_deaths"), short_text = L("iy_counter_deaths"), source = "deaths", icon_index = 15},
         },
     },
     {
         widget = "section_offense",
-        text = "Offense",
+        text = L("iy_section_offense"),
         direction = "higher",
         metrics = {
-            {widget = "damage_dealt", text = "Damage total", source = "damage_dealt", icon_index = 11},
-            {widget = "weakspot_hits", text = "Weakspot hits", source = "weakspot_hits", icon_index = 19},
-            {widget = "melee_kills", text = "Melee kills", source = "melee_kills", icon_index = 29},
-            {widget = "ranged_kills", text = "Ranged kills", source = "ranged_kills", icon_index = 26},
-            {widget = "lesser_enemies", text = "Swarmers killed", source = "lesser_enemies", icon_index = 33},
-            {widget = "elites", text = "Elites killed", source = "melee_ranged_threats", icon_index = 65},
-            {widget = "specials", text = "Specials killed", source = "special_threats", icon_index = 25},
-            {widget = "boss_damage", text = "Boss damage", source = "boss_damage_dealt", icon_index = 70},
+            {widget = "damage_dealt", text = L("iy_metric_damage_total"), short_text = L("iy_metric_damage_total"), source = "damage_dealt", icon_index = 11},
+            {widget = "weakspot_hits", text = L("iy_metric_weakspot_hits"), short_text = L("iy_metric_weakspot_hits"), source = "weakspot_hits", icon_index = 19},
+            {widget = "melee_kills", text = L("iy_metric_melee_kills"), short_text = L("iy_metric_melee_kills"), source = "melee_kills", icon_index = 29},
+            {widget = "ranged_kills", text = L("iy_metric_ranged_kills"), short_text = L("iy_metric_ranged_kills"), source = "ranged_kills", icon_index = 26},
+            {widget = "lesser_enemies", text = L("iy_metric_swarmers"), short_text = L("iy_metric_swarmers"), source = "lesser_enemies", icon_index = 33},
+            {widget = "elites", text = L("iy_metric_elites"), short_text = L("iy_metric_elites"), source = "melee_ranged_threats", icon_index = 65},
+            {widget = "specials", text = L("iy_metric_specials"), short_text = L("iy_metric_specials"), source = "special_threats", icon_index = 25},
+            {widget = "boss_damage", text = L("iy_metric_boss"), short_text = L("iy_metric_boss"), source = "boss_damage_dealt", icon_index = 70},
         },
     },
     {
         widget = "section_team",
-        text = "Team Contribution",
+        text = L("iy_section_teamplay"),
         direction = "higher",
         metrics = {
-            {widget = "coherency", text = "Coherency score", source = "coherency_efficiency", icon_index = 62},
-            {widget = "revives", text = "Revives", source = "revived_operative", icon_index = 13},
-            {widget = "saves", text = "Saves", source = "team_saves", icon_index = 17},
-            {widget = "ammo", text = "Ammo score", source = "ammo_score", icon_index = 21},
+            {widget = "coherency", text = L("iy_metric_coherency"), source = "coherency_efficiency", icon_index = 62},
+            {widget = "revives", text = L("iy_metric_revives"), source = "revived_operative", icon_index = 13},
+            {widget = "saves", text = L("iy_metric_saves"), source = "team_saves", icon_index = 17},
+            {widget = "ammo", text = L("iy_metric_ammo"), source = "ammo_score", icon_index = 21},
         },
     },
 }
@@ -204,7 +208,7 @@ end
 
 local default_role_profiles = {
     generalist = {
-        label = "Generalist",
+        label = L("role_generalist"),
         targets = {
             damage_taken = 27, times_downed = 25, times_disabled = 25, deaths = 25,
             damage_dealt = 22, weakspot_hits = 20, melee_kills = 20, ranged_kills = 18,
@@ -213,7 +217,7 @@ local default_role_profiles = {
         },
     },
     frontline = {
-        label = "Melee Anchor",
+        label = L("role_frontline"),
         targets = {
             damage_taken = 30, times_downed = 30, times_disabled = 30, deaths = 25,
             damage_dealt = 25, weakspot_hits = 18, melee_kills = 30, ranged_kills = 15,
@@ -222,7 +226,7 @@ local default_role_profiles = {
         },
     },
     horde_control = {
-        label = "Horde Control",
+        label = L("role_horde_control"),
         targets = {
             damage_taken = 28, times_downed = 27, times_disabled = 27, deaths = 25,
             damage_dealt = 28, weakspot_hits = 15, melee_kills = 22, ranged_kills = 20,
@@ -231,7 +235,7 @@ local default_role_profiles = {
         },
     },
     ranged_specialist = {
-        label = "Ranged Specialist",
+        label = L("role_ranged_specialist"),
         targets = {
             damage_taken = 22, times_downed = 22, times_disabled = 22, deaths = 20,
             damage_dealt = 28, weakspot_hits = 28, melee_kills = 15, ranged_kills = 32,
@@ -240,7 +244,7 @@ local default_role_profiles = {
         },
     },
     elite_boss = {
-        label = "Elite & Boss Killer",
+        label = L("role_elite_boss"),
         targets = {
             damage_taken = 27, times_downed = 25, times_disabled = 25, deaths = 25,
             damage_dealt = 28, weakspot_hits = 25, melee_kills = 20, ranged_kills = 20,
@@ -249,7 +253,7 @@ local default_role_profiles = {
         },
     },
     support_control = {
-        label = "Support & Control",
+        label = L("role_support_control"),
         targets = {
             damage_taken = 25, times_downed = 22, times_disabled = 22, deaths = 20,
             damage_dealt = 20, weakspot_hits = 15, melee_kills = 18, ranged_kills = 18,
@@ -261,12 +265,12 @@ local default_role_profiles = {
 
 local role_order = {"generalist", "frontline", "horde_control", "ranged_specialist", "elite_boss", "support_control"}
 local canonical_role_labels = {
-    generalist = "Generalist",
-    frontline = "Melee Anchor",
-    horde_control = "Horde Control",
-    ranged_specialist = "Ranged Specialist",
-    elite_boss = "Elite & Boss",
-    support_control = "Support & Control",
+    generalist = L("role_generalist"),
+    frontline = L("role_frontline"),
+    horde_control = L("role_horde_control"),
+    ranged_specialist = L("role_ranged_specialist"),
+    elite_boss = L("group_role_elite_boss"),
+    support_control = L("role_support_control"),
 }
 
 -- Configured role-target resolver shared by all visual boards.
@@ -471,7 +475,7 @@ local function find_me(players)
 end
 
 local function display_mission_name(name)
-    name = tostring(name or "Saved match")
+    name = tostring(name or L("iy_current_mission"))
     name = name:gsub("_+", " ")
     name = name:gsub("(%a)([%w']*)", function(first, rest)
         return string.upper(first) .. string.lower(rest)
@@ -481,7 +485,7 @@ end
 
 local function difficulty_text(entry)
     local havoc_rank = tonumber(entry and entry.mission_havoc_rank)
-    if havoc_rank then return "Havoc " .. tostring(havoc_rank) end
+    if havoc_rank then return L("iy_havoc_rank", havoc_rank) end
     local challenge = tonumber(entry and entry.mission_challenge)
     local resistance = tonumber(entry and entry.mission_resistance)
     local danger = challenge and Danger.danger_by_difficulty(challenge, resistance or challenge) or nil
@@ -489,8 +493,7 @@ local function difficulty_text(entry)
         local ok, text = pcall(Localize, danger.display_name)
         if ok and text and text ~= "" then return text end
     end
-    local fallback = {[1] = "Sedition", [2] = "Uprising", [3] = "Malice", [4] = "Heresy", [5] = "Damnation"}
-    if challenge and fallback[challenge] then return fallback[challenge] end
+    if challenge and challenge >= 1 and challenge <= 5 then return L("iy_difficulty_" .. challenge) end
     local raw = entry and (entry.mission_resistance or entry.mission_challenge)
     return raw and tostring(raw) or "—"
 end
@@ -516,11 +519,11 @@ end
 
 local function compact_match_title(entry)
     if entry and entry.victory_defeat == "won" then
-        return "VICTORY"
+        return L("iy_victory")
     elseif entry and entry.victory_defeat == "lost" then
-        return "LOST"
+        return L("iy_lost")
     end
-    return "IMPROVE YOURSELF!"
+    return L("iy_title")
 end
 
 local function compact_mission_subtitle(entry)
@@ -717,12 +720,12 @@ local function apply_summary_widget(widget, section, values, compact)
         end
     end
     local visible_total = #visible_values
-    widget.content.score = total > 0 and string.format("%d/%d goals", met, total) or "No goals"
+    widget.content.score = total > 0 and L("iy_goals_count", met, total) or L("iy_no_goals")
 
     local status_parts = {}
-    if met > 0 then status_parts[#status_parts + 1] = string.format("%d met", met) end
-    if close > 0 then status_parts[#status_parts + 1] = string.format("%d close", close) end
-    if missed > 0 then status_parts[#status_parts + 1] = string.format("%d missed", missed) end
+    if met > 0 then status_parts[#status_parts + 1] = L("iy_met_count", met) end
+    if close > 0 then status_parts[#status_parts + 1] = L("iy_close_count", close) end
+    if missed > 0 then status_parts[#status_parts + 1] = L("iy_missed_count", missed) end
 
     local best_names = {}
     for _, value in ipairs(values) do
@@ -731,16 +734,16 @@ local function apply_summary_widget(widget, section, values, compact)
         end
     end
     if #best_names > 0 then
-        status_parts[#status_parts + 1] = "Best of match: " .. table.concat(best_names, ", ")
+        status_parts[#status_parts + 1] = L("iy_best_of_match", table.concat(best_names, ", "))
     end
     local status_text = table.concat(status_parts, "  ·  ")
 
     local all_goals_met = total > 0 and met == total
     local one_goal_short = total > 0 and met == total - 1
     if compact and all_goals_met then
-        widget.content.praise = "OUTSTANDING!"
+        widget.content.praise = L("iy_outstanding")
     elseif compact and one_goal_short then
-        widget.content.praise = "IMPRESSIVE!"
+        widget.content.praise = L("iy_impressive")
     else
         widget.content.praise = ""
     end
@@ -748,12 +751,12 @@ local function apply_summary_widget(widget, section, values, compact)
     if all_goals_met then
         improve = ""
     elseif #missed_names > 0 then
-        improve = "Improve: " .. table.concat(missed_names, " · ")
+        improve = L("iy_improve_metrics", table.concat(missed_names, " · "))
     else
-        improve = "All goals within reach"
+        improve = L("iy_all_goals_close")
     end
-    if string.len(improve) > 78 then
-        improve = string.sub(improve, 1, 75) .. "..."
+    if mod:utf8_character_count(improve) > 78 then
+        improve = mod:utf8_truncate(improve, 75, "...")
     end
     if compact and improve ~= "" then
         status_text = status_text ~= "" and (status_text .. "  |  " .. improve) or improve
@@ -876,8 +879,8 @@ local function update_section_summaries(self, detail_summaries, compact_summarie
             local total = #compact_values
             local all_goals_met = total > 0 and met == total
             local one_goal_short = total > 0 and met == total - 1
-            compact_widget.content.praise = all_goals_met and "OUTSTANDING!" or (one_goal_short and "IMPRESSIVE!" or "")
-            compact_widget.content.score = total > 0 and string.format("%d/%d goals", met, total) or "No goals"
+            compact_widget.content.praise = all_goals_met and L("iy_outstanding") or (one_goal_short and L("iy_impressive") or "")
+            compact_widget.content.score = total > 0 and L("iy_goals_count", met, total) or L("iy_no_goals")
             -- Preserve the centered three-line stack when praise is present.
             -- Without praise, center TEAMPLAY and its goal count as two lines.
             local has_praise = compact_widget.content.praise ~= ""
@@ -976,7 +979,7 @@ local function populate_compact_players(self, entry)
             end)
             local primary_key = ranked[1] and ranked[1].key or nil
             local secondary_key = ranked[2] and ranked[2].key or nil
-            local primary_label = canonical_role_labels[primary_key] or "Operative"
+            local primary_label = canonical_role_labels[primary_key] or L("iy_operative")
             local secondary_label = secondary_key and canonical_role_labels[secondary_key] or nil
             local detail = primary_label
             if secondary_label and secondary_label ~= primary_label then
@@ -986,7 +989,7 @@ local function populate_compact_players(self, entry)
             local archetype_name = player.archetype_name or player.archetype
             local archetype_symbol = archetype_name and UISettings.archetype_font_icon and UISettings.archetype_font_icon[archetype_name]
             widget.content.icon = tostring(player.string_symbol or archetype_symbol or "")
-            widget.content.name = tostring(player.name or player.account_name or "Unknown")
+            widget.content.name = tostring(player.name or player.account_name or L("iy_unknown"))
             widget.content.detail = detail
             widget.style.icon.text_color = is_local and Color.terminal_text_header(255, true) or Color.white(255, true)
             widget.style.name.text_color = is_local and Color.terminal_text_header(255, true) or Color.white(255, true)
@@ -1003,7 +1006,7 @@ local function populate_compact_players(self, entry)
 end
 
 local function single_line_player_name(value, max_characters)
-    local name = tostring(value or "Unknown"):gsub("[%c]", " "):gsub("%s+", " ")
+    local name = tostring(value or L("iy_unknown")):gsub("[%c]", " "):gsub("%s+", " ")
     max_characters = math.max(2, tonumber(max_characters) or 14)
     local offsets = {}
     local byte_index = 1
@@ -1044,7 +1047,7 @@ local function damage_source_detail(value, segment_height, detail_width)
     local next_part = 2
     while next_part <= #parts do
         local candidate = first_line .. ", " .. parts[next_part]
-        if #candidate > line_limit then
+        if mod:utf8_character_count(candidate) > line_limit then
             break
         end
         first_line = candidate
@@ -1194,7 +1197,7 @@ local function populate_defense_prototype(self, entry, role)
         widget.style["result_highlight_" .. i].offset = {bx + 1, result_y, 10}; widget.style["result_highlight_" .. i].size = {bar_w - 2, result_h > 0 and 2 or 0}
         local overflow = share and share > chart_cap
         widget.style["overflow_" .. i].offset = {bx + 1, chart_y - 11, 11}; widget.style["overflow_" .. i].size = {bar_w - 2, overflow and 8 or 0}; widget.style["overflow_" .. i].color = color
-        widget.content["raw_" .. i] = not result and history_no_data and is_local and "NO DATA"
+        widget.content["raw_" .. i] = not result and history_no_data and is_local and L("iy_no_data")
             or (result and tonumber(result.total or 0) > 0 and format_raw_metric(raw, false) or (is_local and "--" or ""))
         widget.content["name_" .. i] = player and single_line_player_name(player.name or player.account_name, 11) or "—"
         widget.content["pct_" .. i] = result and tonumber(result.total or 0) > 0 and string.format("%.1f%%", share) or (result and "--" or "")
@@ -1236,10 +1239,10 @@ local function populate_defense_prototype(self, entry, role)
     end
     local show_source_breakdown = has_source_data and source_total > 0
     local source_layout = damage_source_layout(source_values, source_order, source_h, 23)
-    widget.content.source_area_label = "Area of Effect"
-    widget.content.source_melee_label = "Melee Damage"
-    widget.content.source_ranged_label = "Ranged Damage"
-    widget.content.source_other_label = "Other Damage"
+    widget.content.source_area_label = L("iy_damage_area")
+    widget.content.source_melee_label = L("iy_damage_melee")
+    widget.content.source_ranged_label = L("iy_damage_ranged")
+    widget.content.source_other_label = L("iy_damage_other")
     local source_details = {}
     for _, category in ipairs(source_order) do
         source_details[category] = local_player and source_text(index, source_detail_rows[category], local_player.account_id) or ""
@@ -1271,7 +1274,7 @@ local function populate_defense_prototype(self, entry, role)
         widget.style["source_" .. category .. "_label"].size = {source_detail_w, 11}
         widget.style["source_" .. category .. "_detail"].offset = {source_detail_x, label_y + 11, 14}
         widget.style["source_" .. category .. "_detail"].size = {source_detail_w, allow_two_lines and 20 or 9}
-        widget.content["source_" .. category .. "_detail"] = damage_source_detail(source_details[category], item.height, source_detail_w)
+        widget.content["source_" .. category .. "_detail"] = damage_source_detail(mod:localize_damage_source_text(source_details[category]), item.height, source_detail_w)
         local source_alpha = source_alpha_by_rank[rank] or 105
         widget.style["source_" .. category .. "_value"].text_color = {255, 28, 36, 31}
         widget.style["source_" .. category .. "_label"].text_color = Color.terminal_text_body(source_alpha, true)
@@ -1294,7 +1297,7 @@ local function populate_defense_prototype(self, entry, role)
     local blocked_available = blocked_enabled and local_player ~= nil and index.attacks_blocked ~= nil
     local blocked = blocked_available and source_score(index, "attacks_blocked", local_player.account_id) or nil
     widget.content.source_summary = show_source_breakdown and blocked_enabled
-        and (blocked_available and (blocked > 0 and format_raw_metric(blocked, false) or "--") or (history_no_data and "NO DATA" or "--")) or ""
+        and (blocked_available and (blocked > 0 and format_raw_metric(blocked, false) or "--") or (history_no_data and L("iy_no_data") or "--")) or ""
     local blocked_result = blocked_available and metric_result_for_entry(entry, {source = "attacks_blocked"}, "higher", local_player.account_id) or nil
     local blocked_is_best = result_is_gold(blocked_result, blocked_result and tonumber(blocked_result.total or 0) > 0)
     local blocked_color = blocked_available and (blocked_is_best and copy_color(gold_fill) or copy_color(green)) or copy_color(grey)
@@ -1341,12 +1344,18 @@ local function populate_defense_prototype(self, entry, role)
     for i = 1, 3 do
         local item = counter_metrics[i]
         if item then
-        set_prototype_icon(widget, "counter_" .. i, resolve_catalogue_icon(item.icon))
-        widget.content["counter_title_" .. i] = item.source == "times_downed" and "Downed" or (item.source == "times_disabled" and "Disabled" or "Deaths")
         local metric
         for _, candidate in ipairs(metric_sections[1].metrics) do
             if candidate.source == item.source then metric = candidate break end
         end
+        set_prototype_icon(widget, "counter_" .. i, resolve_catalogue_icon(item.icon))
+        -- counter_metrics stores only the enabled source and icon. Its title
+        -- belongs to the matching metric definition; reading item.short_text
+        -- or item.text here removed the widget's valid default by assigning
+        -- nil and crashed Gui2.slug_text when History drew the Defense band.
+        widget.content["counter_title_" .. i] = metric
+            and (metric.short_text or metric.text)
+            or ""
 
         local row_available = source_recorded(index, item.source)
         local team_total = 0
@@ -1458,7 +1467,7 @@ local function populate_defense_prototype(self, entry, role)
         end
         widget.content["counter_best_raw_" .. i] = has_events and format_raw_metric(best_raw, false) or ""
         widget.content["counter_own_raw_" .. i] = not row_available
-            and (history_no_data and "NO DATA" or "--") or (has_events and format_raw_metric(raw, false) or "--")
+            and (history_no_data and L("iy_no_data") or "--") or (has_events and format_raw_metric(raw, false) or "--")
         widget.content["counter_worst_raw_" .. i] = has_events and format_raw_metric(worst_raw, false) or ""
         widget.content["counter_pct_" .. i] = not row_available and "" or (has_events and string.format("%.1f%%", share or 0) or "--")
         widget.style["counter_own_raw_" .. i].font_size = row_available and 11 or (history_no_data and 8 or 11)
@@ -1510,9 +1519,9 @@ local function populate_offense_prototype(self, entry, role)
     end
 
     local all_quality_metrics = {
-        {source = "weakspot_hit_percent", denominator = "damaging_hits", title = "Weakspot hit %"},
-        {source = "critical_hits", denominator = "damaging_hits", title = "Critical hits %"},
-        {source = "accuracy", denominator = "ranged_shots_fired", title = "Ranged accuracy"},
+        {source = "weakspot_hit_percent", denominator = "damaging_hits", title = L("iy_metric_weakspot_percent")},
+        {source = "critical_hits", denominator = "damaging_hits", title = L("iy_metric_critical_percent")},
+        {source = "accuracy", denominator = "ranged_shots_fired", title = L("iy_metric_accuracy")},
     }
     local quality_metrics = {}
     for _, metric in ipairs(all_quality_metrics) do
@@ -1564,7 +1573,7 @@ local function populate_offense_prototype(self, entry, role)
     local damage_total_best = result_is_gold(damage_total_result, damage_total_result and tonumber(damage_total_result.total or 0) > 0)
     damage_total_color = result_display_color(damage_total_result, damage_total_color, damage_total_result and tonumber(damage_total_result.total or 0) > 0)
     local damage_total_has_events = damage_total_result and tonumber(damage_total_result.total or 0) > 0
-    widget.content.damage_total_pct = not damage_total_result and history_no_data and "NO DATA"
+    widget.content.damage_total_pct = not damage_total_result and history_no_data and L("iy_no_data")
         or (damage_total_has_events and string.format("%.1f%%", damage_total_share or 0) or "--")
     widget.content.damage_total_raw = not damage_total_result and history_no_data and ""
         or (damage_total_has_events and format_raw_metric(damage_total_raw, false) or "--")
@@ -1770,7 +1779,7 @@ local function populate_offense_prototype(self, entry, role)
             local show_goal_frame = has_events and result_h <= goal_h
 
             set_prototype_icon(widget, "metric_" .. i, resolve_catalogue_icon(metric.icon_index))
-            widget.content["name_" .. i] = metric.text:gsub(" killed$", ""):gsub(" kills$", "")
+            widget.content["name_" .. i] = metric.short_text or metric.text
             widget.style["metric_icon_" .. i].offset = {cx - 9, 8, 20}
             widget.style["metric_glyph_" .. i].offset = {cx - 9, 6, 20}
             widget.style["goal_stripes_" .. i].offset = {bx, goal_y, 7}
@@ -1795,7 +1804,7 @@ local function populate_offense_prototype(self, entry, role)
             widget.style["overflow_" .. i].offset = {bx + 1, chart_y - 11, 11}
             widget.style["overflow_" .. i].size = {bar_w - 2, overflow and 8 or 0}
             widget.style["overflow_" .. i].color = color
-            widget.content["raw_" .. i] = not result and (history_no_data and "NO DATA" or "--") or (not has_events and "--" or format_raw_metric(raw, false))
+            widget.content["raw_" .. i] = not result and (history_no_data and L("iy_no_data") or "--") or (not has_events and "--" or format_raw_metric(raw, false))
             widget.content["pct_" .. i] = not result and "" or (not has_events and "--" or string.format("%.1f%%", share or 0))
             widget.style["raw_" .. i].font_size = result and 11 or (history_no_data and 8 or 11)
             widget.style["raw_" .. i].offset = {cx - 38, overflow and (chart_y - 31) or math.max(chart_y - 27, result_y - 20), 12}
@@ -1902,7 +1911,7 @@ local function populate_offense_prototype(self, entry, role)
             local style = widget.style["quality_" .. name .. "_bar_" .. i]
             style.size[1] = widths[name]
             style.color = name == "own" and copy_color(own_color) or copy_color(muted_quality)
-            widget.content["quality_" .. name .. "_value_" .. i] = not recorded and (name == "own" and (history_no_data and "NO DATA" or "--") or "")
+            widget.content["quality_" .. name .. "_value_" .. i] = not recorded and (name == "own" and (history_no_data and L("iy_no_data") or "--") or "")
                 or (values[name] ~= nil and values[name] > 0 and string.format("%.1f%%", values[name]) or "--")
             local value_style = widget.style["quality_" .. name .. "_value_" .. i]
             value_style.offset[1] = style.offset[1] + widths[name] + 5
@@ -1953,13 +1962,13 @@ local function populate_teamplay_widget(self, entry, role)
     local score_index = row_index(entry.rows)
     local history_no_data = self._iy_history_host_attached == true
     local all_teamplay_metrics = {
-        {metric = metric_sections[3].metrics[1], label = "Coherency"},
-        {metric = metric_sections[3].metrics[3], label = "Saves"},
-        {metric = metric_sections[3].metrics[2], label = "Revives"},
-        {metric = metric_sections[3].metrics[4], label = "Ammo"},
-        {metric = {source = "heal_station_used", icon_index = 22}, label = "Healthstations", context = true},
-        {metric = {source = "operated", icon_index = 48}, label = "Objectives", context = true},
-        {metric = {source = "resources_collected", icon_index = 50}, label = "Currency", context = true},
+        {metric = metric_sections[3].metrics[1], label = L("iy_metric_coherency")},
+        {metric = metric_sections[3].metrics[3], label = L("iy_metric_saves")},
+        {metric = metric_sections[3].metrics[2], label = L("iy_metric_revives")},
+        {metric = metric_sections[3].metrics[4], label = L("iy_metric_ammo")},
+        {metric = {source = "heal_station_used", icon_index = 22}, label = L("iy_metric_healthstations"), context = true},
+        {metric = {source = "operated", icon_index = 48}, label = L("iy_metric_objectives"), context = true},
+        {metric = {source = "resources_collected", icon_index = 50}, label = L("iy_metric_currency"), context = true},
     }
     local teamplay_metrics = {}
     for _, item in ipairs(all_teamplay_metrics) do
@@ -2003,7 +2012,7 @@ local function populate_teamplay_widget(self, entry, role)
         if is_context then color = copy_color(close_grey_green) end
         local has_events = result and tonumber(result.total or 0) > 0
         widget.content["row_raw_" .. i] = not row_available
-            and (history_no_data and "NO DATA" or "--") or (has_events and format_raw_metric(raw, false) or "--")
+            and (history_no_data and L("iy_no_data") or "--") or (has_events and format_raw_metric(raw, false) or "--")
         widget.style["row_raw_" .. i].font_size = row_available and 17 or (history_no_data and 9 or 17)
         widget.style["row_raw_" .. i].text_color = color
         widget.style["row_name_" .. i].text_color = color

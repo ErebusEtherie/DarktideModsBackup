@@ -8,19 +8,26 @@ end
 -- Load shared constants first (used throughout this file)
 mod:io_dofile("BetterLoadouts/scripts/mods/BetterLoadouts/constants")
 
+-- ---- Settings cache (once at init) + centralized on_setting_changed ----------
+mod.preset_limit = mod:get("preset_limit") or 28
+mod.preset_alignment = mod:get("preset_alignment") or "right"
+
+mod._has_dsmi = false
+mod._has_loadoutnames = false
+
+-- Shared feature helpers must be available before the hook files use them.
+mod:io_dofile("BetterLoadouts/scripts/mods/BetterLoadouts/preset_colors")
+mod:io_dofile("BetterLoadouts/scripts/mods/BetterLoadouts/preset_drag_reorder")
+mod:io_dofile("BetterLoadouts/scripts/mods/BetterLoadouts/preset_tooltip")
+
 -- Load split-out hook files
 mod:io_dofile("BetterLoadouts/scripts/mods/BetterLoadouts/hooks/ui_manager_load_view")
 mod:io_dofile("BetterLoadouts/scripts/mods/BetterLoadouts/hooks/view_element_profile_presets_definitions")
 mod:io_dofile("BetterLoadouts/scripts/mods/BetterLoadouts/hooks/profile_presets_layout_changed")
 mod:io_dofile("BetterLoadouts/scripts/mods/BetterLoadouts/hooks/profile_presets_setup_buttons")
 mod:io_dofile("BetterLoadouts/scripts/mods/BetterLoadouts/hooks/profile_presets_present_grid")
+mod:io_dofile("BetterLoadouts/scripts/mods/BetterLoadouts/hooks/profile_presets_customize")
 mod:io_dofile("BetterLoadouts/scripts/mods/BetterLoadouts/hooks/profile_presets_left_pressed")
-
--- ---- Settings cache (once at init) + centralized on_setting_changed ----------
-mod.preset_limit = mod:get("preset_limit") or 28
-
-mod._has_dsmi = false
-mod._has_loadoutnames = false
 
 local ViewElementProfilePresetsSettings =
     require("scripts/ui/view_elements/view_element_profile_presets/view_element_profile_presets_settings")
@@ -49,10 +56,22 @@ local function _apply_limit_to_settings()
     end
 end
 
+local function _refresh_active_preset_element()
+    local element = mod.active_preset_element
+    if element and element._setup_preset_buttons then
+        element:_setup_preset_buttons()
+        mod.refresh_preset_tooltip_layout(element, element._costumization_open == true)
+    end
+end
+
 function mod.on_setting_changed(setting_id)
     if setting_id == "preset_limit" then
         mod.preset_limit = mod:get("preset_limit") or 28
         _apply_limit_to_settings()
+        _refresh_active_preset_element()
+    elseif setting_id == "preset_alignment" then
+        mod.preset_alignment = mod:get("preset_alignment") or "right"
+        _refresh_active_preset_element()
     end
 end
 
@@ -93,6 +112,8 @@ mod:hook_safe(CLASS.ViewElementProfilePresets, "init", function(self)
 end)
 
 mod:hook_safe(CLASS.ViewElementProfilePresets, "destroy", function(self)
+    mod.reset_preset_drag_reorder(self)
+
     if mod.active_preset_element == self then
         mod.active_preset_element = nil
     end

@@ -1,70 +1,9 @@
---[[
-	File: InstantCharacterChange.lua
-	Description:
-		Switch operatives without going back to the main menu and reloading
-		the Mourningstar.
-
-		Use case: you are on the Mourningstar as an Ogryn, the Party Finder
-		needs a Psyker. Pick the Psyker in the Esc-menu panel, apply to the
-		group as usual, and when the mission starts you connect to it AS the
-		Psyker. One loading screen (the mission itself) instead of three
-		(main menu -> Mourningstar -> mission).
-
-		How it works (all of this is client-side data the game itself sends):
-
-		1. "Who you are" for the Party Finder is your PRESENCE, which your own
-		   client publishes every ~1s from
-		   Managers.player:local_player_backend_profile()
-		   (presence_manager.lua). Hooking that function makes the group
-		   leader see you as the target character.
-
-		2. The matchmaking queue ticket (fetch_queue_ticket_mission /
-		   _hot_join_ticket / single player) sends a characterId taken from
-		   the same local_player_backend_profile(). Same hook covers it.
-
-		3. When connecting to the new game server the client CLAIMS its
-		   character_id via rpc_sync_local_players; the sync data comes from
-		   PlayerManager:create_sync_data() (local_players_sync_state.lua).
-		   The server then fetches the authoritative profile for that id from
-		   the backend itself (profile_synchronizer_host.lua ->
-		   fetch_account_character) and syncs it back to us
-		   (local_profiles_sync_state.lua -> player:set_profile). So we hook
-		   create_sync_data to claim the target character; all the actual
-		   character data comes from the backend, not from us.
-
-		4. Managers.data_service.account:set_selected_character_id() is also
-		   called (plain backend POST, no loading screen) so the backend's
-		   "selected character" matches the ticket, in case it cross-checks.
-
-		5. What PARTY MEMBERS see (hub left-side panels, Social, Party Finder)
-		   is driven by PRESENCE, not by the hub server's profile sync: their
-		   clients read presence:character_profile(), a blob the BACKEND
-		   attaches to our presence from the character_id we advertise. After
-		   every applied/armed/cancelled switch the mod re-advertises the
-		   character and restarts the presence stream (the same full handshake
-		   as a game login), so the backend rebuilds that blob and the party
-		   list shows the new operative. The visible 3D unit in the hub still
-		   stays the old character until the next travel.
-
-		6. The MISSION TERMINAL's "which difficulties/missions are unlocked"
-		   comes from a per-character player-journey fetch that the game caches
-		   as ONE global blob, force-refreshed only on hub load — safe in
-		   vanilla, where a character change always reloads the hub, stale
-		   with this mod. The journey-data hook re-points that fetch at the
-		   switched character and refreshes the cache when it was built for
-		   someone else, so the terminal gates by the character actually
-		   being played.
-
-		The switch stays ARMED until the first server accepts us as the target
-		character (detected in the HumanPlayer.set_profile hook), or until you
-		run "/switchchar cancel", or until you go back to the main menu.
-
-		While armed and still on the Mourningstar you keep walking around as
-		your old character (the hub server cannot be re-told who you are) —
-		that is cosmetic only.
-
-	Author: X
-]]
+-- Switch operatives from the Esc menu without reloading the Mourningstar.
+-- Hub: apply the backend profile locally, guard against old server pushes,
+-- and refresh after loadout edits. The visible unit changes on next travel.
+-- Psykhanium: use the host's profile override and package-driven respawn.
+-- Presence, matchmaking and session sync all follow the selected character.
+-- See README.md for the user flow, architecture and in-game verification.
 
 local mod = get_mod("InstantCharacterChange")
 
@@ -123,25 +62,17 @@ end
 -- Armed switch: { profile = <backend profile>, character_id = <uuid>,
 --                 label = "Psyker Lv 30 (CoolName)" }. nil when not armed.
 mod._target = nil
+mod._switch_epoch = 0
+mod._switch_request = nil
+mod._profile_refresh = nil
 
--- character_id we were actually playing when the switch was armed; restored
--- as the backend "selected character" on /switchchar cancel.
-mod._original_character_id = nil
-
--- Anti-revert guard for the /switchnow hub swap: while set, incoming profile
+-- Anti-revert guard for the Esc-menu hub swap: while set, incoming profile
 -- pushes from the hub server for OUR player that carry a DIFFERENT character
 -- are dropped (the hub server only knows the character we connected with and
 -- would otherwise overwrite the local swap after every loadout edit).
 -- Cleared automatically when handshaking into a new session (the new server
 -- is authoritative for the right character from then on) or in the main menu.
 mod._local_swap_character_id = nil
-
--- Which character the game's mission-board player-journey cache (the
--- difficulty / mission unlocks the mission terminal shows) was last built
--- for. The vanilla cache is a single global blob with no record of whose it
--- is; the journey-data hook below uses this to know when serving it would
--- show another character's unlocks.
-mod._journey_cache_character_id = nil
 
 -- Presence-restart bookkeeping (see force_presence_readvertise): debounce
 -- countdown, a deferred-restart reason set while the debounce is running, and
@@ -184,22 +115,15 @@ local function write_log_line(text)
 	file:close()
 end
 
--- Logs to the file (if enabled) and, when echo_too is set, to chat. The text
+-- Logs technical text to the file and optionally echoes chat_text (or the
+-- same text) to chat. A localized chat message never changes the log marker. The text
 -- is passed to echo as a format ARGUMENT so stray '%' in names/errors can't
 -- break string.format. Chat output respects the "chat_messages_enabled"
--- setting; direct responses to typed chat commands bypass this on purpose.
-local function log(text, echo_too)
+-- setting; switch rejection messages are always shown.
+local function log(text, echo_too, chat_text)
 	write_log_line(text)
 	if echo_too and mod:get("chat_messages_enabled") then
-		mod:echo("[InstantCharacterChange] %s", text)
-	end
-end
-
--- Switch-flow chat notification, silenced by the "chat_messages_enabled"
--- setting.
-local function chat_message(text)
-	if mod:get("chat_messages_enabled") then
-		mod:echo("[InstantCharacterChange] %s", text)
+		mod:echo("[InstantCharacterChange] %s", chat_text or text)
 	end
 end
 
@@ -280,57 +204,10 @@ local function _archetype_display_name(archetype_name)
 	return raw:sub(1, 1):upper() .. raw:sub(2)
 end
 
-local function profile_label(profile, index)
-	local archetype = profile.archetype and profile.archetype.name or "?"
-	local level = profile.current_level or "?"
-	local name = profile.name or "?"
-	return string.format("%d. %s  —  %s, lv %s", index, name, archetype, level)
-end
-
--- Finds a character in a fetched profile list by: index number, archetype
--- name prefix ("psy" -> psyker) or character name substring. Returns
--- profile or nil plus an error message.
-local function find_target(profiles, query)
-	query = string.lower(query or "")
-	if query == "" then
-		return nil, "empty query"
-	end
-
-	-- By index.
-	local index = tonumber(query)
-	if index then
-		local profile = profiles[index]
-		if profile then
-			return profile
-		end
-		return nil, "no character #" .. tostring(index)
-	end
-
-	-- By archetype prefix, e.g. "psy", "ogryn", "vet", "zealot", "adamant".
-	for i = 1, #profiles do
-		local profile = profiles[i]
-		local archetype = profile.archetype and profile.archetype.name
-		if archetype and string.find(string.lower(archetype), query, 1, true) == 1 then
-			return profile
-		end
-	end
-
-	-- By character name substring.
-	for i = 1, #profiles do
-		local profile = profiles[i]
-		local name = profile.name
-		if name and string.find(string.lower(name), query, 1, true) then
-			return profile
-		end
-	end
-
-	return nil, "no character matches '" .. query .. "'"
-end
-
 -- Custom character order (drag & drop in the Esc panel), persisted as an
 -- array of character ids in the mod settings. Applied to every fetched
--- profile list the mod shows, so the panel and the /switchchar numbering
--- always agree. Ids missing from the saved order (new characters) keep their
+-- profile list the panel shows. Ids missing from the saved order
+-- (new characters) keep their
 -- backend order at the end; stale ids are skipped. Every save rewrites the
 -- full list, so it self-heals.
 local function apply_saved_order(profiles)
@@ -557,15 +434,14 @@ local function force_presence_readvertise(profile, reason)
 		local stream = pm._my_presence_stream
 
 		pm._my_presence_stream = nil
+		mod._presence_restart_cooldown = PRESENCE_RESTART_DEBOUNCE
+		mod._presence_reinit_retry = PRESENCE_REINIT_RETRY_DELAY
 
 		if stream then
 			stream:abort()
 		end
 
 		pm:_init_immaterium_presence()
-
-		mod._presence_restart_cooldown = PRESENCE_RESTART_DEBOUNCE
-		mod._presence_reinit_retry = PRESENCE_REINIT_RETRY_DELAY
 
 		log("Presence: stream restarted — full handshake sent with character_id=" .. tostring(profile.character_id) .. " (" .. tostring(reason) .. ")")
 	end)
@@ -578,6 +454,10 @@ end
 -- 1s poll and our forced calls both land here (the hook runs after the
 -- message was handed to the stream).
 mod:hook_safe(CLASS.PresenceManager, "set_character_profile", function(self, character_profile)
+	if not mod:get("diagnostics_enabled") then
+		return
+	end
+
 	local stream_state = "MISSING"
 
 	pcall(function()
@@ -593,12 +473,12 @@ mod:hook_safe(CLASS.PresenceManager, "set_character_profile", function(self, cha
 end)
 
 -- ---------------------------------------------------------------------------
--- Arm / disarm
+-- Switch application
 -- ---------------------------------------------------------------------------
 
 -- Applies the armed switch RIGHT NOW inside a locally hosted singleplayer
 -- session (see in_own_singleplay_session). On the next synchronizer tick the
--- profile is applied (our set_profile hook then disarms and reports success)
+-- profile is applied (our set_profile hook then clears the target and reports success)
 -- and the unit respawns as the new class.
 local function apply_live_singleplay_switch()
 	local target = mod._target
@@ -625,7 +505,7 @@ end
 -- talent views open for the new character (edits hit the right character on
 -- the backend, since equips use player:character_id()), the Party Finder
 -- advertises the new class, and the next mission connects as it. The
--- set_profile detector hook below fires from our own call and disarms.
+-- set_profile detector hook below fires from our own call and clears the target.
 local function apply_hub_local_switch()
 	local target = mod._target
 	if not target then
@@ -641,217 +521,127 @@ local function apply_hub_local_switch()
 		player:set_profile(target.profile)
 	end)
 	if ok then
-		log("Hub-local switch applied (unit stays the old character until the next travel)")
-		chat_message(mod:localize("msg_hub_swapped"))
+		log("Hub-local switch applied (unit stays the old character until the next travel)", true, mod:localize("msg_hub_swapped"))
 	else
 		mod._local_swap_character_id = nil
 		log("Hub-local switch failed: " .. tostring(err) .. " (switch stays armed for the next travel)", true)
+		force_presence_readvertise(target.profile, "hub apply failed; switch armed")
 	end
 end
 
-local function disarm(reason, silent)
-	if not mod._target then
-		return
+-- Re-read at every async boundary. A failed state query must not authorize
+-- an identity change while the connection state is unknown.
+local function switch_block_reason()
+	local ok, reason = pcall(function()
+		if not in_hub() and not in_own_singleplay_session() then
+			return "msg_hub_only"
+		end
+		local party = Managers.party_immaterium
+		if Managers.data_service.social:is_in_matchmaking() then
+			return "msg_in_matchmaking"
+		end
+		if party:game_session_in_progress() then
+			return "msg_departing_blocked"
+		end
+		local vote = party:party_vote_state()
+		if vote and vote.type == "start_matchmaking" and vote.state == "ONGOING" then
+			return "msg_start_vote_blocked"
+		end
+	end)
+	if not ok then
+		return "msg_switch_unavailable"
 	end
-	local label = mod._target.label
-	mod._target = nil
-	log("Switch disarmed (" .. tostring(reason) .. "): " .. tostring(label), not silent)
+	return reason
 end
 
-local function arm(profile, hub_live)
+local function arm(profile)
+	if mod._switch_request then
+		mod:echo("[InstantCharacterChange] %s", mod:localize("msg_switch_pending"))
+		return false
+	end
 	local current = real_local_profile()
-	local current_id = current and current.character_id
-
-	if current_id and current_id == profile.character_id then
-		mod:echo("[InstantCharacterChange] " .. mod:localize("msg_already_that_character"))
+	if current and current.character_id == profile.character_id then
+		mod:echo("[InstantCharacterChange] %s", mod:localize("msg_already_that_character"))
+		return false
+	end
+	local reason = switch_block_reason()
+	if reason then
+		mod:echo("[InstantCharacterChange] %s", mod:localize(reason))
 		return false
 	end
 
-	-- Same guard the game applies to its own "change character" button:
-	-- swapping identity mid-matchmaking would race the queue ticket. Echoed
-	-- unconditionally (not via chat_message): every arm() call is a direct
-	-- user action, and a silently ignored click reads as a broken mod.
-	local in_matchmaking = false
-	pcall(function()
-		in_matchmaking = Managers.data_service.social:is_in_matchmaking()
-	end)
-	if in_matchmaking then
-		mod:echo("[InstantCharacterChange] " .. mod:localize("msg_in_matchmaking"))
-		return false
+	local request = {
+		player = Managers.player:local_player(1),
+		original_id = current and current.character_id,
+	}
+	mod._switch_request = request
+	local label = string.format("%s (%s, lv %s)", profile.name or "?",
+		profile.archetype and profile.archetype.name or "?", tostring(profile.current_level or "?"))
+
+	local function is_current()
+		return mod._switch_request == request
+	end
+	local function can_apply()
+		if not is_current() then
+			return false
+		end
+		local live = real_local_profile()
+		local blocked = switch_block_reason()
+		return not blocked and Managers.player:local_player(1) == request.player
+			and live and live.character_id == request.original_id
+	end
+	local function finish()
+		if is_current() then
+			mod._switch_request = nil
+		end
+	end
+	local function failed(err)
+		if is_current() then
+			mod:echo("[InstantCharacterChange] %s", mod:localize("msg_switch_unavailable"))
+			log("Switch request failed: " .. tostring(err))
+		end
+		finish()
 	end
 
-	-- "Departing" guard. Once the party accepts a mission, the backend
-	-- allocates the game session while everyone is still standing in the hub
-	-- — party game state GAME_SESSION_IN_PROGRESS, the phase the game shows
-	-- as "Departing". is_in_matchmaking() above is already FALSE here: it
-	-- only covers the queue and the acceptance vote (PartyState matchmaking /
-	-- matchmaking_acceptance_vote), never in_mission. The session slot was
-	-- reserved for the character we queued as, so switching now makes the
-	-- connect-time claim (create_sync_data) contradict that reservation —
-	-- the server accepts the join and then kicks us right after the mission
-	-- loads (Nexus bug report). The party state is re-read on every attempt
-	-- and drops back to idle when the vote fails or matchmaking is aborted,
-	-- so switching unblocks by itself.
-	local departing = false
-	pcall(function()
-		departing = Managers.party_immaterium:game_session_in_progress()
-	end)
-	if departing then
-		mod:echo("[InstantCharacterChange] " .. mod:localize("msg_departing_blocked"))
-		return false
-	end
-
-	-- Premade "start mission" vote (mission terminal with a party, Havoc —
-	-- same template): it runs as a party vote of type "start_matchmaking",
-	-- which vanilla's current_state() does NOT map (it only knows
-	-- "accept_matchmaking", the found-game accept popup) — so while members
-	-- are still accepting, both checks above read the party as idle (field
-	-- report: Havoc premade). The window is just as dangerous: each
-	-- member's queue ticket — with their character baked in — goes out THE
-	-- MOMENT THEY VOTE YES, so switching after accepting recreates the
-	-- departing mismatch and the kick. The vote popup is modal, so in
-	-- practice this window only exists after the local accept — block the
-	-- whole ONGOING vote; a failed vote unblocks automatically (live
-	-- re-read).
-	local start_vote_ongoing = false
-	pcall(function()
-		local vote = Managers.party_immaterium:party_vote_state()
-
-		start_vote_ongoing = vote and vote.type == "start_matchmaking" and vote.state == "ONGOING"
-	end)
-	if start_vote_ongoing then
-		mod:echo("[InstantCharacterChange] " .. mod:localize("msg_start_vote_blocked"))
-		return false
-	end
-
-	mod._original_character_id = current_id
-
-	local archetype = profile.archetype and profile.archetype.name or "?"
-	local label = string.format("%s (%s, lv %s)", profile.name or "?", archetype, tostring(profile.current_level or "?"))
-
-	-- Tell the backend first, so its "selected character" agrees with the
-	-- queue tickets we are about to send. Plain POST — no loading screen.
-	log("Arming switch to " .. label .. " character_id=" .. tostring(profile.character_id))
-
-	local ok = pcall(function()
-		Managers.data_service.account:set_selected_character_id(profile.character_id):next(function()
-			mod._target = {
-				profile = profile,
-				character_id = profile.character_id,
-				label = label,
-			}
-
-			-- Preload the target's narrative (onboarding/story progress) NOW.
-			-- NarrativeManager keeps per-character data that is normally only
-			-- loaded when entering the hub AS that character; onboarding UI
-			-- indexes it by profile.character_id every frame and hard-crashes
-			-- on a missing entry. So the profile may only go live once this
-			-- has landed. Idempotent and async.
-			local narrative_promise
-			pcall(function()
-				narrative_promise = Managers.narrative:load_character_narrative(profile.character_id)
-			end)
-
-			log("Backend accepted selected-character change. Switch ARMED: " .. label, true)
-
-			announce_switch_to_party(current, profile)
-
-			if in_own_singleplay_session() then
-				-- Psykhanium: no server involved — switch right here, gated
-				-- on the narrative preload (see above).
-				chat_message(mod:localize("msg_live_switching"))
-				if narrative_promise then
-					narrative_promise:next(function()
-						apply_live_singleplay_switch()
-					end):catch(function()
-						log("Could not load target narrative — live switch aborted; the switch stays armed and applies on your next travel", true)
-					end)
-				else
-					apply_live_singleplay_switch()
+	-- Narrative belongs to THIS operation. Do not publish a target before it
+	-- is ready, and do not let another selection overtake the account POST.
+	local ok, err = pcall(function()
+		Managers.narrative:load_character_narrative(profile.character_id):next(function()
+			if not can_apply() then
+				finish()
+				return
+			end
+			return Managers.data_service.account:set_selected_character_id(profile.character_id):next(function()
+				if not is_current() then
+					return
 				end
-			elseif hub_live and in_hub() then
-				-- /switchnow in the hub: swap the local profile in place,
-				-- gated on the same narrative preload (hub onboarding UI
-				-- reads it per character every frame).
-				if narrative_promise then
-					narrative_promise:next(function()
-						if in_hub() then
-							apply_hub_local_switch()
-						end
-					end):catch(function()
-						log("Could not load target narrative — hub swap aborted; the switch stays armed and applies on your next travel", true)
-					end)
+				if not can_apply() then
+					-- Keep the operation locked until rollback completes. Queue
+					-- tickets still use the previous identity throughout this path.
+					local effective = mod._target and mod._target.profile or real_local_profile()
+					if effective then
+						return Managers.data_service.account:set_selected_character_id(effective.character_id):next(finish)
+					end
+					finish()
+					return
+				end
+
+				mod._target = { profile = profile, character_id = profile.character_id, label = label }
+				finish()
+				log("Backend accepted selected-character change. Switch ARMED: " .. label, true)
+				announce_switch_to_party(current, profile)
+				if in_own_singleplay_session() then
+					apply_live_singleplay_switch()
 				else
 					apply_hub_local_switch()
 				end
-			else
-				chat_message(mod:localize("msg_armed_hint"))
-
-				-- No local swap on this path, but the party should still see
-				-- the class we are going to play (hook 1 already answers the
-				-- presence poll with the target).
-				force_presence_readvertise(profile, "switch armed")
-			end
-		end):catch(function(error)
-			local details = type(error) == "table" and table.tostring(error, 3) or tostring(error)
-			log("Backend REJECTED selected-character change: " .. details, true)
-		end)
+			end)
+		end):catch(failed)
 	end)
 	if not ok then
-		log("Could not reach the account service (game update?)", true)
+		failed(err)
+		return false
 	end
-end
-
-local function cancel_switch()
-	if not mod._target then
-		mod:echo("[InstantCharacterChange] " .. mod:localize("msg_nothing_armed"))
-		return
-	end
-
-	-- Mirror of the guards in arm(): from the moment a queue ticket may be
-	-- out with the ARMED character (hook 1 answers ticket fetches with it),
-	-- cancelling would create the same claim-vs-reservation mismatch in
-	-- reverse and get us kicked on mission load. That covers the whole
-	-- pipeline: the premade start-mission vote (tickets go out as members
-	-- vote yes), the queue, the found-game accept vote (tickets went out at
-	-- queue start), and the allocated session. Re-read live, so a failed
-	-- vote / aborted queue / cancelled departure unblocks cancelling by
-	-- itself.
-	local ticket_may_be_out = false
-	pcall(function()
-		local pm = Managers.party_immaterium
-		local vote = pm:party_vote_state()
-
-		-- SocialService.is_in_matchmaking covers the queue AND the
-		-- found-game accept vote (unlike the party manager's own, which is
-		-- queue-only).
-		ticket_may_be_out = Managers.data_service.social:is_in_matchmaking()
-			or pm:game_session_in_progress()
-			or (vote and vote.type == "start_matchmaking" and vote.state == "ONGOING")
-	end)
-	if ticket_may_be_out then
-		mod:echo("[InstantCharacterChange] " .. mod:localize("msg_departing_cancel_blocked"))
-		return
-	end
-
-	local restore_id = mod._original_character_id
-
-	disarm("cancelled by user")
-
-	-- Point the backend's selected character back at who we actually are.
-	if restore_id then
-		pcall(function()
-			Managers.data_service.account:set_selected_character_id(restore_id):next(function()
-				log("Backend selected character restored to " .. tostring(restore_id))
-			end):catch(function()
-				log("Could not restore backend selected character (harmless: it self-corrects next relog)", true)
-			end)
-		end)
-	end
-
-	-- The party may have been shown the armed target already — advertise the
-	-- character we actually still are.
-	force_presence_readvertise(real_local_profile(), "switch cancelled")
 end
 
 -- ---------------------------------------------------------------------------
@@ -878,7 +668,7 @@ mod:hook(CLASS.PlayerManager, "create_sync_data", function(func, self, peer_id, 
 	if peer_id == Network.peer_id() then
 		-- Handshaking into a new session: from here the server is
 		-- authoritative for the right character, so the hub-swap
-		-- anti-revert guard (see /switchnow) is no longer needed.
+		-- anti-revert guard (see apply_hub_local_switch) is no longer needed.
 		mod._local_swap_character_id = nil
 	end
 
@@ -927,7 +717,7 @@ end)
 --    (local_profiles_sync_state.lua -> player:set_profile). The hub server
 --    keeps sending our OLD character, so a false trigger cannot happen.
 --    (Also fires right after our own set_profile in the singleplayer hook
---    below, which is the correct moment to disarm there too.)
+--    below, which is the correct moment to clear the target there too.)
 mod:hook_safe(CLASS.HumanPlayer, "set_profile", function(self, profile)
 	local target = mod._target
 	if not target or not profile or profile.character_id ~= target.character_id then
@@ -939,8 +729,12 @@ mod:hook_safe(CLASS.HumanPlayer, "set_profile", function(self, profile)
 	end)
 	if ok and is_local then
 		local label = target.label
+		mod._switch_epoch = mod._switch_epoch + 1
+		mod._switch_request = nil
+		mod._profile_refresh = nil
+
 		mod._target = nil
-		mod._original_character_id = nil
+
 		log("Switch applied — now playing as " .. tostring(label), true)
 
 		-- One place covers every applied path (hub swap, psykhanium respawn,
@@ -955,7 +749,7 @@ end)
 --    run. Instead, swap the profile on the local player directly at session
 --    boot — this is the moment the hub is being torn down (safe to swap) and
 --    it is BEFORE the loading state, so the target class' packages load.
---    The set_profile hook above then sees the target id and disarms.
+--    The set_profile hook above then sees the target id and clears it.
 mod:hook_safe(CLASS.MultiplayerSessionManager, "boot_singleplayer_session", function(self)
 	local target = mod._target
 	if not target then
@@ -988,6 +782,45 @@ mod:hook_safe(CLASS.MultiplayerSessionManager, "boot_singleplayer_session", func
 	end
 end)
 
+-- 5) Respawn guard for the live switch. A different archetype (or gender /
+--    voice / height) makes PackageSynchronizerHost despawn the unit, load the
+--    new class' packages over several frames and only THEN respawn it
+--    (spawn_player with force_spawn). While the packages load, the player
+--    sits in the spawn manager's "without unit" list and the game mode's
+--    can_spawn_player() still says yes -- harmless in vanilla, where nothing
+--    in the Psykhanium spawns from that list, but SoloPlay 2.6+
+--    (workarounds/shooting_range.lua) respawns every listed player on the
+--    next fixed frame: the new class gets spawned before its packages exist,
+--    and the synchronizer then spawns it a SECOND time -- native crash.
+--    Answer "no" for a player whose package sync is still waiting to respawn
+--    them. The synchronizer's own spawn passes force_spawn and is unaffected.
+-- Required explicitly (same reason as the views above): the class table
+-- must exist NOW for the hook to attach.
+local ok_require_gmm, GameModeManagerClass = pcall(require, "scripts/managers/game_mode/game_mode_manager")
+
+if not ok_require_gmm or type(GameModeManagerClass) ~= "table" then
+	GameModeManagerClass = CLASS and CLASS.GameModeManager
+end
+
+local function package_respawn_pending(player)
+	local manager = Managers.package_synchronization
+	local host = manager and manager:synchronizer_host()
+	local syncs = host and host._syncs
+	local peer_syncs = syncs and syncs[player:peer_id()]
+	local sync_data = peer_syncs and peer_syncs[player:local_player_id()]
+	local changed = sync_data and sync_data.changed_profile_fields
+
+	return changed ~= nil and changed.player_unit_respawn == true
+end
+
+mod:hook(GameModeManagerClass, "can_spawn_player", function(func, self, player, ...)
+	if player and package_respawn_pending(player) then
+		return false
+	end
+
+	return func(self, player, ...)
+end)
+
 -- ---------------------------------------------------------------------------
 -- Psykhanium HUD rebuild: restore enemy health bars / damage numbers
 -- ---------------------------------------------------------------------------
@@ -1013,8 +846,85 @@ end)
 -- unit death (remove_on_death_duration) and on HUD destroy.
 mod._damage_indicator_units = setmetatable({}, { __mode = "k" })
 
-mod.on_game_state_changed = function(status, state_name)
+local function reset_switch_state(scope)
+	mod._switch_epoch = mod._switch_epoch + 1
+	mod._switch_request = nil
+	mod._profile_refresh = nil
+	mod._preset_commit = nil
+	mod._preset_verify_elapsed = nil
+	mod._preset_verify_min_delay = nil
+	mod._preset_verify_deadline = nil
 	mod._damage_indicator_units = setmetatable({}, { __mode = "k" })
+
+	-- The armed switch and its presence work must survive destination loading.
+	if scope ~= "transition" then
+		mod._presence_reinit_retry = nil
+		mod._presence_restart_pending = nil
+		mod._presence_restart_cooldown = nil
+		mod._target = nil
+		mod._local_swap_character_id = nil
+	end
+end
+
+mod.on_game_state_changed = function(status, state_name)
+	reset_switch_state("transition")
+end
+
+local _ui_widget
+local function ui_widget()
+	if not _ui_widget then
+		local ok, m = pcall(require, "scripts/managers/ui/ui_widget")
+		if ok then
+			_ui_widget = m
+		end
+	end
+	return _ui_widget
+end
+
+local panel_views = setmetatable({}, { __mode = "k" })
+local function hide_panel_widget(widget)
+	local ok, err = pcall(function() widget.content.visible = false end)
+	if not ok then log("Esc panel: cleanup failed: " .. tostring(err)) end
+end
+
+local function _clear_entries(view)
+	local destroyed = {}
+	local function destroy_entry(widget)
+		if destroyed[widget] then return end
+		destroyed[widget] = true
+		hide_panel_widget(widget)
+		local ok, err = pcall(function()
+			ui_widget().destroy(view._ui_renderer, widget)
+		end)
+		if not ok then log("Esc panel: widget destroy failed: " .. tostring(err)) end
+	end
+	for name, widget in pairs(view._widgets_by_name or {}) do
+		if name:match("^chs_entry_") then
+			destroy_entry(widget)
+			view._widgets_by_name[name] = nil
+		end
+	end
+	for i = #(view._widgets or {}), 1, -1 do
+		local widget = view._widgets[i]
+		if widget.name and widget.name:match("^chs_entry_") then
+			destroy_entry(widget)
+			table.remove(view._widgets, i)
+		end
+	end
+	view._chs_entries = nil
+	view._chs_drag = nil
+end
+
+-- DMF removes hooks before on_disabled; invalidate callbacks before UI cleanup.
+mod.on_disabled = function()
+	reset_switch_state("disabled")
+	for view in pairs(panel_views) do
+		view._chs_generation = (view._chs_generation or 0) + 1
+		_clear_entries(view)
+		for name, widget in pairs(view._widgets_by_name or {}) do
+			if name:match("^chs_") then hide_panel_widget(widget) end
+		end
+	end
 end
 
 -- Recorder. Cheap gate order: almost every registration that is not ours
@@ -1068,12 +978,13 @@ end)
 -- not matching") and every downstream consumer would see the OLD build. So
 -- whenever a push is dropped, fetch the TARGET character from the backend
 -- ourselves and apply that instead — same data, right character.
--- Single-flight with a dirty flag: edit bursts (items + talents commit as
--- separate POSTs) collapse into at most one trailing re-fetch.
+-- One request record owns the fetch, queued edits and equip retry policy.
+-- Edit bursts (items + talents commit as separate POSTs) share one trailing
+-- fetch; successful equip healing leaves no active timer.
 -- Reapplying a profile is only safe while we are actually STANDING in the
 -- hub (game mode "hub" — false on every loading screen) and the party has no
--- allocated game session ("Departing"). Checked at promise-RESOLVE time, not
--- at fetch time: a set_profile landing during the hub teardown loads item /
+-- allocated game session ("Departing"). Checked before fetching and again
+-- before applying the response: a set_profile during hub teardown loads item /
 -- portrait packages while the engine is unloading the hub ones — a native
 -- refcount assertion no Lua pcall can catch (Nexus crash report). Both
 -- conditions are needed: during the departing countdown the game mode is
@@ -1089,54 +1000,206 @@ local function safe_to_reapply_profile()
 	return safe
 end
 
-local function request_local_profile_refresh(character_id)
-	if mod._refresh_inflight then
-		mod._refresh_dirty = true
+local PROFILE_REFRESH_DELAY = 0.75
+local REFRESH_MAX_ATTEMPTS = 3
+local PROFILE_REFRESH_TIMEOUT = 15
+local EQUIP_HEAL_QUIET_PERIOD = 30
+local refresh_time = 0
+
+local function refresh_identity()
+	local ok, player, character_id = pcall(function()
+		local player = Managers.player:local_player(1)
+		local profile = player and player:profile()
+		if not player or not profile or not profile.character_id then
+			return nil, nil
+		end
+		return player, mod._local_swap_character_id or profile.character_id
+	end)
+	if ok and player and character_id then
+		return player, character_id, true
+	end
+	return nil, nil, false
+end
+
+local function new_profile_refresh(player, character_id, heal_due)
+	return { player = player, character_id = character_id, loadout_attempts = 0,
+		heal_attempts = 0, next_heal_at = refresh_time, heal_due = heal_due }
+end
+
+-- All boundaries use the same identity transition. Equip demand belongs to
+-- the local player's guard; edits and callbacks belong to one character.
+local function align_refresh_identity(state, player, character_id)
+	if not player or not character_id then
+		return state
+	end
+	if not state or (state.player and state.player ~= player)
+		or (state.character_id and state.character_id ~= character_id) then
+		-- Unbound guard demand survives the first readable local identity.
+		local heal = state and (not state.player or state.player == player) and (state.heal_due or state.inflight and state.inflight.heal)
+		state = new_profile_refresh(player, character_id, heal and refresh_time or nil)
+		mod._profile_refresh = state
+	else
+		state.player, state.character_id = player, character_id
+	end
+	return state
+end
+
+-- Every completion (including a rejected profile or unavailable session) goes
+-- through one transition. Source demands and retry policy belong to the same
+-- record; a new push cannot erase an equip demand attached to its fetch.
+local function finish_profile_refresh(state, request, profile, err)
+	if mod._profile_refresh ~= state or state.inflight ~= request then
 		return
 	end
+	local player, character_id, identity_ok = refresh_identity()
+	if identity_ok then
+		local aligned = align_refresh_identity(state, player, character_id)
+		if aligned ~= state then
+			return
+		end
+	end
 
-	mod._refresh_inflight = true
-	mod._refresh_dirty = false
-
-	local ok = pcall(function()
-		Managers.data_service.profiles:fetch_profile(character_id):next(function(profile)
-			mod._refresh_inflight = false
-
-			if mod._local_swap_character_id ~= character_id or not profile then
-				return
-			end
-
-			if not safe_to_reapply_profile() then
-				log("Skipped local profile reapply — hub teardown/departing in progress (avoids racing the package unload)")
-				return
-			end
-
-			local applied = pcall(function()
-				local player = Managers.player:local_player(1)
-
-				player:set_profile(profile)
-				-- What the real push would have triggered; among others this
-				-- clears UIManager's "waiting for loadout" state.
-				Managers.event:trigger("event_player_profile_updated", player:peer_id(), player:local_player_id(), profile)
-			end)
-			if applied then
-				log("Local profile refreshed from backend after loadout edit")
-			end
-
-			if mod._refresh_dirty then
-				request_local_profile_refresh(character_id)
-			end
-		end):catch(function(err)
-			mod._refresh_inflight = false
-			log("Backend profile refresh failed: " .. tostring(err))
+	local unavailable = not identity_ok or not safe_to_reapply_profile()
+	local discarded = not err and (unavailable or request.swap_id ~= mod._local_swap_character_id
+		or not profile or profile.character_id ~= character_id)
+	if not err and not discarded then
+		-- Keep the token through set_profile and the event: either may trigger
+		-- another nil-item equip synchronously. Earlier equip demands are
+		-- captured at dispatch are satisfied; later demands remain queued.
+		request.applying = true
+		local applied, apply_err = pcall(function()
+			player:set_profile(profile)
+			Managers.event:trigger("event_player_profile_updated", player:peer_id(), player:local_player_id(), profile)
 		end)
-	end)
-	if not ok then
-		mod._refresh_inflight = false
+		request.applying = nil
+		if not applied then
+			err = apply_err or "profile apply failed"
+		end
+	end
+	if mod._profile_refresh ~= state or state.inflight ~= request then
+		return
+	end
+	state.inflight = nil
+
+	-- A response blocked by transient readiness did not get a chance to heal.
+	if discarded and unavailable then
+		if request.heal then state.heal_attempts = math.max(0, state.heal_attempts - 1) end
+		if request.loadout then state.loadout_attempts = math.max(0, state.loadout_attempts - 1) end
+	end
+
+	if not err and not discarded then
+		if request.heal and not request.heal_failed_during_apply then
+			state.heal_attempts = 0
+		end
+		log("Local profile refreshed from backend")
+	else
+		if request.heal and not state.heal_due and state.heal_attempts < REFRESH_MAX_ATTEMPTS then
+			state.heal_due = math.max(refresh_time + PROFILE_REFRESH_DELAY, state.next_heal_at)
+		end
+		-- Retry failed and discarded responses alike, within each source budget.
+		-- Never carry an old character's edit to a new one.
+		if request.loadout and not state.loadout_due and state.loadout_attempts < REFRESH_MAX_ATTEMPTS then
+			state.loadout_due = math.max(refresh_time + PROFILE_REFRESH_DELAY, request.loadout_retry_at)
+		end
+		log(err and ("Backend profile refresh failed: " .. tostring(err))
+			or "Local profile refresh discarded — identity changed or profile reapply is unavailable")
 	end
 end
 
--- Anti-revert guard for the /switchnow hub swap. The hub server re-fetches
+-- Only demand entry points and update dispatch work; completion never dispatches.
+local function start_profile_refresh(state)
+	if mod._profile_refresh ~= state or state.inflight or (state.ready_at and refresh_time < state.ready_at) then
+		return
+	end
+	local loadout_due = state.loadout_due and state.loadout_due <= refresh_time
+	local heal_due = state.heal_due and state.heal_due <= refresh_time
+	if not loadout_due and not heal_due then
+		return
+	end
+
+	local player, character_id, identity_ok = refresh_identity()
+	if not identity_ok then
+		state.ready_at = refresh_time + 2
+		return
+	end
+	local aligned = align_refresh_identity(state, player, character_id)
+	if aligned ~= state then
+		state = aligned
+		loadout_due = state.loadout_due and state.loadout_due <= refresh_time
+		heal_due = state.heal_due and state.heal_due <= refresh_time
+		if not loadout_due and not heal_due then return end
+	end
+
+	-- Readiness is not a backend attempt: retain work until departure is
+	-- cancelled, or session cleanup invalidates the record. Poll slowly.
+	if not safe_to_reapply_profile() then
+		state.ready_at = refresh_time + 2
+		return
+	end
+	state.ready_at = nil
+
+	local request = { swap_id = mod._local_swap_character_id, heal = heal_due, loadout = loadout_due,
+		deadline = refresh_time + PROFILE_REFRESH_TIMEOUT }
+	state.inflight = request
+	if heal_due then
+		state.heal_due = nil
+	end
+	if loadout_due then
+		state.loadout_due = nil
+	end
+	if request.loadout then
+		state.loadout_attempts = state.loadout_attempts + 1
+		request.loadout_retry_at = refresh_time + 2 ^ math.min(state.loadout_attempts - 1, 2)
+	end
+	if request.heal then
+		state.heal_attempts = state.heal_attempts + 1
+		state.next_heal_at = refresh_time + 2 ^ math.min(state.heal_attempts - 1, 2)
+	end
+
+	local ok, err = pcall(function()
+		request.promise = Managers.data_service.profiles:fetch_profile(character_id)
+		request.promise:next(function(profile)
+			finish_profile_refresh(state, request, profile)
+		end):catch(function(fetch_err)
+			finish_profile_refresh(state, request, nil, fetch_err or "profile fetch rejected")
+		end)
+	end)
+	if not ok then
+		finish_profile_refresh(state, request, nil, err or "profile fetch failed")
+	end
+end
+
+local function request_local_profile_refresh(source)
+	local player, character_id, identity_ok = refresh_identity()
+	local state = mod._profile_refresh
+	if identity_ok then
+		state = align_refresh_identity(state, player, character_id)
+	elseif not state then
+		state = new_profile_refresh(nil, mod._local_swap_character_id)
+		mod._profile_refresh = state
+	end
+	if source == "loadout" then
+		state.loadout_due = refresh_time + PROFILE_REFRESH_DELAY
+		state.loadout_attempts = 0
+	else
+		if state.inflight and state.inflight.applying then
+			state.inflight.heal_failed_during_apply = true
+		end
+		-- Completed work has no due time and incurs no per-frame timer work.
+		-- Keep only a short burst limit, reset lazily after a quiet period.
+		if not state.last_equip_at or refresh_time - state.last_equip_at >= EQUIP_HEAL_QUIET_PERIOD then
+			state.heal_attempts = 0
+			state.next_heal_at = refresh_time
+		end
+		state.last_equip_at = refresh_time
+		if state.heal_attempts < REFRESH_MAX_ATTEMPTS then
+			state.heal_due = state.heal_due or math.max(refresh_time, state.next_heal_at)
+		end
+	end
+	start_profile_refresh(state)
+end
+
+-- Anti-revert guard for the Esc-menu hub swap. The hub server re-fetches
 -- and pushes OUR profile after every loadout/talent edit
 -- (rpc_notify_profile_changed -> profile_changed -> sync_player_profile ->
 -- this RPC applies it via player:set_profile). It only knows the character we
@@ -1169,7 +1232,7 @@ mod:hook(CLASS.ProfileSynchronizerClient, "rpc_profile_synced_by_all", function(
 			-- Debounced: pushes arriving within the window (items + talents
 			-- commit as separate POSTs, each causing one push) collapse into
 			-- a single backend fetch — less traffic and less Lua garbage.
-			mod._refresh_delay_left = 0.75
+			request_local_profile_refresh("loadout")
 
 			return
 		end
@@ -1181,11 +1244,10 @@ end)
 -- Back in the main menu the game manages character selection itself; an armed
 -- switch would fight it. Disarm silently.
 mod:hook_safe(CLASS.StateMainMenu, "on_enter", function()
-	mod._local_swap_character_id = nil
-
 	if mod._target then
-		disarm("entered main menu", true)
+		log("Switch disarmed (entered main menu): " .. tostring(mod._target.label))
 	end
+	reset_switch_state("main_menu")
 end)
 
 -- ---------------------------------------------------------------------------
@@ -1246,15 +1308,25 @@ mod:hook(CLASS.MissionBoard, "fetch_player_journey_data", function(func, self, a
 			tostring(desired_id), tostring(character_id)))
 	end
 
-	if force_refresh == false and mod._journey_cache_character_id ~= desired_id then
+	if force_refresh == false and self.__chs_journey_cache_character_id ~= desired_id then
 		force_refresh = true
 
 		log("Journey data: cached unlocks belong to another character — forcing a backend refresh")
 	end
 
-	mod._journey_cache_character_id = desired_id
-
-	return func(self, account_id, desired_id, force_refresh)
+	local result = func(self, account_id, desired_id, force_refresh)
+	if not result then
+		return result
+	end
+	return result:next(function(value)
+		-- Vanilla writes the cache before resolving and returns nil on success,
+		-- but resolves with BackendError on failure. Track the last writer,
+		-- not the last request: replies can arrive in either order.
+		if value == nil and self._cached_progression_data then
+			self.__chs_journey_cache_character_id = desired_id
+		end
+		return value
+	end)
 end)
 
 -- The "new difficulty unlocked" toast (onboarding template "Player Journey -
@@ -1271,9 +1343,9 @@ end)
 -- unlocks still fire: after a mission the hub reload refetches the blob for
 -- the character who played it.
 mod:hook(CLASS.MissionBoard, "get_new_difficulty_unlocked", function(func, self, character_id)
-	local blob_owner_id = mod._journey_cache_character_id
+	local blob_owner_id = self.__chs_journey_cache_character_id
 
-	if blob_owner_id and character_id ~= blob_owner_id then
+	if not self._cached_progression_data or character_id ~= blob_owner_id then
 		return false
 	end
 
@@ -1291,17 +1363,12 @@ end)
 -- change silently evaporates; the game then even deselects the preset at the
 -- next open because the profile does not match it.
 --
--- The fix here does not touch that machinery at all. A preset already
--- CONTAINS everything the backend needs — gear ids per slot and the talent
--- node map live in the save file. Strategy is VERIFY-FIRST to stay
--- server-friendly: the game's own commit path runs untouched; after the
--- inventory closes (once the game's round-trip has landed) the profile is
--- compared LOCALLY against the active preset, and only actual losses are
--- committed straight to the backend with the same service calls the view
--- uses. The common, working case costs zero extra requests; a struck bug
--- costs at most two (one batched item equip + one talent set). The only
--- eager path is when the game demonstrably skips its whole commit (closing
--- before the item list synced) — there is nothing to wait for then.
+-- Only an explicit preset activation in the local inventory authorizes a
+-- repair. Opening the view is not an activation. After close, compare the
+-- profile against a snapshot of that preset; discard the request if its
+-- character, active preset or saved contents changed. Reopening the editor
+-- pauses repair until it closes again. An unrelated mismatch is left to the
+-- game's normal deselection behavior.
 -- ---------------------------------------------------------------------------
 
 -- Slots that define a build. Cosmetic slots are excluded on purpose: the
@@ -1341,7 +1408,7 @@ end
 -- close-commit START, so the waiting flag is already up if it is coming).
 -- max_wait: hard deadline — verify even if the waiting flag never clears
 -- (a lost round-trip is exactly the failure being repaired).
-local function schedule_preset_commit(reason, min_delay, max_wait)
+local function schedule_preset_commit(view, reason, min_delay, max_wait)
 	local ok = pcall(function()
 		local PU = profile_utils()
 		local preset_id = PU and PU.get_active_profile_preset_id()
@@ -1349,12 +1416,32 @@ local function schedule_preset_commit(reason, min_delay, max_wait)
 		if not preset_id then
 			return
 		end
-
+		local preset = PU.get_profile_preset(preset_id)
+		if not preset then
+			return
+		end
 		local profile = real_local_profile()
+		local previous = view.__chs_pending_preset
+		local character_id = profile and profile.character_id
+			or (previous and previous.epoch == mod._switch_epoch and previous.character_id)
+		if not character_id then
+			log("Preset guard: could not schedule a commit — character identity unavailable", true)
+			return
+		end
+		local resumed = previous and previous.epoch == mod._switch_epoch
+			and previous.character_id == character_id and previous.preset_id == preset_id
+			and _talent_maps_equal(previous.loadout, preset.loadout)
+			and _talent_maps_equal(previous.talents, preset.talents)
+		if view.__chs_preset_intent ~= preset_id and not resumed then
+			return
+		end
 
 		mod._preset_commit = {
+			epoch = mod._switch_epoch,
+			loadout = table.clone(preset.loadout or {}),
+			talents = table.clone(preset.talents or {}),
 			preset_id = preset_id,
-			character_id = profile and profile.character_id,
+			character_id = character_id,
 			reason = reason,
 		}
 		mod._preset_verify_elapsed = 0
@@ -1381,68 +1468,88 @@ local function direct_commit_preset()
 
 	local ok, err = pcall(function()
 		local PU = profile_utils()
-		local player = Managers.player:local_player(1)
-		local profile = player and player:profile()
+		local readable, player, profile = pcall(function()
+			local player = Managers.player:local_player(1)
+			return player, player and player:profile()
+		end)
 		local preset = PU and PU.get_profile_preset(pending.preset_id)
 
-		if not profile or not preset then
+		if not readable or not profile then
+			if pending.epoch == mod._switch_epoch
+				and (mod._preset_verify_elapsed or 0) < (mod._preset_verify_deadline or 5.0) then
+				mod._preset_commit = pending
+			else
+				log("Preset guard: commit expired — profile unavailable", true)
+			end
+			return
+		end
+		if not preset or pending.epoch ~= mod._switch_epoch
+			or PU.get_active_profile_preset_id() ~= pending.preset_id
+			or not _talent_maps_equal(preset.loadout, pending.loadout)
+			or not _talent_maps_equal(preset.talents, pending.talents) then
 			return
 		end
 
 		-- Stale request from before a character switch.
-		if pending.character_id and profile.character_id ~= pending.character_id then
+		if profile.character_id ~= pending.character_id then
 			return
 		end
 
 		-- ITEMS: gear ids straight from the preset save data.
 		local wrong_slots = {}
-		local wrong_any = false
+		local wrong_count = 0
 		local equipped = profile.loadout_item_ids or {}
 
 		for slot_name, gear_id in pairs(preset.loadout or {}) do
 			if BUILD_SLOTS[slot_name] and gear_id and equipped[slot_name] ~= gear_id then
 				wrong_slots[slot_name] = gear_id
-				wrong_any = true
+				wrong_count = wrong_count + 1
 			end
 		end
 
-		if wrong_any then
-			local count = 0
-			for _ in pairs(wrong_slots) do
-				count = count + 1
-			end
-
-			log("Preset guard (" .. tostring(pending.reason) .. "): committing " .. tostring(count) .. " item slot(s) directly to backend", true)
+		if wrong_count > 0 then
+			log("Preset guard (" .. tostring(pending.reason) .. "): committing " .. tostring(wrong_count) .. " item slot(s) directly to backend", true)
 			Managers.data_service.profiles:equip_items_in_slots(profile.character_id, wrong_slots, {}):next(function()
 				-- Same follow-up the game does after an equip: nudges the
 				-- server refetch (or, with an active hub swap, our own
 				-- refresh path).
-				pcall(function()
+				local ok_notify, notified = pcall(function()
+					if pending.epoch ~= mod._switch_epoch or Managers.player:local_player(1) ~= player
+						or player:character_id() ~= pending.character_id then
+						return false
+					end
 					if Managers.connection:is_host() then
 						local host = Managers.profile_synchronization:synchronizer_host()
 
 						if host then
 							host:profile_changed(player:peer_id(), player:local_player_id())
+							return true
 						end
 					else
 						Managers.connection:send_rpc_server("rpc_notify_profile_changed", player:local_player_id())
+						return true
 					end
 				end)
-				log("Preset guard: items committed", true)
+				if ok_notify and notified then
+					log("Preset guard: items saved to backend; server refresh requested", true)
+				else
+					log("Preset guard: items saved to backend; server refresh not requested", true)
+				end
 			end):catch(function(equip_err)
 				log("Preset guard: item commit FAILED: " .. tostring(equip_err), true)
 			end)
 		end
 
 		-- TALENTS: node map straight from the preset save data.
+		-- Newly created presets also have talents = {}. An empty map is not
+		-- evidence that the user requested a reset. Unknown profile schemas
+		-- must not authorize a speculative talent write either.
 		local preset_talents = preset.talents
-		local talents_match = true
+		local can_check_talents = type(preset_talents) == "table" and next(preset_talents) ~= nil
+			and type(profile.selected_nodes) == "table"
+		local talents_match = can_check_talents and _talent_maps_equal(profile.selected_nodes, preset_talents)
 
-		if type(preset_talents) == "table" and next(preset_talents) ~= nil and type(profile.selected_nodes) == "table" then
-			talents_match = _talent_maps_equal(profile.selected_nodes, preset_talents)
-		end
-
-		if not talents_match then
+		if can_check_talents and not talents_match then
 			log("Preset guard (" .. tostring(pending.reason) .. "): committing talents directly to backend", true)
 
 			local TalentLayoutParser = require("scripts/ui/views/talent_builder_view/utilities/talent_layout_parser")
@@ -1468,8 +1575,12 @@ local function direct_commit_preset()
 			end
 		end
 
-		if not wrong_any and talents_match then
-			log("Preset guard: profile already matches preset '" .. tostring(preset.name or pending.preset_id) .. "'")
+		if wrong_count == 0 then
+			if talents_match then
+				log("Preset guard: profile already matches preset '" .. tostring(preset.name or pending.preset_id) .. "'")
+			elseif not can_check_talents then
+				log("Preset guard: items already match; talents not checked (empty preset or unknown profile schema)")
+			end
 		end
 	end)
 	if not ok then
@@ -1477,118 +1588,58 @@ local function direct_commit_preset()
 	end
 end
 
--- Returns the id of a preset that exactly matches the profile's current
--- build (weapons/curios + talents), or nil.
-local function _find_matching_preset_id(profile)
-	local PU = profile_utils()
-	local presets = PU and PU.get_profile_presets()
-
-	if not presets then
-		return nil
-	end
-
-	local equipped = profile.loadout_item_ids or {}
-
-	for i = 1, #presets do
-		local preset = presets[i]
-		local loadout = preset and preset.loadout
-
-		if loadout then
-			local matches = true
-
-			for slot_name in pairs(BUILD_SLOTS) do
-				local preset_gear_id = loadout[slot_name]
-
-				if preset_gear_id and equipped[slot_name] ~= preset_gear_id then
-					matches = false
-
-					break
-				end
-			end
-
-			if matches and type(preset.talents) == "table" and next(preset.talents) ~= nil and type(profile.selected_nodes) == "table" then
-				matches = _talent_maps_equal(profile.selected_nodes, preset.talents)
-			end
-
-			if matches then
-				return preset.id
-			end
-		end
-	end
-
-	return nil
-end
-
--- Marks the given preset as selected in the presets element (the visual
--- highlight) and syncs the element/view bookkeeping.
-local function _apply_preset_selection_visual(view, preset_id)
-	local element = view._profile_presets_element
-	local widgets = element and element._profile_buttons_widgets
-
-	if not widgets then
-		return false
-	end
-
-	local found = false
-
-	for i = 1, #widgets do
-		local content = widgets[i].content
-		local selected = content.profile_preset_id == preset_id
-
-		if content.hotspot then
-			content.hotspot.is_selected = selected
-		end
-
-		found = found or selected
-	end
-
-	if found then
-		element._active_profile_preset_id = preset_id
-		view._active_profile_preset_id = preset_id
-	end
-
-	return found
-end
-
 if InventoryBackgroundViewClass then
-	-- PRESET SELECTION HEALING. When the inventory opens while the profile
-	-- has not caught up with a just-committed preset yet (fast close-reopen),
-	-- the game sees a mismatch and DESELECTS the active preset — erasing the
-	-- saved id, which is why the preset shows as "none selected" even after
-	-- the build itself arrives. Two-part fix:
-	--   1. While _setup_profile_presets runs, the transient mismatch-driven
-	--      deselect is blocked (flag checked by the hook on
-	--      ViewElementProfilePresets.remove_active_profile_preset below).
-	--   2. After setup, if NO preset is marked active but the profile
-	--      exactly matches one, that preset is re-selected — healing ids
-	--      already erased before this fix and any other path that lost the
-	--      selection.
+	mod:hook_safe(InventoryBackgroundViewClass, "on_enter", function(self)
+		if not self._is_readonly and self._is_own_player then
+			self.__chs_pending_preset = mod._preset_commit
+			mod._preset_commit = nil
+		end
+	end)
+
+	-- Only an explicit preset activation authorizes repair. Vanilla also calls
+	-- this event directly during setup; those calls are not user selections.
+	mod:hook_safe(InventoryBackgroundViewClass, "event_on_profile_preset_changed", function(self, preset, on_preset_deleted)
+		if self.__chs_setting_up_presets or self._is_readonly or not self._is_own_player then
+			return
+		end
+		self.__chs_preset_intent = not on_preset_deleted and preset and preset.id or nil
+		local profile = real_local_profile()
+		self.__chs_pending_preset = self.__chs_preset_intent and profile and profile.character_id and {
+			epoch = mod._switch_epoch, character_id = profile.character_id, preset_id = preset.id,
+			loadout = table.clone(preset.loadout or {}), talents = table.clone(preset.talents or {}),
+		} or nil
+		mod._preset_commit = nil
+	end)
+
 	mod:hook(InventoryBackgroundViewClass, "_setup_profile_presets", function(func, self, ...)
-		self.__chs_block_preset_deselect = true
-
-		local result_a, result_b, result_c = func(self, ...)
-
+		local PU = profile_utils()
+		local pending = self.__chs_pending_preset or mod._preset_commit
+		self.__chs_pending_preset = nil
+		local profile = real_local_profile()
+		local active_id = PU and PU.get_active_profile_preset_id()
+		local preset = active_id and PU.get_profile_preset(active_id)
+		local resume = not self._is_readonly and self._is_own_player and pending
+			and pending.epoch == mod._switch_epoch and profile
+			and pending.character_id == profile.character_id and pending.preset_id == active_id
+			and preset and _talent_maps_equal(preset.loadout, pending.loadout)
+			and _talent_maps_equal(preset.talents, pending.talents)
+		self.__chs_pending_preset = resume and pending or nil
+		if not self._is_readonly and self._is_own_player then
+			-- A reopened editor owns the next commit; the old timer must not
+			-- write while the user is making new changes.
+			mod._preset_commit = nil
+			self.__chs_preset_intent = (resume or self.__chs_preset_intent == active_id) and active_id or nil
+		end
+		self.__chs_setting_up_presets = true
+		self.__chs_block_preset_deselect = not self._is_readonly and self._is_own_player
+			and active_id and self.__chs_preset_intent == active_id or nil
+		local results = { pcall(func, self, ...) }
+		self.__chs_setting_up_presets = nil
 		self.__chs_block_preset_deselect = nil
-
-		pcall(function()
-			local PU = profile_utils()
-			local active_id = PU and PU.get_active_profile_preset_id()
-
-			if active_id then
-				return
-			end
-
-			local player = Managers.player:local_player(1)
-			local profile = player and player:profile()
-			local match_id = profile and _find_matching_preset_id(profile)
-
-			if match_id and _apply_preset_selection_visual(self, match_id) then
-				PU.save_active_profile_preset_id(match_id)
-				log("Preset guard: restored the active preset selection (profile matches it)")
-			end
-		end)
-
-		return result_a, result_b, result_c
+		if not results[1] then
+			error(results[2])
+		end
+		return unpack(results, 2)
 	end)
 
 	-- Single trigger: inventory close.
@@ -1601,7 +1652,7 @@ if InventoryBackgroundViewClass then
 			skipped = own_player and not self:is_inventory_synced()
 		end)
 
-		if skipped then
+		if skipped and self.__chs_preset_intent then
 			-- The game is about to skip its ENTIRE commit (closed before the
 			-- item list synced) — nothing to wait for. Talents do not depend
 			-- on that list, commit them right away; items follow via the
@@ -1612,13 +1663,13 @@ if InventoryBackgroundViewClass then
 				self:_apply_current_talents_to_profile()
 			end)
 
-			schedule_preset_commit("game skipped commit on close", 0.15, 3.0)
+			schedule_preset_commit(self, "game skipped commit on close", 0.15, 3.0)
 		elseif own_player then
 			-- Normal close: the game's own commit is on its way. Verify the
 			-- moment its round-trip settles (the waiting flag is polled every
 			-- frame) — the comparison is purely local (save data vs profile),
 			-- so when the game's path worked this costs ZERO backend requests.
-			schedule_preset_commit("verify after close", 0.4, 5.0)
+			schedule_preset_commit(self, "verify after close", 0.4, 5.0)
 		end
 
 		return func(self, ...)
@@ -1640,6 +1691,9 @@ if ViewElementProfilePresetsClass then
 			return
 		end
 
+		if parent then
+			parent.__chs_preset_intent = nil
+		end
 		return func(self, ...)
 	end)
 end
@@ -1651,19 +1705,19 @@ end
 mod.update = function(dt)
 	dt = dt or 0
 
-	-- Debounced local-profile refresh for the hub swap (armed by the blocked
-	-- push handler; the window restarts on every push).
-	if mod._refresh_delay_left then
-		mod._refresh_delay_left = mod._refresh_delay_left - dt
-
-		if mod._refresh_delay_left <= 0 then
-			mod._refresh_delay_left = nil
-
-			local guard_id = mod._local_swap_character_id
-			if guard_id then
-				request_local_profile_refresh(guard_id)
-			end
-		end
+	refresh_time = refresh_time + dt
+	local refresh = mod._profile_refresh
+	if refresh and refresh.inflight and refresh_time >= refresh.inflight.deadline then
+		local request = refresh.inflight
+		-- Promise.cancel only releases callbacks; the service exposes no HTTP cancellation.
+		pcall(function()
+			if request.promise and request.promise.cancel then request.promise:cancel() end
+		end)
+		finish_profile_refresh(refresh, request, nil, "profile fetch timed out")
+	end
+	refresh = mod._profile_refresh
+	if refresh and not refresh.inflight and (refresh.loadout_due or refresh.heal_due) then
+		start_profile_refresh(refresh)
 	end
 
 	-- Preset guard: verify/commit as soon as the game's own equip round-trip
@@ -1736,9 +1790,9 @@ end
 --
 -- A panel to the right of the system (Esc) menu, one entry per character:
 -- class icon, name, class + level. Clicking an entry performs the INSTANT
--- switch (same as /switchnow — no Mourningstar reload) and closes the menu.
+-- switch without a Mourningstar reload and closes the menu.
 -- Dragging an entry (press, move, release) reorders the list; the order is
--- saved and also applied to the /switchchar numbering.
+-- saved between sessions.
 -- Only shown where switching works: hub and Psykhanium.
 --
 -- Integration technique: the panel's scenegraph nodes and static widgets are
@@ -1748,16 +1802,6 @@ end
 -- proved unreliable.)
 -- ---------------------------------------------------------------------------
 
-local _ui_widget
-local function ui_widget()
-	if not _ui_widget then
-		local ok, m = pcall(require, "scripts/managers/ui/ui_widget")
-		if ok then
-			_ui_widget = m
-		end
-	end
-	return _ui_widget
-end
 
 -- Geometry. PANEL_W is the scenegraph NODE width baked into the definitions;
 -- the drawn width comes from the "panel_width" mod setting and is applied to
@@ -1772,12 +1816,6 @@ local ENTRY_GAP = 5
 local ENTRY_ICON_SIZE = 40
 local ENTRY_TEXT_X = 68
 
-local function panel_user_width()
-	local width = tonumber(mod:get("panel_width")) or PANEL_W
-
-	return math.clamp(width, 340, 600)
-end
-
 -- All size-dependent values in one place, scaled by the "panel_scale" mod
 -- setting (percent). Entry widgets are rebuilt on every menu open, so the
 -- scale applies immediately on the next open.
@@ -1785,7 +1823,7 @@ local function panel_layout()
 	local scale = math.clamp(tonumber(mod:get("panel_scale")) or 100, 70, 200) / 100
 
 	return {
-		width = panel_user_width(),
+		width = math.clamp(tonumber(mod:get("panel_width")) or PANEL_W, 340, 600),
 		header_h = math.floor(HEADER_H * scale + 0.5),
 		header_font = math.floor(21 * scale + 0.5),
 		entry_h = math.floor(ENTRY_H * scale + 0.5),
@@ -2000,7 +2038,7 @@ local function _make_bg_definition()
 				color = C_ACCENT_DIM,
 			},
 		},
-	}, "chs_root")
+	}, "chs_root", { visible = false })
 end
 
 local function _make_header_definition()
@@ -2021,6 +2059,7 @@ local function _make_header_definition()
 			},
 		},
 	}, "chs_header", {
+		visible = false,
 		text = "",
 	})
 end
@@ -2116,11 +2155,15 @@ local function _build_esc_panel(view)
 	end
 
 	_set_panel_chrome_visible(view, false)
+	view._chs_generation = (view._chs_generation or 0) + 1
+	_clear_entries(view)
 
 	if not in_hub() and not in_own_singleplay_session() then
 		return
 	end
 
+	panel_views[view] = true
+	local view_generation = view._chs_generation
 	local view_name = view.view_name
 
 	local ok, err = pcall(function()
@@ -2130,7 +2173,8 @@ local function _build_esc_panel(view)
 			pcall(function()
 				active = Managers.ui:view_active(view_name)
 			end)
-			if not active or view._destroyed or not view._widgets then
+			if view_generation ~= view._chs_generation
+				or not active or view._destroyed or not view._widgets then
 				return
 			end
 
@@ -2211,49 +2255,26 @@ local function _build_esc_panel(view)
 	end
 end
 
-mod:hook_safe(SystemViewClass or CLASS.SystemView, "on_enter", function(self)
-	_build_esc_panel(self)
+mod.on_enabled = function()
+	local ok, err = pcall(function()
+		local ui = Managers.ui
+		if ui and ui:view_active("system_view") then
+			local view = ui:view_instance("system_view")
+			if view and not view._destroyed then _build_esc_panel(view) end
+		end
+	end)
+	if not ok then log("Esc panel: enable rebuild failed: " .. tostring(err)) end
+end
+
+mod:hook_safe(SystemViewClass or CLASS.SystemView, "on_exit", function(self)
+	self._chs_generation = (self._chs_generation or 0) + 1
+	_clear_entries(self)
+	_set_panel_chrome_visible(self, false)
+	panel_views[self] = nil
 end)
 
--- Remove our dynamic entries when the menu closes: destroy their passes (if
--- the view's renderer is still alive), drop them from the widget list and
--- unregister their names, so nothing of ours outlives the view.
-mod:hook_safe(SystemViewClass or CLASS.SystemView, "on_exit", function(self)
-	local entries = self._chs_entries
-
-	self._chs_drag = nil
-	self._chs_layout = nil
-
-	if not entries then
-		return
-	end
-
-	self._chs_entries = nil
-
-	local UIWidget = ui_widget()
-	local ui_renderer = self._ui_default_renderer
-
-	for i = 1, #entries do
-		local widget = entries[i].widget
-
-		if UIWidget and ui_renderer then
-			pcall(UIWidget.destroy, ui_renderer, widget)
-		end
-
-		local widgets = self._widgets
-		if widgets then
-			for j = #widgets, 1, -1 do
-				if widgets[j] == widget then
-					table.remove(widgets, j)
-					break
-				end
-			end
-		end
-
-		pcall(function()
-			self:_unregister_widget_name(widget.name)
-		end)
-	end
+mod:hook_safe(SystemViewClass or CLASS.SystemView, "on_enter", function(self)
+	_build_esc_panel(self)
 end)
 
 -- ---------------------------------------------------------------------------
@@ -2277,14 +2298,6 @@ local DRAG_START_THRESHOLD = 6
 local ENTRY_BASE_Z = 2
 local DRAG_LIFT_Z = 30
 
-local function _ui_inverse_scale()
-	local ok, inverse_scale = pcall(function()
-		return RESOLUTION_LOOKUP.inverse_scale
-	end)
-
-	return ok and inverse_scale or 1
-end
-
 local function _cursor_y(input_service)
 	local ok, y = pcall(function()
 		local cursor = input_service:get("cursor")
@@ -2304,7 +2317,7 @@ local function _click_entry(view, entry)
 	-- (same character / matchmaking / departing). Keep the menu open then:
 	-- the guard already echoed why, and a silently closing menu would look
 	-- like the click just got lost.
-	if arm(entry.profile, true) == false then
+	if arm(entry.profile) == false then
 		return
 	end
 
@@ -2382,7 +2395,11 @@ local function _update_entry_drag(view, dt, input_service)
 		return
 	end
 
-	local delta = (cursor_y - drag.start_y) * _ui_inverse_scale()
+	local ok_scale, inverse_scale = pcall(function()
+		return RESOLUTION_LOOKUP and RESOLUTION_LOOKUP.inverse_scale
+	end)
+	if not ok_scale or type(inverse_scale) ~= "number" then inverse_scale = 1 end
+	local delta = (cursor_y - drag.start_y) * inverse_scale
 
 	if not drag.moved and math.abs(delta) > DRAG_START_THRESHOLD then
 		-- Candidate becomes a drag: lift the entry above its neighbours.
@@ -2461,91 +2478,6 @@ mod:hook_safe(SystemViewClass or CLASS.SystemView, "update", function(self, dt, 
 end)
 
 -- ---------------------------------------------------------------------------
--- /switchchar command
--- ---------------------------------------------------------------------------
-
-local function list_characters()
-	local ok = pcall(function()
-		Managers.data_service.profiles:fetch_all_profiles():next(function(data)
-			local profiles = apply_saved_order(data and data.profiles or {})
-
-			mod:echo("[InstantCharacterChange] " .. mod:localize("msg_character_list"))
-			local current = real_local_profile()
-			local current_id = current and current.character_id
-			for i = 1, #profiles do
-				local line = profile_label(profiles[i], i)
-				if profiles[i].character_id == current_id then
-					line = line .. "   <- " .. mod:localize("msg_current_marker")
-				end
-				mod:echo("%s", line)
-			end
-			if mod._target then
-				mod:echo("[InstantCharacterChange] %s %s", mod:localize("msg_armed_status"), mod._target.label)
-			end
-			mod:echo("[InstantCharacterChange] " .. mod:localize("msg_usage_hint"))
-		end):catch(function()
-			mod:echo("[InstantCharacterChange] " .. mod:localize("msg_fetch_failed"))
-		end)
-	end)
-	if not ok then
-		mod:echo("[InstantCharacterChange] " .. mod:localize("msg_fetch_failed"))
-	end
-end
-
-local function switch_command(hub_live, ...)
-	local query = table.concat({ ... }, " ")
-
-	if query == "" then
-		list_characters()
-		return
-	end
-
-	if query == "cancel" or query == "off" then
-		cancel_switch()
-		return
-	end
-
-	if not in_hub() and not in_own_singleplay_session() then
-		mod:echo("[InstantCharacterChange] " .. mod:localize("msg_hub_only"))
-		return
-	end
-
-	-- Always re-fetch: loadouts/levels may have changed, and the profile we
-	-- arm with is also what gets packed for player-hosted sessions.
-	local ok = pcall(function()
-		Managers.data_service.profiles:fetch_all_profiles():next(function(data)
-			local profiles = apply_saved_order(data and data.profiles or {})
-
-			local target, err = find_target(profiles, query)
-			if not target then
-				mod:echo("[InstantCharacterChange] %s. %s", tostring(err), mod:localize("msg_usage_hint"))
-				return
-			end
-
-			arm(target, hub_live)
-		end):catch(function()
-			mod:echo("[InstantCharacterChange] " .. mod:localize("msg_fetch_failed"))
-		end)
-	end)
-	if not ok then
-		mod:echo("[InstantCharacterChange] " .. mod:localize("msg_fetch_failed"))
-	end
-end
-
-mod:command("switchchar", mod:localize("command_description"), function(...)
-	switch_command(false, ...)
-end)
-
--- Same as /switchchar, but in the hub the switch applies IMMEDIATELY
--- (local profile swap): your visible unit stays the old character, but the
--- loadout/talent views open for the new one so the build can be adjusted
--- before queueing. In the Psykhanium it behaves exactly like /switchchar
--- (live respawn there already).
-mod:command("switchnow", mod:localize("command_description_now"), function(...)
-	switch_command(true, ...)
-end)
-
--- ---------------------------------------------------------------------------
 -- Equip crash guard (permanent). Nexus report: server_correction_occurred
 -- resolves profile_field (cosmetic/weapon) slots via
 -- profile.visual_loadout[slot_name] with NO nil check, so a server-side
@@ -2565,66 +2497,22 @@ if not ok_equip_guard or type(EquipGuardVLExt) ~= "table" then
 	EquipGuardVLExt = CLASS and CLASS.PlayerUnitVisualLoadoutExtension
 end
 
--- Single-flight backend re-fetch of whoever we currently are, applied the
--- way the real push would be. Speeds up the correction retry after a skip.
--- Hub only — mission/psykhanium profiles are managed by their own machinery.
-local function equip_guard_heal()
-	if mod._equip_guard_heal_inflight then
-		return
-	end
+-- Only the local unit can be healed by fetching the local profile. Use the
+-- same request as blocked server pushes so the two paths cannot race.
+local function equip_guard_tripped(extension, slot_name, where)
+	pcall(function()
+		log("Equip guard: skipped equipping a nil item into " .. tostring(slot_name) .. " (" .. where .. ") — crash avoided")
 
-	mod._equip_guard_heal_inflight = true
-
-	local ok = pcall(function()
-		local player = Managers.player:local_player(1)
-		local character_id = player:character_id()
-
-		Managers.data_service.profiles:fetch_profile(character_id):next(function(profile)
-			mod._equip_guard_heal_inflight = nil
-
-			if not profile then
-				return
-			end
-
-			if not safe_to_reapply_profile() then
-				log("Equip guard: skipped profile reapply — hub teardown/departing in progress")
-				return
-			end
-
-			local applied = pcall(function()
-				local p = Managers.player:local_player(1)
-
-				p:set_profile(profile)
-				Managers.event:trigger("event_player_profile_updated", p:peer_id(), p:local_player_id(), profile)
-			end)
-
-			if applied then
-				log("Equip guard: local profile refreshed after a skipped equip")
-			end
-		end):catch(function(err)
-			mod._equip_guard_heal_inflight = nil
-
-			log("Equip guard: profile refresh failed: " .. tostring(err))
-		end)
+		if extension._is_local_unit and in_hub() then
+			request_local_profile_refresh("equip")
+		end
 	end)
-
-	if not ok then
-		mod._equip_guard_heal_inflight = nil
-	end
-end
-
-local function equip_guard_tripped(slot_name, where)
-	log("Equip guard: skipped equipping a nil item into " .. tostring(slot_name) .. " (" .. where .. ") — crash avoided")
-
-	if in_hub() then
-		equip_guard_heal()
-	end
 end
 
 if EquipGuardVLExt then
 	mod:hook(EquipGuardVLExt, "equip_item_to_slot", function(func, self, item, slot_name, ...)
 		if not item then
-			equip_guard_tripped(slot_name, "equip_item_to_slot")
+			equip_guard_tripped(self, slot_name, "equip_item_to_slot")
 
 			return
 		end
@@ -2634,7 +2522,7 @@ if EquipGuardVLExt then
 
 	mod:hook(EquipGuardVLExt, "_equip_item_to_slot", function(func, self, item, slot_name, ...)
 		if not item then
-			equip_guard_tripped(slot_name, "_equip_item_to_slot")
+			equip_guard_tripped(self, slot_name, "_equip_item_to_slot")
 
 			return
 		end
@@ -2644,4 +2532,3 @@ if EquipGuardVLExt then
 else
 	log("Equip guard DISABLED: PlayerUnitVisualLoadoutExtension not found (game update?)", true)
 end
-

@@ -1,6 +1,7 @@
 -- BetterLoadouts_data.lua
+local mod = get_mod("BetterLoadouts"); if not mod then return end
 
-local mod = get_mod("BetterLoadouts")
+local Localize = Localize
 
 return {
     name = mod:localize("mod_name"),
@@ -22,6 +23,18 @@ return {
                     { text = "preset_limit_option_60",  value = 60 },
                     { text = "preset_limit_option_160", value = 160 },
                     { text = "preset_limit_option_240", value = 240 },
+                },
+            },
+            {
+                setting_id = "preset_alignment",
+                title = Localize("loc_setting_com_wheel_tap_ping"),
+                type = "dropdown",
+                default_value = "right",
+                localize = false,
+                options = {
+                    { text = Localize("loc_alias_view_right"),              value = "right" },
+                    { text = Localize("loc_alias_view_left"),               value = "left" },
+                    { text = Localize("loc_setting_dlss_quality_balanced"), value = "center" },
                 },
             },
             {

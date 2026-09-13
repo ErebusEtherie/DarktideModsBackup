@@ -44,7 +44,7 @@ mod:hook("Unit", "flow_event", function(func, unit, event_name)
     end
     
     -- Block toxic gas fog particles (the persistent cloud)
-    if mod:get("disable_toxic_gas") then
+    if _disable_toxic_gas then
         if event_name == "create_particle" or event_name == "destroy_particle" then
             local has_toxic_gas_fog, has_toxic_gas_corals = get_components(unit)
             if has_toxic_gas_fog or has_toxic_gas_corals then
@@ -53,8 +53,6 @@ mod:hook("Unit", "flow_event", function(func, unit, event_name)
             end
         end
     end
-    
-    -- Not a blocked event, call original
     return func(unit, event_name)
 end)
         

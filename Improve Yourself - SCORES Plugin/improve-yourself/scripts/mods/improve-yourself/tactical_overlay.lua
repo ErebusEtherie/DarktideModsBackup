@@ -7,6 +7,10 @@ local UIFontSettings = mod:original_require("scripts/managers/ui/ui_font_setting
 local ViewElementProfilePresetsSettings = mod:original_require("scripts/ui/view_elements/view_element_profile_presets/view_element_profile_presets_settings")
 local VisualConstants = mod:io_dofile("improve-yourself/scripts/mods/improve-yourself/views/shared/improve_yourself_visual_constants")
 
+local function L(key, ...)
+    return mod:safe_localize(key, ...)
+end
+
 local CUSTOM_ICON_PATHS = {
     "content/ui/materials/icons/item_types/ranged_weapons",
     "content/ui/materials/icons/circumstances/assault_01",
@@ -182,29 +186,29 @@ local metric_icon_indices = {
 
 local categories = {
     defense = {
-        label = "DEFENSE",
+        label = L("iy_section_defense"),
         direction = "lower",
         metrics = {"damage_taken", "times_downed", "times_disabled", "deaths"},
     },
     offense = {
-        label = "OFFENSE",
+        label = L("iy_section_offense"),
         direction = "higher",
         metrics = {"damage_dealt", "weakspot_hits", "melee_kills", "ranged_kills", "lesser_enemies", "melee_ranged_threats", "special_threats", "boss_damage_dealt"},
     },
     team = {
-        label = "TEAM CONTRIBUTION",
+        label = L("iy_section_teamplay"),
         direction = "higher",
         metrics = {"coherency_efficiency", "revived_operative", "team_saves", "ammo_score"},
     },
 }
 
 local role_labels = {
-    generalist = "GENERALIST",
-    frontline = "MELEE ANCHOR",
-    horde_control = "HORDE CONTROL",
-    ranged_specialist = "RANGED SPECIALIST",
-    elite_boss = "ELITE & BOSS",
-    support_control = "SUPPORT & CONTROL",
+    generalist = L("role_generalist"),
+    frontline = L("role_frontline"),
+    horde_control = L("role_horde_control"),
+    ranged_specialist = L("role_ranged_specialist"),
+    elite_boss = L("group_role_elite_boss"),
+    support_control = L("role_support_control"),
 }
 
 local fallback_targets = {
@@ -557,7 +561,7 @@ local function pct_text(share)
 end
 
 local function single_line_player_name(value, max_characters)
-    local name=tostring(value or "Unknown"):gsub("[%c]"," "):gsub("%s+"," ")
+    local name=tostring(value or L("iy_unknown")):gsub("[%c]"," "):gsub("%s+"," ")
     max_characters=math.max(2,tonumber(max_characters) or 14)
     local offsets={}
     local byte_index=1
@@ -586,7 +590,7 @@ local function damage_source_detail(value,segment_height,detail_width)
     local next_part=2
     while next_part<=#parts do
         local candidate=first_line..", "..parts[next_part]
-        if #candidate>line_limit then break end
+        if mod:utf8_character_count(candidate)>line_limit then break end
         first_line=candidate
         next_part=next_part+1
     end
@@ -612,8 +616,8 @@ local function summary_for(match, section)
             end
         end
     end
-    local praise=total>0 and met==total and "OUTSTANDING!" or (total>0 and met>=total-1 and "IMPRESSIVE!" or "")
-    return praise,(total>0 and string.format("%d/%d goals",met,total) or "—")
+    local praise=total>0 and met==total and L("iy_outstanding") or (total>0 and met>=total-1 and L("iy_impressive") or "")
+    return praise,(total>0 and L("iy_goals_count",met,total) or "—")
 end
 
 -- Reused every Tactical frame; keep this outside populate_offense so dynamic
@@ -727,10 +731,10 @@ local function populate_defense(widget,match)
     end
     local show_source_breakdown=has_source_data and source_total>0
     local source_layout=damage_source_layout(source_values,source_order,source_h,23)
-    widget.content.source_area_label="Area of Effect"
-    widget.content.source_melee_label="Melee Damage"
-    widget.content.source_ranged_label="Ranged Damage"
-    widget.content.source_other_label="Other Damage"
+    widget.content.source_area_label=L("iy_damage_area")
+    widget.content.source_melee_label=L("iy_damage_melee")
+    widget.content.source_ranged_label=L("iy_damage_ranged")
+    widget.content.source_other_label=L("iy_damage_other")
     local source_details=me and me.damage_taken_source_labels or {}
     for _,category in ipairs(source_order) do
         widget.content["source_"..category.."_detail"]=""
@@ -777,7 +781,7 @@ local function populate_defense(widget,match)
             detail_style.size={source_detail_w,allow_two_lines and 20 or 9}
             detail_style.text_color=label_color
         end
-        widget.content["source_"..category.."_detail"]=damage_source_detail(source_details[category],item.height,source_detail_w)
+        widget.content["source_"..category.."_detail"]=damage_source_detail(mod:localize_damage_source_text(source_details[category]),item.height,source_detail_w)
     end
     local local_bar_x=first_bar_x+3*(bar_w+bar_gap)
     local connector_start_x=local_bar_x+bar_w
@@ -812,7 +816,7 @@ local function populate_defense(widget,match)
         local metric=counter_metrics[i]
         if metric then
         set_icon(widget,"counter_"..i,metric_icon_indices[metric])
-        widget.content["counter_title_"..i]=metric=="times_downed" and "Downed" or (metric=="times_disabled" and "Disabled" or "Deaths")
+        widget.content["counter_title_"..i]=metric=="times_downed" and L("iy_counter_downed") or (metric=="times_disabled" and L("iy_counter_disabled") or L("iy_counter_deaths"))
         local raw,total,share=metric_data(match,me,metric)
         local best=is_best_player(match,metric,me,"lower")
         local goal=target(metric)
@@ -947,9 +951,9 @@ local function populate_offense(widget,match)
     widget.content.offense_praise=praise; widget.content.offense_score=score
     set_icon(widget,"damage_total",metric_icon_indices.damage_dealt)
     local quality_specs={
-        {metric="weakspot_hit_percent",denominator="damaging_hits",title="Weakspot hit %"},
-        {metric="critical_hits",denominator="damaging_hits",title="Critical hits %"},
-        {metric="accuracy",denominator="ranged_shots_fired",title="Ranged accuracy"},
+        {metric="weakspot_hit_percent",denominator="damaging_hits",title=L("iy_metric_weakspot_percent")},
+        {metric="critical_hits",denominator="damaging_hits",title=L("iy_metric_critical_percent")},
+        {metric="accuracy",denominator="ranged_shots_fired",title=L("iy_metric_accuracy")},
     }
     local quality={}
     for _,spec in ipairs(quality_specs) do if mod:is_metric_enabled(spec.metric) then quality[#quality+1]=spec end end
@@ -1092,7 +1096,12 @@ local function populate_offense(widget,match)
     widget.style.grid_50_text.offset[1]=chart_x-36; widget.style.grid_25_text.offset[1]=chart_x-36
     widget.style.grid_50_text.text_color=kill_graph_visible and {180,126,148,126} or {0,126,148,126}
     widget.style.grid_25_text.text_color=kill_graph_visible and {180,126,148,126} or {0,126,148,126}
-    local labels={weakspot_hits="Weakspot",melee_kills="Melee",ranged_kills="Ranged",lesser_enemies="Swarmers",melee_ranged_threats="Elites",special_threats="Specials",boss_damage_dealt="Boss"}
+    local labels={
+        weakspot_hits=L("iy_metric_weakspot_short"), melee_kills=L("iy_metric_melee_short"),
+        ranged_kills=L("iy_metric_ranged_short"), lesser_enemies=L("iy_metric_swarmers"),
+        melee_ranged_threats=L("iy_metric_elites"), special_threats=L("iy_metric_specials"),
+        boss_damage_dealt=L("iy_metric_boss"),
+    }
     for i=1,7 do
         local metric=list[i]
         if metric then
@@ -1205,13 +1214,13 @@ local function populate_team(widget,match)
     widget.style.section_label.offset[2]=praise~="" and 33 or 20
     widget.style.score.offset[2]=praise~="" and 60 or 47
     local all={
-        {metric="coherency_efficiency",icon=metric_icon_indices.coherency_efficiency,label="Coherency"},
-        {metric="team_saves",icon=metric_icon_indices.team_saves,label="Saves"},
-        {metric="revived_operative",icon=metric_icon_indices.revived_operative,label="Revives"},
-        {metric="ammo_score",icon=metric_icon_indices.ammo_score,label="Ammo"},
-        {metric="heal_station_used",icon=22,context=true,label="Healthstations"},
-        {metric="operated",icon=48,context=true,label="Objectives"},
-        {metric="resources_collected",icon=50,context=true,label="Currency"},
+        {metric="coherency_efficiency",icon=metric_icon_indices.coherency_efficiency,label=L("iy_metric_coherency")},
+        {metric="team_saves",icon=metric_icon_indices.team_saves,label=L("iy_metric_saves")},
+        {metric="revived_operative",icon=metric_icon_indices.revived_operative,label=L("iy_metric_revives")},
+        {metric="ammo_score",icon=metric_icon_indices.ammo_score,label=L("iy_metric_ammo")},
+        {metric="heal_station_used",icon=22,context=true,label=L("iy_metric_healthstations")},
+        {metric="operated",icon=48,context=true,label=L("iy_metric_objectives")},
+        {metric="resources_collected",icon=50,context=true,label=L("iy_metric_currency")},
     }
     local list={}
     for _,item in ipairs(all) do if mod:is_metric_enabled(item.metric) then list[#list+1]=item end end
@@ -1307,13 +1316,13 @@ local function install(definitions)
     rawset(sg,"compact_team",{parent=ids.panel,size={970,90},position={50,592,base_z+2}})
     rawset(sg,ids.footer,{parent=ids.panel,size={970,24},position={50,714,base_z+2}})
     rawset(wd,"iy_tac_panel",panel_definition())
-    rawset(wd,"iy_tac_title",text_definition(ids.title,"CURRENT PERFORMANCE",46,nil))
-    rawset(wd,"iy_tac_subtitle",text_definition(ids.subtitle,"LIVE MISSION PROGRESS",16,Color.terminal_text_body(255,true)))
+    rawset(wd,"iy_tac_title",text_definition(ids.title,L("iy_current_performance"),46,nil))
+    rawset(wd,"iy_tac_subtitle",text_definition(ids.subtitle,L("iy_live_mission_progress"),16,Color.terminal_text_body(255,true)))
     rawset(wd,"iy_tac_players",tactical_players_definition(ids.players))
     rawset(wd,"compact_defense_prototype",VictoryWidgets.compact_defense_prototype)
     rawset(wd,"compact_offense_prototype",VictoryWidgets.compact_offense_prototype)
     rawset(wd,"compact_team",VictoryWidgets.compact_team)
-    rawset(wd,"iy_tac_footer",text_definition(ids.footer,"Live values update while the tactical overlay is open.",13,Color.terminal_text_body(205,true)))
+    rawset(wd,"iy_tac_footer",text_definition(ids.footer,L("iy_live_footer"),13,Color.terminal_text_body(205,true)))
 end
 
 -- Tactical widgets are installed once through the HUD definition hook above.
@@ -1353,8 +1362,8 @@ end
 -- Refresh Tactical content at the configured throttle interval.
 -- Reuses existing widget/style tables to reduce Lua garbage and heap pressure.
 local function refresh(overlay)
-    local match=current_live_match(); local title=custom_widget(overlay,"iy_tac_title"); if title then title.content.text="CURRENT PERFORMANCE" end
-    local subtitle=custom_widget(overlay,"iy_tac_subtitle"); if subtitle then local mission=match and match.mission or {}; local sec=safe_number(mission.duration_seconds) or 0; local role=tostring(mod:get("default_role") or "generalist"); subtitle.content.text=string.format("%s  |  %s  |  %02d:%02d  |  %s",tostring(mission.name or "CURRENT MISSION"),tostring(mission.difficulty or ""),math.floor(sec/60),math.floor(sec%60),role_labels[role] or string.upper(role)) end
+    local match=current_live_match(); local title=custom_widget(overlay,"iy_tac_title"); if title then title.content.text=L("iy_current_performance") end
+    local subtitle=custom_widget(overlay,"iy_tac_subtitle"); if subtitle then local mission=match and match.mission or {}; local sec=safe_number(mission.duration_seconds) or 0; local role=tostring(mod:get("default_role") or "generalist"); subtitle.content.text=string.format("%s  |  %s  |  %02d:%02d  |  %s",tostring(mission.name or L("iy_current_mission")),tostring(mission.difficulty or ""),math.floor(sec/60),math.floor(sec%60),role_labels[role] or string.upper(role)) end
     local pw=custom_widget(overlay,"iy_tac_players")
     if pw then
         if pw.style and pw.style.text then
@@ -1362,8 +1371,8 @@ local function refresh(overlay)
             pw.style.text.font_size=18
         end
         local names={}
-        for _,p in ipairs(match and match.players or {}) do names[#names+1]=tostring(p.name or "Unknown") end
-        pw.content.text=#names>0 and table.concat(names,"     •     ") or "WAITING FOR LIVE SCOREBOARD DATA"
+        for _,p in ipairs(match and match.players or {}) do names[#names+1]=tostring(p.name or L("iy_unknown")) end
+        pw.content.text=#names>0 and table.concat(names,"     •     ") or L("iy_waiting_for_scores")
     end
     populate_defense(custom_widget(overlay,"compact_defense_prototype"),match)
     populate_offense(custom_widget(overlay,"compact_offense_prototype"),match)
@@ -1378,12 +1387,21 @@ local function suppress(v) local s=get_mod("scores"); if v then if not s then re
 local function improve_yourself_selected()
     return mod:get("tactical_overlay_preference") ~= "scores"
 end
+-- Tactical and mission-end boards belong to different UI layers. Hide the
+-- Tactical layer while Scores owns an active end-view to prevent overlap.
 mod:hook_safe(CLASS.HudElementTacticalOverlay,"update",function(self,dt,t,ui_renderer,render_settings,input_service,...)
-    geometry(self); local mission=allowed_here(); local selected=improve_yourself_selected(); local visible=self._active==true and mission and selected; suppress(mission and selected)
+    geometry(self)
+    local mission=allowed_here()
+    local selected=improve_yourself_selected()
+    local end_view=mod._iy_scores_end_view_active==true
+    local visible=self._active==true and mission and selected and not end_view
+    suppress(mission and selected and not end_view)
     self._iy_refresh=(self._iy_refresh or 0)-(safe_number(dt) or 0); if visible and (not self._iy_was_active or self._iy_refresh<=0) then self._iy_refresh=0.35; local ok,err=pcall(refresh,self); if not ok then mod:error("Improve Yourself tactical refresh failed: %s",tostring(err)) end end
     set_visible(self,visible); self._iy_was_active=visible
 end)
 mod:hook(CLASS.HudElementTacticalOverlay,"_draw_widgets",function(func,self,dt,t,input_service,ui_renderer,render_settings,...)
+    -- Block both native Scores Tactical widgets and hosted IY Tactical widgets.
+    if mod._iy_scores_end_view_active==true then set_visible(self,false); return end
     local visible=self._active==true and allowed_here() and improve_yourself_selected(); local hidden={}
     if visible then for _,name in ipairs({"scoreboard","circumstance_info","expedition_currency"}) do local w=self._widgets_by_name and self._widgets_by_name[name]; if w then hidden[#hidden+1]={w=w,v=w.visible,a=w.alpha_multiplier}; w.visible=false; w.alpha_multiplier=0 end end; for _,w in ipairs(self.row_widgets or {}) do hidden[#hidden+1]={w=w,v=w.visible,a=w.alpha_multiplier}; w.visible=false; w.alpha_multiplier=0 end end
     if func then func(self,dt,t,input_service,ui_renderer,render_settings,...) end

@@ -1,4 +1,7 @@
 return {
+	-- ───────────────────── ❀ ─────────────────────
+	--  Mod Entry
+	-- ───────────────────── ❀ ─────────────────────
 	mod_name = {
 		en = "Auto Loot",
 		ru = "Автосбор лута",
@@ -8,6 +11,32 @@ return {
 		es = "Recoge automáticamente materiales de fabricación y otros objetos.",
 		ru = "Auto Loot — Автоматически подбирает материалы для крафта и прочий лут.",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Aim Gate
+	-- ───────────────────── ❀ ─────────────────────
+	aim_limit = {
+		en = "How closely you must aim",
+		es = "Precisión de apuntado necesaria",
+		ru = "Точность прицеливания",
+	},
+	aim_limit_description = {
+		en = "An item is only taken when you are pointing within this many centimetres of it. At 75 it takes anything the game offers, the way older versions did.",
+		es = "Un objeto solo se recoge cuando apuntas a esta distancia de él en centímetros. En 75 recoge todo lo que el juego ofrece, como hacían las versiones anteriores.",
+		ru = "Предмет подбирается, только когда вы целитесь не дальше указанного числа сантиметров от него. При 75 подбирается всё, что предлагает игра, как в прежних версиях.",
+	},
+	press_delay_seconds = {
+		en = "Wait before picking up",
+		es = "Espera antes de recoger",
+		ru = "Задержка перед подбором",
+	},
+	press_delay_seconds_description = {
+		en = "Holds each pickup until the same item has been in view for this many seconds. 0 takes it the moment you look at it.",
+		es = "Retrasa cada recogida hasta que el mismo objeto lleve este número de segundos a la vista. Con 0 se recoge en cuanto lo miras.",
+		ru = "Откладывает подбор, пока один и тот же предмет не пробудет в поле зрения указанное число секунд. При 0 подбирается сразу, как только вы на него посмотрите.",
+	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Ammo Sliders
+	-- ───────────────────── ❀ ─────────────────────
 	ammo_clip_threshold = {
 		en = "Ammo clip pickup threshold",
 		es = "Umbral de recogida de cargadores de munición",
@@ -28,6 +57,9 @@ return {
 		es = "Recoge automáticamente una bolsa de munición grande cuando tu munición de reserva está en este porcentaje de su máximo o por debajo. Las balas cargadas en tus armas no cuentan, ya que las recogidas solo rellenan la reserva.",
 		ru = "Автоматически подбирает большую сумку с патронами, когда запас боеприпасов равен или ниже этого процента от максимума. Заряженные в оружие патроны не учитываются, так как подбор пополняет только запас.",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Groups & Stimms
+	-- ───────────────────── ❀ ─────────────────────
 	other_group = {
 		en = "Other",
 		es = "Otros",
@@ -54,9 +86,9 @@ return {
 		ru = "Приоритеты для каждого класса",
 	},
 	per_class_stimms_description = {
-		en = "When on, the stimm settings below belong to the class you are currently playing: each class remembers its own toggles and priorities, and this menu always shows the list for your current character. When off, one shared list is used for every class, reset to the default priorities (Med, Combat, Celerity, Concentration). Per-class lists are kept and come back when re-enabled.",
-		es = "Cuando está activado, las opciones siguientes pertenecen a la clase que estás jugando: cada clase recuerda sus propias prioridades y ajustes, y este menú siempre muestra la configuración del personaje actual. Cuando está desactivado, todas las clases comparten una única lista con las prioridades predeterminadas (Médico, Combate, Celeridad y Concentración). Las listas por clase se conservan y se restauran al volver a activarlo.",
-		ru = "Если включено, настройки стимуляторов ниже принадлежат вашему текущему классу: каждый класс запоминает свои переключатели и приоритеты, и это меню всегда показывает список для вашего текущего персонажа. Если выключено, используется один общий список для всех классов, сброшенный к приоритетам по умолчанию (Мед, Боевой, Скоростной, Концентрации). Списки для каждого класса сохраняются и возвращаются при повторном включении.",
+		en = "When off, one shared list is used for every class, reset to the default priorities (Med, Combat, Celerity, Concentration). Per-class lists are kept and come back when re-enabled.",
+		es = "Cuando está desactivado, todas las clases comparten una única lista con las prioridades predeterminadas (Médico, Combate, Celeridad y Concentración). Las listas por clase se conservan y se restauran al volver a activarlo.",
+		ru = "Если выключено, используется один общий список для всех классов, сброшенный к приоритетам по умолчанию (Мед, Боевой, Скоростной, Концентрации). Списки для каждого класса сохраняются и возвращаются при повторном включении.",
 	},
 	stimm_med_enabled = {
 		en = "{#color(80,255,120)}Med Stimm{#reset()}",
@@ -138,6 +170,9 @@ return {
 		es = "1 es la prioridad más alta y 4 la más baja. Un estimulante con un número menor sustituirá al que lleves equipado si este tiene una prioridad inferior. Si ambas prioridades son iguales, no se sustituirá.",
 		ru = "1 — наивысший приоритет, 4 — наинизший. Стимулятор с меньшим номером заменяет удерживаемый стимулятор с большим номером. При равном приоритете замена не происходит.",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Ammo
+	-- ───────────────────── ❀ ─────────────────────
 	pickup_ammo = {
 		en = "Automatically pick up ammo",
 		es = "Recoger automáticamente munición",
@@ -163,6 +198,9 @@ return {
 		es = "Muestra los dos umbrales automáticos en tu ventana de chat al comenzar una misión. Solo tú los ves. No tiene efecto si los umbrales de munición automáticos están desactivados.",
 		ru = "Выводит два порога подбора в окно чата в начале миссии. Видите их только вы. Не действует, если автоматические пороги боеприпасов отключены.",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Loot & Chests
+	-- ───────────────────── ❀ ─────────────────────
 	pickup_materials = {
 		en = "Automatically pick up crafting materials",
 		es = "Recoger automáticamente materiales de fabricación",
@@ -198,6 +236,9 @@ return {
 		es = "Solo recoge cajas si no llevas ya una.",
 		ru = "Подбирает ящики, только если у вас ещё нет такого.",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Grenades
+	-- ───────────────────── ❀ ─────────────────────
 	pickup_grenades = {
 		en = "Automatically pick up grenades",
 		es = "Recoger automáticamente granadas",

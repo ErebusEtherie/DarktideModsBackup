@@ -35,6 +35,36 @@ return {
     preset_limit_option_160 = { en = " 160 (80x2) " },
     preset_limit_option_240 = { en = " 240 (80x3) " },
 
+    preset_alignment = {
+        en = "Preset Bar Alignment",
+        ["zh-cn"] = "预设栏对齐",
+        ru = "Выравнивание панели пресетов",
+    },
+
+    preset_alignment_tooltip = {
+        en = "Choose where the preset bar is anchored along the top of the screen.",
+        ["zh-cn"] = "选择预设栏在屏幕顶部的锚定位置。",
+        ru = "Выберите, где панель пресетов закреплена вдоль верхнего края экрана.",
+    },
+
+    preset_alignment_right = {
+        en = "Upper Right",
+        ["zh-cn"] = "右上",
+        ru = "Справа сверху",
+    },
+
+    preset_alignment_left = {
+        en = "Upper Left",
+        ["zh-cn"] = "左上",
+        ru = "Слева сверху",
+    },
+
+    preset_alignment_center = {
+        en = "Upper Center",
+        ["zh-cn"] = "顶部居中",
+        ru = "По центру сверху",
+    },
+
     move_preset_backward = {
         en = " Move Loadout Up ",
         ["zh-cn"] = " 上移配装 ",

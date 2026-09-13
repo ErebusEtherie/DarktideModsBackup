@@ -1,16 +1,5 @@
 local InputUtils = require("scripts/managers/input/input_utils")
 
-local function readable(text)
-    local readable_string = ""
-    local tokens = string.split(text, "_")
-    for i, token in ipairs(tokens) do
-        local first_letter = string.sub(token, 1, 1)
-        token = string.format("%s%s", string.upper(first_letter), string.sub(token, 2))
-        readable_string = string.trim(string.format("%s %s", readable_string, token))
-    end
-    return readable_string
-end
-
 local localizations = {
     mod_name = {
         en = " Improved Havoc Tags",
@@ -40,6 +29,48 @@ local localizations = {
         pl = "Zmienia kolory niektórych modyfikatorów Spustoszenie, aby łatwiej je rozpoznać w Wyszukiwarce Drużyn. Po zmianie kolorów przeładuj mody lub zrestartuj grę!",
         ["pt-br"] = "Altera as cores de certos modificadores da Devastação para facilitar sua identificação no Localizador de Grupo. Recarregue os mods ou reinicie o jogo após alterar as cores!",
     },
+	revert_to_original_names_title = {
+		en = "Revert to Original Modifier Names",
+		de = "Zu ursprünglichen Modifikatornamen zurückkehren",
+		fr = "Revenir aux noms de modificateurs d'origine",
+		it = "Ripristina i nomi dei modificatori originali",
+		ko = "원래 수식어 이름으로 되돌리기",
+		es = "Revertir a nombres de modificadores originales",
+		["zh-cn"] = "恢复原始词条名称",
+		["zh-tw"] = "恢復原始詞條名稱",
+		ru = "Вернуть оригинальные названия модификаторов",
+		ja = "元の修飾子名に戻す",
+		pl = "Przywróć oryginalne nazwy modyfikatorów",
+		["pt-br"] = "Reverter aos nomes originais dos modificadores",
+	},
+	revert_to_original_names_tooltip = {
+		en = "Use original game names for Marked Healers and Enraging Elites. Reload mods after changing.",
+		de = "Verwende ursprüngliche Spielnamen für Markierte Heiler und Wütende Eliten. Nach Änderung Mods neu laden.",
+		fr = "Utilise les noms de jeu d'origine pour Soigneurs Marqués et Élites Enragées. Rechargez les mods après modification.",
+		it = "Usa i nomi originali del gioco per Guaritori Segnati e Élite Furente. Ricarica i mod dopo aver cambiato.",
+		ko = "표식된 치유사와 분노한 정예병에 원본 게임 이름을 사용합니다. 변경 후 모드를 다시 불러오세요.",
+		es = "Usa nombres originales del juego para Sanadores Marcados y Élites Enfurecidos. Recarga mods después de cambiar.",
+		["zh-cn"] = "对标记治疗者和狂暴精英使用原始游戏名称。更改后请重新加载模组。",
+		["zh-tw"] = "對標記治療者和狂暴菁英使用原始遊戲名稱。更改後請重新載入模組。",
+		ru = "Использует оригинальные названия игры для Помеченных целителей и Разъярённой элиты. Перезагрузите моды после изменения.",
+		ja = "刻印のヒーラーと怒れる精鋭に元のゲーム名を使用します。変更後はMODを再読み込みしてください。",
+		pl = "Używa oryginalnych nazw gry dla Naznaczonych Uzdrowicieli i Wściekłej Elity. Przeładuj mody po zmianie.",
+		["pt-br"] = "Usa nomes originais do jogo para Curandeiros Marcados e Elites Enfurecidos. Recarregue os mods após alterar.",
+	},
+	revert_to_original_names_notification = {
+		en = "Please reload your mods.",
+		de = "Bitte laden Sie Ihre Mods neu.",
+		fr = "Veuillez recharger vos mods.",
+		it = "Si prega di ricaricare i mod.",
+		ko = "모드를 다시 불러오세요.",
+		es = "Por favor, recarga tus mods.",
+		["zh-cn"] = "请重新加载模组。",
+		["zh-tw"] = "請重新載入模組。",
+		ru = "Пожалуйста, перезагрузите моды.",
+		ja = "MODを再読み込みしてください。",
+		pl = "Proszę przeładować mody.",
+		["pt-br"] = "Por favor, recarregue seus mods.",
+	},
     increased_difficulty = {
         en = Localize("loc_havoc_increased_difficulty_name"),
         de = Localize("loc_havoc_increased_difficulty_name"),
@@ -76,7 +107,7 @@ local localizations = {
         ko = Localize("loc_havoc_bolstering_enemies_name"),
         es = Localize("loc_havoc_bolstering_enemies_name"),
         ["zh-cn"] = Localize("loc_havoc_bolstering_enemies_name"),
-        ["zh-tw"] = "蠻橫敵軍(加防)",
+        ["zh-tw"] = Localize("loc_havoc_bolstering_enemies_name"),
         ru = Localize("loc_havoc_bolstering_enemies_name"),
         ja = Localize("loc_havoc_bolstering_enemies_name"),
         pl = Localize("loc_havoc_bolstering_enemies_name"),
@@ -146,7 +177,7 @@ local localizations = {
         ko = Localize("loc_havoc_chaos_ritual_name"),
         es = Localize("loc_havoc_chaos_ritual_name"),
         ["zh-cn"] = Localize("loc_havoc_chaos_ritual_name"),
-        ["zh-tw"] = "萬惡儀式(宿主)",
+        ["zh-tw"] = Localize("loc_havoc_chaos_ritual_name"),
         ru = Localize("loc_havoc_chaos_ritual_name"),
         ja = Localize("loc_havoc_chaos_ritual_name"),
         pl = Localize("loc_havoc_chaos_ritual_name"),
@@ -160,7 +191,7 @@ local localizations = {
         ko = Localize("loc_havoc_armored_infected_name"),
         es = Localize("loc_havoc_armored_infected_name"),
         ["zh-cn"] = Localize("loc_havoc_armored_infected_name"),
-        ["zh-tw"] = "莫比亞21師(防彈)",
+        ["zh-tw"] = Localize("loc_havoc_armored_infected_name"),
         ru = Localize("loc_havoc_armored_infected_name"),
         ja = Localize("loc_havoc_armored_infected_name"),
         pl = Localize("loc_havoc_armored_infected_name"),
@@ -174,7 +205,7 @@ local localizations = {
         ko = Localize("loc_havoc_enemies_corrupted_name"),
         es = Localize("loc_havoc_enemies_corrupted_name"),
         ["zh-cn"] = Localize("loc_havoc_enemies_corrupted_name"),
-        ["zh-tw"] = "疫病蔓延(腐化)",
+        ["zh-tw"] = Localize("loc_havoc_enemies_corrupted_name"),
         ru = Localize("loc_havoc_enemies_corrupted_name"),
         ja = Localize("loc_havoc_enemies_corrupted_name"),
         pl = Localize("loc_havoc_enemies_corrupted_name"),
@@ -208,7 +239,7 @@ local localizations = {
         pl = Localize("loc_havoc_tougher_skin_name"),
         ["pt-br"] = Localize("loc_havoc_tougher_skin_name"),
     },
-	rotten_armor = {
+    rotten_armor = {
         en = Localize("loc_havoc_rotten_armor_name"),
         de = Localize("loc_havoc_rotten_armor_name"),
         fr = Localize("loc_havoc_rotten_armor_name"),
@@ -222,7 +253,7 @@ local localizations = {
         pl = Localize("loc_havoc_rotten_armor_name"),
         ["pt-br"] = Localize("loc_havoc_rotten_armor_name"),
     },
-	stimmed_minions = {
+    stimmed_minions = {
         en = Localize("loc_havoc_stimmed_minions_name"),
         de = Localize("loc_havoc_stimmed_minions_name"),
         fr = Localize("loc_havoc_stimmed_minions_name"),
@@ -335,71 +366,5 @@ local localizations = {
         ["pt-br"] = Localize("loc_circumstance_darkness_hunting_grounds_title"),
     },
 }
-
-for i, color_name in ipairs(Color.list) do
-    local color_values = Color[color_name](255, true)
-    local readable_name = readable(color_name)
-    localizations["color_option_" .. color_name] = {
-        en = string.format("{#color(%d,%d,%d)}%s{#reset()}", 
-            color_values[2], color_values[3], color_values[4], 
-            readable_name),
-        de = string.format("{#color(%d,%d,%d)}%s{#reset()}", 
-            color_values[2], color_values[3], color_values[4], 
-            readable_name),
-        fr = string.format("{#color(%d,%d,%d)}%s{#reset()}", 
-            color_values[2], color_values[3], color_values[4], 
-            readable_name),
-        it = string.format("{#color(%d,%d,%d)}%s{#reset()}", 
-            color_values[2], color_values[3], color_values[4], 
-            readable_name),
-        ko = string.format("{#color(%d,%d,%d)}%s{#reset()}", 
-            color_values[2], color_values[3], color_values[4], 
-            readable_name),
-        es = string.format("{#color(%d,%d,%d)}%s{#reset()}", 
-            color_values[2], color_values[3], color_values[4], 
-            readable_name),
-        ["zh-cn"] = string.format("{#color(%d,%d,%d)}%s{#reset()}", 
-            color_values[2], color_values[3], color_values[4], 
-            readable_name),
-        ["zh-tw"] = string.format("{#color(%d,%d,%d)}%s{#reset()}",
-            color_values[2], color_values[3], color_values[4],
-            readable_name),
-        ru = string.format("{#color(%d,%d,%d)}%s{#reset()}", 
-            color_values[2], color_values[3], color_values[4], 
-            readable_name),
-        ja = string.format("{#color(%d,%d,%d)}%s{#reset()}", 
-            color_values[2], color_values[3], color_values[4], 
-            readable_name),
-        pl = string.format("{#color(%d,%d,%d)}%s{#reset()}", 
-            color_values[2], color_values[3], color_values[4], 
-            readable_name),
-        ["pt-br"] = string.format("{#color(%d,%d,%d)}%s{#reset()}", 
-            color_values[2], color_values[3], color_values[4], 
-            readable_name),
-    }
-end
-
-local color_names = Color.list
-for i, color_name in ipairs(color_names) do
-    local color_values = Color[color_name](255, true)
-    local readable_name = readable(color_name)
-    local text = string.format("{#color(%d,%d,%d)}%s{#reset()}", 
-        color_values[2], color_values[3], color_values[4], 
-        readable_name)
-    localizations[color_name] = {
-        en = text,
-        de = text,
-        fr = text,
-        it = text,
-        ko = text,
-        es = text,
-        ["zh-cn"] = text,
-        ["zh-tw"] = text,
-        ru = text,
-        ja = text,
-        pl = text,
-        ["pt-br"] = text,
-    }
-end
 
 return localizations

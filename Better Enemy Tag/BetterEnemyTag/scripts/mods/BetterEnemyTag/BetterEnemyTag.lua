@@ -30,13 +30,9 @@ local mod_settings             = {
     normal_tag_icon_path                    = mod:get("normal_tag_icon_path"),
     normal_tag_use_slot_color               = mod:get("normal_tag_use_slot_color"),
     override_normal_tag_color               = mod:get("override_normal_tag_color"),
-    normal_tag_color_red                    = mod:get("normal_tag_color_red"),
-    normal_tag_color_green                  = mod:get("normal_tag_color_green"),
-    normal_tag_color_blue                   = mod:get("normal_tag_color_blue"),
+    normal_tag_color                        = mod:get("normal_tag_color"),
     override_teammate_normal_tag_color      = mod:get("override_teammate_normal_tag_color"),
-    teammate_normal_tag_color_red           = mod:get("teammate_normal_tag_color_red"),
-    teammate_normal_tag_color_green         = mod:get("teammate_normal_tag_color_green"),
-    teammate_normal_tag_color_blue          = mod:get("teammate_normal_tag_color_blue"),
+    teammate_normal_tag_color               = mod:get("teammate_normal_tag_color"),
     override_veteran_tag_settings           = mod:get("override_veteran_tag_settings"),
     veteran_tag_opacity_normal              = mod:get("veteran_tag_opacity_normal"),
     veteran_tag_fade_when_aim               = mod:get("veteran_tag_fade_when_aim"),
@@ -45,13 +41,9 @@ local mod_settings             = {
     veteran_tag_icon_path                   = mod:get("veteran_tag_icon_path"),
     veteran_tag_use_slot_color              = mod:get("veteran_tag_use_slot_color"),
     override_veteran_tag_color              = mod:get("override_veteran_tag_color"),
-    veteran_tag_color_red                   = mod:get("veteran_tag_color_red"),
-    veteran_tag_color_green                 = mod:get("veteran_tag_color_green"),
-    veteran_tag_color_blue                  = mod:get("veteran_tag_color_blue"),
+    veteran_tag_color                       = mod:get("veteran_tag_color"),
     override_teammate_veteran_tag_color     = mod:get("override_teammate_veteran_tag_color"),
-    teammate_veteran_tag_color_red          = mod:get("teammate_veteran_tag_color_red"),
-    teammate_veteran_tag_color_green        = mod:get("teammate_veteran_tag_color_green"),
-    teammate_veteran_tag_color_blue         = mod:get("teammate_veteran_tag_color_blue"),
+    teammate_veteran_tag_color              = mod:get("teammate_veteran_tag_color"),
     override_companion_tag_settings         = mod:get("override_companion_tag_settings"),
     companion_tag_opacity_normal            = mod:get("companion_tag_opacity_normal"),
     companion_tag_fade_when_aim             = mod:get("companion_tag_fade_when_aim"),
@@ -60,13 +52,9 @@ local mod_settings             = {
     companion_tag_icon_path                 = mod:get("companion_tag_icon_path"),
     companion_tag_use_slot_color            = mod:get("companion_tag_use_slot_color"),
     override_companion_tag_color            = mod:get("override_companion_tag_color"),
-    companion_tag_color_red                 = mod:get("companion_tag_color_red"),
-    companion_tag_color_green               = mod:get("companion_tag_color_green"),
-    companion_tag_color_blue                = mod:get("companion_tag_color_blue"),
+    companion_tag_color                     = mod:get("companion_tag_color"),
     override_teammate_companion_tag_color   = mod:get("override_teammate_companion_tag_color"),
-    teammate_companion_tag_color_red        = mod:get("teammate_companion_tag_color_red"),
-    teammate_companion_tag_color_green      = mod:get("teammate_companion_tag_color_green"),
-    teammate_companion_tag_color_blue       = mod:get("teammate_companion_tag_color_blue"),
+    teammate_companion_tag_color            = mod:get("teammate_companion_tag_color"),
     override_servo_skull_tag_settings       = mod:get("override_servo_skull_tag_settings"),
     servo_skull_tag_opacity_normal          = mod:get("servo_skull_tag_opacity_normal"),
     servo_skull_tag_fade_when_aim           = mod:get("servo_skull_tag_fade_when_aim"),
@@ -75,13 +63,9 @@ local mod_settings             = {
     servo_skull_tag_icon_path               = mod:get("servo_skull_tag_icon_path"),
     servo_skull_tag_use_slot_color          = mod:get("servo_skull_tag_use_slot_color"),
     override_servo_skull_tag_color          = mod:get("override_servo_skull_tag_color"),
-    servo_skull_tag_color_red               = mod:get("servo_skull_tag_color_red"),
-    servo_skull_tag_color_green             = mod:get("servo_skull_tag_color_green"),
-    servo_skull_tag_color_blue              = mod:get("servo_skull_tag_color_blue"),
+    servo_skull_tag_color                   = mod:get("servo_skull_tag_color"),
     override_teammate_servo_skull_tag_color = mod:get("override_teammate_servo_skull_tag_color"),
-    teammate_servo_skull_tag_color_red      = mod:get("teammate_servo_skull_tag_color_red"),
-    teammate_servo_skull_tag_color_green    = mod:get("teammate_servo_skull_tag_color_green"),
-    teammate_servo_skull_tag_color_blue     = mod:get("teammate_servo_skull_tag_color_blue"),
+    teammate_servo_skull_tag_color          = mod:get("teammate_servo_skull_tag_color"),
 }
 
 -- Params
@@ -115,18 +99,6 @@ local scale_settings           = {
 
 local tag_templates            = {}
 local alternate_fire_component = nil
-
-local PACKAGES                 = {
-    "packages/ui/views/scanner_display_view/scanner_display_view",
-    "packages/ui/views/character_appearance_view/character_appearance_view",
-    "packages/ui/views/inventory_background_view/inventory_background_view",
-}
-
-local function load_package(package_name)
-    if Application.can_get_resource("package", package_name) and not Managers.package:is_loading(package_name) and not Managers.package:has_loaded(package_name) then
-        Managers.package:load(package_name, "BetterEnemyTag", nil, true)
-    end
-end
 
 local function change_template_settings(template)
     template.screen_margins = mod_settings.reduce_screen_margin and screen_margins or DEFAULT_SCREEN_MARGINS
@@ -220,15 +192,9 @@ local function on_marker_update(widget, marker, tag_type)
             local override_tag_color = mod_settings["override_" .. tag_type .. "_color"]
             local override_teammate_tag_color = mod_settings["override_teammate_" .. tag_type .. "_color"] and is_teammate_tag
             if override_teammate_tag_color then
-                tag_color = {}
-                tag_color[2] = mod_settings["teammate_" .. tag_type .. "_color_red"]
-                tag_color[3] = mod_settings["teammate_" .. tag_type .. "_color_green"]
-                tag_color[4] = mod_settings["teammate_" .. tag_type .. "_color_blue"]
+                tag_color = mod_settings["teammate_" .. tag_type .. "_color"]
             elseif override_tag_color then
-                tag_color = {}
-                tag_color[2] = mod_settings[tag_type .. "_color_red"]
-                tag_color[3] = mod_settings[tag_type .. "_color_green"]
-                tag_color[4] = mod_settings[tag_type .. "_color_blue"]
+                tag_color = mod_settings[tag_type .. "_color"]
             end
         end
         if tag_color then
@@ -339,9 +305,11 @@ mod:hook_safe(CLASS.OutlineSystem, "_event_smart_tag_created",
             local override_tag_color = mod_settings["override_" .. tag_type .. "_color"]
             local override_teammate_tag_color = mod_settings["override_teammate_" .. tag_type .. "_color"] and is_teammate_tag
             if override_teammate_tag_color then
-                outline_color = { mod_settings["teammate_" .. tag_type .. "_color_red"] / 255, mod_settings["teammate_" .. tag_type .. "_color_green"] / 255, mod_settings["teammate_" .. tag_type .. "_color_blue"] / 255 }
+                local color = mod_settings["teammate_" .. tag_type .. "_color"]
+                outline_color = { color[2] / 255, color[3] / 255, color[4] / 255 }
             elseif override_tag_color then
-                outline_color = { mod_settings[tag_type .. "_color_red"] / 255, mod_settings[tag_type .. "_color_green"] / 255, mod_settings[tag_type .. "_color_blue"] / 255 }
+                local color = mod_settings[tag_type .. "_color"]
+                outline_color = { color[2] / 255, color[3] / 255, color[4] / 255 }
             else
                 outline_color = get_default_tag_color(tag_type)
             end
@@ -376,61 +344,6 @@ mod.on_setting_changed = function(setting_id)
             local tag_type = setting_id:gsub("^override_", ""):gsub("^teammate_", ""):gsub("_color$", "")
             mod:set(tag_type .. "_use_slot_color", false, true)
         end
-    elseif string.find(setting_id, "_red")
-        or string.find(setting_id, "_green")
-        or string.find(setting_id, "_blue")
-    then
-        local Alf = get_mod("Alfs_DMF_Extensions")
-        if Alf and Alf:get("enable_RGB_widget") then
-            return
-        end
-
-        local title_key = setting_id:gsub("_red$", ""):gsub("_green$", ""):gsub("_blue$", "")
-        local localization = mod:get_localization()
-        local translations = localization[title_key]
-        local lang = Managers.localization:language()
-        local new_title = translations[lang] or translations.en
-        if not new_title then
-            return
-        end
-
-        local red               = mod:get(title_key .. "_red")
-        local green             = mod:get(title_key .. "_green")
-        local blue              = mod:get(title_key .. "_blue")
-        local new_title_colored = mod:make_text_colorful(new_title, red, green, blue)
-        local dmf               = get_mod("DMF")
-        local mod_name          = mod:get_name()
-        for _, mod_data in ipairs(dmf.options_widgets_data) do
-            if mod_data[1] and mod_data[1].mod_name == mod_name then
-                for j = 1, #mod_data do
-                    if mod_data[j].setting_id == title_key then
-                        mod_data[j].title = new_title_colored
-                        break
-                    end
-                end
-            end
-        end
-
-        local view = Managers.ui:view_instance("dmf_options_view")
-        local settings_category_widgets = view and view._settings_category_widgets
-        local mod_widgets = settings_category_widgets and settings_category_widgets[mod:localize("mod_name")]
-        if mod_widgets then
-            for _, data in ipairs(mod_widgets) do
-                local widget = data.widget
-                local content = widget and widget.content
-                if not content or not content.text then
-                    break
-                end
-
-                if new_title == string.gsub(content.text, "{#.-}", "") then
-                    if content.entry then
-                        content.entry.display_name = new_title_colored
-                    end
-                    content.text = new_title_colored
-                    break
-                end
-            end
-        end
     end
 end
 
@@ -452,18 +365,12 @@ local function reset_components()
     alternate_fire_component = nil
 end
 
-mod.on_enabled         = function()
+mod.on_enabled  = function()
     init_components()
 end
 
-mod.on_disabled        = function()
+mod.on_disabled = function()
     reset_components()
-end
-
-mod.on_all_mods_loaded = function()
-    for _, package_name in ipairs(PACKAGES) do
-        load_package(package_name)
-    end
 end
 
 mod:hook_safe(CLASS.PlayerUnitDataExtension, "init",

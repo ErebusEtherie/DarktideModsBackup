@@ -1,0 +1,667 @@
+local mod = get_mod("ChaosWastesAtHome")
+
+local strip = mod:io_dofile("ChaosWastesAtHome/scripts/mods/ChaosWastesAtHome/view/loadout_strip")
+local tab_strip = mod:io_dofile("ChaosWastesAtHome/scripts/mods/ChaosWastesAtHome/view/tab_strip")
+
+local ScriptWorld = require("scripts/foundation/utilities/script_world")
+local UIRenderer = require("scripts/managers/ui/ui_renderer")
+local UIWidget = require("scripts/managers/ui/ui_widget")
+local UIWidgetGrid = require("scripts/ui/widget_logic/ui_widget_grid")
+local ViewElementInputLegend = require("scripts/ui/view_elements/view_element_input_legend/view_element_input_legend")
+
+local asset_loader = mod:io_dofile("ChaosWastesAtHome/scripts/mods/ChaosWastesAtHome/asset_loader")
+local buff_pool = mod:io_dofile("ChaosWastesAtHome/scripts/mods/ChaosWastesAtHome/buff_pool")
+local havoc_pool = mod:io_dofile("ChaosWastesAtHome/scripts/mods/ChaosWastesAtHome/havoc_pool")
+
+-- Which buffs are allowed to be rolled.
+--
+-- Left: families and legendary categories. Right: the buffs in the selected
+-- one, each row a toggle. Everything is on by default; turning a row off adds
+-- it to the exclusion table the buff system already filters both pools through.
+--
+-- Follows the priority-preset view in AugsGamingChair: offscreen renderer
+-- plus UIWidgetGrid plus a mask, which is the workspace's pattern for a
+-- scrollable list in a custom view.
+
+local VIEW_NAME = "chaos_wastes_buff_toggle_view"
+
+local BuffToggleView = class("ChaosWastesBuffToggleView", "BaseView")
+
+BuffToggleView.init = function (self, settings_arg, context)
+	self._definitions = mod:io_dofile("ChaosWastesAtHome/scripts/mods/ChaosWastesAtHome/view/buff_toggle_view_definitions")
+	self._blueprint_data = mod:io_dofile("ChaosWastesAtHome/scripts/mods/ChaosWastesAtHome/view/buff_toggle_view_blueprints")
+	self._blueprints = self._blueprint_data.blueprints
+	self._view_settings = mod:io_dofile("ChaosWastesAtHome/scripts/mods/ChaosWastesAtHome/view/buff_toggle_view_settings")
+
+	self._pool = buff_pool
+	self._subtab = "buffs"
+	self._group_widgets = {}
+	self._group_rows_by_id = {}
+	self._buff_widgets = {}
+	self._selected_group = nil
+	self._selected_buff = nil
+	self._group_grid = nil
+	self._buff_grid = nil
+
+	BuffToggleView.super.init(self, self._definitions, settings_arg, context)
+
+	-- Both false so the engine stops here: UIViewHandler walks open views
+	-- top-down and hands null_service to everything below the first view
+	-- reporting pass_on_input false, which is what stops clicks landing on the
+	-- mod options menu this was opened from.
+	self._pass_input = false
+	self._pass_draw = false
+
+	self:_setup_offscreen_gui()
+end
+
+BuffToggleView._setup_offscreen_gui = function (self)
+	local ui_manager = Managers.ui
+	local class_name = self.__class_name
+
+	self._offscreen_world = ui_manager:create_world(class_name .. "_world", 10, "ui", self.view_name)
+
+	local viewport_name = class_name .. "_viewport"
+
+	self._offscreen_viewport = ui_manager:create_viewport(
+		self._offscreen_world, viewport_name, "overlay_offscreen", 1, self._view_settings.shading_environment
+	)
+	self._offscreen_viewport_name = viewport_name
+	self._ui_offscreen_renderer = ui_manager:create_renderer(class_name .. "_renderer", self._offscreen_world)
+end
+
+BuffToggleView.on_enter = function (self)
+	BuffToggleView.super.on_enter(self)
+
+	self._input_legend_element = self:_add_element(ViewElementInputLegend, "input_legend", 10)
+
+	for _, leg in ipairs(self._definitions.legend_inputs) do
+		local cb = leg.on_pressed_callback and callback(self, leg.on_pressed_callback)
+
+		self._input_legend_element:add_entry(leg.display_name, leg.input_action, nil, cb, leg.alignment)
+	end
+
+	local widgets_by_name = self._widgets_by_name
+
+	if widgets_by_name.enable_all_button then
+		widgets_by_name.enable_all_button.content.hotspot.pressed_callback = callback(self, "cb_enable_all")
+	end
+
+	if widgets_by_name.disable_all_button then
+		widgets_by_name.disable_all_button.content.hotspot.pressed_callback = callback(self, "cb_disable_all")
+	end
+
+	if widgets_by_name.family_pick_button then
+		widgets_by_name.family_pick_button.content.hotspot.pressed_callback = callback(self, "cb_toggle_family_pick")
+	end
+
+	if widgets_by_name.reset_all_button then
+		widgets_by_name.reset_all_button.content.hotspot.pressed_callback = callback(self, "cb_reset_all")
+	end
+
+	if widgets_by_name.detail_toggle_button then
+		widgets_by_name.detail_toggle_button.content.hotspot.pressed_callback = callback(self, "cb_toggle_selected")
+	end
+
+	tab_strip.attach(self, "buffs")
+
+	strip.attach(self)
+
+	-- The icons live in the Mortis package, which is only resident during one of
+	-- our missions -- so in the Mourningstar every icon would be a placeholder.
+	-- Requesting it here makes the menu usable from the hub, and it is the same
+	-- package a run loads, so opening this mid-run costs nothing.
+	--
+	-- Honours the preload setting: someone who turned the package off to save
+	-- load time has already accepted placeholder artwork on the real cards.
+	asset_loader.request()
+
+	self._assets_loaded = asset_loader.is_loaded()
+
+	-- Rebuilt on open so custom buffs registered since the last visit appear.
+	buff_pool.invalidate()
+
+	widgets_by_name.subtab_buffs.content.hotspot.pressed_callback = callback(self, "cb_subtab_buffs")
+	widgets_by_name.subtab_havoc.content.hotspot.pressed_callback = callback(self, "cb_subtab_havoc")
+	self:_select_subtab("buffs")
+end
+
+-- Switch within this view, preserving the loadout strip and pause state.
+BuffToggleView._select_subtab = function (self, id)
+	self._subtab = id
+	self._pool = id == "havoc" and havoc_pool or buff_pool
+	for _, widget in ipairs(self._group_widgets) do self:_unregister_widget_name(widget.name) end
+	self._group_widgets, self._group_rows_by_id, self._group_grid = {}, {}, nil
+	local widgets = self._widgets_by_name
+	widgets.subtab_buffs.content.hotspot.disabled = id == "buffs"
+	widgets.subtab_havoc.content.hotspot.disabled = id == "havoc"
+	widgets.title_text.content.text = mod:localize(id == "havoc" and "tab_havoc_modifiers" or "buff_toggle_view_title")
+	widgets.family_pick_button.visible = id == "buffs"
+	self:_build_groups()
+	self:_select_group(self._pool.groups()[1])
+end
+
+BuffToggleView.cb_subtab_buffs = function (self) self:_select_subtab("buffs") end
+BuffToggleView.cb_subtab_havoc = function (self) self:_select_subtab("havoc") end
+
+-- ---------------------------------------------------------------------------
+-- Left list
+-- ---------------------------------------------------------------------------
+
+BuffToggleView._build_groups = function (self)
+	local template = self._blueprints.group_row
+	local def = UIWidget.create_definition(template.pass_template, "group_grid_content_pivot", nil, template.size)
+
+	for i, group in ipairs(self._pool.groups()) do
+		local widget = self:_create_widget("group_row_" .. i, def)
+
+		template.init(self, widget, { title = group.label, group = group }, "cb_group_pressed")
+		self:_refresh_group_row(widget, group)
+
+		self._group_widgets[#self._group_widgets + 1] = widget
+		self._group_rows_by_id[group.id] = widget
+	end
+
+	if #self._group_widgets > 0 then
+		self._group_grid = UIWidgetGrid:new(
+			self._group_widgets, self._group_widgets, self._ui_scenegraph,
+			"group_panel", "down", self._view_settings.grid_spacing, nil, true
+		)
+
+		self._group_grid:set_render_scale(self._render_scale)
+
+		local scrollbar = self._widgets_by_name.group_scrollbar
+
+		if scrollbar then
+			self._group_grid:assign_scrollbar(scrollbar, "group_grid_content_pivot", "group_panel")
+			self._group_grid:set_scrollbar_progress(0)
+		end
+	end
+end
+
+-- The "7/9" on a filter row, so a group with things switched off is visible
+-- without opening it.
+--
+-- A family that can no longer be offered as an opening pick is dimmed as well,
+-- so which ones are excluded reads down the column instead of having to be
+-- discovered by selecting each one in turn.
+BuffToggleView._refresh_group_row = function (self, widget, group)
+	local on, total = self._pool.group_counts(group)
+
+	widget.content.state_text = string.format("%d/%d", on, total)
+	widget.style.state_text.text_color = table.clone(
+		on == total and self._blueprint_data.color_on or self._blueprint_data.color_off
+	)
+
+	local excluded = group.family ~= nil and not self._pool.is_family_offered(group.family)
+
+	widget.style.text.text_color = table.clone(
+		excluded and self._blueprint_data.color_off or self._blueprint_data.color_title
+	)
+end
+
+-- Reads the selected family, so it updates on every selection as well as on
+-- every toggle.
+BuffToggleView._refresh_family_pick_button = function (self)
+	local widget = self._widgets_by_name.family_pick_button
+
+	if not widget then
+		return
+	end
+
+	local group = self._selected_group
+	local family = group and group.family
+
+	widget.content.hotspot.disabled = family == nil
+
+	if not family then
+		-- The custom-buff group is not a family and has no opening pick, so the
+		-- button says what it would act on rather than going blank.
+		widget.content.original_text = mod:localize("family_pick_unavailable")
+
+		return
+	end
+
+	widget.content.original_text = self._pool.is_family_offered(family)
+		and mod:localize("family_pick_disable")
+		or mod:localize("family_pick_enable")
+end
+
+BuffToggleView.cb_toggle_family_pick = function (self)
+	local group = self._selected_group
+	local family = group and group.family
+
+	if not family then
+		return
+	end
+
+	self._pool.set_family_offered(family, not self._pool.is_family_offered(family))
+
+	self:_refresh_family_pick_button()
+	self:_refresh_group_counts()
+end
+
+-- ---------------------------------------------------------------------------
+-- Right list
+-- ---------------------------------------------------------------------------
+
+BuffToggleView._clear_buffs = function (self)
+	for _, widget in ipairs(self._buff_widgets) do
+		pcall(function ()
+			self:_unregister_widget_name(widget.name)
+		end)
+	end
+
+	self._buff_widgets = {}
+	self._buff_grid = nil
+end
+
+BuffToggleView._build_buffs = function (self, group)
+	self:_clear_buffs()
+
+	if not group then
+		return
+	end
+
+	local template = self._blueprints.buff_row
+	local def = UIWidget.create_definition(template.pass_template, "buff_grid_content_pivot", nil, template.size)
+
+	for i, name in ipairs(group.names) do
+		local widget = self:_create_widget("buff_row_" .. i, def)
+
+		template.init(self, widget, { title = self._pool.title(name), buff_name = name }, "cb_buff_pressed")
+		self:_refresh_buff_row(widget, name)
+
+		self._buff_widgets[#self._buff_widgets + 1] = widget
+	end
+
+	if #self._buff_widgets > 0 then
+		self._buff_grid = UIWidgetGrid:new(
+			self._buff_widgets, self._buff_widgets, self._ui_scenegraph,
+			"buff_panel", "down", self._view_settings.grid_spacing, nil, true
+		)
+
+		self._buff_grid:set_render_scale(self._render_scale)
+
+		local scrollbar = self._widgets_by_name.buff_scrollbar
+
+		if scrollbar then
+			self._buff_grid:assign_scrollbar(scrollbar, "buff_grid_content_pivot", "buff_panel")
+			self._buff_grid:set_scrollbar_progress(0)
+		end
+	end
+end
+
+BuffToggleView._refresh_buff_row = function (self, widget, name)
+	local enabled = self._pool.is_enabled(name)
+
+	widget.content.state_text = mod:localize(enabled and "buff_state_on" or "buff_state_off")
+	widget.style.state_text.text_color = table.clone(
+		enabled and self._blueprint_data.color_on or self._blueprint_data.color_off
+	)
+	widget.style.text.text_color = table.clone(
+		enabled and self._blueprint_data.color_on or self._blueprint_data.color_off
+	)
+end
+
+BuffToggleView._refresh_visible_buffs = function (self)
+	local group = self._selected_group
+
+	if not group then
+		return
+	end
+
+	for i, widget in ipairs(self._buff_widgets) do
+		local name = group.names[i]
+
+		if name then
+			self:_refresh_buff_row(widget, name)
+		end
+	end
+end
+
+BuffToggleView._select_group = function (self, group)
+	self._selected_group = group
+
+	for id, widget in pairs(self._group_rows_by_id) do
+		widget.content.is_selected = group ~= nil and id == group.id
+	end
+
+	self:_build_buffs(group)
+
+	-- Opens on the first buff rather than an empty card: there is always
+	-- something to describe, and a blank right-hand third reads as broken.
+	self:_select_buff(group and group.names[1] or nil)
+	self:_refresh_summary()
+
+	-- Here rather than in the click handler: on_enter selects the first group
+	-- directly, and the button would start out describing nothing.
+	self:_refresh_family_pick_button()
+	self:_refresh_details()
+end
+
+-- ---------------------------------------------------------------------------
+-- Detail card
+-- ---------------------------------------------------------------------------
+
+BuffToggleView._select_buff = function (self, name)
+	self._selected_buff = name
+
+	local group = self._selected_group
+
+	if group then
+		for i, widget in ipairs(self._buff_widgets) do
+			widget.content.is_selected = group.names[i] == name
+		end
+	end
+
+	self:_refresh_details()
+end
+
+-- Writes the icon into the container material.
+--
+-- Where the material values live depends on how the widget was built: the game
+-- writes content.icon.material_values (blueprints.lua:558) while the value is
+-- declared in style. Both shapes are handled rather than assuming one, because
+-- guessing wrong is a nil index on a table that is only touched when a card is
+-- shown -- i.e. it would look fine until someone opened the menu.
+BuffToggleView._set_icon = function (self, widget, icon)
+	if not widget or not icon then
+		return
+	end
+
+	local content_icon = widget.content and widget.content.icon
+
+	if type(content_icon) == "table" and content_icon.material_values then
+		content_icon.material_values.icon = icon
+
+		return
+	end
+
+	local style_icon = widget.style and widget.style.icon
+
+	if style_icon and style_icon.material_values then
+		style_icon.material_values.icon = icon
+	end
+end
+
+BuffToggleView._refresh_details = function (self)
+	local widgets_by_name = self._widgets_by_name
+	local name = self._selected_buff
+	local details = name and self._pool.details(name)
+	local visible = details ~= nil
+
+	for _, id in ipairs({ "detail_panel", "detail_icon", "detail_modifier_icon", "detail_title", "detail_subtitle", "detail_description", "detail_toggle_button" }) do
+		local widget = widgets_by_name[id]
+
+		if widget then
+			widget.visible = visible
+		end
+	end
+
+	if not visible then
+		return
+	end
+
+	widgets_by_name.detail_title.content.text = details.title
+
+	widgets_by_name.detail_subtitle.content.text = mod:localize(
+		self._subtab == "havoc" and "havoc_modifier_kind"
+			or (details.is_family_buff and "buff_kind_family" or "buff_kind_legendary")
+	)
+
+	-- Already parsed and colour-tagged by the game's own formatter, so it goes
+	-- into the text pass verbatim.
+	widgets_by_name.detail_description.content.text = details.description or mod:localize("buff_no_description")
+
+	widgets_by_name.detail_icon.visible = self._subtab == "buffs"
+	widgets_by_name.detail_modifier_icon.visible = self._subtab == "havoc" and details.icon ~= nil
+	if self._subtab == "havoc" then
+		if details.icon then widgets_by_name.detail_modifier_icon.content.icon = details.icon end
+	else
+		self:_set_icon(widgets_by_name.detail_icon, details.icon)
+	end
+
+	local enabled = self._pool.is_enabled(name)
+
+	widgets_by_name.detail_toggle_button.content.original_text =
+		mod:localize(self._subtab == "havoc"
+			and (enabled and "havoc_disable_this" or "havoc_enable_this")
+			or (enabled and "buff_disable_this" or "buff_enable_this"))
+end
+
+BuffToggleView._refresh_summary = function (self)
+	local widget = self._widgets_by_name.summary_text
+
+	if not widget then
+		return
+	end
+
+	local disabled = self._pool.disabled_count()
+
+	if self._subtab == "havoc" then
+		local enabled, total = self._pool.group_counts(self._pool.groups()[1])
+		widget.content.text = enabled == 0 and mod:localize("havoc_pool_none")
+			or mod:localize("havoc_pool_summary", enabled, total)
+		return
+	end
+
+	widget.content.text = disabled == 0 and mod:localize("buff_summary_all_on")
+		or mod:localize("buff_summary_disabled", disabled)
+end
+
+-- ---------------------------------------------------------------------------
+-- Callbacks
+-- ---------------------------------------------------------------------------
+
+BuffToggleView.cb_group_pressed = function (self, widget, entry)
+	self:_select_group(entry.group)
+end
+
+-- Selecting, not toggling. Reading what a buff does should not change whether
+-- it is enabled -- browsing a family would otherwise turn half of it off. The
+-- card's own button is the only thing that toggles.
+BuffToggleView.cb_buff_pressed = function (self, widget, entry)
+	self:_select_buff(entry.buff_name)
+end
+
+BuffToggleView.cb_toggle_selected = function (self)
+	local name = self._selected_buff
+
+	if not name then
+		return
+	end
+
+	self._pool.set_enabled(name, not self._pool.is_enabled(name))
+
+	self:_refresh_visible_buffs()
+	self:_refresh_group_counts()
+	self:_refresh_summary()
+	self:_refresh_details()
+end
+
+BuffToggleView.cb_enable_all = function (self)
+	self:_set_group_enabled(true)
+end
+
+BuffToggleView.cb_disable_all = function (self)
+	self:_set_group_enabled(false)
+end
+
+BuffToggleView._set_group_enabled = function (self, enabled)
+	local group = self._selected_group
+
+	if not group then
+		return
+	end
+
+	self._pool.set_group_enabled(group, enabled)
+	self:_refresh_visible_buffs()
+	self:_refresh_group_counts()
+	self:_refresh_summary()
+	self:_refresh_details()
+end
+
+BuffToggleView.cb_reset_all = function (self)
+	for _, group in ipairs(self._pool.groups()) do
+		self._pool.set_group_enabled(group, true)
+
+		-- Families too. "Re-enable everything" that leaves four families barred
+		-- from the opening pick has not re-enabled everything, and the state it
+		-- misses is the one that is hardest to spot.
+		if group.family then
+			self._pool.set_family_offered(group.family, true)
+		end
+	end
+
+	self:_refresh_visible_buffs()
+	self:_refresh_group_counts()
+	self:_refresh_summary()
+	self:_refresh_family_pick_button()
+	self:_refresh_details()
+end
+
+-- Every group row, not just the selected one: the same buff can appear in more
+-- than one group (grenade buffs are shared across abilities), so toggling once
+-- can change the count on a row that is not currently open.
+BuffToggleView._refresh_group_counts = function (self)
+	for _, group in ipairs(self._pool.groups()) do
+		local widget = self._group_rows_by_id[group.id]
+
+		if widget then
+			self:_refresh_group_row(widget, group)
+		end
+	end
+end
+
+-- The strip applied a different loadout, so anything this tab reads from
+-- settings is now stale.
+BuffToggleView.on_loadout_changed = function (self)
+	-- Refreshed in place. NOT rebuilt.
+	--
+	-- _build_groups is an on_enter builder: it appends into _group_widgets and
+	-- registers a widget name per row, so calling it again left two rows per
+	-- group in the grid and two widgets claiming one name. That is the duplicate
+	-- that appeared in the scroll list on every loadout click, and why clicking a
+	-- row afterwards acted on something other than what it looked like.
+	--
+	-- Nothing needs rebuilding anyway. _build_catalogue reads
+	-- MissionBuffsAllowedBuffs and the custom buff list and never touches a
+	-- setting, so a different loadout changes which buffs are ticked, never
+	-- which groups or rows exist. Only the counts move.
+	-- By id, not by table identity: select() invalidates the catalogue, so these
+	-- are fresh group tables holding the same ids -- which also means the group
+	-- the view has open is now a table from the previous build. Re-point it
+	-- rather than leaving a stale reference behind.
+	local selected_id = self._selected_group and self._selected_group.id
+
+	for _, group in ipairs(self._pool.groups()) do
+		local widget = self._group_rows_by_id[group.id]
+
+		if widget then
+			self:_refresh_group_row(widget, group)
+		end
+
+		if group.id == selected_id then
+			self._selected_group = group
+		end
+	end
+
+	self:_refresh_visible_buffs()
+	self:_refresh_summary()
+	self:_refresh_family_pick_button()
+	self:_refresh_details()
+end
+
+BuffToggleView.cb_on_back_pressed = function (self)
+	Managers.ui:close_view(VIEW_NAME)
+end
+
+-- ---------------------------------------------------------------------------
+-- Update / draw
+-- ---------------------------------------------------------------------------
+
+BuffToggleView.update = function (self, dt, t, input_service)
+	strip.update(self, dt)
+
+	if self._group_grid then
+		self._group_grid:update(dt, t, input_service)
+	end
+
+	if self._buff_grid then
+		self._buff_grid:update(dt, t, input_service)
+	end
+
+	-- The package load is asynchronous, so the card is already on screen by the
+	-- time the textures arrive. Nothing re-reads a material value on its own --
+	-- one refresh when the load lands is what turns the placeholder into art.
+	local loaded = asset_loader.is_loaded()
+
+	if loaded ~= self._assets_loaded then
+		self._assets_loaded = loaded
+
+		self:_refresh_details()
+	end
+
+	return BuffToggleView.super.update(self, dt, t, input_service)
+end
+
+BuffToggleView.draw = function (self, dt, t, input_service, layer)
+	self:_draw_elements(dt, t, self._ui_renderer, self._render_settings, input_service)
+
+	if #self._group_widgets > 0 then
+		self:_draw_grid(self._group_grid, self._group_widgets, dt, t, input_service)
+	end
+
+	if #self._buff_widgets > 0 then
+		self:_draw_grid(self._buff_grid, self._buff_widgets, dt, t, input_service)
+	end
+
+	BuffToggleView.super.draw(self, dt, t, input_service, layer)
+end
+
+BuffToggleView._draw_grid = function (self, grid, widgets, dt, t, input_service)
+	local ui_renderer = self._ui_offscreen_renderer
+
+	UIRenderer.begin_pass(ui_renderer, self._ui_scenegraph, input_service, dt, self._render_settings)
+
+	for _, widget in ipairs(widgets) do
+		local visible = widget.visible ~= false and (not grid or grid:is_widget_visible(widget))
+
+		if visible then
+			UIWidget.draw(widget, ui_renderer)
+		end
+	end
+
+	UIRenderer.end_pass(ui_renderer)
+end
+
+BuffToggleView.on_exit = function (self)
+	-- Only when no mission of ours is running. During a run the package belongs
+	-- to the run, and releasing it here would strip the icons off the real buff
+	-- cards for the rest of it.
+	if not mod.manager then
+		asset_loader.release()
+	end
+
+	if self._input_legend_element then
+		self:_remove_element("input_legend")
+
+		self._input_legend_element = nil
+	end
+
+	if self._ui_offscreen_renderer then
+		Managers.ui:destroy_renderer(self.__class_name .. "_renderer")
+		ScriptWorld.destroy_viewport(self._offscreen_world, self._offscreen_viewport_name)
+		Managers.ui:destroy_world(self._offscreen_world)
+
+		self._ui_offscreen_renderer = nil
+		self._offscreen_viewport = nil
+		self._offscreen_viewport_name = nil
+		self._offscreen_world = nil
+	end
+
+	BuffToggleView.super.on_exit(self)
+end
+
+return BuffToggleView

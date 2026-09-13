@@ -1,0 +1,17 @@
+{
+    "name": "Aggro Indicator",
+    "author": "IndicaBunny",
+    "version": "1.4",
+    "homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/1062",
+    "source": "https://github.com/MaddyMarv/Aggro-Indicator",
+    "funding": {
+        "kofi": "https://ko-fi.com/indicabunny"
+    },
+    "description": "Adds an indicator near your crosshair that lights up and color-codes enemies targeting you (Pox Bursters, Trappers, Snipers, etc.).",
+    "dependencies": {
+        "required": [],
+        "self_after": [],
+        "self_before": []
+    },
+    "localization": {}
+}

@@ -65,4 +65,10 @@ return {
 	keep_allies_visible_while_holding_support_items_description = {
 		["en"] = "Temporarily use Darktide's default fade distances for allied players while you are holding an ammo crate, medical crate, or stim. Your custom distances return when you switch away",
 	},
+	prevent_own_player_fade = {
+		["en"] = "Prevent Own Player Fade",
+	},
+	prevent_own_player_fade_description = {
+		["en"] = "Prevent your own character from fading out. This is especially useful with third-person camera mods",
+	},
 }

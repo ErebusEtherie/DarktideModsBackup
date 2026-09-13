@@ -19,7 +19,7 @@ local servo_skull_states                = CompanionServoSkullSettings.STATES
 local RESOLUTION_LOOKUP                 = RESOLUTION_LOOKUP
 local Managers                          = Managers
 local callback                          = callback
-local GameSession                       = GameSession
+local get_game_object_field             = GameSession.game_object_field
 local ScriptUnit_extension              = ScriptUnit.extension
 
 local HACK_TAG_NAME                     = "hacking_over_here_companion"
@@ -128,20 +128,36 @@ end
 function mod:is_servo_skull_hacking()
     local companion_spawner_extension = context.companion_spawner_extension
     local companion_unit = companion_spawner_extension and companion_spawner_extension:spawned_unit_lookup(special_rules.cryptic_servo_skull_hack)
-    if not ALIVE[companion_unit] then
+    if not companion_unit then
         return false
     end
 
     local game_session = Managers.state.game_session:game_session()
     local game_object_id = Managers.state.unit_spawner:game_object_id(companion_unit)
-    local game_object_exists = GameSession.game_object_exists(game_session, game_object_id)
+    local state = get_game_object_field(game_session, game_object_id, "state")
+    return state == servo_skull_states.hacking
+end
 
-    if not game_object_exists then
+function mod:is_noospheric_command_boost_breed_valid(target_unit)
+    local unit_data_extension = ScriptUnit_extension(target_unit, "unit_data_system")
+    local breed_data = unit_data_extension and unit_data_extension._breed
+    if not breed_data then
         return false
     end
 
-    local state = GameSession.game_object_field(game_session, game_object_id, "state")
-    return state == servo_skull_states.hacking
+    local breed_name = breed_data.name
+    local breed_settings = noospheric_command_breed_settings[breed_name]
+    if breed_settings and breed_settings.override then
+        return breed_settings.toggle
+    end
+
+    if breed_data.is_boss then
+        return mod_settings.noospheric_command_boost_boss
+    elseif breed_data.tags.special then
+        return mod_settings.noospheric_command_boost_special
+    else
+        return mod_settings.noospheric_command_boost_elite
+    end
 end
 
 local find_hackable_target_unit = function()
@@ -200,7 +216,7 @@ end
 
 local hack_interval             = 0
 function mod:auto_hack(dt, t, fixed_frame)
-    if not mod_settings.toggle_mod or not mod_settings.auto_hack or (mod_settings.disable_auto_hack_for_noospheric_command and context.has_noospheric_command) or context.class_name ~= "cryptic" or not context.has_servo_skull then
+    if not mod_settings.auto_hack or (mod_settings.disable_auto_hack_for_noospheric_command and context.has_noospheric_command) or context.class_name ~= "cryptic" or not context.has_servo_skull then
         return
     end
 
@@ -242,7 +258,7 @@ end
 
 local cancel_interval = 0
 function mod:auto_cancel_servo_skull_mark(dt, t, fixed_frame)
-    if not mod_settings.toggle_mod or not mod_settings.servo_skull_cancel_mark or context.class_name ~= "cryptic" or not context.has_servo_skull then
+    if not mod_settings.servo_skull_cancel_mark or context.class_name ~= "cryptic" or not context.has_servo_skull then
         return
     end
 
@@ -283,23 +299,23 @@ function mod:auto_cancel_servo_skull_mark(dt, t, fixed_frame)
     if time_threshold > 0 then
         if mod:is_servo_skull_target_visible(marked_unit, fixed_frame, true) then
             tag_context.servo_skull_lose_sight_time = nil
-        elseif tag_context.servo_skull_lose_sight_time == nil then
+        elseif not tag_context.servo_skull_lose_sight_time then
             tag_context.servo_skull_lose_sight_time = t
         end
 
         if tag_context.servo_skull_lose_sight_time and t - tag_context.servo_skull_lose_sight_time > time_threshold then
             mod:print_debug("cancel servo skull mark due to time threshold")
-            tag_context.canceled_units[marked_unit] = t + 0.5
+            tag_context.canceled_units[marked_unit] = t + 0.3
             cancel_interval = CANCEL_INTERVAL
             mod:cancel_mark(marked_tag._id)
         end
     end
 
-    if health_threshold > 0 then
+    if health_threshold > 0 and tag_context.shoot_start_time then
         local health_percent = Health.current_health_percent(marked_unit)
         if health_percent < health_threshold then
             mod:print_debug("cancel servo skull mark due to health threshold, health_percent:", health_percent)
-            tag_context.canceled_units[marked_unit] = math.huge
+            tag_context.canceled_units[marked_unit] = t + 3
             cancel_interval = CANCEL_INTERVAL
             mod:cancel_mark(marked_tag._id)
             return

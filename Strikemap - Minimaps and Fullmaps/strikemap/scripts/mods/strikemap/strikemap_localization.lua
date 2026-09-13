@@ -490,6 +490,12 @@ local loc = {
 		en = "Strikemap: no map data for this mission",
 		["zh-cn"] = "战术雷达：本关卡暂无地形数据",
 	},
+	record_geometry_dumps = {
+		en = "Developer Geometry Recording",
+	},
+	record_geometry_dumps_tooltip = {
+		en = "Developer-only: collect and persist navmesh JSON for missing missions and expedition tiles. This can create large files and extra garbage-collection work, so it is off by default. Live expedition maps still work when this is off.",
+	},
 	expedition_live_map = {
 		en = "Live Expedition Maps",
 		["zh-cn"] = "远征实时地图",
@@ -813,6 +819,21 @@ local loc = {
 	strikemap_performance = {
 		en = "Performance",
 		["zh-cn"] = "性能设置",
+	},
+	performance_report = {
+		en = "Performance Diagnostics",
+	},
+	performance_report_tooltip = {
+		en = "Write current burst timings and subsystem state to mods/strikemap/strikemap_diag.txt. Use this after a stutter to see which scheduled operation spiked.",
+	},
+	performance_report_button = {
+		en = "Write Performance Report",
+	},
+	performance_report_written = {
+		en = "Strikemap: performance report written to strikemap_diag.txt",
+	},
+	performance_report_failed = {
+		en = "Strikemap: performance report could not be written",
 	},
 	perf_enemy_scan_range = {
 		en = "Enemy Scan Range",

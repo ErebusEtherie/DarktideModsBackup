@@ -302,3 +302,33 @@ Added the following hooks:
 
 Light Lasgun Firing SFX
 Heavy Lasgun Firing SFX
+
+
+1.27
+
+Fixed errors related to default sounds not being properly muted, Thanks Alf!
+Culled a couple defunct toggles.
+
+
+Changed the following hooks:
+
+Psyker Dome Shield now has an accompanying Stop sound
+
+
+1.28
+
+Fixed errors related to 2D sounds not playing properly, Thanks Alf!
+Increased max sound distance from 50m to 100m.
+
+
+Added the following hooks:
+
+Achyls Heavy Stubber Firing SFX
+
+
+1.29
+
+Added the following hooks:
+
+Hive Scum Dual Stub Pistols Firing SFX
+Hive Scum Dual Stub Pistols Special Firing SFX

@@ -44,22 +44,6 @@ mod:add_global_localize_strings({
         ko = "이 기록 항목에 대한 짧은 메모를 입력하세요. 비워 두면 메모가 지워집니다.",
         ["zh-tw"] = "輸入此記錄的簡短備註。留空可清除備註。",
     },
-    loc_note_empty_placeholder = { en = "--" },
-    loc_note_prefix = {
-        en = "Note",
-        fr = "Note",
-        it = "Nota",
-        de = "Notiz",
-        es = "Nota",
-        pl = "Notatka",
-        ["pt-br"] = "Nota",
-        ru = "Заметка",
-        ["zh-cn"] = "备注",
-        ja = "メモ",
-        ko = "메모",
-        ["zh-tw"] = "備註",
-    },
-    loc_note_save_failed = { en = Localize("loc_popup_header_error") }
 })
 
 return {
@@ -67,7 +51,8 @@ return {
         -- first %s: mission time (format mm:ss)
         -- second %s: combat time (format mm:ss)
         -- third %s: combat percentage
-        en = Localize("loc_interface_setting_chat_bubbles_lifetime_multiplier")..": "..Localize("loc_hud_presence_mission").." %s - "..Localize("loc_keybind_category_combat").." %s (%s)",
+        en = Localize("loc_interface_setting_chat_bubbles_lifetime_multiplier") ..
+        ": " .. Localize("loc_hud_presence_mission") .. " %s - " .. Localize("loc_keybind_category_combat") .. " %s (%s)",
     },
     mod_name = { en = "Uptime 2" },
     mod_description = {
@@ -412,6 +397,9 @@ return {
         ko = "점수판 모드",
         ["zh-tw"] = "記分板模式",
     },
+    end_view_scoreboard_position = {
+        en = "End of Round Scoreboard Position",
+    },
     loc_track_damage_view = {
         en = "Saved Scoreboard",
         fr = "Tableau des scores enregistré",
@@ -510,35 +498,6 @@ return {
         ko = "활성 시간 추적 전환",
         ["zh-tw"] = "切換持續時間追蹤",
     },
-    loc_uptime_command_open_history = {
-        en = "Open uptime history view",
-        fr = "Ouvrir l'historique du temps actif",
-        it = "Apri la cronologia del tempo attivo",
-        de = "Aktivzeit-Verlauf öffnen",
-        es = "Abrir el historial de tiempo activo",
-        pl = "Otwórz widok historii czasu aktywności",
-        ["pt-br"] = "Abrir histórico de tempo ativo",
-        ru = "Открыть историю времени действия",
-        ["zh-cn"] = "打开持续时间历史视图",
-        ja = "稼働時間履歴ビューを開く",
-        ko = "활성 시간 기록 보기 열기",
-        ["zh-tw"] = "開啟持續時間歷史視圖",
-    },
-    loc_uptime_command_close_view = {
-        en = "Close uptime view",
-        fr = "Fermer la vue du temps actif",
-        it = "Chiudi la schermata del tempo attivo",
-        de = "Aktivzeit-Ansicht schließen",
-        es = "Cerrar la vista de tiempo activo",
-        pl = "Zamknij widok czasu aktywności",
-        ["pt-br"] = "Fechar visualização de tempo ativo",
-        ru = "Закрыть окно времени действия",
-        ["zh-cn"] = "关闭持续时间视图",
-        ja = "稼働時間ビューを閉じる",
-        ko = "활성 시간 보기 닫기",
-        ["zh-tw"] = "關閉持續時間視圖",
-    },
-    loc_havoc_rank = { en = Localize("loc_havoc_name") .. " %d" },
     loc_damage_horde = {
         en = "Horde",
         fr = "Horde",
@@ -627,7 +586,12 @@ return {
 
 
     -- Ingame loc keys
+    loc_note_empty_placeholder = { en = "--" },
+    loc_note_save_failed = { en = Localize("loc_popup_header_error") },
+
     loc_track_damage_off = { en = Localize("loc_setting_nv_reflex_disabled") },
+
+    loc_havoc_rank = { en = Localize("loc_havoc_name") .. " %d" },
 
     loc_loadout_blitz = { en = Localize("loc_tactical_overlay_build_blitz") },
     loc_loadout_ability = { en = Localize("loc_tactical_overlay_build_ability") },
@@ -653,4 +617,6 @@ return {
     loc_damage_ranged = { en = Localize("loc_setting_ranged") },
     loc_damage_blitz = { en = Localize("loc_tactical_overlay_build_blitz") },
 
+    loc_end_view_scoreboard_position_down = { en = Localize("loc_alias_view_navigate_down") },
+    loc_end_view_scoreboard_position_up = { en = Localize("loc_alias_view_navigate_up") },
 }

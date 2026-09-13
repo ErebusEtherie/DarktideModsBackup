@@ -3,132 +3,60 @@ local mod = get_mod("minimap")
 mod.settings = {}
 mod.settings.icon_vis = {}
 
-local color_presets = {}
-for _, name in ipairs(Color.list or {}) do
-    local c = Color[name](255, true)
-    color_presets[#color_presets+1] = { id = name, name = name, r = c[2], g = c[3], b = c[4] }
-end
-
-local color_defaults = {
-    color_chaos_hound = { 255, 0, 200 },
-    color_renegade_netgunner = { 200, 0, 255 },
-    color_renegade_sniper = { 255, 0, 150 },
-    color_flamer = { 255, 80, 0 },
-    color_grenadier = { 180, 255, 0 },
-    color_chaos_poxwalker_bomber = { 220, 255, 0 },
-    color_executor = { 150, 0, 200 },
-    color_berzerker = { 220, 0, 0 },
-    color_renegade_plasma_gunner = { 0, 220, 255 },
-    color_chaos_ogryn_bulwark = { 255, 200, 0 },
-    color_special = { 255, 0, 255 },
-    color_elite_ranged = { 255, 100, 0 },
-    color_elite_melee = { 255, 165, 0 },
-    color_monster = { 255, 0, 0 },
-    color_captain = { 128, 0, 128 },
-    color_horde = { 150, 150, 150 },
-    color_roamer = { 180, 180, 180 },
+local default_enemy_colors = {
+    human_boss = { 255, 255, 50, 100 },
+    monster = { 255, 255, 0, 0 },
+    disabler = { 255, 0, 255, 0 },
+    ranged_special = { 255, 0, 255, 255 },
+    poxburster = { 255, 255, 255, 0 },
+    ranged_elite = { 255, 0, 0, 255 },
+    crushers_maulers = { 255, 255, 80, 0 },
+    melee_elite = { 255, 81, 53, 146 },
+    shooters = { 255, 245, 245, 135 },
+    chaff = { 255, 105, 55, 20 },
 }
 
-local function load_breed_colors_from_settings()
-	local function get_color(r_key, g_key, b_key, default_r, default_g, default_b)
-		return {
-			mod:get(r_key) or default_r,
-			mod:get(g_key) or default_g,
-			mod:get(b_key) or default_b
-		}
-	end
+local function load_enemy_colors_from_settings()
+    local colors = {}
+    for category, default_col in pairs(default_enemy_colors) do
+        local saved = mod:get("color_" .. category)
+        if not saved and category == "human_boss" then saved = mod:get("color_captain") or mod:get("color_boss") end
+        if not saved and category == "monster" then saved = mod:get("color_monster") or mod:get("color_boss") end
+        if not saved and category == "disabler" then saved = mod:get("color_disabler") end
+        if not saved and category == "ranged_special" then saved = mod:get("color_special") or mod:get("color_sniper") end
+        if not saved and category == "poxburster" then saved = mod:get("color_chaos_poxwalker_bomber") end
+        if not saved and category == "ranged_elite" then saved = mod:get("color_ranged_elite") end
+        if not saved and category == "crushers_maulers" then saved = mod:get("color_executor") end
+        if not saved and category == "melee_elite" then saved = mod:get("color_melee_elite") or mod:get("color_berzerker") end
+        if not saved and category == "shooters" then saved = mod:get("color_roamer") end
+        if not saved and category == "chaff" then saved = mod:get("color_horde") end
 
-	return {
-		boss = get_color("color_boss_r", "color_boss_g", "color_boss_b", 255, 0, 0),
-		disabler = get_color("color_disabler_r", "color_disabler_g", "color_disabler_b", 200, 0, 255),
-		sniper = get_color("color_sniper_r", "color_sniper_g", "color_sniper_b", 255, 0, 150),
-		shield = get_color("color_shield_r", "color_shield_g", "color_shield_b", 100, 150, 255),
-		ranged_elite = get_color("color_ranged_elite_r", "color_ranged_elite_g", "color_ranged_elite_b", 255, 100, 0),
-		melee_elite = get_color("color_melee_elite_r", "color_melee_elite_g", "color_melee_elite_b", 255, 165, 0),
-		special = get_color("color_special_r", "color_special_g", "color_special_b", 255, 0, 255),
-		horde = get_color("color_horde_r", "color_horde_g", "color_horde_b", 150, 150, 150),
-		roamer = get_color("color_roamer_r", "color_roamer_g", "color_roamer_b", 180, 180, 180),
-		default = { 255, 255, 255 },
-
-		chaos_hound = get_color("color_chaos_hound_r", "color_chaos_hound_g", "color_chaos_hound_b", 180, 0, 255),
-		renegade_netgunner = get_color("color_renegade_netgunner_r", "color_renegade_netgunner_g", "color_renegade_netgunner_b", 180, 0, 255),
-
-		renegade_sniper = get_color("color_renegade_sniper_r", "color_renegade_sniper_g", "color_renegade_sniper_b", 255, 0, 150),
-
-		renegade_flamer = get_color("color_flamer_r", "color_flamer_g", "color_flamer_b", 100, 255, 100),
-		cultist_flamer = get_color("color_flamer_r", "color_flamer_g", "color_flamer_b", 100, 255, 100),
-
-		renegade_grenadier = get_color("color_grenadier_r", "color_grenadier_g", "color_grenadier_b", 100, 255, 100),
-		cultist_grenadier = get_color("color_grenadier_r", "color_grenadier_g", "color_grenadier_b", 100, 255, 100),
-		chaos_poxwalker_bomber = get_color("color_chaos_poxwalker_bomber_r", "color_chaos_poxwalker_bomber_g", "color_chaos_poxwalker_bomber_b", 100, 255, 100),
-
-		chaos_ogryn_executor = get_color("color_executor_r", "color_executor_g", "color_executor_b", 255, 220, 0),
-		renegade_executor = get_color("color_executor_r", "color_executor_g", "color_executor_b", 255, 220, 0),
-		renegade_berzerker = get_color("color_berzerker_r", "color_berzerker_g", "color_berzerker_b", 255, 220, 0),
-		cultist_berzerker = get_color("color_berzerker_r", "color_berzerker_g", "color_berzerker_b", 255, 220, 0),
-		renegade_plasma_gunner = get_color("color_renegade_plasma_gunner_r", "color_renegade_plasma_gunner_g", "color_renegade_plasma_gunner_b", 255, 120, 0),
-		chaos_ogryn_bulwark = get_color("color_chaos_ogryn_bulwark_r", "color_chaos_ogryn_bulwark_g", "color_chaos_ogryn_bulwark_b", 0, 200, 255),
-	}
+        if saved and type(saved) == "table" and #saved >= 4 then
+            colors[category] = saved
+        else
+            colors[category] = default_col
+        end
+    end
+    return colors
 end
 
-mod.fallback_breed_colors = load_breed_colors_from_settings()
+mod.settings.enemy_colors = load_enemy_colors_from_settings()
+
+function mod.get_category_color(category)
+    if mod.settings.enemy_colors and mod.settings.enemy_colors[category] then
+        return mod.settings.enemy_colors[category]
+    end
+    return default_enemy_colors[category] or { 255, 255, 255, 255 }
+end
+
+mod.fallback_breed_colors = mod.settings.enemy_colors
 
 function mod.get_breed_color_fallback(unit)
     if not unit then
-        return mod.fallback_breed_colors.default
+        return mod.get_category_color("chaff")
     end
-
-    local success, breed_color = pcall(function()
-        local unit_data_extension = ScriptUnit.has_extension(unit, "unit_data_system")
-        if not unit_data_extension then
-            return nil
-        end
-
-        local breed = unit_data_extension:breed()
-        if not breed or not breed.tags then
-            return nil
-        end
-
-        local tags = breed.tags
-        local breed_name = breed.name
-
-        if mod.fallback_breed_colors[breed_name] then
-            return mod.fallback_breed_colors[breed_name]
-        end
-
-        if tags.captain or tags.cultist_captain or tags.monster then
-            return mod.fallback_breed_colors.boss
-        elseif tags.elite then
-            local ranged_elites = {
-                renegade_gunner = true,
-                renegade_shocktrooper = true,
-                cultist_gunner = true,
-                chaos_ogryn_gunner = true,
-                cultist_shocktrooper = true
-            }
-            if ranged_elites[breed_name] or tags.far then
-                return mod.fallback_breed_colors.ranged_elite
-            else
-                return mod.fallback_breed_colors.melee_elite
-            end
-        elseif breed_name == "cultist_vanguard" or breed_name == "renegade_vanguard" then
-            return mod.fallback_breed_colors.shield
-        elseif tags.disabler then
-            return mod.fallback_breed_colors.disabler
-        elseif tags.special and tags.sniper then
-            return mod.fallback_breed_colors.sniper
-        elseif tags.special then
-            return mod.fallback_breed_colors.special
-        elseif tags.horde then
-            return mod.fallback_breed_colors.horde
-        elseif tags.roamer then
-            return mod.fallback_breed_colors.roamer
-        end
-
-        return nil
-    end)
-
-    return success and breed_color or mod.fallback_breed_colors.default
+    local breed_type = mod.get_unit_breed_type and mod.get_unit_breed_type(unit) or "chaff"
+    return mod.get_category_color(breed_type)
 end
 
 function mod.get_enemy_display_name(unit)
@@ -221,38 +149,45 @@ function mod.classify_and_score_unit(unit)
 
     local tags = breed.tags
     local breed_name = breed.name
-    local breed_type = "roamer"
-    local breed_priority = 0
+    local breed_type = "chaff"
+    local breed_priority = 100
 
-    if breed_name == "cultist_vanguard" or breed_name == "renegade_vanguard" then
-        breed_type = "shield"
-        breed_priority = 650
-    elseif tags.monster or tags.captain or tags.cultist_captain then
-        breed_type = "boss"
+    if tags.captain or tags.cultist_captain then
+        breed_type = "human_boss"
+        breed_priority = 950
+    elseif tags.monster or tags.witch then
+        breed_type = "monster"
         breed_priority = 900
-    elseif tags.witch then
-        breed_type = "boss"
-        breed_priority = 850
-    elseif tags.disabler then
+    elseif tags.disabler or tags.mutant or breed_name == "cultist_mutant" or breed_name == "mutant_charger" then
         breed_type = "disabler"
-        breed_priority = 800
-    elseif tags.special and tags.sniper then
-        breed_type = "sniper"
-        breed_priority = 750
-    elseif tags.elite and tags.far or tags.special and tags.far or (tags.elite and tags.close and breed_name == "renegade_plasma_gunner") then
-        breed_type = "ranged_elite"
-        breed_priority = 700
-    elseif tags.elite then
-        breed_type = "melee_elite"
-        breed_priority = 650
+        breed_priority = 850
     elseif tags.special then
-        breed_type = "special"
-        breed_priority = 600
-    elseif tags.horde then
-        breed_type = "horde"
-        breed_priority = 200
+        if tags.bomber or breed_name == "chaos_poxwalker_bomber" then
+            breed_type = "poxburster"
+            breed_priority = 800
+        elseif breed.ranged or tags.scrambler or tags.sniper or string.find(breed_name, "grenadier") or string.find(breed_name, "flamer") then
+            breed_type = "ranged_special"
+            breed_priority = 750
+        else
+            breed_type = "poxburster"
+            breed_priority = 800
+        end
+    elseif tags.elite then
+        if breed_name == "chaos_ogryn_executor" or breed_name == "renegade_executor" then
+            breed_type = "crushers_maulers"
+            breed_priority = 700
+        elseif breed.ranged or tags.far or breed_name == "renegade_plasma_gunner" or breed_name == "chaos_ogryn_gunner" then
+            breed_type = "ranged_elite"
+            breed_priority = 650
+        else
+            breed_type = "melee_elite"
+            breed_priority = 600
+        end
+    elseif breed_name == "cultist_assault" or breed_name == "renegade_assault" or breed_name == "renegade_rifleman" or breed.ranged then
+        breed_type = "shooters"
+        breed_priority = 300
     else
-        breed_type = "roamer"
+        breed_type = "chaff"
         breed_priority = 100
     end
 
@@ -461,36 +396,54 @@ local function collect_settings()
     mod.settings.show_in_hub = mod:get("show_in_hub")
     mod.settings.show_in_shooting_range = mod:get("show_in_shooting_range")
     mod.settings.show_when_dead = mod:get("show_when_dead")
-    mod.settings.minimap_background_color_r = mod:get("minimap_background_color_r") or 180
-    mod.settings.minimap_background_color_g = mod:get("minimap_background_color_g") or 180
-    mod.settings.minimap_background_color_b = mod:get("minimap_background_color_b") or 180
+    mod.settings.minimap_background_color = mod:get("minimap_background_color") or {255, 180, 180, 180}
     mod.settings.minimap_background_opacity = mod:get("minimap_background_opacity")
 
     mod.settings.enemy_radar_enabled = mod:get("enemy_radar_enabled")
     mod.settings.enemy_radar_scan_range = mod:get("enemy_radar_scan_range") or 50.0
 
 
+    mod.settings.enemy_colors = load_enemy_colors_from_settings()
+    mod.fallback_breed_colors = mod.settings.enemy_colors
+
+    local function get_filter(key, fallback_key, default_val)
+        local val = mod:get(key)
+        if val == nil and fallback_key then val = mod:get(fallback_key) end
+        if val == nil then return default_val end
+        return val
+    end
+
     mod.settings.enemy_radar_filters = {
-        disabler = mod:get("enemy_radar_filter_disabler"),
-        sniper = mod:get("enemy_radar_filter_sniper"),
-        shield = mod:get("enemy_radar_filter_shield"),
-        ranged_elite = mod:get("enemy_radar_filter_ranged_elite"),
-        melee_elite = mod:get("enemy_radar_filter_melee_elite"),
-        special = mod:get("enemy_radar_filter_special"),
-        boss = mod:get("enemy_radar_filter_boss"),
-        horde = mod:get("enemy_radar_filter_horde"),
-        roamer = mod:get("enemy_radar_filter_roamer"),
+        human_boss = get_filter("enemy_radar_filter_human_boss", "enemy_radar_filter_boss", true),
+        monster = get_filter("enemy_radar_filter_monster", "enemy_radar_filter_boss", true),
+        disabler = get_filter("enemy_radar_filter_disabler", nil, true),
+        ranged_special = get_filter("enemy_radar_filter_ranged_special", "enemy_radar_filter_special", true),
+        poxburster = get_filter("enemy_radar_filter_poxburster", "enemy_radar_filter_special", true),
+        ranged_elite = get_filter("enemy_radar_filter_ranged_elite", nil, true),
+        crushers_maulers = get_filter("enemy_radar_filter_crushers_maulers", "enemy_radar_filter_melee_elite", true),
+        melee_elite = get_filter("enemy_radar_filter_melee_elite", nil, true),
+        shooters = get_filter("enemy_radar_filter_shooters", "enemy_radar_filter_roamer", false),
+        chaff = get_filter("enemy_radar_filter_chaff", "enemy_radar_filter_horde", false),
     }
+
+    local function get_limit(key, fallback_key, default_val)
+        local val = mod:get(key)
+        if val == nil and fallback_key then val = mod:get(fallback_key) end
+        if val == nil then return default_val end
+        return val
+    end
+
     mod.settings.enemy_radar_limits = {
-        disabler = mod:get("enemy_radar_limit_disabler"),
-        sniper = mod:get("enemy_radar_limit_sniper"),
-        shield = mod:get("enemy_radar_limit_shield"),
-        ranged_elite = mod:get("enemy_radar_limit_ranged_elite"),
-        melee_elite = mod:get("enemy_radar_limit_melee_elite"),
-        special = mod:get("enemy_radar_limit_special"),
-        boss = mod:get("enemy_radar_limit_boss"),
-        horde = mod:get("enemy_radar_limit_horde"),
-        roamer = mod:get("enemy_radar_limit_roamer"),
+        human_boss = get_limit("enemy_radar_limit_human_boss", "enemy_radar_limit_boss", 5),
+        monster = get_limit("enemy_radar_limit_monster", "enemy_radar_limit_boss", 5),
+        disabler = get_limit("enemy_radar_limit_disabler", nil, 10),
+        ranged_special = get_limit("enemy_radar_limit_ranged_special", "enemy_radar_limit_special", 10),
+        poxburster = get_limit("enemy_radar_limit_poxburster", "enemy_radar_limit_special", 10),
+        ranged_elite = get_limit("enemy_radar_limit_ranged_elite", nil, 10),
+        crushers_maulers = get_limit("enemy_radar_limit_crushers_maulers", "enemy_radar_limit_melee_elite", 10),
+        melee_elite = get_limit("enemy_radar_limit_melee_elite", nil, 10),
+        shooters = get_limit("enemy_radar_limit_shooters", "enemy_radar_limit_roamer", 10),
+        chaff = get_limit("enemy_radar_limit_chaff", "enemy_radar_limit_horde", 10),
     }
 
     mod.settings.enemy_radar_priority_mode = mod:get("enemy_radar_priority_mode") or "damage"
@@ -502,9 +455,7 @@ local function collect_settings()
 
     mod.settings.enemy_radar_melee_ring_enabled = mod:get("enemy_radar_melee_ring_enabled")
     mod.settings.enemy_radar_melee_range = mod:get("enemy_radar_melee_range")
-    mod.settings.enemy_radar_melee_ring_color_r = mod:get("enemy_radar_melee_ring_color_r") or 180
-    mod.settings.enemy_radar_melee_ring_color_g = mod:get("enemy_radar_melee_ring_color_g") or 180
-    mod.settings.enemy_radar_melee_ring_color_b = mod:get("enemy_radar_melee_ring_color_b") or 180
+    mod.settings.enemy_radar_melee_ring_color = mod:get("enemy_radar_melee_ring_color") or {255, 255, 165, 0}
     mod.settings.enemy_radar_melee_ring_opacity = mod:get("enemy_radar_melee_ring_opacity")
 
     mod.settings.enemy_radar_vertical_distance_enabled = mod:get("enemy_radar_vertical_distance_enabled")
@@ -528,24 +479,24 @@ local function collect_settings()
 
     mod.settings.enemy_name_filters = {
         only_pinged = mod:get("enemy_name_filter_only_pinged"),
-        boss = mod:get("enemy_name_filter_boss"),
-        disabler = mod:get("enemy_name_filter_disabler"),
-        sniper = mod:get("enemy_name_filter_sniper"),
-        shield = mod:get("enemy_name_filter_shield"),
-        ranged_elite = mod:get("enemy_name_filter_ranged_elite"),
-        melee_elite = mod:get("enemy_name_filter_melee_elite"),
-        special = mod:get("enemy_name_filter_special"),
+        human_boss = get_filter("enemy_name_filter_human_boss", "enemy_name_filter_boss", false),
+        monster = get_filter("enemy_name_filter_monster", "enemy_name_filter_boss", false),
+        disabler = get_filter("enemy_name_filter_disabler", nil, false),
+        ranged_special = get_filter("enemy_name_filter_ranged_special", "enemy_name_filter_special", false),
+        poxburster = get_filter("enemy_name_filter_poxburster", "enemy_name_filter_special", false),
+        ranged_elite = get_filter("enemy_name_filter_ranged_elite", nil, false),
+        crushers_maulers = get_filter("enemy_name_filter_crushers_maulers", "enemy_name_filter_melee_elite", false),
+        melee_elite = get_filter("enemy_name_filter_melee_elite", nil, false),
+        shooters = get_filter("enemy_name_filter_shooters", nil, false),
+        chaff = get_filter("enemy_name_filter_chaff", nil, false),
     }
 end
 
-
 mod.on_all_mods_loaded = function()
-    mod.fallback_breed_colors = load_breed_colors_from_settings()
     collect_settings()
     recreate_hud()
 end
 
-local is_syncing_preset = false
 local hud_recreate_timer = 0
 local HUD_RECREATE_DELAY = 0.1
 
@@ -554,46 +505,13 @@ mod.on_setting_changed = function(setting_id)
         return
     end
 
-    if is_syncing_preset then
-        return
-    end
-
-    if string.match(setting_id, "_preset$") then
-        local preset_id = mod:get(setting_id)
-        local base_setting = string.gsub(setting_id, "_preset$", "")
-
-        is_syncing_preset = true
-        if preset_id == "default" then
-            local defaults = color_defaults[base_setting]
-            if defaults then
-                mod:set(base_setting .. "_r", defaults[1], false)
-                mod:set(base_setting .. "_g", defaults[2], false)
-                mod:set(base_setting .. "_b", defaults[3], false)
-            end
-        else
-            for _, p in ipairs(color_presets) do
-                if p.id == preset_id then
-                    mod:set(base_setting .. "_r", p.r, false)
-                    mod:set(base_setting .. "_g", p.g, false)
-                    mod:set(base_setting .. "_b", p.b, false)
-                    break
-                end
-            end
-        end
-        is_syncing_preset = false
-        collect_settings()
-        return
-    end
-
     collect_settings()
 
-    if string.find(setting_id, "^color_") and string.find(setting_id, "_[rgb]$") then
-        mod.fallback_breed_colors = load_breed_colors_from_settings()
+    if string.find(setting_id, "^color_") then
         return
     end
 
-    if setting_id == "minimap_background_color_r" or setting_id == "minimap_background_color_g" or
-       setting_id == "minimap_background_color_b" or setting_id == "minimap_background_opacity" then
+    if setting_id == "minimap_background_color" or setting_id == "minimap_background_opacity" then
         local ui_manager = Managers.ui
         if ui_manager and ui_manager._hud and ui_manager._hud._elements then
             local minimap = get_hud_minimap_element(ui_manager._hud._elements)
@@ -601,10 +519,6 @@ mod.on_setting_changed = function(setting_id)
                 minimap:_update_background_color()
             end
         end
-        return
-    end
-
-    if string.find(setting_id, "_[rgb]$") then
         return
     end
 

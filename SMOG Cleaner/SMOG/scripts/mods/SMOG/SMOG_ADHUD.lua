@@ -17,11 +17,11 @@ local refresh_interval = 0.5
 local smog_title = "SMOG"
 local lua_column_title = "LUA HEAP"
 local process_column_title = "GAME MEMORY"
-local lua_full_title = "LUA HEAP FULL"
+local lua_full_title = "LUA HEAP USED"
 local lua_total_title = "LUA HEAP TOTAL"
 local lua_growth_title = "LUA GROWTH"
 local peak_lua_title = "PEAK LUA / SESSION"
-local lua_share_title = "LUA SHARE"
+local lua_share_title = "LUA SHARE OF GAME MEM"
 local process_total_title = "GAME MEMORY TOTAL"
 local process_growth_title = "GAME MEMORY GROWTH"
 local peak_process_title = "PEAK GAME MEMORY"
@@ -42,11 +42,14 @@ local digit_symbols = {
 local blue_box = QuaternionBox(Color(245,55,190,255))
 local label_blue_box = QuaternionBox(Color(215,55,190,255))
 local title_blue_box = QuaternionBox(Color(225,55,190,255))
+local pressure_lua_box = QuaternionBox(Color(245,255,70,70))
+local pressure_game_box = QuaternionBox(Color(225,255,190,55))
+local pressure_mixed_box = QuaternionBox(Color(225,255,135,45))
 local unit_blue_box = QuaternionBox(Color(190,55,190,255))
 local divider_blue_box = QuaternionBox(Color(95,55,190,255))
 local warning_red_box = QuaternionBox(Color(245,235,54,38))
 local fps_green_box = QuaternionBox(Color(195,95,255,115))
-local background_box = QuaternionBox(Color(125,7,12,17))
+local background_box = QuaternionBox(Color(167,7,12,17))
 local Renderer = {}
 local function digital_text(text)
 return tostring(text or ""):gsub("%d",function(character)
@@ -157,7 +160,11 @@ local style_b_unit = math_max(15,math_floor(20 * scale + 0.5))
 local style_c = math_max(18,math_floor(25 * scale + 0.5))
 local style_c_label = math_max(9,math_floor(12 * scale + 0.5))
 local style_c_unit = math_max(9,math_floor(11 * scale + 0.5))
+local heap_limit_reference_size = math_max(12,math_floor(style_a * 1.22 + 0.5))
+local heap_limit_size = style_a
 local lua_share_percent_size = math_max(11,math_floor(style_c_unit * 1.2 + 0.5))
+local smog_title_size = math_max(1,math_floor(style_b_unit * 0.95 + 0.5))
+local fps_label_size = math_max(1,math_floor(style_c_label * 1.1 + 0.5))
 local process_growth_sign_size = math_max(20,math_floor(style_b * 0.6 + 0.5))
 local percent_symbol_size = math_max(22,math_floor(31 * scale + 0.5))
 local line_height = math_max(1,math_floor(scale + 0.5))
@@ -174,11 +181,11 @@ local content_y = heading_line_y + 14 * scale
 local left_label_gap = 17 * scale
 local left_block_gap = 65 * scale
 local right_block_gap = 86 * scale
-local lua_full_label_y = content_y
-local lua_full_value_y = lua_full_label_y + left_label_gap
-local process_total_label_y = content_y
-local process_total_value_y = process_total_label_y + left_label_gap
-local process_growth_base_label_y = process_total_label_y + right_block_gap
+local lua_full_label_y = content_y - 1 * scale
+local lua_full_value_y = content_y + left_label_gap - 10 * scale
+local process_total_label_y = content_y - 1 * scale
+local process_total_value_y = content_y + left_label_gap - 10 * scale
+local process_growth_base_label_y = content_y + right_block_gap - 10 * scale
 local process_growth_label_y = process_growth_base_label_y + 5 * scale
 local process_growth_value_y = process_growth_base_label_y + left_label_gap
 local lua_total_label_y = process_growth_base_label_y
@@ -213,6 +220,17 @@ local process_growth_sign = owner._smog_advanced_process_growth_sign or "+"
 local process_growth_magnitude_text = owner._smog_advanced_process_growth_magnitude_text or digital_number(0)
 local process_peak_text = owner._smog_advanced_process_peak_text or decimal_number(0)
 local fps_text = owner._smog_advanced_fps_text or digital_number(0,3)
+local heap_limit_text = owner._smog_advanced_heap_limit_text or digital_number(mod._smog_heap_size_mb)
+local lua_column_title_width = Common.text_width(gui,lua_column_title,mono_font,style_a)
+local heap_limit_left = left_x + lua_column_title_width + 7 * scale
+local heap_limit_reference_width = select(2,text_horizontal_bounds(gui,heap_limit_text,digital_font,heap_limit_reference_size))
+local heap_limit_right = left_x + lua_column_title_width + 8 * scale + heap_limit_reference_width
+local heap_limit_width = select(2,text_horizontal_bounds(gui,heap_limit_text,digital_font,heap_limit_size))
+while heap_limit_size > style_a and heap_limit_width > heap_limit_right - heap_limit_left do
+heap_limit_size = heap_limit_size - 1
+heap_limit_width = select(2,text_horizontal_bounds(gui,heap_limit_text,digital_font,heap_limit_size))
+end
+local heap_limit_x = left_aligned_x(gui,heap_limit_text,digital_font,heap_limit_size,heap_limit_left)
 local percent_x = left_aligned_x(gui,percent_text,digital_font,style_b,left_x)
 local percent_width = select(2,text_horizontal_bounds(gui,percent_text,digital_font,style_b))
 local percent_symbol_x = left_x + percent_width + 9 * scale
@@ -246,53 +264,60 @@ cached.style_b_unit = style_b_unit
 cached.style_c = style_c
 cached.style_c_label = style_c_label
 cached.style_c_unit = style_c_unit
+cached.smog_title_size = smog_title_size
+cached.fps_label_size = fps_label_size
+cached.heap_limit_size = heap_limit_size
 cached.lua_share_percent_size = lua_share_percent_size
 cached.process_growth_sign_size = process_growth_sign_size
 cached.percent_symbol_size = percent_symbol_size
 cached.line_height = line_height
 cached.panel_left = panel_left
 cached.panel_width = panel_right - panel_left
-cached.background_x = panel_left - background_pad
-cached.background_y = panel_top - background_pad
-cached.background_width = panel_right - panel_left + background_pad * 2
-cached.background_height = panel_bottom - panel_top + background_pad * 2
+cached.background_x = panel_left
+cached.background_y = panel_top - background_pad + 4 * scale
+cached.background_width = panel_right - panel_left
+cached.background_height = panel_bottom - panel_top + background_pad * 2 - 20 * scale
 cached.divider_x = divider_x
 cached.divider_y = divider_y
 cached.divider_width = line_height
-cached.divider_height = divider_height
+cached.divider_height = divider_height - 18 * scale
 cached.smog_x = left_x
 cached.smog_y = smog_y
 cached.left_x = left_x
 cached.right_x = right_x
 cached.column_title_y = column_title_y
+cached.heap_limit_x = heap_limit_x + 5 * scale
+cached.heap_limit_y = column_title_y - 2 * scale
+cached.heap_limit_unit_x = heap_limit_right + 5 * scale
+cached.heap_limit_unit_y = column_title_y + style_a - style_c_unit - 1 * scale
 cached.heading_line_y = heading_line_y
-cached.fps_line_y = fps_line_y
+cached.fps_line_y = fps_line_y - 22 * scale
 cached.fps_line_width = math_max(0,panel_right - divider_x)
-cached.bottom_line_y = bottom_line_y
+cached.bottom_line_y = bottom_line_y - 18 * scale
 cached.lua_full_label_y = lua_full_label_y
-cached.lua_full_value_y = lua_full_value_y
+cached.lua_full_value_y = lua_full_value_y - 3 * scale
 cached.lua_total_label_y = lua_total_label_y
-cached.lua_total_value_y = lua_total_value_y
-cached.lua_growth_label_y = lua_growth_label_y
-cached.lua_growth_value_y = lua_growth_value_y
-cached.peak_lua_label_y = peak_lua_label_y
-cached.peak_lua_value_y = peak_lua_value_y
-cached.lua_share_label_y = lua_share_label_y
-cached.lua_share_value_y = lua_share_value_y
-cached.process_total_label_y = process_total_label_y
-cached.process_total_value_y = process_total_value_y
-cached.process_growth_label_y = process_growth_label_y
-cached.process_growth_value_y = process_growth_value_y
-cached.peak_process_label_y = peak_process_label_y
-cached.peak_process_value_y = peak_process_value_y
-cached.fps_value_y = fps_value_y
-cached.memory_pressure_y = memory_pressure_y
+cached.lua_total_value_y = lua_total_value_y - 3 * scale
+cached.lua_growth_label_y = lua_growth_label_y - 4 * scale
+cached.lua_growth_value_y = lua_growth_value_y - 7 * scale
+cached.peak_lua_label_y = peak_lua_label_y - 11 * scale
+cached.peak_lua_value_y = peak_lua_value_y - 14 * scale
+cached.lua_share_label_y = lua_share_label_y - 18 * scale
+cached.lua_share_value_y = lua_share_value_y - 22 * scale
+cached.process_total_label_y = process_total_label_y - 1 * scale
+cached.process_total_value_y = process_total_value_y - 3 * scale
+cached.process_growth_label_y = process_growth_label_y - 4 * scale
+cached.process_growth_value_y = process_growth_value_y - 8 * scale
+cached.peak_process_label_y = peak_process_label_y - 7 * scale
+cached.peak_process_value_y = peak_process_value_y - 12 * scale
+cached.fps_value_y = fps_value_y - 22 * scale
+cached.memory_pressure_y = memory_pressure_y - 10 * scale
 cached.percent_x = percent_x
 cached.percent_symbol_x = percent_symbol_x
-cached.percent_symbol_y = lua_full_value_y + style_b - percent_symbol_size
+cached.percent_symbol_y = lua_full_value_y + style_b - percent_symbol_size - 1 * scale
 cached.heap_x = heap_x
 cached.heap_unit_x = left_x + heap_width + 6 * scale
-cached.heap_unit_y = lua_total_value_y + style_c - style_c_unit
+cached.heap_unit_y = lua_total_value_y + style_c - style_c_unit - 1 * scale
 cached.lua_growth_x = lua_growth_x
 cached.lua_growth_unit_x = left_x + lua_growth_width + 6 * scale
 cached.lua_peak_x = lua_peak_x
@@ -306,15 +331,15 @@ cached.process_growth_magnitude_x = process_growth_magnitude_x
 cached.process_growth_unit_x = process_growth_magnitude_left + process_growth_magnitude_width + 8 * scale
 cached.process_peak_x = process_peak_x
 cached.process_peak_unit_x = right_x + process_peak_width + 8 * scale
-cached.lua_growth_unit_y = lua_growth_value_y + style_c - style_c_unit
-cached.lua_peak_unit_y = peak_lua_value_y + style_c - style_c_unit
-cached.lua_share_unit_y = lua_share_value_y + style_c - lua_share_percent_size + 3 * scale
-cached.process_unit_y = process_total_value_y + style_b - style_b_unit
-cached.process_growth_unit_y = process_growth_value_y + style_b - style_c_unit
-cached.process_peak_unit_y = peak_process_value_y + style_b - style_b_unit
+cached.lua_growth_unit_y = lua_growth_value_y + style_c - style_c_unit - 7 * scale
+cached.lua_peak_unit_y = peak_lua_value_y + style_c - style_c_unit - 14 * scale
+cached.lua_share_unit_y = lua_share_value_y + style_c - lua_share_percent_size + 3 * scale - 21 * scale
+cached.process_unit_y = process_total_value_y + style_b - style_b_unit - 3 * scale
+cached.process_growth_unit_y = process_growth_value_y + style_b - style_c_unit - 8 * scale
+cached.process_peak_unit_y = peak_process_value_y + style_b - style_b_unit - 12 * scale
 cached.fps_x = fps_x
 cached.fps_label_x = right_x
-cached.fps_label_y = fps_label_y
+cached.fps_label_y = fps_label_y - 19 * scale
 cached.memory_pressure_value_x = left_x + pressure_label_width + 7 * scale
 owner._smog_advanced_layout = cached
 owner._smog_advanced_layout_dirty = false
@@ -332,6 +357,7 @@ owner._smog_advanced_heap_value = nil
 owner._smog_advanced_fps_value = nil
 owner._smog_advanced_percent_text = digit_symbols[0]
 owner._smog_advanced_heap_text = digit_symbols[0]
+owner._smog_advanced_heap_limit_text = digital_number(mod._smog_heap_size_mb)
 owner._smog_advanced_fps_text = digital_number(0,3)
 owner._smog_advanced_process_text = decimal_number(0)
 owner._smog_advanced_process_growth_sign,owner._smog_advanced_process_growth_magnitude_text,owner._smog_advanced_process_growth_unit = process_growth_parts(0)
@@ -364,8 +390,10 @@ Gui.rect(gui,Vector3(l.panel_left,l.heading_line_y,824),Vector2(l.panel_width,l.
 Gui.rect(gui,Vector3(l.divider_x,l.fps_line_y,824),Vector2(l.fps_line_width,l.line_height),divider_blue_box:unbox())
 Gui.rect(gui,Vector3(l.panel_left,l.bottom_line_y,824),Vector2(l.panel_width,l.line_height),divider_blue_box:unbox())
 end
-Common.draw_text(gui,smog_title,mono_font,l.style_b_unit,l.smog_x,l.smog_y,825,title_blue_box:unbox())
+Common.draw_text(gui,smog_title,mono_font,l.smog_title_size,l.smog_x,l.smog_y,825,title_blue_box:unbox())
 Common.draw_text(gui,lua_column_title,mono_font,l.style_a,l.left_x,l.column_title_y,825,title_blue_box:unbox())
+Common.draw_text(gui,owner._smog_advanced_heap_limit_text or digital_number(mod._smog_heap_size_mb),digital_font,l.heap_limit_size,l.heap_limit_x,l.heap_limit_y,825,blue_box:unbox())
+Common.draw_text(gui,"MB",mono_font,l.style_c_unit,l.heap_limit_unit_x,l.heap_limit_unit_y,825,blue_box:unbox())
 Common.draw_text(gui,process_column_title,mono_font,l.style_a,l.right_x,l.column_title_y,825,title_blue_box:unbox())
 Common.draw_text(gui,lua_full_title,mono_font,l.style_c_label,l.left_x,l.lua_full_label_y,825,label_blue_box:unbox())
 Common.draw_text(gui,owner._smog_advanced_percent_text or digit_symbols[0],digital_font,l.style_b,l.percent_x,l.lua_full_value_y,825,percentage_box:unbox())
@@ -392,10 +420,12 @@ Common.draw_text(gui,owner._smog_advanced_process_growth_unit or "MB/min",mono_f
 Common.draw_text(gui,peak_process_title,mono_font,l.style_c_label,l.right_x,l.peak_process_label_y,825,label_blue_box:unbox())
 Common.draw_text(gui,owner._smog_advanced_process_peak_text,digital_font,l.style_b,l.process_peak_x,l.peak_process_value_y,825,blue_box:unbox())
 Common.draw_text(gui,"GB",mono_font,l.style_b_unit,l.process_peak_unit_x,l.process_peak_unit_y,825,unit_blue_box:unbox())
-Common.draw_text(gui,fps_title,mono_font,l.style_c_label,l.fps_label_x,l.fps_label_y,825,fps_green_box:unbox())
+Common.draw_text(gui,fps_title,mono_font,l.fps_label_size,l.fps_label_x,l.fps_label_y,825,fps_green_box:unbox())
 Common.draw_text(gui,owner._smog_advanced_fps_text or digital_number(0,3),digital_font,l.style_c,l.fps_x,l.fps_value_y,825,fps_green_box:unbox())
 Common.draw_text(gui,memory_pressure_title,mono_font,l.style_a,l.left_x,l.memory_pressure_y,825,title_blue_box:unbox())
-Common.draw_text(gui,owner._smog_advanced_pressure_text or "NORMAL",mono_font,l.style_a,l.memory_pressure_value_x,l.memory_pressure_y,825,title_blue_box:unbox())
+local pressure_text = owner._smog_advanced_pressure_text or "NORMAL"
+local pressure_box = pressure_text == "LUA" and pressure_lua_box or pressure_text == "GAME" and pressure_game_box or pressure_text == "MIXED" and pressure_mixed_box or title_blue_box
+Common.draw_text(gui,pressure_text,mono_font,l.style_a,l.memory_pressure_value_x,l.memory_pressure_y,825,pressure_box:unbox())
 end
 function Renderer.destroy()
 end

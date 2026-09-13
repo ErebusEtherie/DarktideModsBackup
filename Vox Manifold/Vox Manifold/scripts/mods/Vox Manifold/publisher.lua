@@ -36,6 +36,7 @@ return function(opts)
         end
 
         if encoded == last_sent then
+            elapsed = 0
             return nil
         end
 

@@ -57,11 +57,18 @@ mod.clear_transient_tracking = function(self)
 	if self.current_health then table_clear(self.current_health) end
 	if self.player_account_ids_by_unit then table_clear(self.player_account_ids_by_unit) end
 	if self.accuracy_shot_snapshots then table_clear(self.accuracy_shot_snapshots) end
+	if self.accuracy_ammo_snapshots then table_clear(self.accuracy_ammo_snapshots) end
 	if self.accuracy_shot_snapshot_modes then table_clear(self.accuracy_shot_snapshot_modes) end
 	if self.accuracy_last_hit_shot_count then table_clear(self.accuracy_last_hit_shot_count) end
 	if self.accuracy_pending_end_time_skips then table_clear(self.accuracy_pending_end_time_skips) end
+	if self.accuracy_pending_ammo_skips then table_clear(self.accuracy_pending_ammo_skips) end
 	if self.ammo_interaction_snapshots then table_clear(self.ammo_interaction_snapshots) end
 	if self.pending_ammo_scores then table_clear(self.pending_ammo_scores) end
+	if self.combat_ability_charges then table_clear(self.combat_ability_charges) end
+	if self.combat_ability_names then table_clear(self.combat_ability_names) end
+	self.combat_ability_tracking_disabled = nil
+	if self.coherency_time then table_clear(self.coherency_time) end
+	if self.coherency_eligible_time then table_clear(self.coherency_eligible_time) end
 	if self.interaction_units then table_clear(self.interaction_units) end
 	if self.player_state_tracker then table_clear(self.player_state_tracker) end
 	if self.pending_shout_revives then table_clear(self.pending_shout_revives) end
@@ -69,6 +76,7 @@ mod.clear_transient_tracking = function(self)
 	self.servo_skull_tracking_timer = 0
 	self.servo_skull_tracking_active = false
 	self._player_account_cache_timer = 0
+	self.coherency_last_sample = nil
 	if self.clear_top_score_announcements then self:clear_top_score_announcements() end
 	self.coherency_timer = self.coherency_frequency
 end
@@ -162,6 +170,7 @@ function mod.developer_diagnostics()
 		status("weakspot hit percent", self:row_tracking_enabled("weakspot_hit_percent")),
 		status("critical hit percent", self:row_tracking_enabled("critical_hits")),
 		status("coherency tracking", self:row_tracking_enabled("coherency_efficiency")),
+		status("combat ability tracking", self:row_tracking_enabled("combat_ability_uses")),
 		status("servo-skull tracking", self:servo_skull_tracking_enabled()),
 		status("history profile polling", self:history_capture_enabled()),
 	}

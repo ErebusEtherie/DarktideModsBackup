@@ -7,6 +7,26 @@ return {
 	options = {
 		widgets = {
 		{
+			-- ───────────────────── ❀ ─────────────────────
+			--  Aim Gate
+			-- ───────────────────── ❀ ─────────────────────
+			setting_id = "aim_limit",
+			type = "numeric",
+			default_value = 60,
+			range = {5, 75},
+			decimals_number = 0,
+		},
+		{
+			setting_id = "press_delay_seconds",
+			type = "numeric",
+			default_value = 0,
+			range = {0, 1},
+			decimals_number = 2,
+		},
+		{
+			-- ───────────────────── ❀ ─────────────────────
+			--  General Pickups
+			-- ───────────────────── ❀ ─────────────────────
 			setting_id  = "other_group",
 			type        = "group",
 			sub_widgets = {
@@ -38,6 +58,9 @@ return {
 			}
 		},
 		{
+			-- ───────────────────── ❀ ─────────────────────
+			--  Grenades & Ammo
+			-- ───────────────────── ❀ ─────────────────────
 			setting_id  = "grenadesammo_group",
 			type        = "group",
 			sub_widgets = {
@@ -85,6 +108,9 @@ return {
 			}
 		},
 		{
+			-- ───────────────────── ❀ ─────────────────────
+			--  Stimms
+			-- ───────────────────── ❀ ─────────────────────
 			setting_id  = "stimms_group",
 			type        = "group",
 			sub_widgets = {

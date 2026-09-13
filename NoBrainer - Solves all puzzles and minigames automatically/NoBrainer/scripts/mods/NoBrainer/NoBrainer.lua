@@ -197,6 +197,7 @@ for _, m in ipairs({
     _load("NoBrainer_minigame_" .. m)
 end
 
+_load("NoBrainer_decode_symbols_reroll")
 _load("NoBrainer_input")
 
 mod.update = function(dt)

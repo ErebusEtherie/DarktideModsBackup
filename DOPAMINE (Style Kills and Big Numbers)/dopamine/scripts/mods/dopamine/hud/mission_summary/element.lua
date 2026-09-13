@@ -320,6 +320,10 @@ MissionSummaryElement.init = function(self, parent, draw_layer, start_scale, con
 	self._hell_yeah_shadow_t = 0
 
 	self._hover_delete = false
+
+	self._skip_alpha = 0
+	self._hover_skip = false
+	self._skip_recap_requested = false
 end
 
 ---@return number left, number top, number scale
@@ -341,12 +345,14 @@ end
 ---@param input_service any
 ---@param lerping boolean
 ---@param show_hell_yeah boolean
-MissionSummaryElement._update_interaction = function(self, snapshot, input_service, lerping, show_hell_yeah)
+---@param show_skip boolean  the "skip recap" button is up (the recap is still counting up)
+MissionSummaryElement._update_interaction = function(self, snapshot, input_service, lerping, show_hell_yeah, show_skip)
 	self._hover_row = nil
 	self._hover_button = false
 	self._hover_mission = nil
 	self._hover_hell_yeah = false
 	self._hover_delete = false
+	self._hover_skip = false
 
 	local cursor = input_service and input_service:get("cursor")
 	if not cursor then
@@ -356,6 +362,17 @@ MissionSummaryElement._update_interaction = function(self, snapshot, input_servi
 	local left, top, scale = self:_panel_screen_frame()
 	local cx, cy = cursor[1], cursor[2]
 	local pressed = input_service:get("left_pressed")
+
+	if show_skip then
+		local rect = self:_screen_rect(self._geo.skip_recap, left, top, scale)
+		if point_in(rect, cx, cy) then
+			self._hover_skip = true
+			if pressed then
+				self:_skip_recap()
+			end
+			return
+		end
+	end
 
 	if show_hell_yeah then
 		local rect = self:_screen_rect(self._geo.hell_yeah, left, top, scale)
@@ -497,6 +514,25 @@ MissionSummaryElement._layout_header = function(self, ui_renderer)
 	style.progress_bar_bg.size[1] = bar_w
 	style.progress_fill.offset[1] = bar_x
 	style.progress_fill.size[1] = bar_w * clamp01(self._level_progress)
+end
+
+---@param ui_renderer table
+MissionSummaryElement._layout_skip_recap = function(self, ui_renderer)
+	local widget = self._widgets_by_name.skip_recap
+	local box_w = self._geo.skip_recap.w
+	local style = widget.style
+
+	local label = widget.content.skip_text
+	local text_w = 0
+	if label and label ~= "" then
+		text_w = Text.text_size(ui_renderer, label, style.skip_text, { box_w, C.HELL_YEAH_BUTTON_H }, true) or 0
+	end
+
+	local total = text_w + C.SKIP_RECAP_ICON_GAP + C.SKIP_RECAP_ICON_SIZE
+	local start_x = math_max(0, (box_w - total) * 0.5)
+	style.skip_text.offset[1] = start_x
+	style.skip_text.size[1] = box_w - start_x
+	style.skip_icon.offset[1] = start_x + text_w + C.SKIP_RECAP_ICON_GAP
 end
 
 ---@param snapshot MissionSummarySnapshot
@@ -819,12 +855,37 @@ MissionSummaryElement._refresh_hell_yeah = function(self, alpha, rank_color)
 	set_text_color(button.style.hy_text, text_color, alpha)
 end
 
+---@param alpha number  0..1 fade
+MissionSummaryElement._refresh_skip_recap = function(self, alpha)
+	local button = self._widgets_by_name.skip_recap
+	if alpha <= 0 then
+		set_rect_color(button.style.skip_bg, { 0, 0, 0, 0 })
+		set_text_color(button.style.skip_text, C.COLOR.SKIP_RECAP_TEXT, 0)
+		set_rect_color(button.style.skip_icon, { 0, 0, 0, 0 })
+		return
+	end
+	local bg = self._hover_skip and C.COLOR.SKIP_RECAP_BG_HOVER or C.COLOR.SKIP_RECAP_BG
+	set_rect_color(button.style.skip_bg, { math_floor(bg[1] * alpha + 0.5), bg[2], bg[3], bg[4] })
+	set_text_color(button.style.skip_text, C.COLOR.SKIP_RECAP_TEXT, alpha)
+
+	local ic = C.COLOR.SKIP_RECAP_TEXT
+	set_rect_color(button.style.skip_icon, { math_floor(ic[1] * alpha + 0.5), ic[2], ic[3], ic[4] })
+end
+
 ---@class MissionRecapState
 ---@field active boolean                       -- there is a recap to animate
 ---@field playing boolean                      -- values are still moving (before the sequence ends)
 ---@field settled boolean                      -- the whole sequence has finished
 ---@field progress table<string, number>       -- per-category eased 0..1
 ---@field paused_cat string|nil                 -- the category in its post-lerp pause this frame, if any
+
+MissionSummaryElement._skip_recap = function(self)
+	self._skip_recap_requested = true
+	for i = 1, #C.INTRO_CATEGORY_ORDER do
+		self._cat_settled[C.INTRO_CATEGORY_ORDER[i]] = true
+	end
+	self._composite_settled = true
+end
 
 ---@param snapshot MissionSummarySnapshot
 ---@param dt number
@@ -838,6 +899,11 @@ MissionSummaryElement._intro_advance = function(self, snapshot, dt)
 		self._cat_shake = {}
 		self._composite_settled = false
 		self._composite_shake = 0
+		self._skip_recap_requested = false
+
+		if key and mod.dl.settings.skip_mission_recap then
+			self:_skip_recap()
+		end
 	end
 
 	if not key then
@@ -852,7 +918,12 @@ MissionSummaryElement._intro_advance = function(self, snapshot, dt)
 
 	local total = (#order - 1) * stagger + lerp
 
-	self._intro_elapsed = math_min(total + C.RANK_SETTLE_SHAKE_T, (self._intro_elapsed or 0) + dt)
+	if self._skip_recap_requested then
+
+		self._intro_elapsed = total + C.RANK_SETTLE_SHAKE_T
+	else
+		self._intro_elapsed = math_min(total + C.RANK_SETTLE_SHAKE_T, (self._intro_elapsed or 0) + dt)
+	end
 	local elapsed = self._intro_elapsed
 
 	local progress = {}
@@ -967,7 +1038,14 @@ MissionSummaryElement.update = function(self, dt, t, input_service)
 		self._hell_yeah_alpha = 0
 	end
 
-	self:_update_interaction(snapshot, input_service, lerping, show_hell_yeah)
+	local show_skip = lerping and (self._intro_elapsed or 0) >= C.SKIP_RECAP_DELAY
+	if show_skip then
+		self._skip_alpha = math_min(1, self._skip_alpha + dt / math_max(C.SKIP_RECAP_FADE, 0.0001))
+	else
+		self._skip_alpha = 0
+	end
+
+	self:_update_interaction(snapshot, input_service, lerping, show_hell_yeah, show_skip)
 
 	local shadow_target = self._hover_hell_yeah and 1 or 0
 	local shadow_step = dt / math_max(C.HELL_YEAH_SHADOW_HOVER_TIME, 0.0001)
@@ -989,9 +1067,11 @@ MissionSummaryElement.update = function(self, dt, t, input_service)
 	self:_refresh_delete_run(snapshot.can_delete_run and not lerping)
 
 	self:_refresh_hell_yeah(self._hell_yeah_alpha, snapshot.rank_color)
+	self:_refresh_skip_recap(self._skip_alpha)
 
 	if self._ui_renderer then
 		self:_layout_header(self._ui_renderer)
+		self:_layout_skip_recap(self._ui_renderer)
 	end
 end
 

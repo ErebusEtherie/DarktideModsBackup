@@ -126,6 +126,8 @@ local PRESS_GRACE = 0.060
 local SUBMIT_TIMEOUT = 1.2
 local SYNC_STABILITY_DURATION = 0.12
 local SYNC_TARGET_EDGE_MARGIN = 0.03
+local MIN_STAGE_READY_DELAY = PRESS_DURATION + RELEASE_DURATION
+local STAGE_ACK_ALPHA = 0.3
 local PRIMARY_HOLD_ACTIONS = {
 	action_one_hold = true,
 	interact_hold = true,
@@ -137,6 +139,10 @@ mod._ds_submitted_stage = nil
 mod._ds_submitted_until = 0
 mod._ds_press_until = 0
 mod._ds_release_until = 0
+mod._ds_submit_time = nil
+mod._ds_stage_ack_cost = MIN_STAGE_READY_DELAY
+mod._ds_stage_ack_samples = 0
+mod._ds_last_stage_ack = nil
 local decode_active = false
 local active_decode_key = nil
 local decode_completed = false
@@ -149,7 +155,48 @@ local decode_sync_candidate_since = nil
 local decode_synced_key = nil
 local decode_synced_start_time = nil
 local decode_synced_target = nil
+local decode_sync_ready_at = nil
 local looks_like_decode_symbols
+
+function mod._ds_network_rtt()
+	local connection = Managers.connection
+	local network = rawget(_G, "Network")
+	if not connection or not connection.host or not network or not network.ping then
+		return nil
+	end
+
+	local host_ok, host = pcall(connection.host, connection)
+	if not host_ok or not host then
+		return nil
+	end
+
+	local ping_ok, rtt = pcall(network.ping, host)
+
+	return ping_ok and type(rtt) == "number" and rtt >= 0 and rtt or nil
+end
+
+function mod._ds_stage_ready_delay(server)
+	if server then
+		return MIN_STAGE_READY_DELAY
+	end
+
+	return math.max(MIN_STAGE_READY_DELAY, mod._ds_stage_ack_cost or 0, mod._ds_network_rtt() or 0)
+end
+
+local function observe_stage_ack(now)
+	local submitted_at = mod._ds_submit_time
+	local observed = submitted_at and now - submitted_at
+	if not observed or observed <= 0 or observed >= SUBMIT_TIMEOUT then
+		return
+	end
+
+	local current = mod._ds_stage_ack_cost or MIN_STAGE_READY_DELAY
+	mod._ds_last_stage_ack = observed
+	mod._ds_stage_ack_cost = observed > current
+		and observed
+		or current + (observed - current) * STAGE_ACK_ALPHA
+	mod._ds_stage_ack_samples = (mod._ds_stage_ack_samples or 0) + 1
+end
 
 local function clear_sync_tracking()
 	decode_sync_candidate_key = nil
@@ -159,6 +206,7 @@ local function clear_sync_tracking()
 	decode_synced_key = nil
 	decode_synced_start_time = nil
 	decode_synced_target = nil
+	decode_sync_ready_at = nil
 end
 
 local function reset_snapshot()
@@ -185,6 +233,7 @@ local function sample_decode_symbols(minigame)
 		mod._ds_submitted_until = 0
 		mod._ds_press_until = 0
 		mod._ds_release_until = 0
+		mod._ds_submit_time = nil
 	end
 
 	if not looks_like_decode_symbols(minigame) then
@@ -215,6 +264,7 @@ local function sample_decode_symbols(minigame)
 		mod._ds_submitted_until = 0
 		mod._ds_press_until = 0
 		mod._ds_release_until = 0
+		mod._ds_submit_time = nil
 	end
 
 end
@@ -240,6 +290,7 @@ local function ds_reset(reason)
 	mod._ds_submitted_until = 0
 	mod._ds_press_until = 0
 	mod._ds_release_until = 0
+	mod._ds_submit_time = nil
 end
 
 local function game_time()
@@ -267,6 +318,61 @@ local function next_center_delta(sweep_duration, now, start_time, target, margin
 	return math.abs(delta_a) < math.abs(delta_b) and delta_a or delta_b
 end
 
+local function decode_sync_ready(now, minigame)
+	if not decode_waiting_for_sync then
+		return true
+	end
+
+	local ds = mod._ds
+	local stage = ds and ds.stage
+	local start_time = ds and ds.start_time
+	local target = ds and ds.target
+	local start_time_changed = decode_previous_start_time == nil or start_time ~= decode_previous_start_time
+
+    if stage ~= 1 or not start_time_changed then
+		decode_sync_candidate_key = nil
+		decode_sync_candidate_start_time = nil
+		decode_sync_candidate_target = nil
+		decode_sync_candidate_since = nil
+        return false
+    end
+
+    if minigame and mod._ds_reroll_predicted_sync_ready
+        and mod._ds_reroll_predicted_sync_ready(minigame, decode_previous_start_time)
+    then
+        decode_waiting_for_sync = false
+        decode_synced_key = ds.key
+        decode_synced_start_time = start_time
+        decode_synced_target = target
+        decode_sync_ready_at = now
+        return true
+    end
+
+	if decode_sync_candidate_key ~= ds.key
+		or decode_sync_candidate_start_time ~= start_time
+		or decode_sync_candidate_target ~= target
+	then
+		decode_sync_candidate_key = ds.key
+		decode_sync_candidate_start_time = start_time
+		decode_sync_candidate_target = target
+		decode_sync_candidate_since = now
+		return false
+	end
+
+	local stable_for = now - decode_sync_candidate_since
+	if stable_for < SYNC_STABILITY_DURATION then
+		return false
+	end
+
+	decode_waiting_for_sync = false
+	decode_synced_key = ds.key
+	decode_synced_start_time = start_time
+	decode_synced_target = target
+	decode_sync_ready_at = now
+
+	return true
+end
+
 local function should_press_decode(now)
 	local ds = mod._ds
 	if not ds or ds.timer <= 0 or not ds.active then
@@ -288,43 +394,22 @@ local function should_press_decode(now)
 		return false
 	end
 
-	local sync_ready_now = false
-	if decode_waiting_for_sync then
-		local start_time_changed = decode_previous_start_time == nil or start_time ~= decode_previous_start_time
-		if stage ~= 1 or not start_time_changed then
-			decode_sync_candidate_key = nil
-			decode_sync_candidate_start_time = nil
-			decode_sync_candidate_target = nil
-			decode_sync_candidate_since = nil
-			return false
-		end
+	local was_waiting_for_sync = decode_waiting_for_sync
+	if not decode_sync_ready(now) then return false end
+	local sync_ready_now = was_waiting_for_sync
+		or decode_sync_ready_at ~= nil and now - decode_sync_ready_at <= SYNC_STABILITY_DURATION
 
-		if decode_sync_candidate_key ~= ds.key
-			or decode_sync_candidate_start_time ~= start_time
-			or decode_sync_candidate_target ~= target
-		then
-			decode_sync_candidate_key = ds.key
-			decode_sync_candidate_start_time = start_time
-			decode_sync_candidate_target = target
-			decode_sync_candidate_since = now
-			return false
-		end
-
-		local stable_for = now - decode_sync_candidate_since
-		if stable_for < SYNC_STABILITY_DURATION then
-			return false
-		end
-
-		decode_waiting_for_sync = false
-		decode_synced_key = ds.key
-		decode_synced_start_time = start_time
-		decode_synced_target = target
-		sync_ready_now = true
+	if mod._ds_reroll_blocks_solver and mod._ds_reroll_blocks_solver() then
+		return false
 	end
 
 	if mod._ds_submitted_stage ~= stage then
+		if mod._ds_submitted_stage ~= nil then
+			observe_stage_ack(now)
+		end
 		mod._ds_submitted_stage = nil
 		mod._ds_submitted_until = 0
+		mod._ds_submit_time = nil
 	elseif now < mod._ds_submitted_until then
 		return false
 	end
@@ -348,6 +433,7 @@ local function submit_decode(now)
 	mod._ds_submitted_until = now + SUBMIT_TIMEOUT
 	mod._ds_press_until = now + PRESS_DURATION
 	mod._ds_release_until = mod._ds_press_until + RELEASE_DURATION
+	mod._ds_submit_time = now
 end
 
 looks_like_decode_symbols = function(minigame)
@@ -382,6 +468,9 @@ end
 
 mod:hook_safe("MinigameDecodeSymbols", "start", function(self, player)
 	if not mod._is_local_minigame_player(player) then
+		if mod._ds_reroll_abort then
+			mod._ds_reroll_abort(self)
+		end
 		if decode_active and is_active_decode_symbols(self) then
 			ds_reset("ownership_transferred")
 		end
@@ -398,19 +487,30 @@ mod:hook_safe("MinigameDecodeSymbols", "start", function(self, player)
 		mod._ds_submitted_until = 0
 		mod._ds_press_until = 0
 		mod._ds_release_until = 0
+		mod._ds_submit_time = nil
 		decode_active = true
 		active_decode_key = tostring(self)
 		decode_completed = false
 		decode_waiting_for_sync = self._is_server ~= true
 	end
+
+	if mod._ds_reroll_start then
+		mod._ds_reroll_start(self)
+	end
 end)
-mod:hook_safe("MinigameDecodeSymbols", "stop", function(self)
+mod:hook_safe("MinigameDecodeSymbols", "stop", function(self, stop_arg)
+	if mod._ds_reroll_stop then
+		mod._ds_reroll_stop(self, stop_arg)
+	end
     if S("enable_decode_auto") and is_active_decode_symbols(self) then
         ds_reset(not decode_completed and "stop" or nil)
     end
 end)
 
 mod:hook_safe("MinigameDecodeSymbols", "complete", function(self)
+	if mod._ds_reroll_complete then
+		mod._ds_reroll_complete(self)
+	end
     if S("enable_decode_auto") and is_active_decode_symbols(self) then
         ds_reset("complete")
     end
@@ -426,9 +526,15 @@ local function on_update(dt)
 	if now and mod._ds_submitted_until > 0 and now >= mod._ds_submitted_until then
 		mod._ds_submitted_stage = nil
 		mod._ds_submitted_until = 0
+		mod._ds_submit_time = nil
 	end
 end
-local function on_round_end() ds_reset(decode_active and "round_end" or nil) end
+local function on_round_end()
+	ds_reset(decode_active and "round_end" or nil)
+	mod._ds_stage_ack_cost = MIN_STAGE_READY_DELAY
+	mod._ds_stage_ack_samples = 0
+	mod._ds_last_stage_ack = nil
+end
 local function on_setting(id) if id == "enable_decode_auto" then ds_reset(decode_active and "setting_changed" or nil) end end
 
 mod._reg("update", on_update)
@@ -483,9 +589,15 @@ local function hook_decode_state_input(PlayerCharacterStateMinigame)
 			end
 		end
 
-			decode_active = true
-			decode_completed = false
-			sample_decode_symbols(minigame)
+		decode_active = true
+		decode_completed = false
+		sample_decode_symbols(minigame)
+		local reroll_blocks = false
+		if mod._ds_reroll_active and mod._ds_reroll_active() then
+            local sync_ready = decode_sync_ready(t, minigame)
+			mod._ds_reroll_evaluate(minigame, t, sync_ready)
+		end
+		reroll_blocks = mod._ds_reroll_blocks_solver and mod._ds_reroll_blocks_solver() or false
 
 		local action_one_hold = input_extension:get("action_one_hold")
 		local interact_hold = input_extension:get("interact_hold")
@@ -511,7 +623,9 @@ local function hook_decode_state_input(PlayerCharacterStateMinigame)
 			return true
 		end
 
-		if mod._ds_press_until > t then
+		if reroll_blocks then
+			primary_input = false
+		elseif mod._ds_press_until > t then
 			primary_input = true
 		elseif mod._ds_release_until > t then
 			primary_input = false

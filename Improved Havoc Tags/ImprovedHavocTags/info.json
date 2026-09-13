@@ -1,0 +1,13 @@
+{
+    "name": "Improved Havoc Tags",
+    "author": "brufgsilva",
+    "version": "3.2",
+    "homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/500",
+    "description": "Recolors certain Havoc modifiers to make them easier to identify at a glance in Party Finder.",
+    "dependencies": {
+        "required": [],
+        "self_after": [],
+        "self_before": []
+    },
+    "localization": {}
+}

@@ -1,3 +1,7 @@
+** 1.6.1 Changes **
+[Better] Briefing skips also work when using the Realms mod (suggested by Wobin)
+[Fixed] Possible fix to muting mortis past voices causing non-past voices to mute (reported by CobaltNinja)
+
 ** 1.6.0 Changes **
 [New] Option to mute Skitarii servo skulls (suggested by AC3NATOR)
 

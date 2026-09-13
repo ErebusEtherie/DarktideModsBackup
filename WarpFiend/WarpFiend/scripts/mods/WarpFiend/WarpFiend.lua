@@ -1,0 +1,435 @@
+-- WarpFiend - Advanced Psyker Basic Attack DPS Optimization
+local mod = get_mod("WarpFiend")
+
+-- ============================================
+-- BUFF MONITOR MODULE
+-- ============================================
+local BuffMonitor = {}
+BuffMonitor.__index = BuffMonitor
+
+function BuffMonitor:new()
+    local self = setmetatable({}, BuffMonitor)
+    self.becalming_stacks = 0
+    self.becalming_active = false
+    self.becalming_time_remaining = 0
+    self.warp_siphon_stacks = 0
+    self.psykinetic_aura_active = false
+    self.just_a_dream_active = false
+    self.warp_rider_damage = 0
+    return self
+end
+
+function BuffMonitor:update(player_unit)
+    if not player_unit or not Unit.alive(player_unit) then return end
+    local success, buff_extension = pcall(ScriptUnit.extension, player_unit, "buff_system")
+    if not success or not buff_extension then return end
+
+    self.becalming_stacks = 0
+    self.becalming_active = false
+    self.warp_siphon_stacks = 0
+    self.psykinetic_aura_active = false
+    self.just_a_dream_active = false
+
+    for _, buff in pairs(buff_extension._buffs_by_index) do
+        local template = buff:template()
+        if template then
+            local buff_name = template.name
+            if buff_name == "psyker_shriek_becalming_eruption_buff" then
+                self.becalming_active = true
+                self.becalming_stacks = buff:stack_count() or 0
+                self.becalming_time_remaining = buff:time_remaining() or 0
+            elseif buff_name == "psyker_warp_siphon_charge_buff" then
+                self.warp_siphon_stacks = buff:stack_count() or 0
+            elseif buff_name == "psyker_cooldown_reduction_on_elite_kill" then
+                self.psykinetic_aura_active = true
+                self.psykinetic_aura_time_remaining = buff:time_remaining() or 0
+            elseif buff_name == "psyker_damage_to_warp_charge_take_damage" then
+                self.just_a_dream_active = true
+            end
+        end
+    end
+    self:update_derived_values(player_unit)
+end
+
+function BuffMonitor:update_derived_values(player_unit)
+    if not player_unit or not Unit.alive(player_unit) then return end
+    if not POSITION_LOOKUP[player_unit] then return end
+    local success, unit_data_extension = pcall(ScriptUnit.extension, player_unit, "unit_data_system")
+    if not success or not unit_data_extension then return end
+    local warp_charge_component = unit_data_extension:read_component("warp_charge")
+    local current_peril = warp_charge_component and warp_charge_component.current_percentage or 0
+    self.warp_rider_damage = current_peril * 0.20
+end
+
+function BuffMonitor:should_allow_continuous_fire()
+    return mod:get("track_becalming_eruption") and self.becalming_active
+end
+
+function BuffMonitor:to_string()
+    return string.format("Becalming: %d (%.1fs) | Siphon: %d | Aura: %s",
+        self.becalming_stacks, self.becalming_time_remaining,
+        self.warp_siphon_stacks, self.psykinetic_aura_active and "Y" or "N")
+end
+-- ============================================
+-- DECISION TREE MODULE
+-- ============================================
+local DecisionTree = {}
+DecisionTree.ACTION_1 = 1
+DecisionTree.ACTION_2 = 2
+DecisionTree.ACTION_3 = 3
+DecisionTree.ACTION_4 = 4
+DecisionTree.ACTION_5 = 5
+DecisionTree.ACTION_6 = 6
+
+local ACTION_NAMES = {
+    [1] = "Emergency Shriek",
+    [2] = "Emergency Quell",
+    [3] = "Ramp-Up",
+    [4] = "Peak Burst",
+    [5] = "Optimal Shriek",
+    [6] = "Value-Hold"
+}
+
+function DecisionTree:evaluate(state, buff_monitor)
+    local emergency_threshold = mod:get("peril_emergency_threshold")
+    local peak_threshold = mod:get("peril_peak_threshold")
+    local auto_shriek_enable = mod:get("auto_shriek_enable")
+    local target_density_threshold = mod:get("target_density_threshold")
+    local hold_for_value = mod:get("hold_shriek_for_value")
+    local elite_priority = mod:get("elite_priority")
+
+    local peril = state.peril or 0
+    local shriek_ready = state.shriek_ready or false
+    local target_density = state.target_density or 0
+    local elite_present = state.elite_present or false
+
+    local function log_action(action_id)
+        if mod:get("debug_logging") then
+            mod:echo("DecisionTree: " .. ACTION_NAMES[action_id])
+            mod:echo("  Peril: " .. tostring(peril) .. " Shriek: " .. tostring(shriek_ready))
+            mod:echo("  Density: " .. tostring(target_density) .. " Buffs: " .. buff_monitor:to_string())
+        end
+    end
+
+    -- PRIORITY 1: Explosion risk
+    if peril >= emergency_threshold then
+        if shriek_ready and auto_shriek_enable then
+            log_action(1)
+            return 1
+        else
+            log_action(2)
+            return 2
+        end
+    end
+
+    -- PRIORITY 2: Ramp-up phase
+    if peril < peak_threshold then
+        log_action(3)
+        return 3
+    end
+
+    -- PRIORITY 3: Peak window
+    if shriek_ready and auto_shriek_enable then
+        if elite_priority and elite_present then
+            log_action(5)
+            return 5
+        end
+        if target_density >= target_density_threshold then
+            log_action(5)
+            return 5
+        end
+        if hold_for_value then
+            log_action(6)
+            return 6
+        else
+            log_action(5)
+            return 5
+        end
+    else
+        log_action(4)
+        return 4
+    end
+end
+-- ============================================
+-- MAIN MODULE
+-- ============================================
+local player = nil
+local player_unit = nil
+local buff_monitor = BuffMonitor:new()
+local current_action = nil
+local micro_quell_active = false
+local micro_quell_timer = 0
+local shots_fired_in_burst = 0
+
+local STAFF_PERIL_COSTS = {
+    trauma = 0.042,
+    purgatus = 0.045,
+    surge = 0.038,
+    voidstrike = 0.050
+}
+
+local function get_player()
+    return Managers.player:local_player(1)
+end
+
+local function get_player_unit()
+    local p = get_player()
+    if not p then return nil end
+    return p.player_unit
+end
+
+local function get_peril_level()
+    if not player_unit or not Unit.alive(player_unit) then return 0 end
+    if not POSITION_LOOKUP[player_unit] then return 0 end
+    local success, unit_data_extension = pcall(ScriptUnit.extension, player_unit, "unit_data_system")
+    if not success or not unit_data_extension then return 0 end
+    local warp_charge_component = unit_data_extension:read_component("warp_charge")
+    return warp_charge_component and warp_charge_component.current_percentage or 0
+end
+
+local function check_shriek_ready()
+    if not player_unit or not Unit.alive(player_unit) then return false end
+    if not POSITION_LOOKUP[player_unit] then return false end
+    local success, ability_extension = pcall(ScriptUnit.extension, player_unit, "ability_system")
+    if not success or not ability_extension then return false end
+    return ability_extension:can_use_ability("combat_ability")
+end
+
+local function get_peril_cost_per_shot()
+    local custom_cost = mod:get("custom_peril_cost")
+    if custom_cost and custom_cost > 0 then return custom_cost end
+    return STAFF_PERIL_COSTS[mod:get("staff_type")] or 0.042
+end
+
+local function count_enemies_in_window(max_distance, max_angle_cosine)
+    if not player_unit or not Unit.alive(player_unit) then return 0 end
+    local player_pos = POSITION_LOOKUP[player_unit]
+    if not player_pos then return 0 end
+    local count = 0
+    local player_forward = Unit.local_forward(player_unit, 0)
+    local unit_spawn_system = Managers.state.unit_spawn
+    if not unit_spawn_system then return 0 end
+    local max_distance_sq = max_distance * max_distance
+    
+    for _, enemy_unit in pairs(unit_spawn_system._spawned_units or {}) do
+        if enemy_unit and Unit.alive(enemy_unit) then
+            local enemy_breed = ScriptUnit.has_extension(enemy_unit, "breed_system")
+            if enemy_breed and enemy_breed.is_enemy then
+                local enemy_pos = POSITION_LOOKUP[enemy_unit]
+                if enemy_pos then
+                    local to_enemy = enemy_pos - player_pos
+                    local distance_sq = Vector3.dot(to_enemy, to_enemy)
+                    if distance_sq <= max_distance_sq then
+                        local distance = math.sqrt(distance_sq)
+                        local to_enemy_normalized = to_enemy / distance
+                        local dot_product = Vector3.dot(player_forward, to_enemy_normalized)
+                        if dot_product >= max_angle_cosine then
+                            count = count + 1
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return count
+end
+
+local function check_elite_present()
+    if not player_unit or not Unit.alive(player_unit) then return false end
+    if not POSITION_LOOKUP[player_unit] then return false end
+    local success, coherency_extension = pcall(ScriptUnit.extension, player_unit, "coherency_system")
+    if not success or not coherency_extension then return false end
+    local coherency_targets = coherency_extension:get_coherency_targets()
+    if coherency_targets then
+        for _, target in pairs(coherency_targets) do
+            if target and target.unit and Unit.alive(target.unit) then
+                local breed_extension = ScriptUnit.has_extension(target.unit, "breed_system")
+                if breed_extension then
+                    local breed_name = breed_extension:breed_name()
+                    if breed_name and (string.find(breed_name, "elite") or string.find(breed_name, "special")) then
+                        return true
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
+-- ============================================
+-- ACTION EXECUTION
+-- ============================================
+local function execute_action_1()
+    if mod:get("debug_logging") then
+        mod:echo("WarpFiend: ACTION 1 - Emergency Shriek")
+    end
+    if mod:get("input_mode") == "auto_cast" then
+        Managers.input:trigger_action("combat_ability_pressed")
+    end
+    return true
+end
+
+local function execute_action_2()
+    if mod:get("debug_logging") then
+        mod:echo("WarpFiend: ACTION 2 - Emergency Quell")
+    end
+    if mod:get("input_mode") == "auto_cast" then
+        Managers.input:trigger_action("weapon_reload_hold")
+        micro_quell_active = true
+        micro_quell_timer = mod:get("micro_quell_duration")
+    end
+    return true
+end
+
+local function execute_action_3()
+    if mod:get("debug_logging") then
+        mod:echo("WarpFiend: ACTION 3 - Ramp-Up")
+    end
+    return false
+end
+
+local function execute_action_4()
+    if mod:get("debug_logging") then
+        mod:echo("WarpFiend: ACTION 4 - Peak Burst")
+    end
+    local input_mode = mod:get("input_mode")
+    local current_peril = get_peril_level()
+    local peril_cost = get_peril_cost_per_shot()
+    local emergency_threshold = mod:get("peril_emergency_threshold")
+    local shots_available = math.floor((emergency_threshold - current_peril) / peril_cost)
+    shots_available = math.min(shots_available, 6)
+    
+    if shots_fired_in_burst >= shots_available then
+        if not micro_quell_active then
+            micro_quell_active = true
+            micro_quell_timer = mod:get("micro_quell_duration")
+            if input_mode == "auto_cast" then
+                Managers.input:trigger_action("weapon_reload_hold")
+            end
+        end
+    else
+        shots_fired_in_burst = shots_fired_in_burst + 1
+    end
+    return false
+end
+
+local function execute_action_5()
+    if mod:get("debug_logging") then
+        mod:echo("WarpFiend: ACTION 5 - Optimal Shriek")
+    end
+    if mod:get("input_mode") == "auto_cast" then
+        Managers.input:trigger_action("combat_ability_pressed")
+    end
+    shots_fired_in_burst = 0
+    return true
+end
+
+local function execute_action_6()
+    if mod:get("debug_logging") then
+        mod:echo("WarpFiend: ACTION 6 - Value-Hold")
+    end
+    local input_mode = mod:get("input_mode")
+    local current_peril = get_peril_level()
+    local emergency_threshold = mod:get("peril_emergency_threshold")
+    
+    if current_peril >= (emergency_threshold - 0.05) then
+        if not micro_quell_active then
+            micro_quell_active = true
+            micro_quell_timer = mod:get("micro_quell_duration")
+            if input_mode == "auto_cast" then
+                Managers.input:trigger_action("weapon_reload_hold")
+            end
+        end
+    end
+    return false
+end
+
+-- ============================================
+-- DECISION LOOP
+-- ============================================
+local function run_decision_tree()
+    -- Guard: Only run during actual gameplay
+    if not Managers.state or not Managers.state.game_mode then return false end
+    if type(Managers.state.game_mode.is_in_game) ~= "function" then return false end
+    if not Managers.state.game_mode:is_in_game() then return false end
+    
+    player = get_player()
+    player_unit = get_player_unit()
+    if not player or not player_unit then return false end
+    if not Unit.alive(player_unit) then return false end
+    if not POSITION_LOOKUP[player_unit] then return false end
+    
+    buff_monitor:update(player_unit)
+    local state = {
+        peril = get_peril_level(),
+        shriek_ready = check_shriek_ready(),
+        target_density = count_enemies_in_window(30, 0.5),
+        elite_present = check_elite_present(),
+    }
+    
+    current_action = DecisionTree:evaluate(state, buff_monitor)
+    local should_block = false
+    
+    if current_action == 1 then
+        should_block = execute_action_1()
+    elseif current_action == 2 then
+        should_block = execute_action_2()
+    elseif current_action == 3 then
+        should_block = execute_action_3()
+    elseif current_action == 4 then
+        should_block = execute_action_4()
+    elseif current_action == 5 then
+        should_block = execute_action_5()
+    elseif current_action == 6 then
+        should_block = execute_action_6()
+    end
+    return should_block
+end
+
+local function update_micro_quell(dt)
+    if micro_quell_active then
+        micro_quell_timer = micro_quell_timer - dt
+        if micro_quell_timer <= 0 then
+            micro_quell_active = false
+            micro_quell_timer = 0
+            if mod:get("input_mode") == "auto_cast" then
+                Managers.input:untrigger_action("weapon_reload_hold")
+            end
+        end
+    end
+end
+
+-- ============================================
+-- HOOKS
+-- ============================================
+mod:hook("InputService", "_get", function(func, self, action_name)
+    local should_block = run_decision_tree()
+    
+    if should_block and mod:get("input_mode") == "input_block" then
+        if (action_name == "action_one_pressed" or action_name == "action_one") and current_action == 2 then
+            return false
+        end
+        if (action_name == "combat_ability_pressed" or action_name == "combat_ability") and current_action == 6 then
+            return false
+        end
+    end
+    return func(self, action_name)
+end)
+
+mod.update = function(dt)
+    update_micro_quell(dt)
+end
+
+mod.on_game_state_change = function()
+    micro_quell_active = false
+    micro_quell_timer = 0
+    shots_fired_in_burst = 0
+    current_action = nil
+end
+
+-- Initialization logging
+mod:echo("WarpFiend loaded successfully!")
+mod:echo("  - Buff Monitor: READY")
+mod:echo("  - Decision Tree: READY")
+mod:echo("  - Input Mode: " .. tostring(mod:get("input_mode") or "auto_cast"))
+
+return mod

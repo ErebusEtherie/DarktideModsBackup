@@ -12,7 +12,7 @@
 --]]
 
 local mod = get_mod("uptime"); if not mod then return end
-mod.version = "Uptime2 v2.10"
+mod.version = "Uptime2 v2.14"
 
 local view_name = "uptime_view"
 
@@ -40,6 +40,7 @@ local SETTINGS_TO_CACHE = {
     "show_combat_max_stack_mode",
     "show_average_stacks_combat",
     "track_damage",
+    "end_view_scoreboard_position",
 }
 
 local function repair_track_damage_setting(track_damage_mode)
@@ -73,6 +74,8 @@ local function cache_setting(setting_id)
         mod.show_average_stacks_combat = mod:get("show_average_stacks_combat")
     elseif setting_id == "track_damage" then
         mod.track_damage_mode = repair_track_damage_setting(mod:get("track_damage"))
+    elseif setting_id == "end_view_scoreboard_position" then
+        mod.end_view_scoreboard_position = mod:get("end_view_scoreboard_position") or "down"
     end
 end
 

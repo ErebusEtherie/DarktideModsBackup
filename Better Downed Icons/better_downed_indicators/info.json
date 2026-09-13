@@ -1,0 +1,17 @@
+{
+    "name": "Player State Indicators",
+    "author": "IndicaBunny",
+    "version": "2.16",
+    "homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/635",
+    "source": "https://github.com/MaddyMarv/Player-State-Indicators-aka-Better-Downed-Icons-",
+    "funding": {
+        "kofi": "https://ko-fi.com/indicabunny"
+    },
+    "description": "Replaces generic downed icons with specific status icons (pounced by hound, netted by trapper, grabbed by mutant) and adds aggro borders.",
+    "dependencies": {
+        "required": [],
+        "self_after": [],
+        "self_before": []
+    },
+    "localization": {}
+}

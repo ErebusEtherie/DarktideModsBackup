@@ -1,0 +1,45 @@
+return {
+	mod_name = { en = "Ritual Danger Zones" },
+	mod_description = { en = "Marks the two points on the mission path where a Heinous Ritual starts ticking and where it hits full speed, plus a site marker and a completion countdown. Client-side." },
+
+	enabled = { en = "Enabled" },
+	ring_start_enabled = { en = "Ring around the ritual: start radius (location only)" },
+	ring_start_color = { en = "Start ring color (RGBA 0-100)" },
+	ring_speedup_enabled = { en = "Ring around the ritual: speedup radius (location only)" },
+	ring_speedup_color = { en = "Speedup ring color (RGBA 0-100)" },
+	ring_start_color_r = { en = "Red" }, ring_start_color_g = { en = "Green" }, ring_start_color_b = { en = "Blue" }, ring_start_color_a = { en = "Alpha" },
+	ring_speedup_color_r = { en = "Red" }, ring_speedup_color_g = { en = "Green" }, ring_speedup_color_b = { en = "Blue" }, ring_speedup_color_a = { en = "Alpha" },
+	ring_projection_depth = { en = "Ring projection depth, all rings (lower = less smear on walls and stairs)" },
+
+	timer_group = { en = "Completion timer" },
+	timer_enabled = { en = "Show timer" },
+	timer_text_size = { en = "Text size on the marker and warning (24 = default)" },
+
+	marker_group = { en = "World marker" },
+	marker_enabled = { en = "Show marker" },
+	marker_icon = { en = "Marker icon" },
+	marker_icon_ritual = { en = "Heinous Rituals icon (game's own)" },
+	marker_icon_skull = { en = "Difficulty skull" },
+	marker_size = { en = "Marker size" },
+	marker_through_walls = { en = "Marker through walls" },
+	marker_show_distance = { en = "Show distance on marker" },
+	marker_offscreen = { en = "Off-screen edge arrow" },
+
+
+	warning_group       = { en = "On-screen warning" },
+	warning_enabled     = { en = "Enable on-screen warning" },
+	warning_size        = { en = "Warning size" },
+	warning_directional = { en = "Off-screen direction arrow" },
+	warning_show_eta    = { en = "Show countdown on warning" },
+	warning_text_color  = { en = "Warning text color (RGBA 0-100)" },
+	warning_text_color_r = { en = "Red" }, warning_text_color_g = { en = "Green" }, warning_text_color_b = { en = "Blue" }, warning_text_color_a = { en = "Alpha" },
+
+	tripwire_group   = { en = "Main-path tripwires" },
+	tripwire_enabled = { en = "Show tripwires on the path" },
+	tripwire_radius  = { en = "Tripwire ring radius (m)" },
+	tripwire_projection_depth = { en = "Tripwire projection depth (raise if a tripwire is not visible)" },
+	tripwire_far_color   = { en = "Tripwire: ritual starts ticking (RGBA 0-100)" },
+	tripwire_close_color = { en = "Tripwire: ritual at full speed (RGBA 0-100)" },
+	tripwire_far_color_r = { en = "Red" }, tripwire_far_color_g = { en = "Green" }, tripwire_far_color_b = { en = "Blue" }, tripwire_far_color_a = { en = "Alpha" },
+	tripwire_close_color_r = { en = "Red" }, tripwire_close_color_g = { en = "Green" }, tripwire_close_color_b = { en = "Blue" }, tripwire_close_color_a = { en = "Alpha" },
+}

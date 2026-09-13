@@ -17,8 +17,8 @@ FEATURES
 - Soft Light overlay: the map behind you rolls off into a gentle fade and a
   warm lamp glow surrounds your position - purely cosmetic, screen-anchored,
   never hides map data (toggleable)
-- Live procedural expedition maps that rebuild as sections change and record
-  reusable tile-local geometry for future layouts
+- Live procedural expedition maps that rebuild as sections change; optional
+  developer recording can capture reusable tile-local geometry
 - 5 themes: Terminal (cogitator panel), Auspex (round radar),
   Clean Square, Clean Circle, Ghost (no frame at all)
 - Enemies by category (horde/elite/specialist/monstrosity) with per-breed
@@ -49,7 +49,7 @@ FEATURES
 - Performance tab for trading detail back for frames: enemy scan range and
   update rate, cheap or precise horde line-of-sight, minimap and full-screen
   map detail budgets, panel effects quality, ally status rate, Debrief autosave
-  interval and per-hit combat stat tracking
+  interval, per-hit combat stat tracking and burst timing diagnostics
 - Versioned, zero-copy geometry API for compatible external minimap mods,
   with manual or automatic geometry-only mode
 - English and Simplified Chinese (community-contributed zh-cn translation)

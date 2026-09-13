@@ -13,11 +13,11 @@ local BUTTON_WIDTH = 195
 local BUTTON_SPLIT = 99
 
 mod:add_global_localize_strings({
-	loc_hq_difficulty_havoc = { en = "Havoc" },
-	loc_hq_button_host = { en = "HOST" },
-	loc_hq_button_queue = { en = "QUEUE" },
-	loc_hq_button_cancel = { en = "CANCEL" },
-	loc_hq_warn_title = { en = "WARNING" },
+	loc_hq_difficulty_havoc = { en = "Havoc", ko = "하복", ["zh-cn"] = "浩劫", ["zh-tw"] = "浩劫" },
+	loc_hq_button_host = { en = "HOST", ko = "호스팅", ["zh-cn"] = "开设", ["zh-tw"] = "開設" },
+	loc_hq_button_queue = { en = "QUEUE", ko = "대기열", ["zh-cn"] = "排队", ["zh-tw"] = "排隊" },
+	loc_hq_button_cancel = { en = "CANCEL", ko = "취소", ["zh-cn"] = "取消", ["zh-tw"] = "取消" },
+	loc_hq_warn_title = { en = "WARNING", ko = "경고", ["zh-cn"] = "警告", ["zh-tw"] = "警告" },
 	loc_hq_warn_body = {
 		en = "WARNING! It appears that you have set your maximum acceptable havoc rank to a number "
 			.. "below 40, even though you are simply hosting. This will auto-decline anyone whose "
@@ -27,13 +27,29 @@ mod:add_global_localize_strings({
 			.. "Note: This mod is accounting for the players' TRUE Havoc Rank, and not the rank of "
 			.. "their highest beaten Havoc mission (the number that's usually displayed next to "
 			.. "their characters' name with a Havoc icon).",
+		ko = "경고! 단순히 호스팅만 하는데도 수락 가능한 최대 하복 랭크가 40 미만으로 "
+			.. "설정되어 있습니다. 이대로 진행하면 현재 임무 랭크가 그 수치 이상인 플레이어는 "
+			.. "모두 자동으로 거절됩니다. 계속하시겠습니까?"
+			.. "\n\n"
+			.. "참고: 이 모드는 캐릭터 이름 옆에 하복 아이콘과 함께 표시되는 최고 클리어 랭크가 "
+			.. "아니라, 플레이어의 실제 하복 랭크를 기준으로 판단합니다.",
+		["zh-cn"] = "警告！你只是在开设队伍，但可接受的最高浩劫等级被设置为低于 40。"
+			.. "这会自动拒绝所有当前任务等级达到或高于该数值的玩家，确定要继续吗？"
+			.. "\n\n"
+			.. "注意：本模组依据的是玩家真实的浩劫等级，而不是其通关过的最高浩劫任务等级"
+			.. "（即通常显示在角色名称旁、带有浩劫图标的那个数字）。",
+		["zh-tw"] = "警告！你只是在開設隊伍，但可接受的最高浩劫級別被設定為低於 40。"
+			.. "這會自動拒絕所有目前任務級別達到或高於該數值的玩家，確定要繼續嗎？"
+			.. "\n\n"
+			.. "注意：本模組依據的是玩家真實的浩劫級別，而不是其通關過的最高浩劫任務級別"
+			.. "（即通常顯示在角色名稱旁、帶有浩劫圖示的那個數字）。",
 	},
-	loc_hq_warn_confirm = { en = "I am sure" },
-	loc_hq_warn_cancel = { en = "Cancel" },
-	loc_hqp_leave_blacklist = { en = "Leave and Blacklist Lobby" },
-	loc_hqp_bl_title = { en = "Leave and Blacklist Lobby" },
-	loc_hqp_bl_confirm = { en = "Leave and blacklist" },
-	loc_hqp_bl_cancel = { en = "Cancel" },
+	loc_hq_warn_confirm = { en = "I am sure", ko = "확실합니다", ["zh-cn"] = "我确定", ["zh-tw"] = "我確定" },
+	loc_hq_warn_cancel = { en = "Cancel", ko = "취소", ["zh-cn"] = "取消", ["zh-tw"] = "取消" },
+	loc_hqp_leave_blacklist = { en = "Leave and Blacklist Lobby", ko = "파티 떠나고 차단하기", ["zh-cn"] = "退出并屏蔽队伍", ["zh-tw"] = "離開並封鎖隊伍" },
+	loc_hqp_bl_title = { en = "Leave and Blacklist Lobby", ko = "파티 떠나고 차단하기", ["zh-cn"] = "退出并屏蔽队伍", ["zh-tw"] = "離開並封鎖隊伍" },
+	loc_hqp_bl_confirm = { en = "Leave and blacklist", ko = "떠나고 차단하기", ["zh-cn"] = "退出并屏蔽", ["zh-tw"] = "離開並封鎖" },
+	loc_hqp_bl_cancel = { en = "Cancel", ko = "취소", ["zh-cn"] = "取消", ["zh-tw"] = "取消" },
 })
 
 local SYSTEM_BLUEPRINTS_PATH = "scripts/ui/views/system_view/system_view_content_blueprints"

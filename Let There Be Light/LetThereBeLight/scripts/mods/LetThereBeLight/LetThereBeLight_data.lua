@@ -8,6 +8,12 @@ return {
     options = {
         widgets = {
             {
+                setting_id = "chat_notification",
+                type = "checkbox",
+                default_value = true,
+                tooltip = "chat_notification_tooltip",
+            },
+            {
                 setting_id = "power_interruption_mode",
                 type = "dropdown",
                 default_value = "lights_on",

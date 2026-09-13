@@ -177,17 +177,11 @@ return {
   horde_ambush_settings = {
     en = "Horde Settings"
   },
-  horde_ambush_enabled = {
-    en = "Horde Enabled"
-  },
   horde_incoming_warning = {
     en = "Horde Incoming Warning"
   },
   weapon_settings = {
     en = "Player Weapon Settings"
-  },
-  weapon_enabled = {
-    en = "Player Weapon Enabled"
   },
   shotgun_fire = {
     en = "Accatran Shotgun Firing"
@@ -359,5 +353,14 @@ return {
   },
   heavy_lasgun = {
 	en = "Heavy Lasgun (Mk IX) Firing SFX"
+  },
+  heavy_stubber = {
+	en = "Ogryn Achlys Heavy Stubber Fire SFX"
+  },
+  dual_stub_pistols = {
+	en = "Hive Scum Dual Stub Pistols Fire SFX"
+  },
+  dual_stub_pistols_special = {
+	en = "Hive Scum Dual Stub Pistols Special Fire SFX"
   },
 }

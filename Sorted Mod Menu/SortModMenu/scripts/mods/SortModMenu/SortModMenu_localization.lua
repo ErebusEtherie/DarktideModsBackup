@@ -8,20 +8,12 @@ local localizations = {
     	ko = "정렬된 모드 메뉴",
 	},
 	mod_description = {
-		en = "Sort the Mod Options menu. Pin mods to the top of the list, or hide them. Close and open the menu to see changes",
-		es = "Ordena el menú de opciones de mods en el orden que prefieras. Cierra y abre el menú para ver los cambios",
-		ru = "Сортируйте меню настроек модов в удобном для вас порядке. Закройте и откройте меню, чтобы увидеть изменения",
-		["zh-cn"] = "按您喜欢的顺序对模组选项菜单进行排序。关闭并重新打开菜单以查看更改",
-		ja = "Modオプションメニューをお好みの順序に並び替えます。変更を確認するにはメニューを一度閉じてから再度開いてください",
-		ko = "모드 옵션 메뉴를 원하는 순서대로 정렬합니다. 변경 사항을 확인하려면 메뉴를 닫았다가 다시 열어주세요",
-	},
-	searchbox_enabled = {
-		en = "Enable Search Bar",
-		es = "Habilitar barra de búsqueda",
-		ru = "Включить строку поиска",
-		["zh-cn"] = "启用搜索栏",
-		ja = "検索バーを有効にする",
-		ko = "검색창 활성화",
+		en = "Sort the Mod Options menu alphabetically, hide mods from the list or turn of colourful text.",
+		es = "Ordena alfabéticamente el menú de opciones de mods u oculta mods de la lista. Cierra y abre el menú para ver los cambios",
+		ru = "Сортируйте меню настроек модов по алфавиту или скрывайте моды из списка. Закройте и откройте меню, чтобы увидеть изменения",
+		["zh-cn"] = "按字母顺序排列模组选项菜单，或从列表中隐藏模组。关闭并重新打开菜单以查看更改",
+		ja = "Modオプションメニューをアルファベット順に並び替え、リストからModを非表示にできます。変更を確認するにはメニューを一度閉じてから再度開いてください",
+		ko = "모드 옵션 메뉴를 알파벳순으로 정렬하거나 목록에서 모드를 숨깁니다. 변경 사항을 확인하려면 메뉴를 닫았다가 다시 열어주세요",
 	},
 	modname_cleaned = {
 		en = "Remove Colors & Glyphs from Mod Names",
@@ -31,6 +23,9 @@ local localizations = {
 		ja = "MOD名から色コードとアイコンを削除する",
 		ko = "모드 이름에서 색상 코드 및 아이콘 제거",
 	},
+	modname_cleaned_description = {
+		en = "Hides color codes and special glyphs in mod names shown in the category list",
+	},
 	sort_order = {
 		en = "Sort Order",
 		es = "Orden de clasificación",
@@ -38,6 +33,9 @@ local localizations = {
 		["zh-cn"] = "排序顺序",
 		ja = "並び替え順序",
 		ko = "정렬 순서",
+	},
+	sort_order_description = {
+		en = "Alphabetical order of the mods in the category list.\nClose and open the menu to apply",
 	},
 	Ascending = {
 		en = "Ascending",
@@ -71,93 +69,7 @@ local localizations = {
 		ja = "非表示Mod",
 		ko = "숨긴 모드",
 	},
-	pinned_mods_group = {
-		en = "Pinned Mods",
-		es = "Mods Fijados",
-		ru = "Закреплённые моды",
-		["zh-cn"] = "置顶模组",
-		ja = "ピン留めMod",
-		ko = "고정된 모드",
-	},
-	pinned_icon = {
-		en = "Add Icon to Pinned Mods",
-		es = "Añadir icono a los Mods Fijados",
-		ru = "Добавить иконку к закреплённым модам",
-		["zh-cn"] = "为置顶模组添加图标",
-		ja = "ピン留めModにアイコンを追加",
-		ko = "고정된 모드에 아이콘 추가",
-	},
-	["\u{e046}"] = {
-		en = "\u{e046}",
-		es = "\u{e046}",
-		ru = "\u{e046}",
-		["zh-cn"] = "\u{e046}",
-		ja = "\u{e046}",
-		ko = "\u{e046}",
-	},
-	["\u{e02b}"] = {
-		en = "\u{e02b}",
-		es = "\u{e02b}",
-		ru = "\u{e02b}",
-		["zh-cn"] = "\u{e02b}",
-		ja = "\u{e02b}",
-		ko = "\u{e02b}",
-	},
-	["\u{e02a}"] = {
-		en = "\u{e02a}",
-		es = "\u{e02a}",
-		ru = "\u{e02a}",
-		["zh-cn"] = "\u{e02a}",
-		ja = "\u{e02a}",
-		ko = "\u{e02a}",
-	},
-	["\u{e01e}"] = {
-		en = "\u{e01e}",
-		es = "\u{e01e}",
-		ru = "\u{e01e}",
-		["zh-cn"] = "\u{e01e}",
-		ja = "\u{e01e}",
-		ko = "\u{e01e}",
-	},
-	["\u{e020}"] = {
-		en = "\u{e020}",
-		es = "\u{e020}",
-		ru = "\u{e020}",
-		["zh-cn"] = "\u{e020}",
-		ja = "\u{e020}",
-		ko = "\u{e020}",
-	},
-	["\u{e041}"] = {
-		en = "\u{e041}",
-		es = "\u{e041}",
-		ru = "\u{e041}",
-		["zh-cn"] = "\u{e041}",
-		ja = "\u{e041}",
-		ko = "\u{e041}",
-	},
 }
-
-for i = 0, 9 do
-	localizations["pin_" .. i .. "_description"] = {
-		en = "Pin #" .. (i + 1) .. " (lower number = higher priority)", 
-		es = "Pin #" .. (i + 1) .. " (número más bajo = mayor prioridad)",
-		ru = "Pin #" .. (i + 1) .. " (меньшее число = выше приоритет)",
-		["zh-cn"] = "置顶 #" .. (i + 1) .. "（数字越小，优先级越高）",
-		ja = "ピン #" .. (i + 1) .. "（数字が小さいほど優先度が高い）",
-		ko = "고정 #" .. (i + 1) .. " (숫자가 낮을수록 우선순위가 높음)",
-	}
-end
-
-for i = 0, 9 do
-	localizations["pin_" .. i] = {
-		en = "Pinned Mod " .. (i + 1),
-		es = "Mod Fijado " .. (i + 1),
-		ru = "Закреплённый мод " .. (i + 1),
-		["zh-cn"] = "置顶模组 " .. (i + 1),
-		ja = "ピン留めMod " .. (i + 1),
-		ko = "고정된 모드 " .. (i + 1),
-	}
-end
 
 for i = 0, 9 do
 	localizations["hidden_" .. i] = {
@@ -169,14 +81,13 @@ for i = 0, 9 do
 		ko = "숨긴 모드 " .. (i + 1),
 	}
 	localizations["hidden_" .. i .. "_description"] = {
-		en = "This mod will not be visible in the mod list",
-		es = "Este mod no será visible en la lista de mods",
-		ru = "Этот мод не будет отображаться в списке модов",
-		["zh-cn"] = "该模组不会显示在模组列表中",
-		ja = "このModはModリストに表示されません",
-		ko = "이 모드는 모드 목록에 표시되지 않습니다",
+		en = "This mod will not be visible in the category list.\nClose and open the menu to apply",
+		es = "Este mod no será visible en la lista de categorías.\nCierra y abre el menú para aplicar",
+		ru = "Этот мод не будет отображаться в списке категорий.\nЗакройте и откройте меню для применения",
+		["zh-cn"] = "该模组不会显示在类别列表中。\n关闭并重新打开菜单以生效",
+		ja = "このModはカテゴリリストに表示されません。\n適用にはメニューを一度閉じて再度開いてください",
+		ko = "이 모드는 카테고리 목록에 표시되지 않습니다.\n적용하려면 메뉴를 닫았다가 다시 열어주세요",
 	}
 end
-
 
 return localizations

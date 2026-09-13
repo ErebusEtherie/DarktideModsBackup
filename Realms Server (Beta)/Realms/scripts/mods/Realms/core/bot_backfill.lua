@@ -1,0 +1,204 @@
+local mod = get_mod("Realms")
+local BotSpawning = require("scripts/managers/bot/bot_spawning")
+local PlayerManager = require("scripts/foundation/managers/player/player_manager")
+local PlayerUnitSpawnManager = require("scripts/managers/player/player_unit_spawn_manager")
+
+local BotBackfill = {}
+local MAX_BOTS = 7
+local MAX_INITIAL_BOTS = 6
+local resetting_host_session = false
+
+local function active_host(Session)
+	local game_session = Managers.state and Managers.state.game_session
+
+	local session_manager = Managers.multiplayer_session
+	return not resetting_host_session and Session.is_active_host() and game_session and game_session:is_server() and session_manager and not session_manager:is_leaving()
+end
+
+local function pending_removal_ids(bot_synchronizer_host)
+	local pending = {}
+
+	for _, local_player_id in pairs(bot_synchronizer_host._bots_queued_for_removal) do
+		pending[local_player_id] = true
+	end
+
+	return pending
+end
+
+local function num_pending_removals(bot_synchronizer_host, bot_ids)
+	local pending = pending_removal_ids(bot_synchronizer_host)
+	local count = 0
+
+	for local_player_id in pairs(pending) do
+		if bot_ids[local_player_id] then
+			count = count + 1
+		end
+	end
+
+	return count
+end
+
+local function available_bot_slots(self, maximum_desired_bots, Session)
+	if not active_host(Session) then
+		return 0
+	end
+
+	local settings = Managers.state.game_mode:settings()
+	if not settings.bot_backfilling_allowed then
+		return 0
+	end
+
+	local bot_synchronizer_host = Managers.bot:synchronizer_host()
+	local num_humans = Managers.player:num_ready_human_players()
+	local bot_ids = bot_synchronizer_host:active_bot_ids()
+	local num_bots = bot_synchronizer_host:num_bots() - num_pending_removals(bot_synchronizer_host, bot_ids) + self._queued_bots_n
+	local desired_bot_count = math.min(math.max(mod:get("bot_fill_target") - num_humans, 0), maximum_desired_bots or MAX_BOTS)
+
+	return desired_bot_count - num_bots
+end
+
+local function initial_available_bot_slots(self, Session)
+	return available_bot_slots(self, MAX_INITIAL_BOTS, Session)
+end
+
+local function fallback_profile_name()
+	local config_prefix = BotSpawning.get_bot_config_identifier() .. "_bot_"
+	local used_profiles = {}
+	for _, player in pairs(Managers.player:bot_players()) do
+		local profile = player:profile()
+		local identifier = profile.identifier
+
+		if identifier then
+			used_profiles[identifier] = true
+		end
+	end
+
+	local registered_profiles = {}
+	local unused_profiles = {}
+	for lookup_id, profile_name in pairs(NetworkLookup.bot_profile_names) do
+		if type(lookup_id) == "number" and type(profile_name) == "string" and string.sub(profile_name, 1, #config_prefix) == config_prefix then
+			registered_profiles[#registered_profiles + 1] = profile_name
+			if not used_profiles[profile_name] then
+				unused_profiles[#unused_profiles + 1] = profile_name
+			end
+		end
+	end
+
+	local candidates = #unused_profiles > 0 and unused_profiles or registered_profiles
+
+	return #candidates > 0 and candidates[math.random(#candidates)] or nil
+end
+
+function BotBackfill.reset_session(Session, original_reset, manager, reason)
+	if not Session.is_active_host() then
+		return original_reset(manager, reason)
+	end
+
+	-- A reset disconnects clients while the old gameplay state is still updating.
+	-- Its replacement-bot queue belongs to the session being destroyed.
+	local player_unit_spawn = Managers.state and Managers.state.player_unit_spawn
+
+	resetting_host_session = true
+	local result = original_reset(manager, reason)
+	resetting_host_session = false
+
+	if player_unit_spawn then
+		player_unit_spawn._queued_bots_n = 0
+	end
+
+	return result
+end
+
+function BotBackfill.install(Session)
+	mod:hook(PlayerManager, "next_available_local_player_id", function (func, self, peer_id, start_index)
+		if not active_host(Session) or peer_id ~= Network.peer_id() then
+			return func(self, peer_id, start_index)
+		end
+
+		local players = self:players_at_peer(peer_id)
+		local bot_ids = Managers.bot:synchronizer_host():active_bot_ids()
+
+		for local_player_id = start_index or 2, MAX_BOTS do
+			if not players[local_player_id] and not bot_ids[local_player_id] then
+				return local_player_id
+			end
+		end
+
+		-- The host owns ID 1. ID 0 is the remaining slot in the three-bit network field.
+		if not players[0] and not bot_ids[0] then
+			return 0
+		end
+
+		error("No network local-player ID is available for another Realms bot")
+	end)
+
+	mod:hook(BotSpawning, "despawn_best_bot", function (func, despawn_safe)
+		if not active_host(Session) then
+			return func(despawn_safe)
+		end
+
+		local bot_synchronizer_host = Managers.bot:synchronizer_host()
+		local bot_ids = bot_synchronizer_host:active_bot_ids()
+		local pending = pending_removal_ids(bot_synchronizer_host)
+
+		for local_player_id in pairs(bot_ids) do
+			if not pending[local_player_id] then
+				return BotSpawning.despawn_bot_character(local_player_id, true)
+			end
+		end
+	end)
+
+	mod:hook(PlayerUnitSpawnManager, "init", function (func, self, is_server, ...)
+		if not is_server or not Session.is_active_host() then
+			return func(self, is_server, ...)
+		end
+
+		self._num_available_bot_slots = function (spawn_manager)
+			return initial_available_bot_slots(spawn_manager, Session)
+		end
+
+		local result = func(self, is_server, ...)
+
+		self._num_available_bot_slots = function (spawn_manager)
+			return available_bot_slots(spawn_manager, nil, Session)
+		end
+		self:_validate_bot_backfill()
+
+		return result
+	end)
+
+	mod:hook(PlayerUnitSpawnManager, "_handle_bot_spawning", function (func, self)
+		if active_host(Session) and Managers.bot:synchronizer_host():num_bots() >= MAX_BOTS then
+			-- Pending removals still own their IDs until BotManager.post_update completes.
+			return
+		end
+
+		return func(self)
+	end)
+
+	mod:hook(BotSpawning, "spawn_bot_character", function (func, profile_name)
+		if active_host(Session) then
+			if Managers.bot:synchronizer_host():num_bots() >= MAX_BOTS then
+				mod:warning("Cannot spawn another bot: the Realms bot limit is %d", MAX_BOTS)
+
+				return nil
+			end
+			if profile_name == nil then
+				profile_name = fallback_profile_name()
+			end
+		end
+
+		return func(profile_name)
+	end)
+end
+
+function BotBackfill.apply_settings(Session)
+	local player_unit_spawn = Managers.state and Managers.state.player_unit_spawn
+	if not player_unit_spawn or not active_host(Session) then
+		return
+	end
+
+	player_unit_spawn:_validate_bot_backfill()
+end
+
+return BotBackfill

@@ -282,6 +282,11 @@ for _, debuff in next, mod.debuffs do
 		value = debuff.name,
 		sort = debuff.name,
 		icon = mod.debuff_styles[debuff.group].icon,
+		icon_style = {
+			color = mod.debuff_styles[debuff.group].colour,
+			default_color = mod.debuff_styles[debuff.group].colour,
+			hover_color = mod.debuff_styles[debuff.group].colour,
+		},
 		icon_colour = mod.debuff_styles[debuff.group].colour,
 	}
 end
@@ -299,6 +304,11 @@ for group_name, debuff in next, mod.debuff_styles do
 		value = group_name,
 		sort = group_name,
 		icon = mod.debuff_styles[group_name].icon,
+		icon_style = {
+			color = mod.debuff_styles[group_name].colour,
+			default_color = mod.debuff_styles[group_name].colour,
+			hover_color = mod.debuff_styles[group_name].colour,
+		},
 		icon_colour = mod.debuff_styles[group_name].colour,
 	}
 end
@@ -593,6 +603,30 @@ table.insert(mod.settings_widgets, {
 			type = "checkbox",
 			default_value = false,
 			tooltip = "only_tagged_enemies_tooltip",
+		},
+		{
+			setting_id = "remove_tag_skull",
+			type = "checkbox",
+			default_value = true,
+			tooltip = "remove_tag_skull_tooltip",
+		},
+		{
+			setting_id = "adjust_ads_opacity",
+			type = "checkbox",
+			default_value = true,
+			tooltip = "adjust_ads_opacity_tooltip",
+		},
+		{
+			setting_id = "ads_opacity_mult",
+			type = "numeric",
+			default_value = 0.7,
+			decimals_number = 2,
+			step_size_value = 0.05,
+			range = {
+				0,
+				2,
+			},
+			tooltip = "ads_opacity_mult_tooltip",
 		},
 		{
 			setting_id = "enable_depth_fading",
@@ -910,6 +944,7 @@ table.insert(mod.settings_widgets, {
 	setting_id = "outline_settings",
 	type = "group",
 	tab = "Outlines",
+	tooltip = "outlines_enable_tooltip",
 	sub_widgets = {
 		{
 			setting_id = "outlines_enable",
@@ -926,6 +961,7 @@ table.insert(mod.settings_widgets, {
 		{
 			setting_id = "outline_tagged_colour",
 			type = "group",
+			tooltip = "outline_tagged_colour_tooltip",
 			sub_widgets = {
 				{
 					setting_id = "outline_tagged_colour_R",
@@ -1204,7 +1240,7 @@ table.insert(mod.settings_widgets, {
 })
 
 -- HEALTHBAR
-	table.insert(mod.settings_widgets, {
+table.insert(mod.settings_widgets, {
 	setting_id = "healthbar_settings",
 	type = "group",
 	tab = "Healthbar",

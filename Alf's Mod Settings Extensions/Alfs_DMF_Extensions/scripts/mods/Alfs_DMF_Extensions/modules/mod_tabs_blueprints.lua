@@ -15,16 +15,20 @@ local settings_value_height = 48
 
 local COLORS = {
 	normal = Color.terminal_text_header(nil, true),
+	disabled = { 255, 150, 150, 150 },
+
 	hover = Color.terminal_text_header_selected(nil, true),
 	selected = Color.terminal_text_header_selected(nil, true),
 
 	background = Color.terminal_background(nil, true),
 	background_hover = Color.terminal_background_gradient(nil, true),
 	background_selected = Color.terminal_background_gradient_selected(nil, true),
+	background_disabled = { 255, 50, 50, 50 },
 
 	frame = Color.terminal_corner(nil, true),
 	frame_hover = Color.terminal_corner_hover(nil, true),
 	frame_selected = Color.terminal_frame_selected(nil, true),
+	frame_disabled = { 255, 100, 100, 100 },
 
 	divider = Color.terminal_frame(nil, true),
 }
@@ -92,7 +96,7 @@ local blueprints = {
 					scale_to_material = true,
 
 					color = COLORS.frame,
-
+					disabled_color = COLORS.frame_disabled,
 					offset = {
 						0,
 						0,
@@ -107,6 +111,12 @@ local blueprints = {
 
 				change_function = function(content, style)
 					local hotspot = content.hotspot
+
+					if hotspot.disabled then
+						style.color = table.clone(COLORS.frame_disabled)
+						style.color[1] = 0
+						return
+					end
 
 					local progress = math.max(hotspot.anim_hover_progress or 0, hotspot.anim_select_progress or 0)
 
@@ -123,6 +133,7 @@ local blueprints = {
 
 				style = {
 					color = COLORS.background_selected,
+					disabled_color = COLORS.background_disabled,
 
 					offset = {
 						0,
@@ -142,6 +153,11 @@ local blueprints = {
 					local selected = mod_reference
 						and mod_reference.selected_tabs[content.selected_tab_key] == content.tab_name
 
+					if content.hotspot and content.hotspot.disabled then
+						style.color[1] = 0
+						return
+					end
+
 					style.color[1] = selected and 255 or 0
 				end,
 			},
@@ -154,7 +170,7 @@ local blueprints = {
 
 				style = {
 					color = {
-						120,
+						0,
 						0,
 						0,
 						0,
@@ -207,6 +223,11 @@ local blueprints = {
 					local selected = mod_reference
 						and mod_reference.selected_tabs[content.selected_tab_key] == content.tab_name
 
+					if hotspot.disabled then
+						style.color[1] = 5
+						return
+					end
+
 					if selected then
 						style.color[1] = 70
 					elseif hotspot.is_hover then
@@ -244,6 +265,11 @@ local blueprints = {
 					local selected = mod_reference
 						and mod_reference.selected_tabs[content.selected_tab_key] == content.tab_name
 
+					if hotspot.disabled then
+						style.color = table.clone(COLORS.frame_disabled)
+						return
+					end
+
 					if selected then
 						style.color = COLORS.frame_selected
 					elseif hotspot.is_hover then
@@ -268,7 +294,7 @@ local blueprints = {
 					text_vertical_alignment = "center",
 
 					text_color = COLORS.normal,
-
+					disabled_color = COLORS.disabled,
 					offset = {
 						0,
 						0,
@@ -285,6 +311,15 @@ local blueprints = {
 
 					local selected = mod_reference
 						and mod_reference.selected_tabs[content.selected_tab_key] == content.tab_name
+
+					if hotspot.disabled then
+						local c = COLORS.disabled
+						style.text_color[1] = c[1]
+						style.text_color[2] = c[2]
+						style.text_color[3] = c[3]
+						style.text_color[4] = c[4]
+						return
+					end
 
 					local c
 					if selected then

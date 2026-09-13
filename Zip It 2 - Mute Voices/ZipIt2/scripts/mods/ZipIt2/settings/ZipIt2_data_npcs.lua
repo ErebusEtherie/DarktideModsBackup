@@ -419,7 +419,10 @@ mod.zipit2_build_npcs = function(D)
             local sorted_voices = {}
             for v, _ in pairs(bucket.voices) do
                 sorted_voices[#sorted_voices + 1] = v
-                _register_voice_mapping(minor_voice_to_group, v, canonical_group_key)
+                -- Minor NPC mappings must remain exact. In particular, a past_* profile must not
+                -- manufacture an alias for the corresponding live profile, as that profile may
+                -- belong to another category (for example, captain_twin_female_a is an enemy).
+                minor_voice_to_group[v] = canonical_group_key
             end
             table.sort(sorted_voices)
 
@@ -445,4 +448,3 @@ mod.zipit2_build_npcs = function(D)
         D.minor_voice_to_group = minor_voice_to_group
     end
 end
-

@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.1.4]
+### Changed
+- **Decode Symbols predicted reroll synchronization**: A rerolled client board can skip the generic 120ms stability wait when its fresh start time, stage 1, all 28 symbols, and all four targets exactly match the seed-predicted board. Incomplete or mismatched replication retains the existing fail-closed synchronization path.
+- **Decode Symbols exact client retry valuation**: Before a measured restart sample exists, a seed-verified client decision now values a retry from the network round-trip floor plus the existing restart synchronization margin instead of the conservative 750ms fallback. Host and statistical decisions retain the fallback, while completed retries continue to replace and adapt the estimate from observed cancel-to-board timing.
+
+### Fixed
+- **Decode Symbols high-ping consecutive rerolls**: A temporary client state correction that reopens the same terminal before the authoritative stop acknowledgement no longer resets an in-progress cancel. Its duplicate local stop is ignored until the server stop arrives, preserving the predicted board and remaining reroll count through consecutive retries.
+
+## [3.1.2] - 2026-08-19
+### Added
+- **Simplified Chinese localization**: Added a complete `zh-cn` translation and manual Simplified Chinese language option. Credits to EasyRain233 for providing a translation! Automatic mode uses the translation when Darktide's language is set to Simplified Chinese.
+
+## [3.1.1] - 2026-08-18
+### Added
+- **Russian localization**: Added a complete Russian translation and manual Russian language option. Automatic mode uses the Russian translation when Darktide's language is set to Russian.
+
+## [3.1] - 2026-08-17
+### Added
+- **Decode Symbols smart seed reroll**: Added an optional Smart Seed Reroll setting that can cancel and retry up to two slow stage-1 layouts before auto-solving. Host play predicts future layouts directly from the isolated minigame seed; network clients use only seed candidates that reproduce the full current symbol and target layout exactly, with finite-horizon statistical stopping as a fallback. Client forecasts include measured submit-to-stage acknowledgement delay and current network RTT, while restart cost is learned separately from the full cancel-to-stable-board path. Retries use normal networked cancel and interaction input, wait for the authoritative stop acknowledgement, reacquire the same terminal, and fail closed on stale synchronization, ownership changes, invalid targets, or timeout.
+- **Smart reroll expected time saving**: A deterministic Monte Carlo simulation of 2,000,000 paired trials sampled all 1,512 legal target layouts with continuous realized cursor phases while applying the runtime policy's 32-phase future-board valuation, 0.5-second minimum net-saving threshold, and maximum of two retries. At the client's 0.2-second minimum stage-ready delay, exact seed prediction reduced the 5.545-second no-reroll mean by 0.645 seconds (11.63%) with the cold 0.75-second restart cost and by 0.720 seconds (12.99%) with a 0.630-second learned cost. A 0.30-second stage-ready delay with the cold restart cost still saved 0.641 seconds (11.55%). Future target layouts are known in exact mode, while future start phases remain unknown and are phase-averaged as in the runtime policy.
+
 ## [3.0.2] - 2026-08-04
 ### Changed
 - **Matching speed 5 movement pacing**: The next movement pulse can now fire immediately after the full server-synchronized cursor coordinate acknowledges the previous move, restoring the practical speed of version 2.2.1 without removing pending-move, stale-session, stage, or timeout safeguards. Timed-out movement also resets submit settling before retrying from the latest fresh snapshot.

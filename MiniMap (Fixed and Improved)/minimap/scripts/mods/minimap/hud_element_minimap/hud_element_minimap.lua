@@ -69,12 +69,10 @@ HudElementMinimap._update_background_color = function(self)
     end
 
     local settings = mod.settings or {}
-    local r = settings.minimap_background_color_r or 180
-    local g = settings.minimap_background_color_g or 180
-    local b = settings.minimap_background_color_b or 180
+    local color = settings.minimap_background_color or { 255, 180, 180, 180 }
     local opacity = settings.minimap_background_opacity or 64
 
-    background_widget.style.circ.color = { opacity, r, g, b }
+    background_widget.style.circ.color = { opacity, color[2], color[3], color[4] }
 end
 
 local markers_data = {}
@@ -109,16 +107,29 @@ local pinged_units = {}
 local companion_targeted_units = {}
 local tracked_enemy_units = {}
 local broadphase_results = {}
+local ENEMY_CATEGORIES_IN_ORDER = {
+    "human_boss",
+    "monster",
+    "disabler",
+    "poxburster",
+    "ranged_special",
+    "crushers_maulers",
+    "ranged_elite",
+    "melee_elite",
+    "shooters",
+    "chaff",
+}
 local enemy_markers_by_type = {
-    boss = {},
+    human_boss = {},
+    monster = {},
     disabler = {},
-    sniper = {},
-    shield = {},
+    ranged_special = {},
+    poxburster = {},
     ranged_elite = {},
+    crushers_maulers = {},
     melee_elite = {},
-    special = {},
-    horde = {},
-    roamer = {},
+    shooters = {},
+    chaff = {},
 }
 local non_enemy_markers = {}
 local enemy_template = { name = "enemy" }
@@ -327,10 +338,11 @@ HudElementMinimap._collect_markers = function(self)
         current_marker_count = current_marker_count + 1
     end
 
-    for breed_type, markers in pairs(enemy_markers_by_type) do
+    for _, breed_type in ipairs(ENEMY_CATEGORIES_IN_ORDER) do
         if current_marker_count >= MAX_MARKERS then break end
+        local markers = enemy_markers_by_type[breed_type]
         local limit = enemy_radar_limits[breed_type] or 0
-        if limit > 0 and #markers > 0 then
+        if limit > 0 and markers and #markers > 0 then
             if priority_mode == "distance" then
                 table_sort(markers, sort_by_distance)
             else
@@ -613,11 +625,9 @@ HudElementMinimap._draw_widgets = function(self, dt, t, input_service, ui_render
                 circle_style.size[1] = ring_radius * 2
                 circle_style.size[2] = ring_radius * 2
 
-                local ring_r = settings.enemy_radar_melee_ring_color_r or 180
-                local ring_g = settings.enemy_radar_melee_ring_color_g or 180
-                local ring_b = settings.enemy_radar_melee_ring_color_b or 180
+                local ring_color = settings.enemy_radar_melee_ring_color or { 255, 165, 165, 165 }
                 local ring_opacity = settings.enemy_radar_melee_ring_opacity or 40
-                circle_style.color = { ring_opacity, ring_r, ring_g, ring_b }
+                circle_style.color = { ring_opacity, ring_color[2], ring_color[3], ring_color[4] }
 
                 melee_ring_widget.alpha_multiplier = 1.0
                 UIWidget.draw(melee_ring_widget, ui_renderer)

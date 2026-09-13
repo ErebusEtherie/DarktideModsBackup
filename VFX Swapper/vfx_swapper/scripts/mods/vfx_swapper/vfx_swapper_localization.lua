@@ -39,6 +39,10 @@ return {
 		en = "Replace Zealot's Immolation Grenade",
 		["zh-cn"] = "替换狂信火雷特效（火焰）",
 	},
+	chem_grenade_vfx = {
+		en = "Disable Chem Grenade VFX (Explosion)",
+		["zh-cn"] = "禁用兴奋剂手雷初始爆炸特效",
+	},
 	replace_rotten_armor = {
 		en = "Replace Rotten Armor's Lingering Gas (after kill)",
 		["zh-cn"] = "替换腐化装甲残留毒气（击杀后）特效",
@@ -54,6 +58,18 @@ return {
 	fire_barrel_vfx_default = {
 		en = "Default",
 		["zh-cn"] = "默认",
+	},
+	replace_smoke_grenade_vfx = {
+		en = "Replace Smoke Grenade",
+		["zh-cn"] = "替换烟雾弹特效",
+	},
+	smoke_grenade_vfx_default = {
+		en = "Default",
+		["zh-cn"] = "默认",
+	},
+	smoke_grenade_tt = {
+		en = "More will be added as good candidates are found.",
+		["zh-cn"] = "随着更多合适的特效被发现，将会添加更多选项。",
 	},
 	zealot_grenade = {
 		en = "Zealot Grenade",
@@ -115,13 +131,33 @@ return {
 		en = "Voltaic Mine",
 		["zh-cn"] = "电磁雷"
 	},
+	empty = {
+		en = "No VFX (use with Danger Zone mod)",
+		["zh-cn"] = "无特效（配合危险区域圆圈使用）",
+	},
+	SMOKE = {
+		en = "Short Gray Smoke",
+		["zh-cn"] = "短灰色烟雾",
+	},
 	rotten_vfx_default = {
 		en = "Default",
 		["zh-cn"] = "默认",
 	},
+	flamer_swap = {
+		en = "Yeatloaf's Blue Zealot Flamer",
+		["zh-cn"] = "Yeatloaf的蓝色狂信火焰效果",
+	},
+	kill_flamer_vfx = {
+		en = "Remove Flamer/Flame Staff Effects",
+		["zh-cn"] = "移除燃烧瓶/火焰杖特效",
+	},
+	kill_flamer_tt = {
+		en = "Only applies to the streaming fire effects (not enemies being on fire)",
+		["zh-cn"] = "仅对持续火焰特效生效（不包括着火的敌人）",
+	},
 	flamer_vfx_default = {
 		en = "Default",
-		["zh-cn"] = "默认",
+		["zh-cn"] = "默认（不要选会崩溃）",
 	},
 	grenade_vfx_default = {
 		en = "Default",
@@ -249,7 +285,7 @@ return {
 	},
 	circle_count_group = {
 		en = "'Circle Only' Count",
-		["zh-cn"] = "'仅圆圈' 数量",
+		["zh-cn"] = "'仅圆形' 数量",
 	},
 	havoc_toggle_group = {
 		en = "Havoc Specific Toggles - {#color(255, 35, 5)}RESTART after changing these.",
@@ -287,8 +323,8 @@ return {
 		en = "Disable Rampaging Enemies VFX*",
 		["zh-cn"] = "禁用暴走特效。需要重启。",
 	},
-	curroptor_goo = {
-		en = "Curroptor Goo",
+	corruptor_goo = {
+		en = "Corruptor Goo",
 		["zh-cn"] = "腐化粘液",
 	},	
 	charge_tip = {
@@ -348,8 +384,12 @@ return {
 		["zh-cn"] = "禁用喷泉/珊瑚喷出的毒气。",
 	},
 	vfx_limiter_group = {
-		en = "OG VFX Limiter Options",
-		["zh-cn"] = "原版特效限制器选项",
+		en = "Misc. Effect Toggles",
+		["zh-cn"] = "杂项特效切换",
+	},
+	forcesword_vfx = {
+		en = "Disable Force Sword VFX",
+		["zh-cn"] = "禁用原力剑特效",
 	},
 	frag_grenade_vfx = {
 		en = "Disable Shredder Frag/Rumbler/Arbites Grenades VFX",
@@ -391,6 +431,10 @@ return {
 		en = "Disable Heinous Ritual effects",
 		["zh-cn"] = "禁用邪恶仪式特效",
 	},
+	ritual_vfx_tt = {
+		en = "Disables 2 of the ritual effects. Specifically the ones that get bugged and become attached to players. Note that this does make Rituals harder to see at a distance.",
+		["zh-cn"] = "禁用两个仪式特效。特别是那些会出现bug并附着在玩家身上的特效。请注意，这确实会使远处的仪式更难以看清。",
+	},
 	scum_stimm_screen = {
 		en = "Disable Scum's Stimm Smoke screen effect",
 		["zh-cn"] = "禁用兴奋剂烟雾屏幕特效",
@@ -398,10 +442,6 @@ return {
 	scum_rampage_screen = {
 		en = "Disable Scum's Rampage screen effect",
 		["zh-cn"] = "禁用狂暴状态屏幕特效",
-	},
-	galvanic_vfx = {
-		en = "Disable Galvanic Rifle Muzzle VFX",
-		["zh-cn"] = "禁用流电步枪开火特效",
 	},
 	lasgun_vfx = {
 		en = "Disable Lasgun Muzzle VFX",
@@ -423,13 +463,17 @@ return {
 		en = "Removes the lightning and black smoke effects",
 		["zh-cn"] = "移除电弧闪电与黑烟特效",
 	},
-	gal_vfx = {
+	galv_vfx = {
 		en = "Disable Galvanic Rifle Muzzle Flash",
 		["zh-cn"] = "禁用流电步枪开火特效",
 	},
 	poxwalker_vfx = {
-		en = "Disable minion death effects",
+		en = "Disable basic minion death effects",
 		["zh-cn"] = "禁用杂兵死亡特效"
+	},
+	poxwalker_vfx_tt = {
+		en = "Effects like bloodballs, exploding guts, and other particle heavy effects - gibbing is untouched",
+		["zh-cn"] = "特效如血球、内脏爆裂等粒子效果繁多 - 肢解不受影响"
 	},
 	disable_bon_death = {
 		en = "Disable Beast of Nurgle death explosion",
@@ -445,6 +489,37 @@ return {
 	},
 	simple_hav_tt = {
 		en = "Removes particle effects from Final Toll and Encroaching Garden while maintaining color. Requires restart.",
-		["zh-cn"] = "在保持颜色的同时移除最后的钟声和花园蔓生的粒子特效。需要重启。",
+		["zh-cn"] = "在保持颜色的同时移除Final Toll和Encroaching Garden的粒子特效。需要重启。",
+	},
+	--new
+	autogun_vfx = {
+		en = "Disable Autogun Muzzle VFX",
+		["zh-cn"] = "禁用自动步枪开火特效",
+	},
+	autogun_tt = {
+		en = "Disables muzzle flash effects for 1st and 3rd person (allies), for infantry, braced, and vigilant autoguns",
+		["zh-cn"] = "禁用第一人称和第三人称（队友）的开火特效，针对三种自动枪。",
+	},
+	plasma_vfx = {
+		en = "Disable Plasma Gun Impact/Explosion",
+		["zh-cn"] = "禁用等离子枪命中/爆炸特效",
+	},
+	plasma_muzzle = {
+		en = "Disable Plasma Muzzle VFX",
+		["zh-cn"] = "禁用等离子枪开火特效",
+	},
+	plasma_beam = {
+		en = "Disable Plasma beam's lingering effect",
+		["zh-cn"] = "禁用等离子枪激光束残留特效",
+	},
+	impact_fx = {
+		en = "Disable Player Impact VFX",
+		["zh-cn"] = "禁用玩家命中特效",
+	},
+	network_impact = {
+		en = "Disable Teammate Impact VFX",
+		["zh-cn"] = "禁用队友命中特效",
 	},
 }
+	
+

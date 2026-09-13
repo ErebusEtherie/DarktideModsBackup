@@ -9,7 +9,7 @@ mod.BL = mod.BL or {}
 -- ---------------------------------------------------------------------------
 -- Version / misc
 -- ---------------------------------------------------------------------------
-mod.BL.VERSION = "1.5.2"
+mod.BL.VERSION = "1.7.0"
 
 -- Trait/blessing master-item fields to check (in order) when resolving icons.
 mod.BL.ICON_FIELDS = {

@@ -1,6 +1,10 @@
 local mod = get_mod("SoloPlay")
 
 mod:io_dofile("SoloPlay/scripts/mods/SoloPlay/workarounds/common")
+mod:io_dofile("SoloPlay/scripts/mods/SoloPlay/workarounds/bot_follow_assignment")
+mod:io_dofile("SoloPlay/scripts/mods/SoloPlay/workarounds/door_bot_teleport")
 mod:io_dofile("SoloPlay/scripts/mods/SoloPlay/workarounds/havoc")
 mod:io_dofile("SoloPlay/scripts/mods/SoloPlay/workarounds/communications_hack_device")
 mod:io_dofile("SoloPlay/scripts/mods/SoloPlay/workarounds/expedition")
+mod:io_dofile("SoloPlay/scripts/mods/SoloPlay/workarounds/session_report")
+mod:io_dofile("SoloPlay/scripts/mods/SoloPlay/workarounds/shooting_range")

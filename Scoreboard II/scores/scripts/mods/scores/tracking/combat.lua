@@ -17,10 +17,29 @@ mod.bosses = {
 mod.current_health = setmetatable({}, {__mode = "k"})
 mod.player_account_ids_by_unit = setmetatable({}, {__mode = "k"})
 mod.accuracy_shot_snapshots = mod.accuracy_shot_snapshots or {}
+mod.accuracy_ammo_snapshots = mod.accuracy_ammo_snapshots or {}
 mod.accuracy_shot_snapshot_modes = mod.accuracy_shot_snapshot_modes or {}
 mod.accuracy_last_hit_shot_count = mod.accuracy_last_hit_shot_count or {}
 mod.accuracy_pending_end_time_skips = mod.accuracy_pending_end_time_skips or {}
+mod.accuracy_pending_ammo_skips = mod.accuracy_pending_ammo_skips or {}
 mod.include_overkill_damage = mod:get("split_damage_dealt") == true
+
+local function extension_number(extension, method_name)
+	local method = extension and extension[method_name]
+	if type(method) ~= "function" then
+		return nil
+	end
+
+	local ok, value = pcall(method, extension)
+	return ok and tonumber(value) or nil
+end
+
+local function seed_current_health(unit, health)
+	health = tonumber(health)
+	if unit and health and health > 0 and not mod.current_health[unit] then
+		mod.current_health[unit] = health
+	end
+end
 
 mod.damage_score_value = function(self, raw_damage, actual_damage)
 	if self.include_overkill_damage then
@@ -33,6 +52,28 @@ local function row_score(row_name, account_id)
 	local row = mod:get_scoreboard_row(row_name)
 	local data = row and row.data and row.data[account_id]
 	return data and data.score or 0
+end
+
+local function first_number(value)
+	if type(value) == "table" then
+		return tonumber(value[1])
+	end
+	return tonumber(value)
+end
+
+mod.accuracy_ammo_total_for_unit = function(self, unit)
+	local wieldable_component = self:safe_component(unit, "slot_secondary")
+	if not wieldable_component then
+		return nil
+	end
+
+	local clip = first_number(self:safe_component_field(wieldable_component, "current_ammunition_clip"))
+	local reserve = first_number(self:safe_component_field(wieldable_component, "current_ammunition_reserve"))
+	if clip == nil or reserve == nil then
+		return nil
+	end
+
+	return clip + reserve
 end
 
 mod.refresh_percent_row = function(self, row_name, numerator_row_name, denominator_row_name, account_id)
@@ -76,19 +117,40 @@ mod.update_accuracy_shots_for_unit = function(self, unit, account_id)
 	end
 
 	local shooting_status = self:safe_component(unit, "shooting_status")
-	local current_shots = tonumber(self:safe_component_field(shooting_status, "num_shots"))
+	local use_num_shots = self:is_me(account_id)
+	local current_shots = use_num_shots and tonumber(self:safe_component_field(shooting_status, "num_shots")) or nil
 	if current_shots then
 		self.accuracy_shot_snapshot_modes[account_id] = "num_shots"
 		local previous_shots = self.accuracy_shot_snapshots[account_id]
 		if previous_shots and current_shots > previous_shots then
 			self:update_stat("ranged_shots_fired", account_id, current_shots - previous_shots)
 			self:refresh_accuracy(account_id)
-		elseif not previous_shots and current_shots > 0 then
-			self:update_stat("ranged_shots_fired", account_id, current_shots)
-			self:refresh_accuracy(account_id)
 		end
 
 		self.accuracy_shot_snapshots[account_id] = current_shots
+		return
+	end
+
+	local current_ammo = self:accuracy_ammo_total_for_unit(unit)
+	if current_ammo then
+		self.accuracy_shot_snapshot_modes[account_id] = "ammo"
+		local previous_ammo = self.accuracy_ammo_snapshots[account_id]
+		if previous_ammo and current_ammo < previous_ammo then
+			local shots_spent = previous_ammo - current_ammo
+			local pending_skips = self.accuracy_pending_ammo_skips[account_id] or 0
+			if pending_skips > 0 then
+				local skipped = math.min(shots_spent, pending_skips)
+				shots_spent = shots_spent - skipped
+				pending_skips = pending_skips - skipped
+				self.accuracy_pending_ammo_skips[account_id] = pending_skips > 0 and pending_skips or nil
+			end
+			if shots_spent > 0 then
+				self:update_stat("ranged_shots_fired", account_id, shots_spent)
+				self:refresh_accuracy(account_id)
+			end
+		end
+
+		self.accuracy_ammo_snapshots[account_id] = current_ammo
 		return
 	end
 
@@ -122,14 +184,16 @@ mod.credit_ranged_accuracy_hit = function(self, unit, account_id)
 	local shots_fired = row_score("ranged_shots_fired", account_id)
 	local last_hit_shot_count = self.accuracy_last_hit_shot_count[account_id] or 0
 	if shots_fired <= last_hit_shot_count then
-		if self.accuracy_shot_snapshot_modes[account_id] ~= "num_shots" then
-			return
-		end
-
 		local shooting_status = self:safe_component(unit, "shooting_status")
 		local current_end_time = tonumber(self:safe_component_field(shooting_status, "shooting_end_time"))
+		local current_ammo = self:accuracy_ammo_total_for_unit(unit)
 		self:update_stat("ranged_shots_fired", account_id, 1)
 		shots_fired = shots_fired + 1
+		if current_ammo then
+			self.accuracy_ammo_snapshots[account_id] = current_ammo
+		elseif self.accuracy_ammo_snapshots[account_id] then
+			self.accuracy_pending_ammo_skips[account_id] = (self.accuracy_pending_ammo_skips[account_id] or 0) + 1
+		end
 		if current_end_time then
 			self.accuracy_pending_end_time_skips[account_id] = (self.accuracy_pending_end_time_skips[account_id] or 0) + 1
 		end
@@ -143,9 +207,11 @@ end
 mod.update_accuracy_scores = function(self)
 	if not self:row_tracking_enabled("accuracy") then
 		if self.accuracy_shot_snapshots then table.clear(self.accuracy_shot_snapshots) end
+		if self.accuracy_ammo_snapshots then table.clear(self.accuracy_ammo_snapshots) end
 		if self.accuracy_shot_snapshot_modes then table.clear(self.accuracy_shot_snapshot_modes) end
 		if self.accuracy_last_hit_shot_count then table.clear(self.accuracy_last_hit_shot_count) end
 		if self.accuracy_pending_end_time_skips then table.clear(self.accuracy_pending_end_time_skips) end
+		if self.accuracy_pending_ammo_skips then table.clear(self.accuracy_pending_ammo_skips) end
 		return
 	end
 
@@ -169,6 +235,17 @@ mod.update_accuracy_scores = function(self)
 			self.accuracy_shot_snapshot_modes[account_id] = nil
 			self.accuracy_last_hit_shot_count[account_id] = nil
 			self.accuracy_pending_end_time_skips[account_id] = nil
+			self.accuracy_pending_ammo_skips[account_id] = nil
+		end
+	end
+
+	for account_id in pairs(self.accuracy_ammo_snapshots) do
+		if not seen[account_id] then
+			self.accuracy_ammo_snapshots[account_id] = nil
+			self.accuracy_shot_snapshot_modes[account_id] = nil
+			self.accuracy_last_hit_shot_count[account_id] = nil
+			self.accuracy_pending_end_time_skips[account_id] = nil
+			self.accuracy_pending_ammo_skips[account_id] = nil
 		end
 	end
 end
@@ -216,26 +293,32 @@ mod:register_tracking_hook({
 			-- Get health extension
 			local current_health = mod.current_health[attacked_unit]
 			local unit_health_extension = mod:safe_extension(attacked_unit, "health_system")
-			local new_health = unit_health_extension and unit_health_extension:current_health()
+			local new_health = extension_number(unit_health_extension, "current_health")
+			local max_health = extension_number(unit_health_extension, "max_health")
+
+			if attack_result == "damaged" or attack_result == "died" then
+				if not current_health then
+					if new_health then
+						current_health = new_health + actual_damage
+					elseif max_health then
+						current_health = max_health
+					else
+						current_health = actual_damage
+					end
+					if max_health then
+						current_health = math.min(current_health, max_health)
+					end
+				end
+
+				actual_damage = math.min(raw_damage, current_health)
+			end
 
 			-- Attack result
-			if attack_result == "damaged" and new_health then
-				-- Current health
-				if not current_health then
-					current_health = new_health + actual_damage
-				end
-				-- Actual damage
-				actual_damage = math.min(raw_damage, current_health)
+			if attack_result == "damaged" then
 				-- Update health
-				mod.current_health[attacked_unit] = new_health
+				mod.current_health[attacked_unit] = new_health or math.max(current_health - actual_damage, 0)
 
 			elseif attack_result == "died" then
-				-- Current health
-				if not current_health then
-					current_health = actual_damage
-				end
-				-- Actual damage
-				actual_damage = current_health
 				-- Overkill damage
 				overkill_damage = math.max(raw_damage - actual_damage, 0)
 				-- Update health
@@ -289,14 +372,23 @@ mod:register_tracking_hook({
 })
 
 mod:register_tracking_hook({
+	name = "health_init",
+	class = "HealthExtension",
+	method = "init",
+	call_order = "after",
+	handler = function(self, extension_init_context, unit, extension_init_data, game_object_data, ...)
+		local health = extension_init_data and extension_init_data.health
+		seed_current_health(unit, health)
+	end,
+})
+
+mod:register_tracking_hook({
 	name = "husk_health_init",
 	class = CLASS.HuskHealthExtension,
 	method = "init",
 	call_order = "after",
 	handler = function(self, extension_init_context, unit, extension_init_data, game_session, game_object_id, owner_id, ...)
-	if unit and self.max_health then
-		mod.current_health[unit] = self:max_health()
-	end
+		seed_current_health(unit, extension_number(self, "max_health"))
 	end,
 })
 

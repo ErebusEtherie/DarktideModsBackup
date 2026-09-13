@@ -1,12 +1,18 @@
 local mod = get_mod("strikemap")
 
-local function checkbox(setting_id, default_value, tooltip)
-	return {
+local function checkbox(setting_id, default_value, tooltip, sub_widgets)
+	local widget = {
 		setting_id = setting_id,
 		type = "checkbox",
 		default_value = default_value,
 		tooltip = tooltip,
 	}
+
+	if sub_widgets then
+		widget.sub_widgets = sub_widgets
+	end
+
+	return widget
 end
 
 local function numeric(setting_id, default_value, min, max, step, tooltip)
@@ -20,13 +26,29 @@ local function numeric(setting_id, default_value, min, max, step, tooltip)
 	}
 end
 
-local function dropdown(setting_id, default_value, tooltip, options)
-	return {
+local function dropdown(setting_id, default_value, tooltip, options, sub_widgets)
+	local widget = {
 		setting_id = setting_id,
 		type = "dropdown",
 		default_value = default_value,
 		tooltip = tooltip,
 		options = options,
+	}
+
+	if sub_widgets then
+		widget.sub_widgets = sub_widgets
+	end
+
+	return widget
+end
+
+local function button(setting_id, function_name, button_text, tooltip)
+	return {
+		setting_id = setting_id,
+		type = "button",
+		function_name = function_name,
+		button_text = button_text,
+		tooltip = tooltip,
 	}
 end
 
@@ -182,20 +204,20 @@ local ENEMY_TYPES = {
 }
 
 local function enemy_type_widgets()
-	local widgets = {
-		checkbox("enemy_type_overrides", false, "enemy_type_overrides_tooltip"),
-	}
+	local details = {}
 
 	for i = 1, #ENEMY_TYPES do
 		local enemy_type = ENEMY_TYPES[i]
 		local prefix = "enemy_type_" .. enemy_type.key
 
-		widgets[#widgets + 1] = dropdown(prefix .. "_icon", enemy_type.icon, "enemy_type_icon_tooltip", enemy_icon_options())
-		widgets[#widgets + 1] = color_dropdown(prefix .. "_color", enemy_type.color, "enemy_type_color_tooltip")
-		widgets[#widgets + 1] = numeric(prefix .. "_scale", 100, 50, 250, 10, "enemy_type_scale_tooltip")
+		details[#details + 1] = dropdown(prefix .. "_icon", enemy_type.icon, "enemy_type_icon_tooltip", enemy_icon_options())
+		details[#details + 1] = color_dropdown(prefix .. "_color", enemy_type.color, "enemy_type_color_tooltip")
+		details[#details + 1] = numeric(prefix .. "_scale", 100, 50, 250, 10, "enemy_type_scale_tooltip")
 	end
 
-	return widgets
+	return {
+		checkbox("enemy_type_overrides", false, "enemy_type_overrides_tooltip", details),
+	}
 end
 
 return {
@@ -260,6 +282,8 @@ return {
 						{ text = "replay_speed_32", value = 32 },
 						{ text = "replay_speed_64", value = 64 },
 					}),
+					checkbox("record_geometry_dumps", false, "record_geometry_dumps_tooltip", {
+					}),
 					checkbox("expedition_live_map", true, "expedition_live_map_tooltip"),
 					numeric("floors_above", 12, 0, 20, 1, "floors_above_tooltip"),
 					numeric("floors_below", 16, 0, 24, 1, "floors_below_tooltip"),
@@ -283,9 +307,10 @@ return {
 					}),
 					dropdown("ally_color_mode", "slot_colors", "ally_color_mode_tooltip", {
 						{ text = "ally_color_mode_slot", value = "slot_colors" },
-						{ text = "ally_color_mode_fixed", value = "fixed" },
+						{ text = "ally_color_mode_fixed", value = "fixed", show_widgets = { 1 } },
+					}, {
+						color_dropdown("ally_color", "cyan"),
 					}),
-					color_dropdown("ally_color", "cyan"),
 					checkbox("show_player_pings", true, "show_player_pings_tooltip"),
 					checkbox("show_objectives", true, "show_objectives_tooltip"),
 					checkbox("show_live_gates", true, "show_live_gates_tooltip"),
@@ -356,7 +381,9 @@ return {
 				setting_id = "strikemap_performance",
 				type = "group",
 				tab = "Performance",
-				sub_widgets = {
+					sub_widgets = {
+					button("performance_report", "write_performance_report", "performance_report_button",
+						"performance_report_tooltip"),
 					numeric("perf_enemy_scan_range", 90, 30, 90, 10, "perf_enemy_scan_range_tooltip"),
 					dropdown("perf_enemy_tick", 150, "perf_enemy_tick_tooltip", {
 						{ text = "perf_tick_fast", value = 150 },

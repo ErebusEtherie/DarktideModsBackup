@@ -41,7 +41,10 @@ return function(deps, opts)
         end
 
         local ok, payload = pcall(builder)
-        if not ok or type(payload) ~= "table" then
+        if not ok then
+            return bare, "builder_error", #bare, tostring(payload)
+        end
+        if type(payload) ~= "table" then
             return bare, "bare", #bare
         end
 
@@ -99,6 +102,10 @@ return function(deps, opts)
         end
 
         return { version = version, mod_version = parsed.m, data = data }
+    end
+
+    function env.advertised(mod_version)
+        return { version = VERSION, mod_version = clamp_version(mod_version), data = nil }
     end
 
     function env.get(decoded)

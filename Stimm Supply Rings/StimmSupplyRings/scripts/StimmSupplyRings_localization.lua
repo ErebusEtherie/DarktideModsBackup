@@ -3,7 +3,7 @@ return {
 		en = "Stimm Supply Rings",
 	},
 	mod_description = {
-		en = "Adds different color rings to Hive Scum Stimm Supply crates to indicate which buffs they provide",
+		en = "Visualizes Stimm Supply buffs with color-coded rings.",
 	},
 
 	-- Settings
@@ -43,8 +43,26 @@ return {
 	enable_logging_tooltip = {
 		en = "Prints a message to the chat and console explaining why rings are not displayed (e.g. stimm on cooldown). Useful for troubleshooting.",
 	},
-	color_customization = {
-		en = "Ring Color Customization",
+	general_settings = {
+		en = "General",
+	},
+	attack_speed_settings = {
+		en = "Attack Speed (Blue)",
+	},
+	cooldown_settings = {
+		en = "Cooldown (Yellow)",
+	},
+	strength_settings = {
+		en = "Strength (Red)",
+	},
+	toughness_settings = {
+		en = "Toughness (Purple)",
+	},
+	enabled = {
+		en = "Enabled",
+	},
+	color = {
+		en = "Color",
 	},
 	attack_speed_color = {
 		en = "Attack Speed Color",
@@ -58,16 +76,8 @@ return {
 	toughness_color = {
 		en = "Toughness Color"
 	},
-
-	-- Colors
-	red = {
-		en = "Red",
-	},
-	green = {
-		en = "Green",
-	},
-	blue = {
-		en = "Blue",
+	unit_percent = {
+		en = "%%",
 	},
 
 	-- Echo messages

@@ -7,8 +7,6 @@ local TAG_NAMES              = mod.TAG_NAMES
 
 -- Imports
 local Archetypes             = require("scripts/settings/archetype/archetypes")
-local Breed                  = require("scripts/utilities/breed")
-local Breeds                 = require("scripts/settings/breed/breeds")
 
 -- Global Cache
 local table_clone            = table.clone
@@ -33,6 +31,7 @@ for class_name, _ in pairs(Archetypes) do
 end
 
 local ADAMANT_COMPANION_DEFAULT_CLASS_SETTINGS = table_clone(DEFAULT_CLASS_SETTINGS)
+ADAMANT_COMPANION_DEFAULT_CLASS_SETTINGS.interval = 0
 local adamant_companion_breed_priorities = ADAMANT_COMPANION_DEFAULT_CLASS_SETTINGS.breed_priorities
 adamant_companion_breed_priorities["chaos_daemonhost_passive"] = 0
 adamant_companion_breed_priorities["chaos_mutator_daemonhost_passive"] = 0
@@ -40,12 +39,14 @@ adamant_companion_breed_priorities["chaos_ogryn_houndmaster"] = 0
 adamant_companion_breed_priorities["chaos_poxwalker_bomber"] = 0
 
 local CRYPTIC_SERVO_SKULL_DEFAULT_CLASS_SETTINGS = table_clone(DEFAULT_CLASS_SETTINGS)
+CRYPTIC_SERVO_SKULL_DEFAULT_CLASS_SETTINGS.interval = 0
 local cryptic_servo_skull_breed_priorities = CRYPTIC_SERVO_SKULL_DEFAULT_CLASS_SETTINGS.breed_priorities
 cryptic_servo_skull_breed_priorities["chaos_daemonhost_passive"] = 0
 cryptic_servo_skull_breed_priorities["chaos_mutator_daemonhost_passive"] = 0
 cryptic_servo_skull_breed_priorities["chaos_poxwalker_bomber"] = 0
 
 local VETERAN_FOCUS_TARGET_DEFAULT_CLASS_SETTINGS = table_clone(DEFAULT_CLASS_SETTINGS)
+VETERAN_FOCUS_TARGET_DEFAULT_CLASS_SETTINGS.interval = 0
 local veteran_focus_target_breed_priorities = VETERAN_FOCUS_TARGET_DEFAULT_CLASS_SETTINGS.breed_priorities
 -- veteran_focus_target_breed_priorities["chaos_daemonhost_passive"] = 0
 veteran_focus_target_breed_priorities["chaos_mutator_daemonhost_passive"] = 0
@@ -95,6 +96,13 @@ function mod:init_auto_mark_settings()
         init_table(class_settings, get_default_class_settings(class_name))
     end
 
+    local cyber_mastiff_settings = auto_mark_settings[ADAMANT_COMPANION]
+    local cyber_mastiff_breed_priorities = cyber_mastiff_settings.breed_priorities
+    cyber_mastiff_breed_priorities["chaos_poxwalker_bomber"] = 0
+    local servo_skull_settings = auto_mark_settings[CRYPTIC_SERVO_SKULL]
+    local servo_skull_breed_priorities = servo_skull_settings.breed_priorities
+    servo_skull_breed_priorities["chaos_poxwalker_bomber"] = 0
+
     for class_name, _ in pairs(auto_mark_settings) do
         if not VALID_CLASSES[class_name] then
             auto_mark_settings[class_name] = nil
@@ -143,7 +151,7 @@ function mod:apply_to_normal_tag(class_name)
 end
 
 -- Set Menu for Display
-function mod:set_menu_settings(class_name)
+function mod:set_menu_class_settings(class_name)
     if not VALID_CLASSES[class_name] then
         return
     end

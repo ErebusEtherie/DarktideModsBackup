@@ -1,0 +1,11 @@
+{
+  "name": "Silence Obnoxious Sounds",
+  "description": "Requires SimpleAudio or Audio. Mutes impact SFX and other various sounds that annoy me.",
+  "version": "1.11.0",
+  "author": "Backup158",
+  "homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/671",
+  "source": "https://github.com/Backup158/MuteImpacts",
+  "dependencies": {
+    "self_after": ["Audio", "SimpleAudio"]
+  }
+}

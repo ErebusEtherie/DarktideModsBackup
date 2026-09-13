@@ -129,6 +129,16 @@ function UptimeView:for_all_icons(func)
         func(buff.icon)
     end
 
+    local weapons = display_values.weapons or {}
+
+    for _, weapon_entry in pairs(weapons) do
+        local weapon_buffs = weapon_entry.buffs or {}
+
+        for _, buff in pairs(weapon_buffs) do
+            func(buff.icon)
+        end
+    end
+
     local damage = display_values.damage
     local team = damage and damage.team or {}
 

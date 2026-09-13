@@ -29,7 +29,9 @@ local function utf8(decimal)
 
     local charbytes = {}
 
-    for bytes, vals in ipairs(bytemarkers) do
+    for bytes = 1, #bytemarkers do
+        local vals = bytemarkers[bytes]
+
         if decimal <= vals[1] then
             for b = bytes + 1, 2, -1 do
                 local rem = decimal % 64
@@ -72,7 +74,7 @@ end
 
 _seed_lookup()
 
--- Hook: handle clicks on an icon tile (set text, unicode, or material, or delete)
+-- Hook: handle clicks on an icon tile (set text, unicode, material, color, or delete)
 mod:hook(
     CLASS.ViewElementProfilePresets,
     "cb_on_profile_preset_icon_grid_left_pressed",
@@ -85,6 +87,32 @@ mod:hook(
             if self._remove_profile_preset then
                 return self:_remove_profile_preset(widget, element)
             end
+
+            return
+        end
+
+        local is_color_swatch = element and element.widget_type == "betterloadouts_color_swatch"
+
+        if is_color_swatch then
+            local index = self._active_customize_preset_index
+            if not index then
+                return
+            end
+
+            local profile_preset_id = self:_get_profile_preset_id_by_widget_index(index)
+            local profile_preset = ProfileUtils.get_profile_preset(profile_preset_id)
+            if not profile_preset then
+                return
+            end
+
+            local color_key = element.color_key
+            profile_preset.betterloadouts_color_key = color_key
+
+            local buttons = self._profile_buttons_widgets
+            local button = buttons and buttons[index]
+            mod.apply_preset_color(button, profile_preset)
+            mod.sync_preset_customization_selection(self, profile_preset, "color")
+            Managers.save:queue_save()
 
             return
         end
@@ -109,25 +137,6 @@ mod:hook(
             return
         end
 
-        -- Clear selection/highlight from the grid
-        local grid = self._profile_preset_tooltip_grid
-        local widgets = grid and grid:widgets()
-
-        if widgets then
-            for i = 1, #widgets do
-                local c = widgets[i].content
-                if c then
-                    c.equipped = false
-                    c.force_glow = false
-
-                    if c.hotspot then
-                        c.hotspot.is_selected = false
-                        c.hotspot.is_focused = false
-                    end
-                end
-            end
-        end
-
         local buttons = self._profile_buttons_widgets
         local btn = buttons and buttons[index]
 
@@ -147,6 +156,8 @@ mod:hook(
             end
 
             profile_preset.custom_icon_key = icon_key
+            mod.apply_preset_color(btn, profile_preset)
+            mod.sync_preset_customization_selection(self, profile_preset, "icon")
             Managers.save:queue_save()
 
             return
@@ -170,6 +181,8 @@ mod:hook(
             end
 
             profile_preset.custom_icon_key = icon_key
+            mod.apply_preset_color(btn, profile_preset)
+            mod.sync_preset_customization_selection(self, profile_preset, "icon")
             Managers.save:queue_save()
 
             return
@@ -188,6 +201,8 @@ mod:hook(
             end
 
             profile_preset.custom_icon_key = icon_key
+            mod.apply_preset_color(btn, profile_preset)
+            mod.sync_preset_customization_selection(self, profile_preset, "icon")
             Managers.save:queue_save()
 
             return
@@ -205,6 +220,8 @@ mod:hook(
             end
 
             profile_preset.custom_icon_key = icon_key
+            mod.apply_preset_color(btn, profile_preset)
+            mod.sync_preset_customization_selection(self, profile_preset, "icon")
             Managers.save:queue_save()
 
             return

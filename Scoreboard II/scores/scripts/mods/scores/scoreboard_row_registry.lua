@@ -1,19 +1,16 @@
 local mod = get_mod("scores")
 
-
 local math = math
 local type = type
 local pairs = pairs
 local math_max = math.max
 local table_insert = table.insert
 
-
 local ScoreboardDefinitions = mod:io_dofile("scores/scripts/mods/scores/ui_definitions")
 
 mod.registered_scoreboard_rows = {}
 mod.scoreboard_row_index = {}
 mod.scoreboard_rows = mod:io_dofile("scores/scripts/mods/scores/scoreboard_row_definitions")
-
 
 mod.collect_scoreboard_rows = function(self, loaded_rows)
 	if not loaded_rows then
@@ -134,14 +131,14 @@ mod.update_row_value = function(self, row_name, account_id, value)
 		return
 	end
 	if self:is_numeric(value) then
-		local value = value and math_max(0, value) or 0
+		local numeric_value = value and math_max(0, value) or 0
 		local row = self:get_scoreboard_row(row_name)
 		if row then
 			row.data = row.data or {}
 			local character_data = row.data[account_id]
 			local iteration = row.iteration
 			local old_value = character_data and character_data.value or 0
-			local new_value, add_score = iteration.value(value, old_value)
+			local new_value, add_score = iteration.value(numeric_value, old_value)
 			local old_score = character_data and character_data.score or 0
 			local new_score = old_score + add_score
 			row.data[account_id] = row.data[account_id] or {}
@@ -161,9 +158,7 @@ mod.update_row_value = function(self, row_name, account_id, value)
 	end
 end
 
-
 mod.get_scoreboard_row = function(self, row_name)
 	return self.scoreboard_row_index and self.scoreboard_row_index[row_name]
 end
-
 

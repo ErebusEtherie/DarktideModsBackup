@@ -62,7 +62,7 @@ return {
                     {
                         setting_id    = "prevent_accidental_jump",
                         type          = "checkbox",
-                        default_value = true,
+                        default_value = false,
                     },
                     {
                         setting_id    = "sprint_dodge",
@@ -72,12 +72,27 @@ return {
                     {
                         setting_id    = "easy_dodge_slide",
                         type          = "checkbox",
-                        default_value = true,
+                        default_value = false,
                     },
                     {
                         setting_id    = "hold_dodge_slide",
                         type          = "checkbox",
                         default_value = false,
+                        sub_widgets   = {
+                            {
+                                setting_id      = "hold_dodge_slide_duration",
+                                type            = "numeric",
+                                default_value   = 0.25,
+                                range           = { 0.1, 0.5 },
+                                unit_text       = "second",
+                                decimals_number = 2,
+                            },
+                            {
+                                setting_id    = "hold_dodge_slide_guarantee_slide",
+                                type          = "checkbox",
+                                default_value = true,
+                            },
+                        }
                     },
                     {
                         setting_id    = "keep_dodging",
@@ -109,7 +124,7 @@ return {
                     {
                         setting_id    = "no_sprinting_stamina",
                         type          = "checkbox",
-                        default_value = true,
+                        default_value = false,
                     },
                 }
             }

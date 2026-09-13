@@ -181,9 +181,9 @@ local function get_talent_definition(talent_id, arch_talents)
 end
 
 local function archetype_has_companion(archetype_settings)
-    local companions_number = archetype_settings and archetype_settings.companions_number
+    local num_companions = archetype_settings and archetype_settings.num_companions
 
-    return type(companions_number) == "number" and companions_number > 0
+    return type(num_companions) == "number" and num_companions > 0
 end
 
 local function is_companion_node(archetype_settings, node)
@@ -367,3 +367,4 @@ function mod:capture_team_loadouts()
 
     return current_team_loadouts
 end
+

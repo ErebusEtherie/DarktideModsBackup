@@ -492,6 +492,11 @@ local Constants = {
 	HELL_YEAH_SHADOW_MAX = 5,
 	HELL_YEAH_SHADOW_HOVER_TIME = 0.03,
 
+	SKIP_RECAP_DELAY = 1.0, 
+	SKIP_RECAP_FADE = 0.25, 
+	SKIP_RECAP_ICON_SIZE = 42, 
+	SKIP_RECAP_ICON_GAP = 12,
+
 	FONTS = {
 		title = mod.dl.fonts.validated("machine_medium", "proxima_nova_bold"),
 		heading = mod.dl.fonts.validated("proxima_nova_bold"),
@@ -540,6 +545,8 @@ local Constants = {
 	MATERIAL = {
 		frame_tile = "content/ui/materials/frames/frame_tile_2px",
 		hr = "content/ui/materials/dividers/skull_rendered_center_03",
+
+		skip_recap_icon = "content/ui/materials/hud/interactions/icons/pocketable_syringe_speed",
 	},
 
 	COLOR = {
@@ -597,6 +604,10 @@ local Constants = {
 		HELL_YEAH_TEXT = { 255, 20, 16, 10 },
 
 		HELL_YEAH_SHADOW = { 200, 0, 0, 0 },
+
+		SKIP_RECAP_BG = { 90, 15, 20, 20 },
+		SKIP_RECAP_BG_HOVER = { 105, 15, 20, 20 },
+		SKIP_RECAP_TEXT = { 255, 226, 199, 126 },
 
 		NUMBERS = NUMBERS,
 	},

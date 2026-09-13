@@ -5,7 +5,7 @@ local loc = {
 		ru = "Таймер стимулятора отребья улья",
 	},
 	mod_description = {
-		en = "A detachable timer for the broker stim ability that can be positioned anywhere on screen.",
+		en = "Moveable on-screen timer for Broker stim duration and cooldown.",
 		["zh-cn"] = "独立的巢都渣滓兴奋剂计时组件，可以放置在屏幕任意位置",
 		ru = "Broker Stim Timer - Отдельный таймер для способности стимулятора отребья улья, который можно разместить в любом месте экрана.",
 	},
@@ -159,105 +159,21 @@ local loc = {
 		["zh-cn"] = "显示计时器",
 		ru = "Показывать таймер",
 	},
-	active = {
+	active_color = {
 		en = "Active Color",
 		["zh-cn"] = "激活状态颜色",
 		ru = "Цвет активного состояния",
 	},
-	active_preset = {
-		en = "Color Preset",
-		["zh-cn"] = "颜色预设",
-		ru = "Пресет цвета",
-	},
-	active_r = {
-		en = "Red",
-		["zh-cn"] = "红",
-		ru = "Красный",
-	},
-	active_g = {
-		en = "Green",
-		["zh-cn"] = "绿",
-		ru = "Зелёный",
-	},
-	active_b = {
-		en = "Blue",
-		["zh-cn"] = "蓝",
-		ru = "Синий",
-	},
-	cooldown = {
+	cooldown_color = {
 		en = "Cooldown Color",
 		["zh-cn"] = "冷却文字颜色",
 		ru = "Цвет перезарядки",
 	},
-	cooldown_preset = {
-		en = "Color Preset",
-		["zh-cn"] = "颜色预设",
-		ru = "Пресет цвета",
-	},
-	cooldown_r = {
-		en = "Red",
-		["zh-cn"] = "红",
-		ru = "Красный",
-	},
-	cooldown_g = {
-		en = "Green",
-		["zh-cn"] = "绿",
-		ru = "Зелёный",
-	},
-	cooldown_b = {
-		en = "Blue",
-		["zh-cn"] = "蓝",
-		ru = "Синий",
-	},
-	ready = {
+	ready_color = {
 		en = "Ready Color",
 		["zh-cn"] = "就绪状态颜色",
 		ru = "Цвет готовности",
 	},
-	ready_preset = {
-		en = "Color Preset",
-		["zh-cn"] = "颜色预设",
-		ru = "Пресет цвета",
-	},
-	ready_r = {
-		en = "Red",
-		["zh-cn"] = "红",
-		ru = "Красный",
-	},
-	ready_g = {
-		en = "Green",
-		["zh-cn"] = "绿",
-		ru = "Зелёный",
-	},
-	ready_b = {
-		en = "Blue",
-		["zh-cn"] = "蓝",
-		ru = "Синий",
-	},
-	default = {
-		en = "Default",
-		["zh-cn"] = "默认",
-		ru = "По умолчанию",
-	},
 }
-
-local default_stage_colors = {
-	active = {r = 226, g = 199, b = 126},
-	cooldown = {r = 246, g = 69, b = 69},
-	ready = {r = 74, g = 177, b = 85},
-}
-
-for stage, c in pairs(default_stage_colors) do
-	local text = string.format("{#color(%s,%s,%s)}Default{#reset()}", c.r, c.g, c.b)
-	loc["default_" .. stage] = { en = text }
-	local ru_text = string.format("{#color(%s,%s,%s)}По умолчанию{#reset()}", c.r, c.g, c.b)
-	loc["default_" .. stage].ru = ru_text
-end
-
-for _, color_name in ipairs(Color.list or {}) do
-	local c = Color[color_name](255, true)
-	local text = string.format("{#color(%s,%s,%s)}%s{#reset()}", c[2], c[3], c[4], string.gsub(color_name, "_", " "))
-	loc[color_name] = { en = text }
-end
 
 return loc

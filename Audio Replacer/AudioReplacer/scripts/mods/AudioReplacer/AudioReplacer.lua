@@ -1,6 +1,5 @@
 local mod = get_mod("AudioReplacer")
 local SimpleAudio
-local silent = {}
 local AttackingUnitResolver = require("scripts/utilities/attack/attacking_unit_resolver")
 
 local warp_explosion_audio = {
@@ -197,6 +196,10 @@ local player_shield_audio = {
 	"player/shield_3.opus",
 	"player/shield_4.opus",
 	"player/shield_5.opus",
+}
+
+local player_shield_end_audio = {
+	"player/shield_end_1.opus",
 }
 
 local player_death_audio = {
@@ -595,6 +598,28 @@ local laser_bigshot_audio = {
 	"weapons/laser_bigshot_3.opus",
 }
 
+local heavy_stubber_fire_audio = {
+	"weapons/heavy_stubber_fire_1.opus",
+	"weapons/heavy_stubber_fire_2.opus",
+	"weapons/heavy_stubber_fire_3.opus",
+	"weapons/heavy_stubber_fire_4.opus",
+	"weapons/heavy_stubber_fire_5.opus",
+}
+
+local dual_stub_pistols_fire_audio = {
+	"weapons/dual_stub_pistols_fire_1.opus",
+	"weapons/dual_stub_pistols_fire_2.opus",
+	"weapons/dual_stub_pistols_fire_3.opus",
+	"weapons/dual_stub_pistols_fire_4.opus",
+	"weapons/dual_stub_pistols_fire_5.opus",
+}
+
+local dual_stub_pistols_special_audio = {
+	"weapons/dual_stub_pistols_special_1.opus",
+	"weapons/dual_stub_pistols_special_2.opus",
+	"weapons/dual_stub_pistols_special_3.opus",
+}
+
 local enemies = {
 	"cultist_mutant",
 	"chaos_hound",
@@ -744,6 +769,12 @@ local enemy_sound_replacements = {
 		play_indicator_backstab_melee = backstab_audio,
 		play_weapon_lasgun_p1_m2 = laser_shot_audio,
 		play_weapon_lasgun_p1_m3 = laser_bigshot_audio,
+		stop_ability_psyker_shield_dome = player_shield_end_audio,
+		stop_ability_psyker_protectorate_shield = player_shield_end_audio,
+		play_heavy_stubber_p2_m3_fire_auto = heavy_stubber_fire_audio,
+		play_heavy_stubber_p2_m3_punch_first = heavy_stubber_fire_audio,
+		play_dual_stubpistols_p1_m1_single = dual_stub_pistols_fire_audio,
+		play_dual_stubpistols_p1_m1_punch_special = dual_stub_pistols_special_audio,
 	},
 	cultist_flamer = {
 		play_minion_flamethrower_green_start = flamer_flame_audio,
@@ -811,8 +842,10 @@ local options_categories = {
 	play_psyker_ability_shout_husk = "player_shriek",
 	play_ability_psyker_shield_dome = "player_psyker_shield",
 	play_ability_psyker_shield_dome_husk = "player_psyker_shield",
+	stop_ability_psyker_shield_dome = "player_psyker_shield",
 	play_ability_psyker_protectorate_shield = "player_psyker_shield",
 	play_ability_psyker_protectorate_shield_husk = "player_psyker_shield",
+	stop_ability_psyker_protectorate_shield = "player_psyker_shield",
 	play_foley_player_netted_struggle = "player_netted",
 	play_enemy_netgunner_net_pull = "player_netted",
 	play_stub_revolver_p1_m2 = "player_revolver",
@@ -894,6 +927,10 @@ local options_categories = {
 	play_indicator_backstab_melee = "backstab_audio",
 	play_weapon_lasgun_p1_m2 = "light_lasgun",
 	play_weapon_lasgun_p1_m3 = "heavy_lasgun",
+	play_heavy_stubber_p2_m3_fire_auto = "heavy_stubber",
+	play_heavy_stubber_p2_m3_punch_first = "heavy_stubber",
+	play_dual_stubpistols_p1_m1_single = "dual_stub_pistols",
+	play_dual_stubpistols_p1_m1_punch_special = "dual_stub_pistols_special",
 
 	-- DOG
 	play_enemy_chaos_hound_vce_leap = "chaos_hound_jump",
@@ -983,9 +1020,15 @@ local VOLUME_OVERRIDE = {
 	play_syringe_heal_self = 70,
 	play_weapon_lasgun_p1_m2 = 70,
 	play_weapon_lasgun_p1_m3 = 70,
+	play_heavy_stubber_p2_m3_fire_auto = 60,
+	play_heavy_stubber_p2_m3_punch_first = 60,
+	play_dual_stubpistols_p1_m1_single = 70,
+	play_dual_stubpistols_p1_m1_punch_special = 90,
 }
 
 local ongoing_sounds = {}
+local suppressed_events = {}
+local SUPPRESSED_EVENT_TTL = 300 -- seconds before a suppressed event entry is considered stale
 mod.SOURCE_ID_TO_UNIT_LOOKUP = mod:persistent_table("SOURCE_ID_TO_UNIT_LOOKUP", {})
 
 local _player_pos_vec = Vector3.zero()
@@ -1097,8 +1140,7 @@ local function resolved_player(unit)
 end
 
 local min_distance = 0 -- The minimum distance at which the sound can be heard
-local max_distance = 50 -- The maximum distance at which the sound can be heard
-local decay = 0 -- The rate at which the volume decays over distance, note that this severely reduces the ACTUAL hearing distance. e.g. a value of 0.01 pretty much halfs the effective "max distance", seems like a bug with SimpleAudio's spatial distance calculation... Hence why I set it to 0, so it'll scale nicer between min and max distances. :)
+local max_distance = 100 -- The maximum distance at which the sound can be heard
 
 local replace_audio = function(sound_table, position_or_unit_or_id, source_file)
 	--mod:echo("TRYING TO REPLACE AUDIO " .. source_file)
@@ -1146,14 +1188,25 @@ local replace_audio = function(sound_table, position_or_unit_or_id, source_file)
 	-- If you want a setting to toggle this, just add the mod:get("setting_name") to the if statement here.
 	if pos then
 		local player_pos, player_rotation = player_position_rotation() -- Try to get more accurate player position (accounts for rotation position)
+
 		if not player_pos then
 			player_pos = get_player_position() -- get absolute position if not
 		end
 
-		if player_pos and Vector3.distance(pos, player_pos) < 1 then
+		if
+			pos
+			and player_pos
+			and type(pos) ~= "userdata" -- Make sure "pos" is not a userdata type...
+			and type(pos) == "Vector3" -- Ensure it is a "Vector3" type...
+			and Vector3.distance(pos, player_pos) < 1 -- If distance between sound and player is less than 1, just play in a 2D space.
+		then
 			pos = nil
 		end
 	end
+
+	--if source_file == "play_minion_horde_poxwalker_ambush_2d" or source_file == "play_signal_horde_poxwalkers_2d" then
+	--	mod:echo("playing horde sound")
+	--end
 
 	ongoing_sounds[source_file] = SimpleAudio.play_file(sound, {
 		audio_type = "sfx",
@@ -1184,8 +1237,10 @@ local override_paths = {
 	play_psyker_ability_shout_husk = "wwise/events/player/",
 	play_ability_psyker_shield_dome = "wwise/events/player/",
 	play_ability_psyker_shield_dome_husk = "wwise/events/player/",
+	stop_ability_psyker_shield_dome = "wwise/events/player/",
 	play_ability_psyker_protectorate_shield = "wwise/events/player/",
 	play_ability_psyker_protectorate_shield_husk = "wwise/events/player/",
+	stop_ability_psyker_protectorate_shield = "wwise/events/player/",
 	play_foley_player_netted_struggle = "wwise/events/player/",
 	play_enemy_netgunner_net_pull = "wwise/events/weapon/",
 	play_stub_revolver_p1_m2 = "wwise/events/weapon/",
@@ -1283,6 +1338,10 @@ local override_paths = {
 	play_indicator_backstab_melee = "wwise/events/player/",
 	play_weapon_lasgun_p1_m2 = "wwise/events/weapon/",
 	play_weapon_lasgun_p1_m3 = "wwise/events/weapon/",
+	play_heavy_stubber_p2_m3_fire_auto = "wwise/events/weapon/",
+	play_heavy_stubber_p2_m3_punch_first = "wwise/events/weapon/",
+	play_dual_stubpistols_p1_m1_single = "wwise/events/weapon/",
+	play_dual_stubpistols_p1_m1_punch_special = "wwise/events/weapon/",
 	--play_minion_flamethrower_green_start = "wwise/events/weapon/"
 }
 
@@ -1345,6 +1404,14 @@ mod.on_all_mods_loaded = function()
 		end
 	end)
 
+	-- Clean up source id mappings when sources are destroyed
+	mod:hook(WwiseWorld, "destroy_manual_source", function(func, wwise_world, source_id, ...)
+		if source_id then
+			mod.SOURCE_ID_TO_UNIT_LOOKUP[source_id] = nil
+		end
+		return func(wwise_world, source_id, ...)
+	end)
+
 	for i = 1, #enemies do
 		local enemy_name = enemies[i]
 		local enabled_setting_name = enemy_name .. "_enabled"
@@ -1358,7 +1425,7 @@ mod.on_all_mods_loaded = function()
 						local path = (override_paths[source_file] or enemy_wwise_path or "")
 
 						path = path .. source_file
-						
+
 						SimpleAudio.hook_sound(
 							path,
 							function(sound_type, sound_name, delta, position_or_unit_or_id, optional_a, optional_b)
@@ -1389,9 +1456,10 @@ mod.on_all_mods_loaded = function()
 									end
 								end
 
-								if #replacement_table > 0 and (delta == nil or delta > 0.2) then
+								if #replacement_table > 0 and (delta == nil or delta > 0.1) then
 									replace_audio(replacement_table, position_or_unit_or_id, source_file)
-									-- return false -- Was causing the crashes with psyker dome ending
+									suppressed_events[path] = os.clock()
+									return false
 								elseif #replacement_table == 0 then
 									return false
 								end
@@ -1399,6 +1467,21 @@ mod.on_all_mods_loaded = function()
 								return true
 							end
 						)
+
+						local stop_source_file = source_file:gsub("^play_", "stop_")
+						if stop_source_file ~= source_file then
+							local stop_path = (override_paths[source_file] or enemy_wwise_path or "")
+								.. stop_source_file
+							SimpleAudio.hook_sound(stop_path, function()
+								local suppressed_at = suppressed_events[path]
+								if suppressed_at and (os.clock() - suppressed_at) < SUPPRESSED_EVENT_TTL then
+									suppressed_events[path] = nil
+									return false
+								end
+								suppressed_events[path] = nil
+								return true
+							end)
+						end
 					end
 				end
 			end

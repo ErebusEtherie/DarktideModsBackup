@@ -1,0 +1,26 @@
+{
+  "name": "Solo Play",
+  "description": "Play local single-player missions. You can't get any rewards or progression in local games.",
+  "homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/176",
+  "source": "https://github.com/deluxghost/darktide-mods/tree/main/SoloPlay",
+  "funding": {
+    "kofi": "https://ko-fi.com/deluxghost",
+    "bilibili": "https://space.bilibili.com/4712698"
+  },
+  "version": "2.6.5",
+  "author": "deluxghost",
+  "localization": {
+    "zh-cn": {
+      "name": "单人游戏",
+      "description": "玩本地单人任务。你无法从本地游戏中获得任何奖励或进度。"
+    },
+    "ru": {
+      "name": "Игра в соло",
+      "description": "Играйте в одиночные миссии локально. В локальной игре вы не получаете никаких наград или прогресса."
+    },
+    "zh-tw": {
+      "name": "單人遊戲",
+      "description": "遊玩本機單人任務。你無法從本機遊戲中獲得任何獎勵或進度。"
+    }
+  }
+}

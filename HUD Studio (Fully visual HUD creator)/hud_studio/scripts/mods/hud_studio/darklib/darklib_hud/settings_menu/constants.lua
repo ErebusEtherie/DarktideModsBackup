@@ -1,0 +1,184 @@
+
+
+---@param Module DLH_SettingsMenu
+---@param mod DL_Mod
+return function(Module, mod)
+	if Module.constants then
+		return Module.constants
+	end
+
+	local Shell = mod.dl_hud.mod_menu.constants
+
+	local Constants = {
+
+		PANEL_WIDTH = Shell.PANEL_WIDTH,
+		PANEL_HEIGHT = Shell.PANEL_HEIGHT,
+		PANEL_OFFSET_X = Shell.PANEL_OFFSET_X,
+		PANEL_OFFSET_Y = Shell.PANEL_OFFSET_Y,
+		TITLE_HEIGHT = 80,
+
+		GRID_COLS = 6,
+
+		CELL_HEIGHT = 68,
+
+		ROW_UNITS = 2,
+		HEADING_ROW_UNITS = 1,
+
+		HEADING_SPACER_UNITS = 1,
+
+		CONTENT_PAD = 30,
+		CONTENT_TOP_GAP = 10,
+
+		CONTENT_BOTTOM_PAD = 0,
+
+		CELL_GUTTER_X = 40,
+		CELL_GUTTER_Y = 20,
+
+		TAB_COL_WIDTH = 200,
+		TAB_COL_GAP = 30,
+		TAB_HEIGHT = 44,
+		TAB_GAP = 16,
+
+		TAB_HEADER_HEIGHT = 72,
+		TAB_TITLE_HEIGHT = 32,
+
+		SCROLLBAR_WIDTH = 8,
+		SCROLLBAR_GAP = 10,
+
+		SCROLL_WHEEL_STEP = 1,
+
+		SCROLL_TAIL_ROWS = 2,
+
+		LABEL_HEIGHT = 30,
+		CONTROL_HEIGHT = 40,
+
+		STEP_BUTTON_WIDTH = 34,
+
+		CHECK_FILL_INSET = 7,
+
+		RESET_ICON_MATERIAL = "content/ui/materials/hud/interactions/icons/pocketable_syringe_ability",
+		RESET_ICON_SIZE = 22,
+
+		RESET_TAB_WIDTH = 150,
+
+		SHADOW_PAD = 10,
+
+		DROPDOWN_OPTION_HEIGHT = 40,
+		DROPDOWN_MAX_VISIBLE = 6,
+
+		DROPDOWN_TEXT_PAD = 12,
+
+		TOOLTIP_WIDTH = 350,
+		TOOLTIP_HEIGHT = 350,
+
+		TOOLTIP_MIN_HEIGHT = 300,
+
+		TOOLTIP_GAP = 20,
+
+		STRINGS = {
+			TITLE = "Settings",
+			PRESS_KEY = "press a key...",
+			UNBOUND = "unbound",
+			ON = "ON",
+			OFF = "OFF",
+			RESET_TAB = "RESET TAB",
+			RESET_ALL = "RESET ALL",
+		},
+
+		TITLE_FONT_SIZE = 32,
+		TAB_FONT_SIZE = 18,
+		TAB_TITLE_FONT_SIZE = 24,
+		TAB_DESC_FONT_SIZE = 16,
+		HEADING_FONT_SIZE = 20,
+		HEADING_DESCRIPTION_FONT_SIZE = 17,
+		LABEL_FONT_SIZE = 17,
+		VALUE_FONT_SIZE = 16,
+		BUTTON_FONT_SIZE = 24,
+		TOOLTIP_TITLE_FONT_SIZE = 20,
+		TOOLTIP_CONTENT_FONT_SIZE = 17,
+
+		Z = 0,
+		Z_BACKDROP = 0,
+		Z_PANEL_BG = 0,
+		Z_PANEL = 1,
+		Z_TAB_BG = 2,
+		Z_TITLE_BG_TEXTURE = 2,
+		Z_TITLE = 4,
+		Z_PANEL_FRAME = 5,
+		Z_WIDGET = 5,
+
+		Z_DROPDOWN = 10,
+
+		Z_TOOLTIP = 20,
+		Z_TOOLTIP_BG = 20,
+		Z_TOOLTIP_FRAME_BG = 21,
+		Z_TOOLTIP_FRAME = 22,
+		Z_TOOLTIP_CONTENT = 23,
+
+		Z_CELL_SHADOW = 11,
+		Z_CELL_TERMINAL = 12,
+		Z_CELL_SURFACE = 12,
+		Z_CELL_TEXT = 13,
+
+		COLOR = {
+
+			TEXT = { 255, 245, 245, 245 },
+			TEXT_MUTED = { 255, 82, 82, 82 },
+
+			BACKDROP = { 140, 0, 0, 0 },
+			PANEL_BG = { 255, 25, 37, 37 },
+			TOOLTIP_BG = { 250, 15, 25, 28 },
+			TABS_BG = { 75, 15, 28, 23 },
+			PANEL = { 100, 190, 210, 180 },
+
+			PANEL_GRADIENT = { 0, 0, 0, 0 },
+			PANEL_SKULL = { 12, 0, 0, 0 },
+			TITLE = { 255, 216, 229, 207 },
+			LABEL = { 255, 240, 240, 240 },
+			VALUE = { 255, 240, 240, 240 },
+			HEADING = { 255, 240, 240, 240 },
+			HEADING_RULE = { 250, 99, 114, 102 },
+
+			TAB_TITLE = { 255, 226, 199, 126 },
+			TAB_DESC = { 255, 170, 176, 184 },
+
+			VALUE_FILL = { 105, 13, 14, 18 },
+
+			CONTROL = { 140, 19, 25, 23 },
+			CONTROL_HOVER = { 150, 64, 70, 82 },
+			CONTROL_ACTIVE = { 255, 226, 199, 126 },
+
+			CONTROL_BUTTON = { 200, 46, 57, 51 },
+
+			CHECK_OFF = { 150, 15, 17, 21 },
+
+			CONTROL_DISABLED = { 80, 19, 25, 23 },
+			CONTROL_BUTTON_DISABLED = { 110, 46, 57, 51 },
+			CONTROL_ACTIVE_DISABLED = { 110, 226, 199, 126 },
+			VALUE_FILL_DISABLED = { 55, 13, 14, 18 },
+
+			LABEL_DISABLED = { 120, 230, 230, 230 },
+			VALUE_DISABLED = { 120, 240, 240, 240 },
+			BUTTON_TEXT_DISABLED = { 120, 226, 199, 126 },
+
+			DROPDOWN_BG = { 255, 15, 20, 24 },
+			DROPDOWN_OPTION = { 0, 64, 70, 82 },
+			DROPDOWN_SELECTED = { 70, 64, 70, 82 },
+			BUTTON_TEXT = { 255, 226, 199, 126 },
+
+			RESET_ICON = { 210, 226, 199, 126 },
+			RESET_ICON_HOVER = { 255, 255, 255, 255 },
+			RESET_ICON_HIDDEN = { 0, 226, 199, 126 },
+
+			SHADOW = { 60, 0, 0, 0 },
+
+			SCROLLBAR_TRACK = { 200, 90, 100, 100 },
+			SCROLLBAR_THUMB = { 200, 15, 23, 22 },
+
+		},
+	}
+
+	Module.constants = Constants
+
+	return Constants
+end

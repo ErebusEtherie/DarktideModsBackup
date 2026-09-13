@@ -133,10 +133,8 @@ template.update_function = function(widget, marker, x, y, vertical_distance, ran
                 
                 local a = mod:get("distance_marker_vertical_arrow_opacity")
                 if a == nil then a = 255 end
-                local r = mod:get("distance_marker_vertical_arrow_color_r") or 255
-                local g = mod:get("distance_marker_vertical_arrow_color_g") or 255
-                local b = mod:get("distance_marker_vertical_arrow_color_b") or 255
-                vertical_arrow_overlay_style.text_color = { a, r, g, b }
+                local c = mod:get("distance_marker_vertical_arrow_color") or {255, 255, 255, 255}
+                vertical_arrow_overlay_style.text_color = { a, c[2], c[3], c[4] }
                 vertical_arrow_overlay_style.font_size = mod:get("distance_marker_vertical_arrow_size") or 20
                 
                 vertical_arrow_overlay_style.visible = true
@@ -144,7 +142,7 @@ template.update_function = function(widget, marker, x, y, vertical_distance, ran
                 vertical_arrow_overlay_style.visible = false
             end
         end
-        vertical_str = "" -- Prevent appending to distance text
+        vertical_str = ""
     end
 
     if should_show then

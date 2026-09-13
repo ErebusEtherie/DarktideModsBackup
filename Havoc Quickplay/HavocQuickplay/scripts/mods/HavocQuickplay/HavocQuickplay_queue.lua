@@ -558,6 +558,14 @@ local function best_offer()
 	return best
 end
 
+local join_best_offer
+
+local function fills_party(party_id)
+	return listing_members(S.listings[party_id]) + 1 >= C.PARTY_MAX
+end
+
+mod.fills_party = fills_party
+
 mod.add_offer = function(party_id, invite_token)
 	if mod.is_blacklisted(party_id) then
 		mod.debug("refused a blacklisted offer from %s", tostring(party_id))
@@ -572,6 +580,15 @@ mod.add_offer = function(party_id, invite_token)
 		at = mod.now(),
 	}
 
+	if fills_party(party_id) then
+		S.countdown_ends_at = nil
+
+		mod.debug("offer from %s fills the party, joining at once", tostring(party_id))
+		join_best_offer()
+
+		return
+	end
+
 	if S.state == STATE.SEARCHING then
 		S.countdown_ends_at = mod.now() + mod.countdown_seconds()
 
@@ -583,7 +600,7 @@ mod.add_offer = function(party_id, invite_token)
 	mod.debug("offer from %s (%d held)", tostring(party_id), offer_count())
 end
 
-local function join_best_offer()
+join_best_offer = function()
 	local offer = best_offer()
 
 	if not offer then

@@ -207,6 +207,11 @@ local loc = {
 		["zh-cn"] = "太棒了",
 	},
 
+	mission_summary_skip_recap = {
+		en = "SKIP RECAP",
+		["zh-cn"] = "跳过回顾",
+	},
+
 	mission_summary_delete_run = {
 		en = "DELETE RUN",
 		["zh-cn"] = "删除记录",

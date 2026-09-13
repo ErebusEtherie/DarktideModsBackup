@@ -1,8 +1,10 @@
--- Fetches one of the game's own localized strings, so the mirrored settings
--- carry exactly the names and tooltips the player knows from the vanilla
--- menu, in every language, with a plain English fallback if the key cannot
--- be read. Only the en slot is filled: every other language falls back to
--- it, and it already holds the current game language's text.
+-- Grace localization. The mirrored vanilla settings pull the game's own
+-- strings into the en slot; every other language falls back to it.
+
+-- ───────────────────── ❀ ─────────────────────
+--  The game string reader
+-- ───────────────────── ❀ ─────────────────────
+
 local _game_string = function(key, fallback)
 	local ok, text = pcall(Localize, key)
 
@@ -12,6 +14,10 @@ local _game_string = function(key, fallback)
 
 	return fallback
 end
+
+-- ───────────────────── ❀ ─────────────────────
+--  The string table
+-- ───────────────────── ❀ ─────────────────────
 
 return {
 	mod_name = {
@@ -23,11 +29,20 @@ return {
 		ru = "Труд любви: самый полный набор настроек передвижения в одном месте.",
 		["zh-tw"] = "一份用心之作，旨在將最全面的移動選項匯集於一處。",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Base and vanilla groups
+	-- ───────────────────── ❀ ─────────────────────
 	group_vanilla_inner = {
 		en = "Vanilla Game's Movement Settings",
 		["zh-cn"] = "原版游戏移动设置",
 		ru = "Оригинальные игровые настройки движения",
 		["zh-tw"] = "原版遊戲移動設定",
+	},
+	group_grace_base = {
+		en = "Grace's Base Movement Settings",
+		["zh-cn"] = "Grace 基础移动设置",
+		ru = "Настройки базового движения Grace",
+		["zh-tw"] = "Grace 基礎移動設定",
 	},
 	group_vanilla = {
 		en = "Base",
@@ -71,6 +86,9 @@ return {
 	vanilla_always_dodge_description = {
 		en = _game_string("loc_setting_always_dodge_desc", "The game's matching setting; see the game options for its full description."),
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Sprint
+	-- ───────────────────── ❀ ─────────────────────
 	group_sprint = {
 		en = "Sprint",
 		["zh-cn"] = "冲刺",
@@ -94,6 +112,18 @@ return {
 		["zh-cn"] = "只要你在正向前进就会自动冲刺，无需绑定按键；之后仍可用按键随时开关。本功能只提供意图；耐力、禁止冲刺的武器动作，以及游戏对按住冲刺键的所有规则照常生效。",
 		ru = "Спринт включается сам, пока вы движетесь прямо вперёд, без назначения клавиши; клавиши по-прежнему выключают и включают его после этого. Передаётся только намерение; выносливость, действия оружия, запрещающие спринт, и все остальные правила игры для зажатой клавиши спринта действуют как обычно.",
 		["zh-tw"] = "只要你在正向前進就會自動衝刺，無需綁定按鍵；之後仍可用按鍵隨時開關。本功能只提供意圖；耐力、禁止衝刺的武器動作，以及遊戲對按住衝刺鍵的所有規則照常生效。",
+	},
+	toggle_undo_hold = {
+		en = "Undo Held Toggle Presses",
+		["zh-cn"] = "长按切换键自动撤销",
+		ru = "Отмена долгого нажатия переключателя",
+		["zh-tw"] = "長按切換鍵自動撤銷",
+	},
+	toggle_undo_hold_description = {
+		en = "A quick tap of a sprint or slide toggle keybind switches as normal. Held longer, the press undoes its own switch on release, so a key shared with a held bind can serve both.",
+		["zh-cn"] = "快速点按冲刺或滑铲的切换键照常切换。按住更久时，松开会撤销这次切换，因此与长按键位共用一个按键也不会弄乱开关。",
+		ru = "Быстрое нажатие клавиши переключателя спринта или подката работает как обычно. Если клавишу удержать дольше, переключение отменяется при отпускании — так одна клавиша может служить и переключателем, и удерживаемой привязкой.",
+		["zh-tw"] = "快速點按衝刺或滑鏟的切換鍵照常切換。按住更久時，鬆開會撤銷這次切換，因此與長按鍵位共用一個按鍵也不會弄亂開關。",
 	},
 	sprint_toggle_keybind = {
 		en = "Sprint (Toggle)",
@@ -131,18 +161,6 @@ return {
 		ru = "Для игроков с выключенной игровой настройкой «Удержание для спринта», когда клавиша спринта принимает только нажатия. Пока клавиша спринта удерживается и вы движетесь вперёд, Grace держит вас в спринте, начиная новый всякий раз, когда он не начался или был прерван, так что удержание работает так, как привыкли руки. Отпускание не останавливает текущий спринт; его завершают собственные правила игры. При включённом удержании для спринта ничего не меняет.",
 		["zh-tw"] = "面向關閉了遊戲「按住衝刺」設定的玩家，此時衝刺鍵只認輕點。當你按住衝刺鍵並向前移動時，Grace 會讓你保持衝刺：只要衝刺尚未開始或被打斷，就會重新開始一次，讓按住的手感如你所期。鬆開按鍵不會停止正在進行的衝刺；由遊戲自身的規則來結束它。開啟按住衝刺時無任何變化。",
 	},
-	sprint_fire_wait = {
-		en = "Wait While Firing",
-		["zh-cn"] = "开火时等待",
-		ru = "Ожидание при стрельбе",
-		["zh-tw"] = "開火時等待",
-	},
-	sprint_fire_wait_description = {
-		en = "Sprint (Always) holds off while the attack button is held with a ranged weapon in hand, so firing is never cut short, and resumes the moment you stop. Your own presses are never held back.",
-		["zh-cn"] = "手持远程武器按住攻击键时，冲刺（始终）暂停，射击不会被打断，停火后立即恢复。你自己的按键不受影响。",
-		ru = "Спринт (всегда) приостанавливается, пока кнопка атаки удержана с дальнобойным оружием в руках, поэтому стрельба не прерывается, и возобновляется сразу после её окончания. Ваши собственные нажатия не задерживаются.",
-		["zh-tw"] = "手持遠程武器按住攻擊鍵時，衝刺（始終）暫停，射擊不會被打斷，停火後立即恢復。你自己的按鍵不受影響。",
-	},
 	sprint_reload_wait = {
 		en = "Wait For Reloads",
 		["zh-cn"] = "等待装填",
@@ -155,11 +173,35 @@ return {
 		ru = "Спринт (всегда) пережидает перезарядку вместо того, чтобы прерывать её, и возобновляется в момент, когда боеприпасы действительно заряжены, примерно на середине анимации. Ваши собственные нажатия никогда не задерживаются.",
 		["zh-tw"] = "衝刺（常開）會等待裝填完成而不是打斷它，並在彈藥真正裝入（動畫進行到一半左右）的那一刻恢復衝刺。你自己的按鍵絕不會被攔下。",
 	},
+	sprint_melee_charge = {
+		en = "Sprint While Charging Melee",
+		["zh-cn"] = "蓄力近战时冲刺",
+		ru = "Спринт во время замаха",
+		["zh-tw"] = "蓄力近戰時衝刺",
+	},
+	sprint_melee_charge_description = {
+		en = "Moving forward while charging a heavy attack enters the sprint on its own, with no sprint feature needed, on weapons whose own data permits sprinting through the charge. Weapons that forbid it are unchanged.",
+		["zh-cn"] = "蓄力重攻击时向前移动会自行进入冲刺，无需任何冲刺功能，仅限自身数据允许蓄力冲刺的武器。禁止的武器不受影响。",
+		ru = "Движение вперёд во время замаха тяжёлой атаки само переводит персонажа в спринт, без каких-либо функций спринта — только на оружии, чьи собственные данные это разрешают. Остальное оружие не затронуто.",
+		["zh-tw"] = "蓄力重攻擊時向前移動會自行進入衝刺，無需任何衝刺功能，僅限自身資料允許蓄力衝刺的武器。禁止的武器不受影響。",
+	},
+	sprint_charge_slide = {
+		en = "Slide While Charging Melee",
+		["zh-cn"] = "蓄力近战时滑铲",
+		ru = "Подкат во время замаха",
+		["zh-tw"] = "蓄力近戰時滑鏟",
+	},
+	sprint_charge_slide_description = {
+		en = "Allows a sprint entered while charging a heavy attack to become a Slide (Always) slide. Left off, the charge sprint stays on its feet; every other slide is untouched.",
+		["zh-cn"] = "允许蓄力重攻击期间进入的冲刺被持续滑铲转为滑铲。关闭时，蓄力冲刺保持站立，其他滑铲不受影响。",
+		ru = "Позволяет спринту, начатому во время замаха тяжёлой атаки, перейти в подкат от постоянного подката. В выключенном состоянии такой спринт остаётся на ногах — остальные подкаты не затронуты.",
+		["zh-tw"] = "允許蓄力重攻擊期間進入的衝刺被持續滑鏟轉為滑鏟。關閉時，蓄力衝刺保持站立，其他滑鏟不受影響。",
+	},
 	reload_swap_keybind = {
-		en = "Melee After Reload (Held)",
-		["zh-cn"] = "装填后切换近战（按住）",
-		ru = "Ближний бой после перезарядки (удержание)",
-		["zh-tw"] = "裝填後切換近戰（按住）",
+		en = "Swap After Reload",
+		["zh-cn"] = "装填后切换",
+		ru = "Смена оружия после перезарядки",
+		["zh-tw"] = "裝填後切換",
 	},
 	reload_swap_keybind_description = {
 		en = "Hold during a reload and the swap to melee waits for the ammunition instead of throwing the reload away. Bind it to your reload key, your melee key, or any key you like. Bound to your melee key, letting go before the ammunition lands gives you melee straight away.",
@@ -173,6 +215,9 @@ return {
 		ru = "Grace: «Смена на ближний бой после перезарядки» теперь привязка клавиши «Ближний бой после перезарядки (удержание)». Назначьте её на клавишу перезарядки, чтобы вернуть прежнее поведение.",
 		["zh-tw"] = "Grace：裝填後切換近戰現已改為按鍵綁定「裝填後切換近戰（按住）」。綁定到裝填鍵即可恢復原有行為。",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Slide
+	-- ───────────────────── ❀ ─────────────────────
 	group_slide = {
 		en = "Slide",
 		["zh-cn"] = "滑铲",
@@ -257,6 +302,9 @@ return {
 		ru = "Дополнительное ожидание перед каждым подкатом, следующим за другим.",
 		["zh-tw"] = "在緊接前一次滑鏟之後的每次滑鏟前額外等待的時間。",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Dodge
+	-- ───────────────────── ❀ ─────────────────────
 	group_dodge = {
 		en = "Dodge",
 		["zh-cn"] = "闪避",
@@ -282,10 +330,10 @@ return {
 		["zh-tw"] = "在斜向衝刺時按下閃避會執行閃避並立即恢復衝刺，而不是被拒絕或變成衝刺跳躍。在明顯斜向衝刺時，跳躍會被暫時擱置，好讓按鍵成為閃避；直線衝刺時跳躍和翻越照常。前斜向閃避還需要開啟遊戲自帶的「前斜向閃避」設定。",
 	},
 	dodge_slide = {
-		en = "Dodge and Slide",
-		["zh-cn"] = "闪避滑铲",
-		ru = "Уклонение и подкат",
-		["zh-tw"] = "閃避滑鏟",
+		en = "Forward Dodge To Slide",
+		["zh-cn"] = "向前闪避接滑铲",
+		ru = "Уклонение вперёд в подкат",
+		["zh-tw"] = "向前閃避接滑鏟",
 	},
 	dodge_slide_description = {
 		en = "Pressing dodge while sprinting forward performs a slide immediately, ignoring the slide delays; the other slide controls can stay off. Once the slide ends, the sprint comes back on its own.",
@@ -293,6 +341,75 @@ return {
 		ru = "Нажатие уклонения во время спринта вперёд сразу выполняет подкат, минуя задержки подката; остальные элементы управления подкатом могут оставаться выключенными. Когда подкат заканчивается, спринт возвращается сам.",
 		["zh-tw"] = "在向前衝刺時按下閃避會立即滑鏟，忽略滑鏟延遲；其他滑鏟控制可以保持關閉。滑鏟結束後，衝刺會自動恢復。",
 	},
+	dodge_slide_diagonal = {
+		en = "Diagonal Dodge To Slide",
+		["zh-cn"] = "斜向闪避接滑铲",
+		ru = "Диагональное уклонение в подкат",
+		["zh-tw"] = "斜向閃避接滑鏟",
+	},
+	dodge_slide_diagonal_description = {
+		en = "Diagonal dodge presses slide as well, not only straight ones. Needs Forward Dodge To Slide switched on, and a diagonal press then slides instead of keeping the sprint.",
+		["zh-cn"] = "斜向按下闪避也会滑铲，而不只是直向时。需要开启「向前闪避接滑铲」，并且斜向按键会改为滑铲，不再保留冲刺。",
+		ru = "Диагональные нажатия уклонения тоже переходят в подкат, а не только прямые. Нужно включить «Уклонение вперёд в подкат», и диагональное нажатие тогда уходит в подкат вместо сохранения спринта.",
+		["zh-tw"] = "斜向按下閃避也會滑鏟，而不只是直向時。需要開啟「向前閃避接滑鏟」，並且斜向按鍵會改為滑鏟，不再保留衝刺。",
+	},
+	dodge_easy_slide = {
+		en = "Easy Dodge & Slide",
+		["zh-cn"] = "轻松闪避接滑铲",
+		ru = "Лёгкое уклонение в подкат",
+		["zh-tw"] = "輕鬆閃避接滑鏟",
+	},
+	dodge_easy_slide_description = {
+		en = "A second dodge press just after a dodge slides out of it. The slide runs in whatever direction the dodge was going.",
+		["zh-cn"] = "闪避后立刻再按一次闪避，就会从这次闪避中滑铲。滑铲沿着闪避原本的方向进行。",
+		ru = "Второе нажатие уклонения сразу после уклонения переходит в подкат. Подкат идёт в том направлении, куда шло уклонение.",
+		["zh-tw"] = "閃避後立刻再按一次閃避，就會從這次閃避中滑鏟。滑鏟沿著閃避原本的方向進行。",
+	},
+	dodge_slide_keybind = {
+		en = "Dodge & Slide",
+		["zh-cn"] = "闪避接滑铲",
+		ru = "Уклонение в подкат",
+		["zh-tw"] = "閃避接滑鏟",
+	},
+	dodge_slide_keybind_description = {
+		en = "One key that dodges and then slides out of it. The game has no straight forward dodge, so hold a strafe direction as well, or the key does nothing. Pressing it during a sprint needs Dodge Without Losing Sprint turned on.",
+		["zh-cn"] = "一个按键完成闪避并接着滑铲。游戏没有正前方闪避，因此还需同时按住横向移动键，否则该按键不做任何事。在冲刺中按下需要开启「闪避不中断冲刺」。",
+		ru = "Одна клавиша выполняет уклонение и переходит из него в подкат. В игре нет уклонения строго вперёд, поэтому удерживайте ещё и клавишу движения вбок, иначе клавиша ничего не делает. Нажатие во время спринта требует включённой настройки «Уклонение без потери спринта».",
+		["zh-tw"] = "一個按鍵完成閃避並接著滑鏟。遊戲沒有正前方閃避，因此還需同時按住橫向移動鍵，否則該按鍵不做任何事。在衝刺中按下需要開啟「閃避不中斷衝刺」。",
+	},
+	dodge_hold = {
+		en = "Hold Dodge",
+		["zh-cn"] = "长按闪避",
+		ru = "Удержание уклонения",
+		["zh-tw"] = "長按閃避",
+	},
+	dodge_hold_description = {
+		en = "Holding dodge past a short delay does more than a single dodge. A quick tap always stays a plain dodge. The game has no forward dodge, so a press made while pushing straight forward is refused unless Always Dodge under Base Settings is on. And Diagonal Forward Dodge turns a forward lean into a sideways dodge.",
+		["zh-cn"] = "按住闪避超过短暂延迟后会做的不止一次闪避。快速轻按始终只是普通闪避。游戏中没有向前闪避，因此正向前推进时按下闪避会被拒绝，除非开启基础设置中的始终闪避。开启斜向前闪避后，向前偏移会转为向侧面的闪避。",
+		ru = "Удержание уклонения дольше короткой задержки даёт больше, чем одно уклонение. Быстрое нажатие всегда остаётся обычным уклонением. В игре нет уклонения вперёд, поэтому нажатие при движении строго вперёд отклоняется, если не включено «Всегда уклоняться» в разделе «База». А «Уклонение по диагонали вперёд» превращает наклон вперёд в уклонение в сторону.",
+		["zh-tw"] = "按住閃避超過短暫延遲後會做的不只一次閃避。快速輕按始終只是普通閃避。遊戲中沒有向前閃避，因此正向前推進時按下閃避會被拒絕，除非開啟基礎設定中的始終閃避。開啟斜向前閃避後，向前偏移會轉為向側面的閃避。",
+	},
+	dodge_hold_off = {
+		en = "Off",
+		["zh-cn"] = "关闭",
+		ru = "Выключено",
+		["zh-tw"] = "關閉",
+	},
+	dodge_hold_slide = {
+		en = "Slide",
+		["zh-cn"] = "滑铲",
+		ru = "Подкат",
+		["zh-tw"] = "滑鏟",
+	},
+	dodge_hold_keep = {
+		en = "Keep Dodging",
+		["zh-cn"] = "持续闪避",
+		ru = "Продолжать уклоняться",
+		["zh-tw"] = "持續閃避",
+	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Jump block
+	-- ───────────────────── ❀ ─────────────────────
 	jump_block = {
 		en = "Block Jump Presses",
 		["zh-cn"] = "屏蔽跳跃按键",
@@ -329,6 +446,9 @@ return {
 		ru = "Grace: «Блокировать нажатия прыжка» теперь имеет три варианта и оставлен на «Всегда», как и работал раньше.",
 		["zh-tw"] = "Grace：阻止跳躍按鍵現有三個選項，已保留為「始終」，與此前的行為一致。",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Vault
+	-- ───────────────────── ❀ ─────────────────────
 	group_vault = {
 		en = "Vault",
 		["zh-cn"] = "翻越",
@@ -413,6 +533,9 @@ return {
 		ru = "Уступы ниже этой высоты в метрах перелезаются за вас только один раз, а не подряд, поэтому лестница стоит одного небольшого перелезания вместо одного на ступень. Нажатие прыжка вручную по-прежнему перелезает всё, что позволяет игра. Ноль отключает ограничение.",
 		["zh-tw"] = "低於此高度（公尺）的邊緣只會為你自動翻越一次，不會連續翻越，因此上樓梯只有一次小翻越而不是每級一次。自己按跳躍仍可翻越遊戲允許的任何邊緣。設為零則關閉此限制。",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Melee swing
+	-- ───────────────────── ❀ ─────────────────────
 	group_swing = {
 		en = "Swing",
 		["zh-cn"] = "挥击",
@@ -473,6 +596,18 @@ return {
 		ru = "Атакует сразу, без ожидания короткого нажатия или удержания, если вы нажимаете клавишу во время уже идущего спринта. По умолчанию выключено; включите, если предпочитаете атаковать в тот же миг, ведь защищать нажатие спринта здесь уже незачем.",
 		["zh-tw"] = "在已經進行的衝刺中按下該鍵會立即攻擊，不做輕點或按住的等待。預設關閉；如果你希望衝刺中一按就攻擊，可以打開，因為此時已經沒有需要保護的衝刺按鍵了。",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Melee attacks and specials
+	-- ───────────────────── ❀ ─────────────────────
+	group_special_repeat = {
+		en = "Repeat Special Attack",
+	},
+	special_repeat = {
+		en = "Repeat Special Attack",
+	},
+	special_repeat_description = {
+		en = "Holding the weapon special key keeps the special attack going instead of one swing per press, and it finds its way back if a normal attack interrupts it. Only weapons whose special can follow another one, such as the Bully Club and the Rumbler; weapons whose special is a toggle, like a chainsword, are left alone.",
+	},
 	group_attacks = {
 		en = "Melee Attacks",
 		["zh-cn"] = "近战攻击",
@@ -527,6 +662,24 @@ return {
 		ru = "Повторяет тяжёлые атаки, пока клавиша удержана. Пока нажата, имеет приоритет над включённым переключателем. Если эта клавиша общая со спринтом, назначьте её ещё и на клавишу удара, чтобы короткое нажатие давало спринт, а не атаку.",
 		["zh-tw"] = "按住期間重複重攻擊。按住時優先於已開啟的切換。若此鍵與衝刺共用，請同時把它綁定到揮擊按鍵，這樣輕點便是衝刺而非攻擊。",
 	},
+	attacks_push_toggle_keybind = {
+		en = "Push While Blocking (Toggle)",
+	},
+	attacks_push_toggle_keybind_description = {
+		en = "Repeats the melee push, but only while block is actually held. Bind it to the same key as a repeating attack and blocking turns that attack into a push. Weapons with a push follow up attack land it before the next push.",
+	},
+	attacks_push_hold_keybind = {
+		en = "Push While Blocking (Held)",
+	},
+	attacks_push_hold_keybind_description = {
+		en = "Repeats the melee push while this key and block are both held. Weapons with a push follow up attack land it before the next push. Does nothing when block is not held.",
+	},
+	notify_attacks_push_on = {
+		en = "Push while blocking: on",
+	},
+	notify_attacks_push_off = {
+		en = "Push while blocking: off",
+	},
 	attacks_invert_keybind = {
 		en = "Swap Attack Kind (Held)",
 		["zh-cn"] = "互换攻击类型（按住）",
@@ -539,6 +692,9 @@ return {
 		ru = "Пока клавиша удержана, идущий повтор лёгких атак становится тяжёлым, а тяжёлых — лёгким. Сама по себе ничего не запускает.",
 		["zh-tw"] = "按住此鍵時，正在進行的輕攻擊重複變為重攻擊，重攻擊變為輕攻擊。本身不會開始任何攻擊。",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Class
+	-- ───────────────────── ❀ ─────────────────────
 	group_class = {
 		en = "Classes",
 		["zh-cn"] = "职业",
@@ -689,6 +845,9 @@ return {
 		ru = "Отключает все возможности Grace во время игры за класс «Отброс улья», как будто мод для этого класса не установлен. По умолчанию включено.",
 		["zh-tw"] = "在遊玩巢都渣滓時關閉 Grace 的所有功能，就像該職業沒有安裝此模組一樣。預設開啟。",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Debug channels
+	-- ───────────────────── ❀ ─────────────────────
 	group_debug = {
 		en = "Debug",
 		["zh-cn"] = "调试",
@@ -797,6 +956,9 @@ return {
 		ru = "Сообщает о каждом замахе и рассчитанном моменте выпуска тяжёлой атаки, а также о причинах простоя привязок атак.",
 		["zh-tw"] = "報告每次蓄力及其計算出的重攻擊釋放時機，以及攻擊按鍵閒置的原因。",
 	},
+	-- ───────────────────── ❀ ─────────────────────
+	--  Notification lines
+	-- ───────────────────── ❀ ─────────────────────
 	notify_attacks_light = {
 		en = "Attacks: light",
 		["zh-cn"] = "攻击：轻",

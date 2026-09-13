@@ -3,8 +3,42 @@ local mod = get_mod("ZipIt2"); if not mod then return end
 
 local LobbyView = require("scripts/ui/views/lobby_view/lobby_view")
 local MissionIntroView = require("scripts/ui/views/mission_intro_view/mission_intro_view")
+local HostWaitForMissionBriefingDoneState = require(
+    "scripts/loading/host_states/host_wait_for_mission_briefing_done_state")
 local LocalWaitForMissionBriefingDoneState = require(
     "scripts/loading/local_states/local_wait_for_mission_briefing_done_state")
+
+local function _briefing_wait_update(func, self, dt)
+    local st = mod._zipit2_state
+    st.in_briefing_state = true
+
+    local mode = mod._zipit2_settings.briefing_mute_mode
+    local should_skip = false
+
+    if st.started_from_lobby then
+        should_skip = mode == "lobby_only" or mode == "both"
+    else
+        should_skip = mode == "rejoin_only" or mode == "both"
+    end
+
+    if should_skip or st.blocked_briefing_vo then
+        st.in_briefing_state = false
+        st.started_from_lobby = false
+        st.blocked_briefing_vo = false
+
+        return "mission_briefing_done"
+    end
+
+    local result = func(self, dt)
+
+    if result == "mission_briefing_done" then
+        st.in_briefing_state = false
+        st.started_from_lobby = false
+        st.blocked_briefing_vo = false
+    end
+
+    return result
+end
 
 mod.zipit2_register_briefing_hooks = mod.zipit2_register_briefing_hooks or function()
     if mod._zipit2_briefing_hooks_registered then
@@ -42,35 +76,6 @@ mod.zipit2_register_briefing_hooks = mod.zipit2_register_briefing_hooks or funct
         return func(self, ...)
     end)
 
-    mod:hook(LocalWaitForMissionBriefingDoneState, "update", function(func, self, dt)
-        local st = mod._zipit2_state
-        st.in_briefing_state = true
-
-        local mode = mod._zipit2_settings.briefing_mute_mode
-        local should_skip = false
-
-        if st.started_from_lobby then
-            should_skip = mode == "lobby_only" or mode == "both"
-        else
-            should_skip = mode == "rejoin_only" or mode == "both"
-        end
-
-        if should_skip or st.blocked_briefing_vo then
-            st.in_briefing_state = false
-            st.started_from_lobby = false
-            st.blocked_briefing_vo = false
-
-            return "mission_briefing_done"
-        end
-
-        local result = func(self, dt)
-
-        if result == "mission_briefing_done" then
-            st.in_briefing_state = false
-            st.started_from_lobby = false
-            st.blocked_briefing_vo = false
-        end
-
-        return result
-    end)
+    mod:hook(LocalWaitForMissionBriefingDoneState, "update", _briefing_wait_update)
+    mod:hook(HostWaitForMissionBriefingDoneState, "update", _briefing_wait_update)
 end

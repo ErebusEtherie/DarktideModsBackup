@@ -1,0 +1,50 @@
+# Realms Loadout
+
+在同一窗口中管理自定义配装、外观、锻造、天赋树及渣滓兴奋剂配方。适用于 SoloPlay 和 Realms；Realms 房间由房主统一制定并校验规则。
+
+## 使用方法
+
+聊天输入 /rl 打开统一窗口，再选择天赋标签。无需绑定按键，也可在本 mod 的 DMF 设置中绑定窗口快捷键，再在窗口内选择天赋。请先关闭原版装备界面。原版 I 键配装独立保存。
+
+本版本已经包含天赋点管理功能。使用前请关闭独立的 TalentPointManager，并只保留一份 realms_loadout。
+
+## 本地配装
+
+仅在该角色没有本地配装文件时复制官方配装。之后的新增、删除、排序与当前选择由本地窗口保存，装备与天赋成套切换，后续官方配装变更不会覆盖本地槽位。
+
+迁移已有本地装备和天赋点管理模组保存的天赋，不删除旧数据。客机天赋另行保存，房主限制不会抹掉原本完整的本地方案。
+
+## 天赋与渣滓兴奋剂
+
+- 普通天赋点可设置为 30–99，支持光环、基石多选；仍消耗点数并遵循前置，未经兼容处理的互斥技能保持互斥。
+- 保留已兼容的天赋修饰组合和可选的机器人天赋设置。
+- 直接通过 DMF 滑条设置渣滓兴奋剂点数（0–103，默认 30；全树点满需 103 点），用于本地／SoloPlay 和 Realms 初始规则。允许原版战斗、耐久、专注和敏捷配方分支多选，仍消耗原版点数并遵循前置。
+- Realms 房主可单独调整各玩家的天赋点、光环和基石。上述控件与部署状态安排在同一行；渣滓玩家在这一行额外显示兴奋剂点数，其他职业不显示该栏；客机服从房主限制，房主收紧规则后立即校验实际生效方案。
+- Realms 显示 realms_loadout 的部署状态和版本；处理掉线、重连及加载过程中的过期规则与请求。
+
+## 配装与界面
+
+保留装备、外观、锻造、本地武器和饰品目录，以及武器数值、祝福、专长和外观调整。使用原生风格导航与配装槽位，渣滓角色额外显示兴奋剂工坊标签。
+
+兼容 Mortis Buff Manager 的页面与 Realms 控件，也兼容 BetterLoadouts 和 LoadoutNames。死灵模组仍为独立选装；天赋 Debug 已关闭并隐藏。
+
+## 运行要求
+
+需要 Darktide Mod Loader、Darktide Mod Framework，以及用于自定义游玩的 SoloPlay 或 Realms。使用 Realms 时请安装其依赖，房主和客机使用同一统一版 realms_loadout。独立 TalentPointManager 由此版本替代。
+
+## Vortex 安装
+
+- 退出游戏，关闭独立 TalentPointManager 与旧 realms_loadout。
+- 使用 Install From File 导入本 ZIP，启用并部署。
+- 将 realms_loadout 放在 SoloPlay 或 Realms 之后加载。
+- 保留本地存档，以便迁移配装与天赋。
+
+## 手动安装
+
+- 退出游戏，用 ZIP 中的文件夹替换旧版本，最终路径为 mods/realms_loadout。
+- 在 mods/mod_load_order.txt 中仅添加一次 realms_loadout，放在 SoloPlay 或 Realms 之后；移除或关闭独立 TalentPointManager 条目。
+- 保留本地存档。使用 /rl 打开。
+
+## 致谢
+
+原 Realms Loadout 作者 Tokyovania；统一天赋与兴奋剂管理 IRONCROWY。Realms 作者 deluxghost；游戏原生素材归 Fatshark。

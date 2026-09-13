@@ -29,15 +29,34 @@ end
 
 local s_sub = string.sub
 local t_clear = table.clear
-local m_min, m_floor, m_ceil, m_max = math.min, math.floor, math.ceil, math.max
+local m_min, m_floor, m_ceil = math.min, math.floor, math.ceil
+
+local HORIZONTAL_ADD_SLOT_WIDTH = 48
+local PRESET_PIVOT_EXTRA_LIFT = 4
 
 -- Layout constants per mode
 local function _layout()
     return mod.BL.layout_for_limit(mod.preset_limit or 28)
 end
 
-local function _is_wide_layout(num_cols, num_rows)
-    return (num_cols or 0) > (num_rows or 0)
+local function _bar_alignment()
+    local alignment = mod.preset_alignment
+
+    if alignment == "left" or alignment == "center" then
+        return alignment
+    end
+
+    return "right"
+end
+
+local function _aligned_bar_x(base_x, alignment)
+    if alignment == "left" then
+        return math.abs(base_x or 0)
+    elseif alignment == "center" then
+        return 0
+    end
+
+    return base_x or 0
 end
 
 local function _cache_loadoutnames_base_positions(sgN)
@@ -52,16 +71,18 @@ local function _cache_loadoutnames_base_positions(sgN)
         mod._ln_base_x_tbox = mod._ln_base_x_tbox or tbox.position[1] or -75
         mod._ln_base_y_tbox = mod._ln_base_y_tbox or tbox.position[2] or -360
         mod._ln_base_z_tbox = mod._ln_base_z_tbox or tbox.position[3] or 0
+        mod._ln_base_valign_tbox = mod._ln_base_valign_tbox or tbox.vertical_alignment or "center"
     end
 
     if tip and tip.position then
         mod._ln_base_x_tip = mod._ln_base_x_tip or tip.position[1] or -75
         mod._ln_base_y_tip = mod._ln_base_y_tip or tip.position[2] or 50
         mod._ln_base_z_tip = mod._ln_base_z_tip or tip.position[3] or 50
+        mod._ln_base_valign_tip = mod._ln_base_valign_tip or tip.vertical_alignment or "top"
     end
 end
 
-local function _position_loadoutnames(self, panel_width, panel_height, bar_top_y, is_wide_layout)
+local function _position_loadoutnames(self, panel_width, panel_height, bar_top_x, bar_top_y, is_wide_layout, alignment)
     if not mod._has_loadoutnames then
         return
     end
@@ -75,52 +96,82 @@ local function _position_loadoutnames(self, panel_width, panel_height, bar_top_y
 
     local SAFE_GAP_X = 16
     local SAFE_GAP_Y = 16
-
-    local shift_x = m_floor((panel_width + SAFE_GAP_X) * 0.5)
-
     local tbox = sgN.loadout_name_tbox_area
     local tip = sgN.loadout_name_tooltip_area
 
     if is_wide_layout then
+        -- Horizontal bars put both LoadoutNames widgets below the bar and use
+        -- the same screen anchor as BetterLoadouts.  This makes live changes
+        -- between left/center/right alignment deterministic instead of keeping
+        -- LoadoutNames anchored to the screen-right edge.
         local tbox_height = (tbox and tbox.size and tbox.size[2]) or 40
         local below_y = bar_top_y + panel_height + SAFE_GAP_Y
         local tip_y = below_y + tbox_height + 8
 
         if tbox and tbox.position then
+            tbox.horizontal_alignment = alignment
+            tbox.vertical_alignment = "top"
             self:_set_scenegraph_position(
                 "loadout_name_tbox_area",
-                (mod._ln_base_x_tbox or -75) - shift_x,
-                m_max(mod._ln_base_y_tbox or below_y, below_y),
+                bar_top_x,
+                below_y,
                 mod._ln_base_z_tbox or 0
             )
         end
 
         if tip and tip.position then
+            tip.horizontal_alignment = alignment
+            tip.vertical_alignment = "top"
             self:_set_scenegraph_position(
                 "loadout_name_tooltip_area",
-                (mod._ln_base_x_tip or -75) - shift_x,
-                m_max(mod._ln_base_y_tip or tip_y, tip_y),
+                bar_top_x,
+                tip_y,
                 mod._ln_base_z_tip or 50
             )
         end
+
+        return
+    end
+
+    -- Vertical bars keep LoadoutNames' original vertical placement, but move
+    -- both widgets to the inward side of a left/right bar.  A centered bar
+    -- puts them immediately to its right.
+    local name_alignment
+    local name_x
+
+    if alignment == "right" then
+        name_alignment = "right"
+        name_x = bar_top_x - panel_width - SAFE_GAP_X
+    elseif alignment == "left" then
+        name_alignment = "left"
+        name_x = bar_top_x + panel_width + SAFE_GAP_X
     else
-        if tbox and tbox.position then
-            self:_set_scenegraph_position(
-                "loadout_name_tbox_area",
-                (mod._ln_base_x_tbox or -75) - shift_x,
-                mod._ln_base_y_tbox or -360,
-                mod._ln_base_z_tbox or 0
-            )
-        end
+        local screen_width = sgN.screen and sgN.screen.size and sgN.screen.size[1] or 1920
 
-        if tip and tip.position then
-            self:_set_scenegraph_position(
-                "loadout_name_tooltip_area",
-                (mod._ln_base_x_tip or -75) - shift_x,
-                mod._ln_base_y_tip or 50,
-                mod._ln_base_z_tip or 50
-            )
-        end
+        name_alignment = "left"
+        name_x = screen_width * 0.5 + panel_width * 0.5 + SAFE_GAP_X
+    end
+
+    if tbox and tbox.position then
+        tbox.horizontal_alignment = name_alignment
+        tbox.vertical_alignment = mod._ln_base_valign_tbox or "center"
+        self:_set_scenegraph_position(
+            "loadout_name_tbox_area",
+            name_x,
+            mod._ln_base_y_tbox or -360,
+            mod._ln_base_z_tbox or 0
+        )
+    end
+
+    if tip and tip.position then
+        tip.horizontal_alignment = name_alignment
+        tip.vertical_alignment = mod._ln_base_valign_tip or "top"
+        self:_set_scenegraph_position(
+            "loadout_name_tooltip_area",
+            name_x,
+            mod._ln_base_y_tip or 50,
+            mod._ln_base_z_tip or 50
+        )
     end
 end
 
@@ -138,7 +189,9 @@ local function utf8(decimal)
 
     local charbytes = {}
 
-    for bytes, vals in ipairs(bytemarkers) do
+    for bytes = 1, #bytemarkers do
+        local vals = bytemarkers[bytes]
+
         if decimal <= vals[1] then
             for b = bytes + 1, 2, -1 do
                 local rem = decimal % 64
@@ -191,7 +244,9 @@ _seed_private_from_vanilla_then_custom()
 mod:hook(CLASS.ViewElementProfilePresets, "_setup_preset_buttons", function(func, self)
     -- Enforce the current cap for this session
     _apply_limit_to_settings_local()
+    mod.reset_preset_drag_reorder(self)
 
+    local alignment = _bar_alignment()
     local existing = self._profile_buttons_widgets
     if existing then
         for i = 1, #existing do
@@ -206,7 +261,7 @@ mod:hook(CLASS.ViewElementProfilePresets, "_setup_preset_buttons", function(func
     end
 
     local L = _layout()
-    local BAR_TOP_X = L.BAR_TOP_X
+    local BAR_TOP_X = _aligned_bar_x(L.BAR_TOP_X, alignment)
     local BAR_TOP_Y = L.BAR_TOP_Y
     local BUTTON_WIDTH = L.BUTTON_WIDTH
     local BUTTON_HEIGHT = L.BUTTON_HEIGHT
@@ -236,7 +291,7 @@ mod:hook(CLASS.ViewElementProfilePresets, "_setup_preset_buttons", function(func
     end
 
     local max_rows = m_min(count, ROWS_PER_COL)
-    local is_wide_layout = _is_wide_layout(num_cols, max_rows)
+    local is_wide_layout = MAX_COLUMNS > ROWS_PER_COL
 
     for i = 1, count do
         local p = presets[i]
@@ -250,7 +305,8 @@ mod:hook(CLASS.ViewElementProfilePresets, "_setup_preset_buttons", function(func
         local row = ((i - 1) % ROWS_PER_COL) + 1
 
         local off = w.offset
-        off[1] = -(col - 1) * (BUTTON_WIDTH + COLUMN_GAP)
+        local column_offset = (col - 1) * (BUTTON_WIDTH + COLUMN_GAP)
+        off[1] = alignment == "left" and column_offset or -column_offset
         off[2] = (row - 1) * (BUTTON_HEIGHT + BUTTON_GAP)
 
         local content = w.content
@@ -302,6 +358,7 @@ mod:hook(CLASS.ViewElementProfilePresets, "_setup_preset_buttons", function(func
         end
 
         content.profile_preset_id = pid
+        mod.apply_preset_color(w, p)
     end
 
     self._profile_buttons_widgets = existing
@@ -315,7 +372,44 @@ mod:hook(CLASS.ViewElementProfilePresets, "_setup_preset_buttons", function(func
     end
 
     local panel_height = TOP_PAD + col_height(max_rows) + BOTTOM_PAD
-    local panel_width = BUTTON_WIDTH * num_cols + COLUMN_GAP * (num_cols - 1)
+    local preset_width = BUTTON_WIDTH * num_cols + COLUMN_GAP * (num_cols - 1)
+    local panel_width = preset_width + (is_wide_layout and HORIZONTAL_ADD_SLOT_WIDTH or 0)
+
+    local scenegraph = self._ui_scenegraph
+    if scenegraph then
+        if scenegraph.profile_preset_button_panel then
+            scenegraph.profile_preset_button_panel.horizontal_alignment = alignment
+        end
+
+        local child_alignment = alignment == "left" and "left" or "right"
+        local pivot_x = 0
+        local add_x = 0
+        local pivot_y = 48
+        local add_y = is_wide_layout and 48 or 0
+        local lift_top_aligned = is_wide_layout or alignment == "center"
+
+        if is_wide_layout then
+            pivot_x = alignment == "left" and HORIZONTAL_ADD_SLOT_WIDTH or -HORIZONTAL_ADD_SLOT_WIDTH
+        end
+
+        if lift_top_aligned then
+            local add_button_node = scenegraph.profile_preset_add_button
+            local add_button_height = add_button_node and add_button_node.size and add_button_node.size[2] or 44
+            local add_button_lift = add_button_height * 0.5
+
+            add_y = add_y - add_button_lift
+            pivot_y = pivot_y - add_button_lift - PRESET_PIVOT_EXTRA_LIFT
+        end
+
+        if scenegraph.profile_preset_add_button then
+            scenegraph.profile_preset_add_button.horizontal_alignment = child_alignment
+            self:_set_scenegraph_position("profile_preset_add_button", add_x, add_y, 1)
+        end
+        if scenegraph.profile_preset_button_pivot then
+            scenegraph.profile_preset_button_pivot.horizontal_alignment = child_alignment
+            self:_set_scenegraph_position("profile_preset_button_pivot", pivot_x, pivot_y, 1)
+        end
+    end
 
     self:_set_scenegraph_size("profile_preset_button_panel", panel_width, panel_height)
     self:_set_scenegraph_position("profile_preset_button_panel", BAR_TOP_X, BAR_TOP_Y, 100)
@@ -328,9 +422,12 @@ mod:hook(CLASS.ViewElementProfilePresets, "_setup_preset_buttons", function(func
     mod._bl_profile_preset_panel_bottom_y = BAR_TOP_Y + panel_height
     mod._bl_profile_preset_num_cols = num_cols
     mod._bl_profile_preset_num_rows = max_rows
+    mod._bl_profile_preset_alignment = alignment
 
-    _position_loadoutnames(self, panel_width, panel_height, BAR_TOP_Y, is_wide_layout)
+    _position_loadoutnames(self, panel_width, panel_height, BAR_TOP_X, BAR_TOP_Y, is_wide_layout, alignment)
 
     self:_force_update_scenegraph()
+    mod.refresh_preset_tooltip_layout(self, false)
     self:_sync_profile_buttons_items_status()
+    mod.attach_preset_drag_reorder(self)
 end)

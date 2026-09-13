@@ -164,6 +164,9 @@ local user_schema = {
 		heading("heading_missions"):as_row(),
 		{
 			checkbox("enable_mission_summary"):span(3),
+			checkbox("skip_mission_recap"):span(3):disabled(function()
+				return mod.dl.settings.enable_mission_summary ~= true
+			end),
 		},
 		heading("heading_danger_zone"):description():as_row(),
 		{

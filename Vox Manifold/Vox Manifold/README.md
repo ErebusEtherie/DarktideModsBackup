@@ -123,15 +123,30 @@ scoped to just that consumer's key: every registered consumer's key is rebuilt a
 of them go out together in one merged update. Returns `false` if the id is not
 registered, which surfaces a typo or a call made before `register`.
 
+Calling it more often than your state actually changes is cheap. The rebuild is rate
+limited alongside the write, so a consumer that marks dirty on every frame costs at most
+one rebuild per interval, not one per frame.
+
 ```lua
 Manifold.get(member, id) -> table | false | nil
 ```
 Read a member's payload for `id`. Returns the payload table, `false` if the member runs
 the mod but has no current payload, or `nil` if the member does not run the mod.
 
-`get` returns `nil` for the local player. A client cannot read back its own published
-key; the engine's own presence entry for the local player exposes no read accessor. Use
-`is_myself` to branch and supply the local player's row from the consumer's own state.
+`get` works for the local player as well as for peers, so a reader can loop over
+`members()` uniformly without special-casing itself.
+
+The local player's value is not read back off the wire. A client cannot read its own
+published key, because the engine's presence entry for the local player exposes no read
+accessor. It is decoded from the bytes the library last published instead, which is the
+same thing every peer sees. Two consequences follow. It lags local state by up to the
+publish interval of two seconds, so it is not a substitute for the consumer's own live
+state. And a payload that was shed for exceeding the byte limit reads back as `false`
+here exactly as it does for a peer, which makes an over-budget payload visible locally
+rather than only in the log.
+
+Between `register` and the first publish there is nothing published yet, so `get` returns
+`false` for the local player during that window.
 
 ```lua
 Manifold.has_mod(member, id) -> version_string | nil
@@ -141,6 +156,10 @@ the capability record, so it is available even when the member has no payload. T
 is `tostring(owner.version)` as the publisher set it; it is opaque. The library does not
 parse or compare it. A consumer that gates on version must define and compare its own
 format, and must not use a string comparison for numeric version ordering.
+
+Like `get`, this answers for the local player too, reporting the version of a consumer
+registered on this client. It answers from the local registry before the first publish,
+so it is truthful immediately after `register` rather than after a two-second delay.
 
 ```lua
 Manifold.members() -> array
@@ -154,11 +173,39 @@ Manifold.is_myself(member) -> boolean
 
 ```lua
 Manifold.on_update(callback) -> unsubscribe
+Manifold.on_update(id, callback) -> unsubscribe
 ```
 Register a callback invoked when any member's replicated state may have changed. The
 callback is not scoped to a single id; treat it as a signal to re-read the members of
 interest. Returns a function that removes the callback. Call it in `on_disabled` or
 `on_unload` to avoid a leaked closure across a hot reload.
+
+The `id` is optional and affects nothing but error reporting. It is not validated against
+the registry, does not scope which changes you are told about, and can be passed before
+`register`.
+
+Listeners run inside a `pcall`, so one consumer's broken callback cannot stop the others
+being notified. That means a callback that throws is skipped rather than propagated, and
+the library has to work out whose it was in order to say anything useful about it. Passing
+your registered id settles that outright.
+
+Without one, the library infers it: it records where the callback was defined and which
+file called `on_update`, then at error time looks for a registered consumer whose mod name
+matches that path. A match names that consumer exactly as an explicit id would, so an
+existing consumer that never passes an id is still reported correctly.
+
+The inference is deliberately conservative and never names a consumer it cannot match. A
+callback built by a shared helper in another mod's folder, or a path matching two
+registered consumers at once, both degrade to naming the file rather than blaming the
+wrong mod.
+
+It resolves at error time rather than at registration, because a listener can outlive its
+registration: a consumer that unregisters in `on_disabled` while keeping its callback is
+unattributable until it registers again.
+
+The case inference cannot reach at all is a **read-only consumer**. A mod that only reads
+other members and publishes nothing has no reason to call `register`, never enters the
+registry, and so can never be matched. Pass the id if you want to be named.
 
 ```lua
 Manifold.unregister(id) -> boolean
@@ -204,7 +251,7 @@ The table the consumer's builder currently returns, or `nil`. This runs the buil
 the builder must remain free of side effects.
 
 ```lua
-Manifold.usage() -> { count, bytes, largest, keys = { [id] = bytes }, limit }
+Manifold.usage() -> { count, bytes, largest, keys = { [id] = bytes }, limit, watches }
 ```
 `count` is the number of registered consumers. `bytes` is the sum of every published
 key's encoded length, informational only. `largest` is the size of the single largest
@@ -213,12 +260,115 @@ backend's cap is per value, not aggregate. `keys[id]` is the size a consumer's v
 would have been, so a shed consumer reports the size that got it shed and can exceed
 `limit`.
 
+`watches` is the watch budget, and covers both pools:
+
+```lua
+{ cap = 8,  per_consumer      = { [id] = n },
+  temp_cap = 24, temp_per_consumer = { [id] = n } }
+```
+
+A consumer that has never used a pool is absent from that pool's table rather than
+reported as zero. The two pools differ once a consumer has used one and let it go: a
+consumer that watched and then released everything with `unwatch` stays present at zero,
+while one that called `release_temp` becomes absent again.
+
+## Watching named accounts
+
+```lua
+Manifold.watch(id, ref)        -- true | nil, err
+Manifold.unwatch(id, ref)      -- boolean
+Manifold.watched(id)           -- array of member handles
+
+Manifold.watch_temp(id, ref)   -- true | nil, err
+Manifold.release_temp(id)      -- number released
+```
+
+`ref` identifies an account, not a party member: `{ id = "<account uuid>" }` or
+`{ platform = "steam", id = "<platform user id>" }`. `watch` resolves it to a presence
+entry and returns `true` on success, including a repeat call for a ref that consumer
+already watches. Otherwise it returns `nil, error_string`:
+
+| Error string | Cause and fix |
+| --- | --- |
+| `unknown consumer id` | `id` is not registered. A read-only consumer that wants to watch must still `register` |
+| `watch requires a table with an id` | `ref` was not a table, or carried no `id` field |
+| `watch limit reached` | This consumer already watches 8 accounts. Release one with `unwatch` first |
+| `temporary watch limit reached` | `watch_temp` only. This consumer already holds 24 temporary watches. Release them with `release_temp` first |
+| `Managers.presence is unavailable` | The presence manager does not exist. The game builds it during game-state init, and only when it is running against the live backend, so this is either a call made too early or a session with no backend. Not a permanent refusal; retry |
+| `no presence entry for <id>` | The ref was well formed but the backend holds no entry for that account. A mistyped, stale, or never-seen account id lands here |
+| `get_presence failed: <error>` | The engine call threw. Reported as `get_presence_by_platform` when the ref carried a `platform` |
+
+The first four are refusals: the call was wrong, and the same call will keep failing. The
+last three mean the account could not be resolved, which is a different thing and is worth
+surfacing to whoever supplied the id, since a retry may well succeed later.
+
+A returned handle from `watched` is a member handle in the same sense `members()`
+produces: pass it to `get`, `has_mod`, and `is_myself` exactly as you would a party
+member. `unwatch` also accepts a handle in place of the original `ref`, so a consumer that
+kept the handle has no reason to keep the ref as well.
+
+`members()` is unchanged by this feature and still returns party members only. Watched
+accounts are deliberately excluded from it, so an existing consumer that loops over
+`members()` sees no behaviour change from another consumer's watches.
+
+A presence entry the game is not itself using is reclaimed: the engine sweeps its presence
+cache every 30 seconds and destroys any entry nothing asked about in that window. Only
+party members and the social UI ask. So Vox Manifold holds each watched entry open for
+you, pinging it on a 10 second timer, and re-resolves any entry the engine reclaimed
+before the ping landed. Nothing is required of the consumer; a handle from `watched` stays
+the same table across a re-resolve and keeps reading current data.
+
+`unwatch` is therefore a real release, not a bookkeeping detail. Once the last consumer
+watching an account has called `unwatch` (or unregistered, or the mod unloaded), the
+pinging stops and the engine reclaims that subscription within about a minute.
+
+Each consumer may watch at most 8 accounts. The limit bounds how much concurrent
+subscription load a single consumer can put on the backend, not because the cost is
+permanent. Watch only accounts a user explicitly named (a squad-mate's id pasted in, for
+example); never a friends list or any bulk source. A consumer that reaches the limit is
+warned once and further watches are refused until it frees one with `unwatch`.
+
+When two consumers watch the same account, the underlying subscription is shared and is
+only released once every consumer that watched it has called `unwatch` (or unregistered).
+
+### Temporary watches
+
+`watch_temp` takes the same `ref` as `watch`, returns the same values, and every error in
+the table above applies to it, with `temporary watch limit reached` standing in for
+`watch limit reached`. What differs is how the watch ends.
+
+A temporary watch is never released individually. `unwatch` only touches the permanent
+pool, so calling it with a temp-watched ref returns `false` and changes nothing. The whole
+temporary set goes at once:
+
+```lua
+local n = Manifold.release_temp(ID)   -- releases every temporary watch, returns the count
+```
+
+Use it for a set whose lifetime is one activity, such as the accounts a search result or a
+lobby list puts on screen, released when the view closes. Use `watch` for an account the
+user named and expects to keep.
+
+The two pools are independent and additive. A consumer may hold 8 permanent watches and 24
+temporary ones at the same time, which is 32 distinct accounts when the sets do not
+overlap. Neither cap borrows from the other: a full temporary pool never refuses a `watch`.
+
+The same account may sit in both pools, and each pool holds its own claim on the underlying
+subscription, so neither release ends it alone. `unwatch` drops the permanent claim and the
+subscription stays alive on the temporary one; `release_temp` drops the temporary claim and
+it stays alive on the permanent one. It ends only once both are gone.
+
+`watched(id)` returns both pools in one array, deduplicated, and does not mark which pool a
+handle came from. Use `usage().watches` when you need them counted separately.
+
+Unregistering releases both pools, as does a mod unload.
+
 ## Example
 
 A complete minimal consumer. The mod shares each player's three curio resistances so the
 party can see coverage gaps. It demonstrates the four patterns that a consumer must get
-right: registration with a versioned payload, marking dirty on change, reading the party
-with the local player special-cased, and teardown.
+right: registration with a versioned payload, marking dirty on change, reading every
+member through one uniform loop, and teardown.
 
 Manifest, `Curio Coverage.mod`:
 
@@ -244,8 +394,8 @@ local mod = get_mod("Curio Coverage")
 local ID = "zoze.curios"
 local PAYLOAD_VERSION = 1
 
--- The consumer's own current state, recomputed locally. This is also what the local
--- player's own row is drawn from, because get() cannot read back the local player.
+-- The consumer's own current state, recomputed locally. This is what the builder
+-- publishes, and it is always fresher than what get() reports for the local player.
 local my_resists = { 0, 0, 0 }
 
 -- Decode a peer payload, tolerating older and newer payload versions.
@@ -274,7 +424,7 @@ mod.on_all_mods_loaded = function()
     end)
 
     -- Re-read and refresh the display whenever any member's state changes.
-    mod.manifold_unsub = Manifold.on_update(function()
+    mod.manifold_unsub = Manifold.on_update(ID, function()
         mod.refresh_display()
     end)
 end
@@ -299,11 +449,19 @@ function mod.build_rows()
     for i = 1, #members do
         local member = members[i]
 
-        if Manifold.is_myself(member) then
-            rows[#rows + 1] = { name = "You", resists = my_resists }
-        elseif Manifold.has_mod(member, ID) then
-            local resists = decode(Manifold.get(member, ID))
-            local name = member.name and member:name() or "?"
+        -- has_mod now answers for the local player too, so one branch covers everyone.
+        if Manifold.has_mod(member, ID) then
+            local name, resists
+
+            if Manifold.is_myself(member) then
+                -- Prefer live local state. get() would work here, but it lags by up
+                -- to the two-second publish interval.
+                name, resists = "You", my_resists
+            else
+                name = member.name and member:name() or "?"
+                resists = decode(Manifold.get(member, ID))
+            end
+
             rows[#rows + 1] = { name = name, resists = resists }
         end
     end
@@ -330,9 +488,12 @@ Points the example illustrates:
 
 - The payload carries its own `pv`, and `decode` reads defensively so a future `pv = 2`
   payload with extra fields still yields a row.
-- The local player is drawn from `my_resists`, not from `get`, because `get` returns
-  `nil` for the local player.
-- `has_mod` gates the read, so a member who does not run Curio Coverage produces no row.
+- `has_mod` gates the read for every member including the local player, so one branch
+  covers the whole party and a member who does not run Curio Coverage produces no row.
+- The local row is still drawn from `my_resists`. `get` would answer, but it reports the
+  last published value, which trails live state by up to the publish interval.
+- `on_update` is passed `ID`, so a fault in the callback is reported against Curio
+  Coverage by name instead of being silently skipped.
 - `on_disabled` and `on_unload` both unregister the consumer and drop the `on_update`
   callback, so a hot reload does not leak a registration or a closure.
 
@@ -369,7 +530,7 @@ older reader rather than failing.
 
 Vox Manifold 1.x published every consumer multiplexed into one shared key, `dtmods`,
 holding `{ "v": 1, "c": { "author.name": "version" }, "d": { "author.name": { } } }`.
-2.0.0 still reads that key, so a party member who has not updated stays visible, but it
+2.x still reads that key, so a party member who has not updated stays visible, but it
 never writes it: writing it would reinstate the per-value overflow that the key-per-
 consumer design exists to fix.
 
@@ -389,7 +550,7 @@ A warning fires at 200 bytes so you get notice before that happens.
 
 Your usable payload budget is `250 - 19 - #version` bytes: 250 minus 19 bytes of fixed
 envelope framing minus the length of your own version string, because the version rides
-on the wire inside every value. For a typical 5-character version like `2.0.0`, that
+on the wire inside every value. For a typical 5-character version like `2.1.0`, that
 works out to 226 bytes; a longer version string eats directly into your budget (a
 32-character version leaves only 199 bytes). Keep payloads small: publish a reference
 (an id or hash the reader resolves locally) rather than a large blob. The presence value
@@ -398,7 +559,7 @@ to that surface and to the backend's unknown limit on key count.
 
 There is no consumer-count limit, but each registered consumer takes its own key, and
 the backend's limit on the number of key-values a client can publish is unknown. A
-warning fires once past 8 registered consumers so this stays visible rather than
+warning fires once past 13 registered consumers so this stays visible rather than
 silent.
 
 A payload that cannot be encoded at all (a function, a cycle) is dropped and logged as
@@ -469,6 +630,21 @@ return { ratio = hits / shots }       -- nan when shots is 0
 local t = {}; t.self = t; return t    -- cycle
 ```
 
+**Warning: `<Mod> builder errored and its payload was dropped: <error>. The mod is still advertised, so peers see it registered with no data. This is a fault in that consumer, not in Vox Manifold. Further errors from this builder are suppressed until it succeeds again.`**
+
+Your builder threw. The library cannot publish what it could not build, so it falls back to
+the bare capability record: `has_mod` keeps reporting your version and `get` returns
+`false`, which is exactly what a healthy mod with nothing to say looks like. Without this
+line there is nothing to distinguish the two, and the symptom is data that never arrives
+with no error anywhere.
+
+Reported once per consumer per failure episode. The latch clears on the first successful
+build, so a builder that breaks, recovers, and breaks again warns twice rather than once.
+
+A builder that returns `nil`, or anything other than a table, is **not** an error and is
+never reported. That is the supported way to say "nothing to publish yet", and it produces
+the same bare record without the warning.
+
 **Warning: `<n> consumers now hold a presence key each, more than the 13 the game itself publishes. Nothing is known to be wrong: the backend's limit on key count is undocumented and untested past this point. Noted here so it is on record if presence misbehaves.`**
 
 Fires once, past 13 consumers. Nothing is broken and there is nothing to do.
@@ -492,6 +668,50 @@ A safety net that should be unreachable, since shedding already guarantees the b
 Reported once. If you ever see it, please open an issue: it means a value got past two
 independent size guards.
 
+### Consumer-callback diagnostics
+
+**Warning: `on_update listener from <who> errored and was skipped: <error>. This is a fault in that consumer, not in Vox Manifold. Further errors from this listener are suppressed until it succeeds again.`**
+
+Your `on_update` callback threw. Listeners run inside a `pcall` so that one broken
+consumer cannot stop the others being notified, which means the error would otherwise
+vanish with no trace: the symptom is a mod that quietly stops updating forever.
+
+Reported once per listener per failure episode, not once per event, because listeners
+fire on every party change. A listener that recovers and later fails again reports again.
+
+`<who>` is your mod name and id when you passed one to `on_update`, or when the library
+matched the callback's file to a registered consumer. When it could not match, it names
+the file and says so, rather than blaming a consumer it is not sure about.
+
+Note this is logged under Vox Manifold's prefix but is not a fault in the library. The
+error text carries the file and line inside your callback where the throw happened.
+
+### Watch diagnostics
+
+**Warning: `<id> reached the watch limit of 8 accounts. Additional watches are refused.`**
+
+Reported once per consumer. Further `watch` calls return `nil, "watch limit reached"` until
+the consumer releases one with `unwatch`. The cap is per consumer, so another mod's watches
+can never cause this.
+
+**Warning: `<id> reached the temporary watch limit of 24 accounts. Additional temporary watches are refused.`**
+
+The same, for the temporary pool, and `watch` is unaffected while it stands. This one can
+recur: `release_temp` re-arms the warning, so a consumer that fills and empties the pool
+across several activities is warned once per activity rather than once per session.
+
+**Info: `watched account <key> was reclaimed by the game and has been re-resolved`**
+
+Routine, and nothing to act on. The engine's 30-second presence sweep destroyed the entry
+between keep-alive pings, and the library rebuilt it. The handle you hold is the same table
+and reads current data again.
+
+**Info: `watched account <key> could not be re-resolved: <error>. Retrying every keep-alive tick until it comes back.`**
+
+The account has gone away, usually by going offline. Reported once per account per outage,
+then retried silently every 10 seconds, and it recovers on its own if the account returns.
+Reads through that handle are not dependable until it does.
+
 ### Engine-contract errors
 
 Reported **once per session** each. These mean a game patch moved something the library
@@ -504,6 +724,8 @@ depends on. They are not caused by your mod and you cannot fix them from a consu
 | `presence entry has no _key_value_string. The game has changed; no party member state can be read.` | Peers cannot be read |
 | `presence push failed: <error>` | One push threw |
 | `create_key_values failed upstream: <error>. Publishing mod keys only; engine presence fields are left as they are.` | Another mod's hook on the same engine function threw. Vox Manifold keeps working; the other mod is broken |
+| `Managers.presence.get_presence is missing. The game has changed; watched accounts cannot be read.` | No account can be watched and `watch` returns an error. Party reads are unaffected. Reported as `get_presence_by_platform` when the ref carried a `platform` |
+| `presence entry has no is_alive. The game has changed; watched accounts cannot be held open and will go stale.` | Watches still resolve, but the library can no longer tell when the engine has reclaimed one, so it stops re-resolving them and reads go stale without further warning |
 
 ### What silence means
 
@@ -524,6 +746,71 @@ end
 `keys` that exceeds `limit` is a consumer whose payload was shed.
 
 Enable the `vm_debug` setting for per-publish and per-peer-decode logging.
+
+## Changes in 2.3
+
+No consumer needs a code change. The additions are opt-in and inert until you call them,
+and the three fixes below only make existing behaviour correct or quieter.
+
+**Temporary watches.** `watch_temp` and `release_temp` add a second watch pool with its own
+cap of 24, for accounts whose lifetime is one activity rather than one session. See
+[Temporary watches](#temporary-watches). Existing `watch`, `unwatch` and `watched` calls
+are unchanged, and the permanent cap of 8 is untouched.
+
+**`usage().watches` gained `temp_cap` and `temp_per_consumer`.** `cap` and `per_consumer`
+keep their meaning and still count the permanent pool alone.
+
+**A builder that throws is now reported.** It previously produced a bare capability record
+silently, indistinguishable from a builder with nothing to publish. See
+[Publish-time diagnostics](#publish-time-diagnostics). Publishing behaviour is unchanged;
+only the reporting is new, and a builder that returns `nil` stays quiet as before.
+
+**The publish interval now throttles encoding, not just sending.** `mark_dirty` called more
+often than the payload actually changes previously re-ran every builder and re-encoded
+every payload on each call, discarding the result when it matched what was already
+published. It now costs at most one rebuild per two-second interval. No API change, and a
+consumer that marks dirty only on real changes sees no difference.
+
+**A re-resolved watch no longer serves a stale read.** When the engine reclaimed a watched
+account and the library re-resolved it, reads through that handle could still answer from
+the decode cached against the dead entry until some other event cleared it. The window was
+short and it corrected itself, but it existed. Watched handles were already documented as
+reading current data across a re-resolve; now they do.
+
+## Changes in 2.2
+
+No consumer needs a code change. The addition is opt-in and inert until you call it.
+
+**Watched named accounts.** `watch`, `unwatch` and `watched` let a consumer read an account
+that is not in the party, given its account id or its platform id. See
+[Watching named accounts](#watching-named-accounts) for the contract, the per-consumer cap
+of 8, and why the library holds each watched entry open for you. A consumer that never
+calls `watch` is untouched: `members()` still returns party members only, no keep-alive
+traffic is generated, and another consumer's watches are invisible to yours.
+
+**`usage()` gained a `watches` field.** Every existing field keeps its meaning, so code
+reading `count`, `bytes`, `largest`, `keys` or `limit` is unaffected.
+
+## Changes in 2.1
+
+No consumer needs a code change. Both changes are additive, and the second only makes an
+existing call report better.
+
+**`get` and `has_mod` now answer for the local player.** They previously returned `nil`
+for yourself, so a reader had to special-case `is_myself` before every read. They now
+report what you last published, decoded from the same bytes your peers receive, and
+`has_mod` falls back to the local registry before the first publish. A reader that already
+special-cases the local player keeps working unchanged, and is still the better choice
+when it needs live state rather than published state.
+
+**`on_update` takes an optional id**, used only to attribute an error in your callback.
+Existing one-argument calls are unaffected: the library matches the callback's file against
+registered consumers and usually names you correctly anyway. Pass the id if you are a
+read-only consumer, since one that never calls `register` cannot be matched.
+
+Errors thrown inside an `on_update` callback were previously discarded in silence. They are
+now logged once per failure, which may surface a pre-existing fault in a consumer that
+looked like it had simply stopped updating.
 
 ## Migrating from 1.x
 
@@ -551,8 +838,9 @@ out here rather than left for you to discover from a `register` that quietly ret
 
 Two other things changed, neither of which requires action:
 
-- `usage()` returns `{ count, bytes, largest, keys = { [id] = bytes }, limit }`. It
-  previously returned `{ count, bytes }` measuring one shared envelope. `largest` is the
+- `usage()` returns `{ count, bytes, largest, keys = { [id] = bytes }, limit, watches }`.
+  It previously returned `{ count, bytes }` measuring one shared envelope. (`watches`
+  arrived later, in 2.2.) `largest` is the
   number that matters: the backend's cap is per value, so `largest` against `limit` is
   your real headroom. `bytes` is the sum across all keys and is informational only.
   `keys[id]` is the size a consumer's value WOULD have been, so a shed consumer reports
@@ -568,9 +856,21 @@ release, two consumers under 1.x:
 | Plus Havoc Auspex's 137-byte payload | 226 |
 | Plus Overflow Meter's 59-byte payload | 311 |
 
-The backend rejected the third one and dropped the presence stream. Under 2.0.0 those
+The backend rejected the third one and dropped the presence stream. Under 2.x those
 same two consumers occupy 161 and 83 bytes in their own keys, each independently inside
 the limit, and neither can affect the other.
 
-Vox Manifold 2.0.0 reads 1.x peers, so a party member who has not updated stays
-visible. It never publishes the 1.x format, because that is what caused the overflow.
+Vox Manifold 2.x reads 1.x peers, so a party member who has not updated stays visible
+to you. It never publishes the 1.x format, because that is what caused the overflow.
+
+**That compatibility is one-way.** A member still on 1.x reads only the old shared key,
+which 2.x never writes, so you are invisible to them. In a mixed party the two readouts
+disagree: a 2.x member sees everyone, a 1.x member sees only other 1.x members.
+
+Nothing crashes and nothing is corrupted in either direction. A 1.x client reading a
+2.x member simply finds no value and concludes they do not run the consumer, which is
+the same path it takes for anyone who genuinely does not.
+
+The fix is for them to update, which they want regardless: 1.x drops their entire presence
+stream as soon as they run two consumers, and once that happens nobody can read them at
+all, on any version.

@@ -23,8 +23,8 @@ local localization = {
     -- mod_name
     mod_name = {
         en = "Auto Mark",
-        ["zh-cn"] = "自动标记",
-        ["zh-tw"] = "自動標記",
+        ["zh-cn"] = "智能标记",
+        ["zh-tw"] = "智慧標記",
     },
     mod_description = {
         en = "Enhance your marking experience",
@@ -92,28 +92,45 @@ local localization = {
         ["zh-cn"] = "当启用时，智能獒犬自动标记将不会标记未警觉的敌人。",
         ["zh-tw"] = "當啟用時，電子獒犬自動標記將不會標記未觸發警戒的敵人。",
     },
+    companion_mark_tagged_always_visible = {
+        en = "Hunt Them Down",
+        ["zh-cn"] = "追踪到底",
+        ["zh-tw"] = "追蹤到底",
+    },
+    companion_mark_tagged_always_visible_description = {
+        en = "When enabled, targets marked by any mark or chosen by Execution Order are always treated as visible by Cyber-Mastiff AUTO-MARK.",
+        ["zh-cn"] = "开启后，被任意标记或处决指令选中的目标，智能獒犬自动标记将始终视其为可见。",
+        ["zh-tw"] = "開啟後，被任意標記或處決指令選中的目標，智慧獒犬自動標記將始終視其為可見。",
+    },
+    threat_priority = {
+        en = "Threat Priority",
+        ["zh-cn"] = "威胁优先",
+        ["zh-tw"] = "威脅優先",
+    },
+    threat_priority_tooltip = {
+        en = "When enabled, Companion Auto-Mark prioritizes enemies targeting the player.",
+        ["zh-cn"] = "开启后，伙伴自动标记将优先标记以玩家为攻击目标的敌人。",
+        ["zh-tw"] = "開啟後，同伴自動標記將優先標記以玩家為攻擊目標的敵人。",
+    },
     execution_order_priority = {
         en = "Execution Order Priority",
         ["zh-cn"] = "遵从处决指令",
         ["zh-tw"] = "遵從處決指令",
     },
     execution_order_priority_description = {
-        en = "Arbites Cyber-Mastiff Auto-Mark prioritizes enemies chosen by Execution Order.\n\n" ..
-            "Switches target if your current marked target is not chosen by Execution Order, but your aimed target is.",
-        ["zh-cn"] = "遵从处决指令的选择，法务官智能獒犬自动标记将优先标记已被处决指令选中的敌人。\n\n" ..
-            "当已标记的敌人没有被处决指令选中，而正在瞄准的敌人被处决指令选中时，将切换至瞄准的目标。",
-        ["zh-tw"] = "遵從處決指令的選擇，法務官電子獒犬自動標記將優先標記已被處決指令選中的敵人。\n\n" ..
-            "當已標記的敵人沒有被處決指令選中，而正在瞄準的敵人被處決指令選中時，將切換至瞄準的目標。",
+        en = "Arbites Cyber-Mastiff Auto-Mark prioritizes enemies chosen by Execution Order.",
+        ["zh-cn"] = "遵从处决指令的选择，法务官智能獒犬自动标记将优先标记已被处决指令选中的敌人。",
+        ["zh-tw"] = "遵從處決指令的選擇，法務官電子獒犬自動標記將優先標記已被處決指令選中的敵人。",
     },
     execution_order_force_mark = {
-        en = "Force Mark",
-        ["zh-cn"] = "强制标记",
-        ["zh-tw"] = "強制標記",
+        en = "Execution Order Force Mark",
+        ["zh-cn"] = "处决指令强制标记",
+        ["zh-tw"] = "處決指令強制標記",
     },
     execution_order_force_mark_description = {
-        en = "Force Auto-Mark to mark targets chosen by Execution Order, regardless of whether the enemy type is ignored in priority settings.",
-        ["zh-cn"] = "强制自动标记系统标记处决指令选中的目标，无论该类敌人是否在优先级设置中被设为忽略。",
-        ["zh-tw"] = "強制自動標記系統標記處決指令選中的目標，無論該類敵人是否在優先度設定中被設為忽略。",
+        en = "When enabled, targets chosen by Execution Order can be auto marked by Cyber-Mastiff even if their enemy type is set to ignored in priority settings.",
+        ["zh-cn"] = "开启后，处决指令选中的目标，即便其敌人类型在优先级设置中被设为忽略，仍可被智能獒犬自动标记。",
+        ["zh-tw"] = "開啟後，處決指令選中的目標，即便其敵人類型在優先度設定中被設為忽略，仍可被電子獒犬自動標記。",
     },
     companion_range_limitation = {
         en = "Companion Range Limitation",
@@ -121,11 +138,11 @@ local localization = {
         ["zh-tw"] = "伙伴範圍限制",
     },
     companion_range_limitation_tooltip = {
-        en = "Restrict the maximum distance between your " .. highlight("companion") .. " and a target that can be marked by the Auto-Mark.\n\n" ..
+        en = "Restrict the maximum distance between your " .. highlight("companion") .. " and a target that can be marked by the Companion Auto-Mark.\n\n" ..
             "Set to " .. highlight("0") .. " to disable.",
-        ["zh-cn"] = "限制自动标记系统可标记的目标与你的" .. highlight("伙伴") .. "之间的最大距离。\n\n" ..
+        ["zh-cn"] = "限制伙伴自动标记系统可标记的目标与你的" .. highlight("伙伴") .. "之间的最大距离。\n\n" ..
             "设置为" .. highlight("0") .. "以禁用。",
-        ["zh-tw"] = "限制自動標記系統可標記的目標與你的" .. highlight("同伴") .. "之間的最大距離。\n\n" ..
+        ["zh-tw"] = "限制同伴自動標記系統可標記的目標與你的" .. highlight("同伴") .. "之間的最大距離。\n\n" ..
             "設為" .. highlight("0") .. "可停用",
     },
     companion_cancel_mark = {
@@ -264,17 +281,17 @@ local localization = {
             "設為" .. highlight("0") .. "可停用。\n" ..
             "不影響" .. highlight("手動") .. "標記。",
     },
-    companion_mark_max_distance_breed = {
+    companion_mark_max_distance = {
         en = "Player Max Distance",
         ["zh-cn"] = "玩家最大距离",
         ["zh-tw"] = "玩家最大距離",
     },
-    companion_mark_max_distance_breed_description = {
-        en = "Restrict the maximum distance between " .. highlight("player") .. " and a target that can be marked by the Auto-Mark.\n\n" ..
+    companion_mark_max_distance_tooltip = {
+        en = "Restrict the maximum distance between " .. highlight("player") .. " and a target that can be marked by the Companion Auto-Mark.\n\n" ..
             "Set to " .. highlight("0") .. " to disable.",
-        ["zh-cn"] = "限制自动标记系统可标记的目标与" .. highlight("玩家") .. "之间的最大距离。\n\n" ..
+        ["zh-cn"] = "限制伙伴自动标记系统可标记的目标与" .. highlight("玩家") .. "之间的最大距离。\n\n" ..
             "设置为" .. highlight("0") .. "以禁用。",
-        ["zh-tw"] = "限制自動標記系統可標記的目標與" .. highlight("玩家") .. "之間的最大距離。\n\n" ..
+        ["zh-tw"] = "限制同伴自動標記系統可標記的目標與" .. highlight("玩家") .. "之間的最大距離。\n\n" ..
             "設為" .. highlight("0") .. "可停用",
     },
     -- cryptic settings
@@ -515,15 +532,25 @@ local localization = {
         ["zh-cn"] = "开启/关闭所选标记类型的自动标记功能。",
         ["zh-tw"] = "啟用或停用所選標記類型的自動標記功能。",
     },
+    interval = {
+        en = "Interval",
+        ["zh-cn"] = "间隔时间",
+        ["zh-tw"] = "間隔時間",
+    },
+    interval_description = {
+        en = "Minimum interval after a mark expires before Auto-Mark marks the next target.\n\nUnit: seconds.",
+        ["zh-cn"] = "设置标记消失后，执行下一次标记的最短时间间隔。\n\n单位：秒。",
+        ["zh-tw"] = "設定標記消失後，執行下一次標記的最短時間間隔。\n\n單位：秒。",
+    },
     cooldown = {
-        en = "Cooldown Time",
+        en = "Cooldown",
         ["zh-cn"] = "冷却时间",
         ["zh-tw"] = "冷卻時間",
     },
     cooldown_description = {
-        en = "Unit: Seconds",
-        ["zh-cn"] = "单位：秒",
-        ["zh-tw"] = "單位：秒",
+        en = "Cooldown after a mark is applied before Auto-Mark marks the next target.\n\nUnit: seconds.",
+        ["zh-cn"] = "设置标记生成后，自动标记下一个目标前的冷却时间。\n\n单位：秒。",
+        ["zh-tw"] = "設定標記生成後，自動標記下一個目標前的冷卻時間。\n\n單位：秒。",
     },
     reset_cooldown = {
         en = "Reset Cooldown",
@@ -788,9 +815,9 @@ local localization = {
         ["zh-tw"] = "標記黏滯",
     },
     sticky_targeting_tooltip = {
-        en = "Enable for the selected enemy type. If a marked enemy has Mark Stickiness enabled, auto-mark will pause target switching caused by priority switch or execution order priority.",
-        ["zh-cn"] = "为所选敌人类型启用标记粘滞。如果被标记的敌人开启了标记粘滞功能，自动标记会暂停因优先级切换、遵从处决指令等导致的切换目标行为。",
-        ["zh-tw"] = "為所選敵人類型啟用標記黏滯。如果被標記的敵人開啟了標記黏滯功能，自動標記會暫停因優先順序切換、遵從處決指令等導致的切換目標行為。",
+        en = "Enable for the selected enemy type. If a marked enemy has Mark Stickiness enabled, AUTO-MARK will pause target switching caused by priority switch.",
+        ["zh-cn"] = "为所选敌人类型启用标记粘滞。如果被标记的敌人开启了标记粘滞功能，自动标记会暂停因优先级切换导致的切换目标行为。",
+        ["zh-tw"] = "為所選敵人類型啟用標記黏滯。如果被標記的敵人開啟了標記黏滯功能，自動標記會暫停因優先順序切換導致的切換目標行為。",
     },
     servo_skull_cancel_mark = {
         en = "Auto Cancel Servo-Skull Mark",
@@ -808,28 +835,52 @@ local localization = {
             "設為" .. highlight("0") .. "可停用。\n" ..
             "不影響" .. highlight("手動") .. "標記。",
     },
+    meter = {
+        en = "m",
+        ["zh-cn"] = "米",
+        ["zh-tw"] = "公尺",
+    },
+    percent = {
+        en = "%%",
+    },
+    degree = {
+        en = "°",
+    },
+    stack = {
+        en = "stack",
+        ["zh-cn"] = "层",
+        ["zh-tw"] = "层",
+    },
+    second = {
+        en = "s",
+        ["zh-cn"] = "秒",
+        ["zh-tw"] = "秒",
+    },
+    hold_to_reset = {
+        en = "to Reset",
+        ["zh-cn"] = "重置",
+        ["zh-tw"] = "重設",
+    },
 }
 
 local function is_localization_valid(text)
-    if string.find(text, "unlocalized") then
-        return false
-    end
-    return true
+    return not string.find(text, "unlocalized")
 end
 
 local function add_breed_localization(breed_name, breed_data, is_passive)
-    local text = Localize(
-        breed_data.is_boss
-        and type(breed_data.boss_display_name) == "string"
-        and breed_data.boss_display_name
-        or breed_data.display_name
-    )
+    local text = Localize(breed_data.is_boss and type(breed_data.boss_display_name) == "string" and breed_data.boss_display_name or breed_data.display_name)
     if is_localization_valid(text) then
         if is_passive then
             localization[breed_name .. "_passive"] = {
                 en = text .. " (Dormant)",
                 ["zh-cn"] = text .. "（休眠）",
                 ["zh-tw"] = text .. "（休眠）",
+            }
+        elseif breed_name == "chaos_mutator_ritualist" then
+            localization[breed_name] = {
+                en = "Hexbound " .. text,
+                ["zh-cn"] = "咒缚" .. text,
+                ["zh-tw"] = "魔縛" .. text,
             }
         elseif breed_name ~= "chaos_mutator_daemonhost" and string.find(breed_name, "mutator") then
             localization[breed_name] = {
@@ -846,7 +897,7 @@ local function add_breed_localization(breed_name, breed_data, is_passive)
 end
 
 for breed_name, breed_data in pairs(Breeds) do
-    if Breed.is_minion(breed_data) and breed_data.smart_tag_target_type == "breed" then
+    if Breed.is_minion(breed_data) and breed_data.unit_template_name == "minion" and breed_data.smart_tag_target_type == "breed" and breed_data.faction_name ~= "imperium" then
         add_breed_localization(breed_name, breed_data)
         if breed_data.tags.witch then
             add_breed_localization(breed_name, breed_data, true)

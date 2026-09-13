@@ -3,7 +3,8 @@ mod:io_dofile("vfx_swapper/scripts/mods/vfx_swapper/additionalvfx")
 mod:io_dofile("vfx_swapper/scripts/mods/vfx_swapper/toxicgas")
 mod:io_dofile("vfx_swapper/scripts/mods/vfx_swapper/vfx_limiter")
 mod:io_dofile("vfx_swapper/scripts/mods/vfx_swapper/havoc")
-
+mod:io_dofile("vfx_swapper/scripts/mods/vfx_swapper/flamer")
+mod:io_dofile("vfx_swapper/scripts/mods/vfx_swapper/smoke_fog_swap")
 local DEBUG_LOGGING = false
 local LiquidAreaTemplates = require("scripts/settings/liquid_area/liquid_area_templates")
 
@@ -18,13 +19,23 @@ local expedition_package_path = "packages/game_mode/expedition"
 local force_staff_package = "content/fx/units/weapons/decal_force_staff_explosion_marker"
 local staff_scaling_effect_name = "content/fx/particles/weapons/force_staff/force_staff_explosion_indicator"
 local staff_scale_variable_name = "radius"
-local zealot_flamer_package = "content/fx/particles/weapons/rifles/player_flamer/flamer_code_control_burst"
-
+local smoke_package = "content/levels/ui/character_create_cryptic/character_create_cryptic"
+local zealot_flamer_package = {
+    [1]="content/fx/particles/weapons/rifles/player_flamer/flamer_code_control_burst",
+    [2]="content/fx/particles/weapons/rifles/player_flamer/flamer_code_control_3p",
+    [3]="content/fx/particles/weapons/rifles/player_flamer/flamer_code_control",
+    [4]="content/fx/particles/weapons/rifles/zealot_flamer/zealot_flamer_impact_delay"
+    }
+local psyker_staff_package = {
+    [1]="content/fx/particles/weapons/flame_staff/psyker_flame_staff_code_control",
+    [2]="content/fx/particles/weapons/flame_staff/psyker_flame_staff_code_control_3p",
+    [3]="content/fx/particles/weapons/flame_staff/psyker_flame_staff_impact_delay"
+    }
 mod._expedition_package_loaded = false
 mod._force_staff_package_loaded = false
 mod._zealot_flamer_package_loaded = false
-
--- Persistent tables for decal tracking
+mod._psyker_staff_package_loaded = false
+mod._smoke_package_loaded = false 
 mod._decals = mod:persistent_table("vfx_swapper_decals")
 
 local CIRCLE_TEMPLATES = {
@@ -52,7 +63,6 @@ local _replace_rotten_armor = nil
 local _replace_havoc_enemy_corruption_liquid = nil
 local _replace_broker_tox_grenade = nil
 local _replace_fire_barrel_vfx = nil
-local _replace_purgator_vfx = nil
 
 local function refresh_replace_vfx()
     _replace_gas_vfx = mod:get("replace_gas_vfx")
@@ -64,7 +74,6 @@ local function refresh_replace_vfx()
     _replace_havoc_enemy_corruption_liquid = mod:get("replace_havoc_enemy_corruption_liquid")
     _replace_broker_tox_grenade = mod:get("replace_broker_tox_grenade")
     _replace_fire_barrel_vfx = mod:get("replace_fire_barrel_vfx")
-    _replace_purgator_vfx = mod:get("purgator_vfx")
 end
 
 refresh_replace_vfx()
@@ -117,11 +126,11 @@ end
 local function create_decal(unit, world, radius, template_name)
     if not is_circle_enabled(template_name) then return nil end
     
-    if not Managers.package:has_loaded(package_path) then
-        Managers.package:load(package_path, "vfx_swapper", function()
-        end)
-        return nil
-    end
+    -- if not Managers.package:has_loaded(package_path) then
+    --     Managers.package:load(package_path, "vfx_swapper", function()
+    --     end)
+    --     return nil
+    -- end
     
     -- Check if decal already exists
     if mod._decals[unit] then return mod._decals[unit] end
@@ -199,7 +208,6 @@ local function create_decal(unit, world, radius, template_name)
     return mod._decals[unit]
 end
 
--- Apply cached color to all decal units (called on creation and setting change)
 local function apply_decal_color(decal)
     if not decal then return end
     local colour = Quaternion.identity()
@@ -213,12 +221,9 @@ local function apply_decal_color(decal)
     end
 end
 
--- Update decal scale and color (called when radius changes)
 local function update_decal(decal, radius, template_name)
     if not decal then return end
     apply_decal_color(decal)
-    
-    -- Handle multiple concentric circles for circle-only
     local units = decal.units or {decal.unit}
     local num_circles = #units
     
@@ -245,18 +250,15 @@ end
 local function destroy_decal(unit)
     local decal = mod._decals[unit]
     if decal then
-        -- Destroy the charge progress overlay (tracked separately)
         if decal.charge_unit and Unit.is_valid(decal.charge_unit) then
             World.destroy_unit(Unit.world(decal.charge_unit), decal.charge_unit)
         end
-        -- Destroy force staff overlay (tracked separately)
         if decal.staff_decal and Unit.is_valid(decal.staff_decal) then
             World.destroy_unit(Unit.world(decal.staff_decal), decal.staff_decal)
         end
         if decal.staff_particle_id and decal.decal_world then
             World.destroy_particles(decal.decal_world, decal.staff_particle_id)
         end
-        -- Destroy outer circle + concentric circles
         local units = decal.units or {decal.unit}
         for _, decal_unit in ipairs(units) do
             if decal_unit and Unit.is_valid(decal_unit) then
@@ -272,7 +274,6 @@ local function destroy_all_decals()
         if Unit.is_valid(unit) then
             destroy_decal(unit)
         else
-            -- Clear stale reference from persistent table
             mod._decals[unit] = nil
         end
     end
@@ -303,7 +304,6 @@ end)
 -- VFX Swap Hooks
 -- ============================================================================
 
--- VFX swap logic 
 local function apply_vfx_swap(self)
     if self._area_template_name == "rotten_armor" then
         if _replace_rotten_armor == "CIRCLE_ONLY" then
@@ -320,7 +320,11 @@ local function apply_vfx_swap(self)
 		    self._vfx_name_filled = _replace_fire_grenade
         end
 	elseif self._area_template_name == "renegade_grenadier_fire_grenade" then
-		self._vfx_name_filled = _replace_renegade_grenade_vfx
+        if _replace_renegade_grenade_vfx == "CIRCLE_ONLY" then
+            self._vfx_name_filled = nil
+        else
+		    self._vfx_name_filled = _replace_renegade_grenade_vfx
+        end
 	elseif self._area_template_name == "renegade_flamer_liquid_paint" then
 		self._vfx_name_filled = _replace_renegade_flamer_vfx
 	elseif self._area_template_name == "cultist_flamer_liquid_paint" then
@@ -338,7 +342,11 @@ local function apply_vfx_swap(self)
 			self._vfx_name_filled = _replace_broker_tox_grenade
 		end
     elseif self._area_template_name == "prop_fire" then
-		self._vfx_name_filled = _replace_fire_barrel_vfx
+        if _replace_fire_barrel_vfx == "CIRCLE_ONLY" then
+			self._vfx_name_filled = nil
+		else
+			self._vfx_name_filled = _replace_fire_barrel_vfx
+        end
 	end
 
 end
@@ -389,7 +397,7 @@ end)
 -- Circle Indicator Hooks
 -- ============================================================================
  
--- Create decal (server-side)
+-- server
 mod:hook_safe("LiquidAreaExtension", "_calculate_broadphase_size", function(self)
     local template_name = self._template_name or self._area_template_name
     if CIRCLE_TEMPLATES[template_name] then
@@ -400,7 +408,7 @@ mod:hook_safe("LiquidAreaExtension", "_calculate_broadphase_size", function(self
     end
 end)
 
--- Create decal (client-side)
+-- client
 mod:hook_safe("HuskLiquidAreaExtension", "_calculate_liquid_size", function(self)
     local template_name = self._template_name or self._area_template_name
     if CIRCLE_TEMPLATES[template_name] then
@@ -464,53 +472,7 @@ mod:hook("HuskLiquidAreaExtension", "update", function(func, self, unit, dt, t)
 end)
 
 -- ============================================================================
--- Purgator VFX (ServoSkull)
--- ============================================================================
-
-local CompanionServoSkullFlamerSettings = require("scripts/settings/companion/companion_servo_skull_flamer_settings")
-local skull_vfx = CompanionServoSkullFlamerSettings.vfx
-local servo_skull_effect = require("scripts/settings/fx/effect_templates/companion_servo_skull_flamer")
-local orig_skull_update = servo_skull_effect.update
-
-servo_skull_effect.update = function(template_data, template_context, dt, t)
-    local current_particle = skull_vfx.flamer_particle
-
-    if template_data._last_particle and template_data._last_particle ~= current_particle then
-        if template_data.stream_effect_id then
-            World.stop_spawning_particles(template_context.world, template_data.stream_effect_id)
-            template_data.stream_effect_id = nil
-        end
-        template_data._burst_create_time = nil
-    end
-    template_data._last_particle = current_particle
-
-    if current_particle == "content/fx/particles/weapons/rifles/player_flamer/flamer_code_control_burst" then
-        if not template_data._burst_create_time then
-            template_data._burst_create_time = t
-        end
-        local elapsed = t - template_data._burst_create_time
-        if elapsed > 2 and template_data.stream_effect_id then
-            World.stop_spawning_particles(template_context.world, template_data.stream_effect_id)
-            template_data.stream_effect_id = nil
-            template_data._burst_create_time = t
-        end
-    end
-
-    return orig_skull_update(template_data, template_context, dt, t)
-end
-
-local function update_purgator_vfx()
-	if _replace_purgator_vfx == true then
-		CompanionServoSkullFlamerSettings.vfx.flamer_particle = "content/fx/particles/weapons/rifles/player_flamer/flamer_code_control_burst"
-	else
-		CompanionServoSkullFlamerSettings.vfx.flamer_particle = "content/fx/particles/abilities/cryptic/companion_servo_skull_flamer_code_control"
-	end
-end
-
-update_purgator_vfx()
-
--- ============================================================================
--- Mod Lifecycle Hooks
+-- Lifecycle
 -- ============================================================================
 
 mod.on_all_mods_loaded = function()
@@ -519,6 +481,16 @@ mod.on_all_mods_loaded = function()
         mod:echo("WARNING: vfx_limiter no longer compatible with VFX Swapper and limiter options are now a part of VFX Swapper. Please disable vfx_limiter")
     end
     mod.havoc_enemy_vfx()
+    if not Managers.package:has_loaded(package_path) then
+        Managers.package:load(package_path, "vfx_swapper")
+    end
+    if not Managers.package:has_loaded(smoke_package) then
+        Managers.package:load(smoke_package, "vfx_swapper_smoke", function()
+            mod._smoke_package_loaded = true
+        end)
+    else
+        mod._smoke_package_loaded = true
+    end    
     if not Managers.package:has_loaded(expedition_package_path) then
         Managers.package:load(expedition_package_path, "vfx_swapper_expedition", function()
             mod._expedition_package_loaded = true
@@ -533,14 +505,24 @@ mod.on_all_mods_loaded = function()
     else
         mod._force_staff_package_loaded = true
     end
-    if not Managers.package:has_loaded(zealot_flamer_package) then
-        Managers.package:load(zealot_flamer_package, "vfx_swapper_zealot_flamer", function()
+    for i = 1, #zealot_flamer_package do
+        if not Managers.package:has_loaded(zealot_flamer_package[i]) then
+            Managers.package:load(zealot_flamer_package[i], "vfx_swapper_zealot_flamer_" .. i, function()
+                mod._zealot_flamer_package_loaded = true
+            end)
+        else
             mod._zealot_flamer_package_loaded = true
-        end)
-    else
-        mod._zealot_flamer_package_loaded = true
+        end
     end
-    -- mod:echo("expedition package loaded: " .. tostring(mod._expedition_package_loaded))  
+    for i = 1, #psyker_staff_package do
+        if not Managers.package:has_loaded(psyker_staff_package[i]) then
+            Managers.package:load(psyker_staff_package[i], "vfx_swapper_psyker_staff_" .. i, function()
+                mod._psyker_staff_package_loaded = true
+            end)
+        else
+            mod._psyker_staff_package_loaded = true
+        end
+    end
     mod._refresh_vfx_limiter_cache()
     mod._refresh_additionalvfx_cache()
     refresh_replace_vfx()
@@ -558,7 +540,6 @@ mod.on_disabled = function()
 end
 
 mod.on_setting_changed = function(setting_id)
-    -- Refresh cached colors on existing decals when color settings change
     for unit, decal in pairs(mod._decals) do
         if Unit.is_valid(unit) then
             local circle_type = CIRCLE_TEMPLATES[decal.template_name]
@@ -572,18 +553,22 @@ mod.on_setting_changed = function(setting_id)
             end
         end
     end
-    -- Refresh caches in sub-modules
     mod._refresh_vfx_limiter_cache()
     mod._refresh_additionalvfx_cache()
     refresh_replace_vfx()
     mod._refresh_toxicgas_cache()
     mod.havoc_enemy_vfx()
-    update_purgator_vfx()
+    mod.refresh_flamer_vfx()
+    mod.update_purgator_vfx()
+    -- mod.swap_inferno_vfx()
+    -- mod.swap_flamer_vfx()
+    mod.refresh_smoke_fog_vfx()
 end
 
 mod:hook_safe("UIManager", "cb_on_game_state_change", function()
     destroy_all_decals()
 end)
+
 -- save scroll position
 -- Author: Alfthebigheaded
 local last_scroll_amount = 0

@@ -3,7 +3,7 @@ local mod = get_mod("SMOG")
 local function colour_text(text,colour)
 return "{#color(" .. colour .. ")}" .. text .. "{#reset()}"
 end
-local function heap_size_mb()
+local function detect_heap_size_mb()
 local size = 1024
 if Application and Application.argv then
 local ok,args = pcall(function()
@@ -12,18 +12,20 @@ end)
 if ok and args then
 for i = 1,#args do
 local arg = tostring(args[i])
-local inline_size = arg:match("^%-%-lua%-heap%-mb%-size=(%d+)$")
-if inline_size then
-size = tonumber(inline_size) or size
-elseif arg == "--lua-heap-mb-size" and tonumber(args[i + 1]) then
-size = tonumber(args[i + 1])
+local value = tonumber(arg:match("^%-%-lua%-heap%-mb%-size=(%d+)$"))
+if not value and arg == "--lua-heap-mb-size" then
+value = tonumber(args[i + 1])
+end
+if value and value > 0 then
+size = value
 end
 end
 end
 end
 return math.floor(size + 0.5)
 end
-local heap_size_text = colour_text(tostring(heap_size_mb()) .. " MB","255,191,0")
+mod._smog_heap_size_mb = detect_heap_size_mb()
+local heap_size_text = colour_text(tostring(mod._smog_heap_size_mb) .. " MB","255,191,0")
 return {
 name = mod:localize("mod_name"),
 description = mod:localize("mod_description_heap",heap_size_text) .. "\n" .. mod:localize("mod_description_manual"),
@@ -89,22 +91,12 @@ sub_widgets = {
 setting_id = "show_hud_key",
 type = "keybind",
 title = "show_hud_key",
+tooltip = "show_hud_key_desc",
 default_value = {"f8"},
 keybind_global = true,
 keybind_trigger = "pressed",
 keybind_type = "function_call",
 function_name = "toggle_hud",
-},
-{
-setting_id = "hud_format",
-type = "dropdown",
-title = "hud_format",
-default_value = "analogue",
-options = {
-{text = "hud_format_analogue",value = "analogue"},
-{text = "hud_format_digital",value = "digital"},
-{text = "hud_format_advanced_digital",value = "advanced_digital"},
-},
 },
 {
 setting_id = "hud_x_axis",

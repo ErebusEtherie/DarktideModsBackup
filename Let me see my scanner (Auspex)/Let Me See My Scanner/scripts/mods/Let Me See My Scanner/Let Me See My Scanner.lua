@@ -54,16 +54,26 @@ local function is_ability_icon(class_name)
     )
 end
 
+local function is_flux_hud(class_name)
+    return type(class_name) == "string" and class_name == "HudElementFlux"
+end
+
+local function is_ringhud(class_name)
+    return type(class_name) == "string" and string.find(class_name, "^HudElementRingHud") ~= nil
+end
+
+local function is_ability_timer(class_name)
+    return type(class_name) == "string" and string.find(class_name, "^HudElementAbilityTimer") ~= nil
+end
+
 local function should_hide_element(class_name)
     if _EXCLUDED_ELEMENTS[class_name] then
         return false
     end
 
-    -- Check individual element toggles
     if _ALWAYS_HIDE_ELEMENTS[class_name] then
         local setting_id = "hide_" .. string.lower(class_name)
         local should = mod:get(setting_id)
-        -- If setting exists, use it; otherwise default to true (backwards compatibility)
         if should == nil then
             return true
         end
@@ -86,7 +96,30 @@ local function should_hide_element(class_name)
         return should == true
     end
 
-    -- Element not in any category, don't hide it
+    if is_flux_hud(class_name) then
+        local should = mod:get("hide_flux")
+        if should == nil then
+            return true
+        end
+        return should == true
+    end
+
+    if is_ringhud(class_name) then
+        local should = mod:get("hide_ringhud")
+        if should == nil then
+            return true
+        end
+        return should == true
+    end
+
+    if is_ability_timer(class_name) then
+        local should = mod:get("hide_ability_timer")
+        if should == nil then
+            return true
+        end
+        return should == true
+    end
+
     return false
 end
 
@@ -104,23 +137,18 @@ end
 
 local function _apply_alpha_to_widget(widget, alpha)
     if not widget then return end
-    
-    -- Get the faded alpha threshold
+
     local faded_alpha = math.clamp(mod:get("transparency_amount") or 0, 0, 1)
-    -- Only completely hide if transparency_amount is 0 (or very close to 0)
-    -- If transparency_amount > 0, keep text visible but faded
     local should_hide_completely = faded_alpha <= 0.001 and alpha <= 0.001
-    
-    -- Completely hide widget only if transparency is set to 0
+
     if widget.content then
         if should_hide_completely then
             widget.content.visible = false
         else
-            -- Restore visibility when alpha goes back up or if transparency > 0
             widget.content.visible = true
         end
     end
-    
+
     widget.alpha_multiplier = alpha
     if widget.style then
         for _, style in pairs(widget.style) do
@@ -128,7 +156,6 @@ local function _apply_alpha_to_widget(widget, alpha)
                 if not style.__orig_a then
                     style.__orig_a = style.color[1]
                 end
-                -- Set alpha to 0 only if completely hiding, otherwise use the calculated alpha
                 style.color[1] = should_hide_completely and 0 or math.floor(style.__orig_a * alpha)
             end
         end
@@ -230,15 +257,13 @@ local function _set_crosshair_visible(show)
         if processed[class_name] then return end
         processed[class_name] = true
 
-        -- Check if this specific element should be hidden
         local should = should_hide_element(class_name)
-        if not should then 
-            -- If we shouldn't hide it, make sure it's fully visible
+        if not should then
             local element = hud:element(class_name)
             if element then
                 _apply_alpha_to_element(element, 1)
             end
-            return 
+            return
         end
 
         local element = hud:element(class_name)
@@ -264,7 +289,7 @@ local function _set_crosshair_visible(show)
     end
 
     for class_name, _ in pairs(hud._elements or {}) do
-        if is_buff_bar(class_name) or is_ability_icon(class_name) then
+        if is_buff_bar(class_name) or is_ability_icon(class_name) or is_flux_hud(class_name) or is_ringhud(class_name) or is_ability_timer(class_name) then
             affect_element(class_name)
         end
     end
@@ -272,7 +297,7 @@ local function _set_crosshair_visible(show)
     local ce = Managers.ui and Managers.ui:ui_constant_elements()
     if ce then
         for class_name, _ in pairs(ce._elements or {}) do
-            if is_buff_bar(class_name) or is_ability_icon(class_name) then
+            if is_buff_bar(class_name) or is_ability_icon(class_name) or is_flux_hud(class_name) or is_ringhud(class_name) or is_ability_timer(class_name) then
                 affect_element(class_name)
             end
         end
@@ -303,33 +328,29 @@ local function _set_crosshair_visible(show)
 end
 
 mod:hook_safe(CLASS.AuspexScanningEffects, "_run_searching_sfx_loop", function(self)
-    -- Only hide HUD if this is the local player's auspex (not a husk)
     if self._is_husk then return end
-    
+
     mod._scan_active = true
     _set_crosshair_visible(false)
 end)
 
 mod:hook_safe(CLASS.AuspexScanningEffects, "_stop_scan_units_effects", function(self)
-    -- Only restore HUD if this is the local player's auspex (not a husk)
     if self._is_husk then return end
-    
+
     mod._scan_active = false
     _set_crosshair_visible(true)
 end)
 
 mod:hook_safe(CLASS.AuspexEffects, "wield", function(self)
-    -- Only hide HUD if this is the local player's auspex (not a husk)
     if self._is_husk then return end
-    
+
     mod._scan_active = true
     _set_crosshair_visible(false)
 end)
 
 mod:hook_safe(CLASS.AuspexEffects, "unwield", function(self)
-    -- Only restore HUD if this is the local player's auspex (not a husk)
     if self._is_husk then return end
-    
+
     mod._scan_active = false
     _set_crosshair_visible(true)
 end)
@@ -400,10 +421,8 @@ local function _apply_current_alpha()
 
     local function set_alpha(el, class_name)
         if not el then return end
-        -- Check if this element should be hidden
         local should = should_hide_element(class_name)
         if not should then
-            -- If we shouldn't hide it, make it fully visible
             _apply_alpha_to_element(el, 1)
             return
         end
@@ -418,7 +437,7 @@ local function _apply_current_alpha()
     end
 
     for class_name, _ in pairs(hud._elements or {}) do
-        if (is_buff_bar(class_name) or is_ability_icon(class_name)) then
+        if (is_buff_bar(class_name) or is_ability_icon(class_name) or is_flux_hud(class_name) or is_ringhud(class_name) or is_ability_timer(class_name)) then
             local element = hud:element(class_name)
             if element then
                 set_alpha(element, class_name)
@@ -429,7 +448,7 @@ local function _apply_current_alpha()
     local ce = Managers.ui and Managers.ui:ui_constant_elements()
     if ce and ce._elements then
         for class_name, element in pairs(ce._elements) do
-            if (is_buff_bar(class_name) or is_ability_icon(class_name)) and element then
+            if (is_buff_bar(class_name) or is_ability_icon(class_name) or is_flux_hud(class_name) or is_ringhud(class_name) or is_ability_timer(class_name)) and element then
                 set_alpha(element, class_name)
             end
         end

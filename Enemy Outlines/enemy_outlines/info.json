@@ -1,0 +1,17 @@
+{
+    "name": "Enemy Outlines",
+    "author": "IndicaBunny",
+    "version": "1.4",
+    "homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/1019",
+    "source": "https://github.com/MaddyMarv/Enemy-outlines",
+    "funding": {
+        "kofi": "https://ko-fi.com/indicabunny"
+    },
+    "description": "Highlights specials, elites, and enemies with outlines.",
+    "dependencies": {
+        "required": [],
+        "self_after": [],
+        "self_before": []
+    },
+    "localization": {}
+}

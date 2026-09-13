@@ -12,14 +12,42 @@ local COLOR_SETTINGS_MAP = {
 	["broker_stimm_combat"] = "strength",
 	["broker_stimm_durability"] = "toughness",
 }
+local LEGACY_COLOR_DEFAULTS = {
+	["attack_speed"] = { 0, 0, 255 },
+	["cooldown"] = { 255, 255, 0 },
+	["strength"] = { 255, 0, 0 },
+	["toughness"] = { 200, 0, 255 },
+}
 
 local function get_stimm_color(stimm_buff_name)
 	local color_setting_name = COLOR_SETTINGS_MAP[stimm_buff_name]
+	local color = mod:get(color_setting_name .. "_color")
 	return {
-		mod:get(color_setting_name .. "_color_red") / 255,
-		mod:get(color_setting_name .. "_color_green") / 255,
-		mod:get(color_setting_name .. "_color_blue") / 255,
+		color[2] / 255,
+		color[3] / 255,
+		color[4] / 255,
 	}
+end
+
+local function migrate_legacy_color_settings()
+	for color_name, default_color in pairs(LEGACY_COLOR_DEFAULTS) do
+		local legacy_prefix = color_name .. "_color_"
+		local red = mod:get(legacy_prefix .. "red")
+		local green = mod:get(legacy_prefix .. "green")
+		local blue = mod:get(legacy_prefix .. "blue")
+
+		if red ~= nil or green ~= nil or blue ~= nil then
+			mod:set(color_name .. "_color", {
+				255,
+				red or default_color[1],
+				green or default_color[2],
+				blue or default_color[3],
+			})
+			mod:set(legacy_prefix .. "red", nil)
+			mod:set(legacy_prefix .. "green", nil)
+			mod:set(legacy_prefix .. "blue", nil)
+		end
+	end
 end
 
 local function update_color_map()
@@ -257,6 +285,7 @@ mod.on_all_mods_loaded = function()
 			end
 
 			-- Set up color map based on mod settings
+			migrate_legacy_color_settings()
 			update_color_map()
 
 			-- Preload assets
@@ -267,5 +296,9 @@ mod.on_all_mods_loaded = function()
 end
 
 mod.on_setting_changed = function()
+	update_color_map()
+end
+
+mod.on_settings_reset = function()
 	update_color_map()
 end

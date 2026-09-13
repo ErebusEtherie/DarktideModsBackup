@@ -1,0 +1,17 @@
+{
+    "name": "MiniMap",
+    "author": "IndicaBunny",
+    "version": "3.4",
+    "homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/633",
+    "source": "https://github.com/MaddyMarv/MiniMap-Fixed-and-Improved-",
+    "funding": {
+        "kofi": "https://ko-fi.com/indicabunny"
+    },
+    "description": "Customizable minimap tracking teammates and objectives. Compatible with Strike Map.",
+    "dependencies": {
+        "required": [],
+        "self_after": [],
+        "self_before": []
+    },
+    "localization": {}
+}

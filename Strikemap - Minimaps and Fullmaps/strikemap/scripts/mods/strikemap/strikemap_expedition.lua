@@ -202,6 +202,7 @@ local EXP = {
 	injected = 0, -- tiles composed from baked files
 	pending_known = 0, -- known tiles seen but their baked file failed to load
 	announced = false,
+	record_dumps = false, -- developer-only tile JSON, live map remains independent
 	-- scanner
 	phase = "idle", -- idle | db | flood | watch
 	db_tile = 0,
@@ -440,6 +441,10 @@ local function write_tile_dump(tile)
 end
 
 local function flush_tile_dumps(reason)
+	if not EXP.record_dumps then
+		return 0
+	end
+
 	local written = 0
 
 	for i = 1, #EXP.tile_order do
@@ -545,7 +550,7 @@ local function accept_triangle(ax, ay, az, bx, by, bz, cx, cy, cz)
 
 	seen[key] = true
 
-	if tile then
+	if tile and EXP.record_dumps then
 		bucket_triangle(tile, ax, ay, az, bx, by, bz, cx, cy, cz)
 	end
 
@@ -856,6 +861,26 @@ end
 -- same table across ticks, growing in place; a NEW table after a section
 -- transition) and nil in every other game mode.
 function mod.expedition_update(dt, mission_name)
+	local record_dumps = mod.geometry_dump_recording_enabled
+		and mod.geometry_dump_recording_enabled() or false
+
+	if EXP.record_dumps and not record_dumps then
+		-- Drop packed developer strings immediately when disabled. The live map
+		-- stores compact numeric geometry separately and is completely untouched.
+		for i = 1, #EXP.tile_order do
+			local tile = EXP.tiles[EXP.tile_order[i]]
+
+			if tile then
+				tile.rows = nil
+				tile.row_count = 0
+			end
+		end
+
+		EXP.dumped = {}
+	end
+
+	EXP.record_dumps = record_dumps
+
 	if get_setting("expedition_live_map", true) == false then
 		if EXP.active then
 			flush_tile_dumps("disabled")
@@ -940,6 +965,7 @@ function mod.expedition_reset()
 	EXP.tile_order = {}
 	EXP.injected = 0
 	EXP.pending_known = 0
+	EXP.record_dumps = false
 	EXP.phase = "idle"
 	EXP.poll_timer = 0
 	EXP.revision_timer = 0

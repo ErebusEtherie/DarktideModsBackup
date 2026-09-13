@@ -1,7 +1,6 @@
 -- SMOG.lua
 local mod = get_mod("SMOG")
 local Managers = Managers
-local Application = Application
 local collectgarbage = collectgarbage
 local math_abs = math.abs
 local math_floor = math.floor
@@ -109,19 +108,18 @@ mod.convenient_moment_cleans = mod:get("auto_clean_on_start")
 mod.auto_clean_every_ten_minutes = mod:get("auto_clean_every_ten_minutes")
 mod.automatic_notifications = mod:get("notifications") ~= false
 mod._smog_hud_visible = mod._smog_hud_visible == true
+local hud_cycle_window_seconds = 3
+local last_hud_key_t = nil
+local last_visible_hud_format = mod._smog_hud_format or mod:get("_smog_last_hud_format")
+if last_visible_hud_format ~= "analogue" and last_visible_hud_format ~= "digital" and last_visible_hud_format ~= "advanced_digital" then
+last_visible_hud_format = "analogue"
+end
+mod._smog_hud_format = last_visible_hud_format
 local advanced = {
 process_sample_interval = 2,
 growth_sample_interval = 30,
 game_growth_threshold_mb_per_min = 256,
 }
-function advanced.read_hud_format()
-local format = mod:get("hud_format")
-if format == "digital" or format == "advanced_digital" then
-return format
-end
-return "analogue"
-end
-mod._smog_hud_format = advanced.read_hud_format()
 mod._smog_notification_active = false
 mod._smog_hud_x_axis = tonumber(mod:get("hud_x_axis")) or 10
 mod._smog_hud_y_axis = tonumber(mod:get("hud_y_axis")) or 30
@@ -140,27 +138,9 @@ end
 local function current_time()
 return elapsed_time
 end
-local function heap_size_mb()
-local size = 1024
-if Application and Application.argv then
-local ok,args = pcall(function()
-return {Application.argv()}
-end)
-if ok and args then
-for i = 1,#args do
-local arg = tostring(args[i])
-local inline_size = arg:match("^%-%-lua%-heap%-mb%-size=(%d+)$")
-if inline_size then
-size = tonumber(inline_size) or size
-elseif arg == "--lua-heap-mb-size" and tonumber(args[i + 1]) then
-size = tonumber(args[i + 1])
-end
-end
-end
-end
-return size
-end
-local detected_heap_mb = heap_size_mb()
+local detected_heap_mb = tonumber(mod._smog_heap_size_mb) or 1024
+detected_heap_mb = math_max(1,math_floor(detected_heap_mb + 0.5))
+mod._smog_heap_size_mb = detected_heap_mb
 local threshold_thirtyfive_mb = detected_heap_mb * 0.35
 local threshold_sixtyeight_mb = detected_heap_mb * 0.68
 local threshold_seventy_mb = detected_heap_mb * 0.7
@@ -892,14 +872,53 @@ local hud_registered = mod:register_hud_element(hud_element_definition)
 if hud_registered ~= true then
 mod:error("SMOG HUD element registration failed. See the preceding DMF Custom HUD Elements error for details.")
 end
-mod.toggle_hud = function()
-mod._smog_hud_visible = not mod._smog_hud_visible
+local function set_hud_visible(visible)
+mod._smog_hud_visible = visible == true
 if mod._smog_hud_visible then
 refresh_context_snapshot()
 refresh_heap_sample()
 heap_sample_accumulator = 0
 else
 heap_sample_accumulator = heap_sample_interval
+end
+end
+local function set_hud_format(format)
+local previous_format = mod._smog_hud_format
+mod._smog_hud_format = format
+last_visible_hud_format = format
+if mod:get("_smog_last_hud_format") ~= format then
+mod:set("_smog_last_hud_format",format)
+save_settings_now()
+end
+if format == "advanced_digital" and previous_format ~= "advanced_digital" then
+advanced.reset_growth()
+end
+end
+mod.toggle_hud = function()
+local t = current_time()
+local rapid_press = last_hud_key_t ~= nil and t - last_hud_key_t <= hud_cycle_window_seconds
+last_hud_key_t = t
+if rapid_press then
+if mod._smog_hud_visible then
+if mod._smog_hud_format == "analogue" then
+set_hud_format("digital")
+set_hud_visible(true)
+elseif mod._smog_hud_format == "digital" then
+set_hud_format("advanced_digital")
+set_hud_visible(true)
+else
+set_hud_visible(false)
+end
+else
+set_hud_format("analogue")
+set_hud_visible(true)
+end
+elseif mod._smog_hud_visible then
+last_visible_hud_format = mod._smog_hud_format
+set_hud_visible(false)
+else
+set_hud_format(last_visible_hud_format)
+set_hud_visible(true)
 end
 end
 local function game_mode_object()
@@ -1293,12 +1312,6 @@ clear_queued_notifications()
 if not notification_manual then
 clear_notification()
 end
-end
-elseif changed_setting == "hud_format" then
-local previous_format = mod._smog_hud_format
-mod._smog_hud_format = advanced.read_hud_format()
-if mod._smog_hud_format == "advanced_digital" and previous_format ~= "advanced_digital" then
-advanced.reset_growth()
 end
 elseif changed_setting == "hud_x_axis" then
 mod._smog_hud_x_axis = tonumber(mod:get("hud_x_axis")) or 10

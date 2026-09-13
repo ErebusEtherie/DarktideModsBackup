@@ -1,20 +1,6 @@
 local mod = get_mod("scores")
 
-mod.version = "1.1"
-
-local DESCRIPTION_COLORS = {
-	label = "255,170,32",
-	text = "169,191,153",
-}
-
-local function mod_description(tagline, author_label, version_label)
-	return tagline
-		.. "\n\n{#color(" .. DESCRIPTION_COLORS.label .. ")}" .. author_label .. ": "
-		.. "{#color(" .. DESCRIPTION_COLORS.text .. ")}u84n\n"
-		.. "{#color(" .. DESCRIPTION_COLORS.label .. ")}" .. version_label .. ": "
-		.. "{#color(" .. DESCRIPTION_COLORS.text .. ")}" .. mod.version
-		.. "{#reset()}"
-end
+mod.version = "1.3"
 
 local function localized(en_text, zh_cn, ru, fr, es, de)
 	return {
@@ -67,12 +53,12 @@ return {
 		title_prefix.."{#color(255,64,0)}P{#color(255,112,0)}u{#color(255,160,0)}n{#color(255,208,0)}k{#color(255,246,80)}t{#color(255,255,128)}e{#reset()}"
 	),
 	mod_description = localized(
-		mod_description("If you ain’t first, you’re last.", "Author", "Version"),
-		mod_description("不当第一，就是最后。", "作者", "版本"),
-		mod_description("Если ты не первый, ты последний.", "Автор", "Версия"),
-		mod_description("Si tu n'es pas premier, tu es dernier.", "Auteur", "Version"),
-		mod_description("Si no eres el primero, eres el último.", "Autor", "Versión"),
-		mod_description("Wenn du nicht Erster bist, bist du Letzter.", "Autor", "Version")
+		"If you ain’t first, you’re last.",
+		"不当第一，就是最后。",
+		"Если ты не первый, ты последний.",
+		"Si tu n'es pas premier, tu es dernier.",
+		"Si no eres el primero, eres el último.",
+		"Wenn du nicht Erster bist, bist du Letzter."
 	),
 	scoreboard_title = localized("Scores", "分数", "СЧЁТ", "Scores", "Scores", "Punkte"),
 	mod_history_view_title = localized("Scores History", "分数历史", "История счёта", "Historique des scores", "Historial de puntuaciones", "Punkteverlauf"),
@@ -156,6 +142,7 @@ return {
 	row_rescued_operative = localized("Rescues", "营救", "Спасения", "Sauvetages", "Rescates", "Rettungen"),
 	row_team_saves = localized("Saves", "救援", "Спасения", "Sauvetages", "Salvamentos", "Rettungsaktionen"),
 	row_coherency_efficiency = localized("Coherency", "连携", "Сплоченность", "Cohésion", "Coherencia", "Kohärenz"),
+	row_combat_ability_uses = localized("Ability uses", "技能使用", "Использований способности", "Capacités utilisées", "Usos de habilidad", "Fähigkeitseinsätze"),
 
 	row_ammo_collected = localized("Ammo score", "弹药得分", "Счёт за боеприпасы", "Score de munitions", "Puntuación de munición", "Munitionswertung"),
 	row_ammo_picked_up = localized("Picked up", "拾取", "Подобрано", "Ramassé", "Recogida", "Aufgehoben"),
@@ -214,6 +201,7 @@ return {
 	show_resources_collected = localized("Resources collected", "收集资源", "Собрано ресурсов", "Ressources collectées", "Recursos recogidos", "Gesammelte Ressourcen"),
 	show_revived_rescued = localized("Revives", "救起", "Поднятия", "Réanimations", "Reanimaciones", "Wiederbelebungen"),
 	show_team_saves = localized("Saves", "救援", "Спасения", "Sauvetages", "Salvamentos", "Rettungsaktionen"),
+	show_combat_ability_uses = localized("Ability uses", "技能使用", "Использований способности", "Capacités utilisées", "Usos de habilidad", "Fähigkeitseinsätze"),
 	show_times_downed = localized("Times downed", "倒地次数", "Падений", "Mises à terre", "Veces derribado", "Niedergänge"),
 	show_deaths = localized("Deaths", "死亡次数", "Смертей", "Morts", "Muertes", "Tode"),
 	show_times_disabled = localized("Times disabled", "被控制次数", "Выведен из строя", "Neutralisations subies", "Veces incapacitado", "Außer-Gefecht-Mal"),

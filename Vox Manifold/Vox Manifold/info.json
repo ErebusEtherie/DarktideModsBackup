@@ -1,0 +1,17 @@
+{
+	"name": "Vox Manifold",
+	"description": "Shared party state channel. Other mods depend on this; it does nothing on its own.",
+	"version": "2.3.0",
+	"author": "Wobin",
+	"homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/1117",
+	"source": "https://github.com/Wobin/VoxManifold",
+	"funding": {
+		"kofi": "https://ko-fi.com/wobin_dwonderdog"
+	},
+	"nexusId": "1117",
+	"order": {
+		"require": [],
+		"this_after": [],
+		"this_before": []
+	}
+}

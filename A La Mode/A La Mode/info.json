@@ -1,0 +1,23 @@
+{
+	"name": "A La Mode",
+	"description": "A La Mode outlines the weapon state in different colours for weapons with a toggleable state",
+	"version": "3.4.0",
+	"author": "Wobin",
+	"homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/663",
+	"source": "https://github.com/Wobin/ALaMode",
+	"funding": {
+		"kofi": "https://ko-fi.com/wobin_dwonderdog"
+	},
+	"nexusId": "663",
+	"localization": {
+		"ru": {
+			"name": "А-ля мод",
+			"description": "A La Mode - подсвечивает состояние оружия разными цветами для оружия с переключаемым режимом"
+		}
+	},
+	"order": {
+		"require": [],
+		"this_after": [],
+		"this_before": []
+	}
+}

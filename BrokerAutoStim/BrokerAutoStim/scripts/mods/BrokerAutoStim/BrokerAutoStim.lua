@@ -6,7 +6,7 @@ local HUD_ELEMENT_CLASS_NAME = "HudElementBrokerAutoStim"
 
 mod:register_hud_element({
 	class_name = HUD_ELEMENT_CLASS_NAME,
-	filename = "BrokerAutoStim/scripts/mods/BrokerAutoStim/HudElementBrokerAutoStim",
+	filename = "BrokerAutoStim/scripts/mods/BrokerAutoStim/hud/HudElementBrokerAutoStim",
 	use_hud_scale = true,
 	visibility_groups = {
 		"alive",
@@ -293,6 +293,21 @@ mod.on_setting_changed = function(setting_id)
             hud_element:set_side_length(mod:get("hud_icon_size"))
         end
     end
+end
+
+mod.on_settings_reset = function()
+    mod:set("profiles", {}, false)
+    _initialize_profiles()
+    
+    local default_profile = 1
+    last_active_profile = default_profile
+    profile_changed_from_hotkey = false
+    
+    is_loading_profile = true
+    _load_profile_settings(default_profile)
+    is_loading_profile = false
+    
+    mod:set("active_profile", default_profile, true)
 end
 
 local function _get_gameplay_time()

@@ -5,6 +5,12 @@ return {
     mod_description = {
         en = "Adjusts lighting during dark mission environments, normalizes Dawn and Inferno, and removes fog during Ventilation Purge. Changes take effect when the mission is loaded.",
     },
+    chat_notification = {
+        en = "Chat notification",
+    },
+    chat_notification_tooltip = {
+        en = "Shows a chat message when Let There Be Light changes a mission environment.",
+    },
     power_interruption_mode = {
         en = "Dark Mission Lighting",
     },
@@ -37,5 +43,20 @@ return {
     },
     remove_ventilation_purge_fog_tooltip = {
         en = "On: Uses the mission's standard environment instead of the foggy Ventilation Purge environment. The line-of-sight modifier and all other gameplay effects are unchanged. Changes take effect when the mission loads.",
+    },
+    power_interruption_atmospheric_lighting_active = {
+        en = "Let There Be Light: Darkness mission lights enabled",
+    },
+    power_interruption_standard_lighting_active = {
+        en = "Let There Be Light: Darkness visuals removed",
+    },
+    dawn_standard_environment_active = {
+        en = "Let There Be Light: Dawn replaced with standard environment",
+    },
+    inferno_standard_environment_active = {
+        en = "Let There Be Light: Inferno environment and decorative fires removed",
+    },
+    ventilation_purge_fog_removed = {
+        en = "Let There Be Light: Ventilation Purge fog removed",
     },
 }

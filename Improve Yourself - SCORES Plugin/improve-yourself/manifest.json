@@ -1,6 +1,6 @@
 {
   "name": "Improve Yourself",
-  "version": "1.0.0",
-  "author": "Till / OpenAI",
+  "version": "1.1.2",
+  "author": "Artayos",
   "description": "A visualization plugin for Scores with Tactical, Victory, History, goals, roles, and damage-source tracking."
 }

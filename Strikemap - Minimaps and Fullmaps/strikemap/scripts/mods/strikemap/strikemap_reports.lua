@@ -99,6 +99,7 @@ local _sample_timer = 0
 local _enemy_timer = 0
 local _enemy_gen = 0     -- report_capture_enemies sweep stamp (no per-call tables)
 local _checkpoint_timer = 0
+local _checkpoint_job = nil -- staged serializer; at most one growing report snapshot
 local _prev_enemies = {} -- unit -> {x,y,z} last seen alive
 local _unit_records = {} -- player_unit -> player record fast path (per run)
 local _last_hit = {}     -- player_unit -> { label, t }: last enemy that hurt them
@@ -440,7 +441,133 @@ local function num(v, dp)
 	return (s:gsub("(%..-)0+$", "%1"):gsub("%.$", ""))
 end
 
-local function write_report(run)
+local SERIALIZE_CHUNK = 256
+
+local function append_joined(chunks, values, separator)
+	values = values or {}
+
+	for first = 1, #values, SERIALIZE_CHUNK do
+		local last = math.min(first + SERIALIZE_CHUNK - 1, #values)
+		local part = {}
+
+		for i = first, last do
+			part[#part + 1] = values[i]
+		end
+
+		if first > 1 then
+			chunks[#chunks + 1] = separator
+		end
+
+		chunks[#chunks + 1] = table.concat(part, separator)
+		coroutine.yield()
+	end
+end
+
+-- Runs inside a coroutine. Large packed replay arrays are joined in bounded
+-- chunks so a checkpoint cannot monopolise a gameplay frame.
+local function serialize_report(run)
+	local chunks = {
+		"-- strikemap mission report; generated in-game\nreturn {\n",
+		"version = 3,\n",
+		"id = " .. run.id .. ",\n",
+		'mission = "' .. esc(run.mission) .. '",\n',
+	}
+
+	if run.title then
+		chunks[#chunks + 1] = 'title = "' .. esc(run.title) .. '",\n'
+	end
+
+	if run.difficulty then
+		chunks[#chunks + 1] = "difficulty = " .. tostring(run.difficulty) .. ",\n"
+	end
+
+	chunks[#chunks + 1] = "duration = " .. num(run.time, 1) .. ",\n"
+
+	if run.date then
+		chunks[#chunks + 1] = "date = " .. run.date .. ",\n"
+	end
+
+	if run.bounds then
+		local b = run.bounds
+		chunks[#chunks + 1] = string.format("bounds = {%s,%s,%s,%s,%s,%s},\n",
+			num(b.x0, 2), num(b.y0, 2), num(b.x1, 2), num(b.y1, 2), num(b.z0, 1), num(b.z1, 1))
+	end
+
+	chunks[#chunks + 1] = "kills_stride = 4,\nkillt_stride = 4,\npath_stride = 4,\nkills = \""
+	append_joined(chunks, run.kills, ";")
+	chunks[#chunks + 1] = '\",\n'
+
+	if run.boss_order and #run.boss_order > 0 then
+		chunks[#chunks + 1] = "bosses = {\n"
+
+		for i, rec in ipairs(run.boss_order) do
+			chunks[#chunks + 1] = string.format(
+				'{label = "%s", t0 = %s, t1 = %s, x = %s, y = %s, z = %s, by = %s},\n',
+				esc(rec.label), num(rec.t0 or 0, 1), rec.t1 and num(rec.t1, 1) or "nil",
+				num(rec.x or 0, 1), num(rec.y or 0, 1), num(rec.z or 0, 1),
+				rec.by and ('"' .. esc(rec.by) .. '"') or "nil")
+
+			if i % 16 == 0 then
+				coroutine.yield()
+			end
+		end
+
+		chunks[#chunks + 1] = "},\n"
+	end
+
+	chunks[#chunks + 1] = "players = {\n"
+
+	local buckets = math.max(1, math.ceil(math.max(run.time, 1) / DMG_BUCKET))
+	local players = {}
+
+	for _, player in pairs(run.players) do
+		players[#players + 1] = player
+	end
+
+	for _, p in ipairs(players) do
+		local dmgt = {}
+
+		for i = 1, buckets do
+			dmgt[i] = tostring(math.floor((p.dmgb and p.dmgb[i] or 0) + 0.5))
+		end
+
+		chunks[#chunks + 1] = string.format(
+			'{slot = %d, name = "%s", arch = "%s", is_local = %s, is_bot = %s, dist = %s, downtime = %s, '
+			.. 'dmg = %d, taken = %d, kills = %d, hits = %d, wk = %d, crit = %d, revs = %d, '
+			.. 'ammo = %d, med = %d, plasteel = %d, diamantine = %d, killt = "',
+			p.slot or 0, esc(p.name), esc(p.arch or ""), tostring(p.is_local), tostring(p.is_bot or false),
+			num(p.dist, 1), num(p.downtime or 0, 1),
+			math.floor((p.dmg or 0) + 0.5), math.floor((p.taken or 0) + 0.5), p.kills or 0,
+			p.hits or 0, p.wk or 0, p.crit or 0, p.revs or 0,
+			p.ammo or 0, p.med or 0,
+			math.floor((p.plasteel or 0) + 0.5), math.floor((p.diamantine or 0) + 0.5))
+
+		append_joined(chunks, p.killt, ";")
+		chunks[#chunks + 1] = '\", dmgt = "'
+		append_joined(chunks, dmgt, ",")
+		chunks[#chunks + 1] = '\", path = "'
+		append_joined(chunks, p.path, ";")
+		chunks[#chunks + 1] = '\", downs = {'
+
+		for i, d in ipairs(p.downs) do
+			chunks[#chunks + 1] = string.format('{x=%s,y=%s,z=%s,code=%d,t=%s,cause="%s"},',
+				num(d.x, 1), num(d.y, 1), num(d.z, 1), d.code, num(d.t, 1), esc(d.cause or ""))
+
+			if i % 64 == 0 then
+				coroutine.yield()
+			end
+		end
+
+		chunks[#chunks + 1] = "}},\n"
+		coroutine.yield()
+	end
+
+	chunks[#chunks + 1] = "},\n}\n"
+
+	return table.concat(chunks)
+end
+
+local function write_report_body(run, body)
 	local io_lib = get_io()
 	local file = io_lib and io_lib.open(report_path(run.id), "w")
 
@@ -448,84 +575,7 @@ local function write_report(run)
 		return false
 	end
 
-	file:write("-- strikemap mission report; generated in-game\nreturn {\n")
-	file:write("version = 3,\n")
-	file:write("id = " .. run.id .. ",\n")
-	file:write('mission = "' .. esc(run.mission) .. '",\n')
-
-	if run.title then
-		file:write('title = "' .. esc(run.title) .. '",\n')
-	end
-
-	if run.difficulty then
-		file:write("difficulty = " .. tostring(run.difficulty) .. ",\n")
-	end
-
-	file:write("duration = " .. num(run.time, 1) .. ",\n")
-
-	if run.date then
-		file:write("date = " .. run.date .. ",\n")
-	end
-
-	if run.bounds then
-		local b = run.bounds
-		file:write(string.format("bounds = {%s,%s,%s,%s,%s,%s},\n",
-			num(b.x0, 2), num(b.y0, 2), num(b.x1, 2), num(b.y1, 2), num(b.z0, 1), num(b.z1, 1)))
-	end
-
-	file:write("kills_stride = 4,\n")
-	file:write("killt_stride = 4,\n")
-	file:write("path_stride = 4,\n")
-	file:write('kills = "' .. table.concat(run.kills, ";") .. '",\n')
-
-	-- boss encounters (only ones the squad actually fought)
-	if run.boss_order and #run.boss_order > 0 then
-		file:write("bosses = {\n")
-
-		for _, rec in ipairs(run.boss_order) do
-			file:write(string.format('{label = "%s", t0 = %s, t1 = %s, x = %s, y = %s, z = %s, by = %s},\n',
-				esc(rec.label), num(rec.t0 or 0, 1), rec.t1 and num(rec.t1, 1) or "nil",
-				num(rec.x or 0, 1), num(rec.y or 0, 1), num(rec.z or 0, 1),
-				rec.by and ('"' .. esc(rec.by) .. '"') or "nil"))
-		end
-
-		file:write("},\n")
-	end
-
-	file:write("players = {\n")
-
-	local buckets = math.max(1, math.ceil(math.max(run.time, 1) / DMG_BUCKET))
-
-	for _, p in pairs(run.players) do
-		local dmgt = {}
-
-		for i = 1, buckets do
-			dmgt[i] = tostring(math.floor((p.dmgb and p.dmgb[i] or 0) + 0.5))
-		end
-
-		file:write(string.format(
-			'{slot = %d, name = "%s", arch = "%s", is_local = %s, is_bot = %s, dist = %s, downtime = %s, '
-			.. 'dmg = %d, taken = %d, kills = %d, hits = %d, wk = %d, crit = %d, revs = %d, '
-			.. 'ammo = %d, med = %d, plasteel = %d, diamantine = %d, '
-			.. 'killt = "%s", dmgt = "%s", path = "%s", downs = {',
-			p.slot or 0, esc(p.name), esc(p.arch or ""), tostring(p.is_local), tostring(p.is_bot or false),
-			num(p.dist, 1), num(p.downtime or 0, 1),
-			math.floor((p.dmg or 0) + 0.5), math.floor((p.taken or 0) + 0.5), p.kills or 0,
-			p.hits or 0, p.wk or 0, p.crit or 0, p.revs or 0,
-			p.ammo or 0, p.med or 0,
-			math.floor((p.plasteel or 0) + 0.5), math.floor((p.diamantine or 0) + 0.5),
-			table.concat(p.killt or {}, ";"), table.concat(dmgt, ","),
-			table.concat(p.path, ";")))
-
-		for _, d in ipairs(p.downs) do
-			file:write(string.format('{x=%s,y=%s,z=%s,code=%d,t=%s,cause="%s"},',
-				num(d.x, 1), num(d.y, 1), num(d.z, 1), d.code, num(d.t, 1), esc(d.cause or "")))
-		end
-
-		file:write("}},\n")
-	end
-
-	file:write("},\n}\n")
+	file:write(body)
 	file:close()
 
 	return true
@@ -715,16 +765,90 @@ local function upsert_index(run)
 	_view.runs = nil -- force the browser to rebuild its list
 end
 
-local function checkpoint(run)
-	if run.time < MIN_SAVE_TIME then
-		return
+local function finish_checkpoint_job(job, body)
+	local started = mod.perf_begin and mod.perf_begin()
+	local written = write_report_body(job.run, body)
+
+	if written then
+		upsert_index(job.run)
+		write_index()
+		job.run.saved = true
+
+		if job.final then
+			job.run.final_save_complete = true
+		end
 	end
 
-	if write_report(run) then
-		upsert_index(run)
-		write_index()
-		run.saved = true
+	if mod.perf_end and started then
+		mod.perf_end("report file commit", started)
 	end
+
+	return written
+end
+
+local function drive_checkpoint_job(steps)
+	steps = steps or 4
+
+	for _ = 1, steps do
+		local job = _checkpoint_job
+
+		if not job then
+			return true
+		end
+
+		local started = mod.perf_begin and mod.perf_begin()
+		local ok, result = coroutine.resume(job.co)
+
+		if mod.perf_end and started then
+			mod.perf_end("report serialization slice", started)
+		end
+
+		if not ok then
+			_checkpoint_job = nil
+			safe(function()
+				mod:warning("Strikemap report serialization failed: " .. tostring(result))
+			end)
+
+			return false
+		end
+
+		if coroutine.status(job.co) == "dead" then
+			_checkpoint_job = nil
+			return finish_checkpoint_job(job, result)
+		end
+	end
+
+	return false
+end
+
+local function checkpoint(run, final, synchronous)
+	if run.time < MIN_SAVE_TIME then
+		return false
+	end
+
+	-- A final request supersedes an unfinished mid-run snapshot so the saved
+	-- debrief includes everything captured up to freeze. Repeated final calls
+	-- reuse/drain the same job instead of formatting and writing twice.
+	if not (_checkpoint_job and _checkpoint_job.run == run
+		and _checkpoint_job.final and final) then
+		_checkpoint_job = {
+			run = run,
+			final = final == true,
+			co = coroutine.create(function()
+				return serialize_report(run)
+			end),
+		}
+	end
+
+	-- Direct/test calls and teardown drain synchronously for durability. Normal
+	-- gameplay checkpoints and the end screen pass false and advance in slices.
+	if synchronous ~= false then
+		while _checkpoint_job and _checkpoint_job.run == run do
+			drive_checkpoint_job(128)
+		end
+	end
+
+	return run.saved == true
 end
 
 -- ---------------------------------------------------------------------------
@@ -1053,6 +1177,11 @@ function mod.report_tick(dt, mission_name, map)
 		begin_run(mission_name)
 	end
 
+	-- Advance any crash checkpoint in small pieces before mutating this frame's
+	-- capture. Four 256-entry chunks normally finishes within a fraction of a
+	-- second without a single long serialization frame.
+	drive_checkpoint_job(4)
+
 	-- The end screen freezes the run: the mission is decided, so nothing that
 	-- happens while people stare at the score should leak into the record.
 	if _run.frozen then
@@ -1230,7 +1359,7 @@ function mod.report_tick(dt, mission_name, map)
 		_checkpoint_timer = interval > 0 and interval or CHECKPOINT_DEFAULT
 
 		if interval > 0 then
-			pcall(checkpoint, _run)
+			pcall(checkpoint, _run, false, false)
 		end
 	end
 end
@@ -1286,7 +1415,7 @@ function mod.report_freeze()
 	if _run and not _run.frozen then
 		_run.frozen = true
 		safe(function()
-			checkpoint(_run)
+			checkpoint(_run, true, false)
 		end)
 	end
 end
@@ -1294,11 +1423,14 @@ end
 -- Called on mission end / leaving to hub.
 function mod.report_finalize()
 	if _run then
-		safe(function()
-			checkpoint(_run)
-		end)
+		if not _run.final_save_complete then
+			safe(function()
+				checkpoint(_run, true, true)
+			end)
+		end
 
 		_run = nil
+		_checkpoint_job = nil
 	end
 end
 
@@ -1547,6 +1679,7 @@ end
 function mod.report_diag_lines(add)
 	add("report: " .. (_run and ("recording " .. _run.mission .. " t=" .. num(_run.time, 0)
 		.. " saved=" .. tostring(_run.saved)) or "idle")
+		.. "  checkpoint=" .. (_checkpoint_job and (_checkpoint_job.final and "final" or "staged") or "idle")
 		.. "  browser=" .. tostring(_view.open) .. " sel=" .. _view.sel)
 end
 
@@ -1573,6 +1706,7 @@ mod.__test_reports = {
 	num = num,
 	reset = function()
 		_run = nil
+		_checkpoint_job = nil
 		_index = nil
 		_view.runs = nil
 		_view.report = nil

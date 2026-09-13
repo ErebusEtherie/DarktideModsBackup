@@ -482,6 +482,7 @@ end
 ---@field mission_grid { x: number, y: number, w: number, h: number }
 ---@field live_button { x: number, y: number, w: number, h: number }
 ---@field hell_yeah { x: number, y: number, w: number, h: number }
+---@field skip_recap { x: number, y: number, w: number, h: number }
 ---@field mission_tile_w number
 local function build_geometry()
 	local content_x = C.CONTENT_PAD_X
@@ -555,6 +556,13 @@ local function build_geometry()
 		},
 
 		hell_yeah = {
+			x = content_x,
+			y = grid_y + C.MISSION_GRID_TITLE_GAP + C.MISSION_GRID_TITLE_H,
+			w = content_w,
+			h = C.HELL_YEAH_BUTTON_H,
+		},
+
+		skip_recap = {
 			x = content_x,
 			y = grid_y + C.MISSION_GRID_TITLE_GAP + C.MISSION_GRID_TITLE_H,
 			w = content_w,

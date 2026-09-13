@@ -746,43 +746,49 @@ local function draw_tactical_event(gui, scale, event, mission_time, project, lay
 	return mx, my - 16, label, rgb, 235 * math.min(1, life * 2) * alpha_mult
 end
 
--- Per-frame settings snapshot: _draw_widgets bumps _setting_frame once per
--- drawn frame, so every id pays at most ONE live mod:get per frame no matter
--- how many markers read it (the old path re-fetched per marker AND allocated a
--- closure per call). _settings_changed flips when a fetched value differs
--- from the previous frame; settings-derived caches key off it.
+-- Revision-based settings snapshot. DMF emits setting/reset events and the
+-- main module advances a generation, so the renderer only walks DMF's settings
+-- store after an actual change instead of re-reading ~70 ids every frame.
 local _setting_values = {}
-local _setting_fetched = {}
-local _setting_frame = 0
+local _setting_loaded = {}
+local _setting_generation = -1
 local _settings_changed = false
 
--- Must run at the top of every drawn frame. Without it the snapshot freezes on
--- generation 0 and settings changes never reach the map.
+-- Must run at the top of every drawn frame so changes invalidate derived map
+-- caches on the same frame as the DMF event.
 local function advance_setting_frame()
-	_setting_frame = _setting_frame + 1
-	_settings_changed = false
+	local generation = 0
+
+	if type(mod.strikemap_settings_generation) == "function" then
+		local ok, value = pcall(mod.strikemap_settings_generation)
+		generation = ok and tonumber(value) or 0
+	end
+
+	_settings_changed = generation ~= _setting_generation
+
+	if _settings_changed then
+		_setting_generation = generation
+		_setting_values = {}
+		_setting_loaded = {}
+	end
 end
 
--- True when any id read so far this frame changed value since last frame.
+-- True for the complete frame after a settings generation change.
 local function settings_changed()
 	return _settings_changed
 end
 
 
 local function setting(id, default)
-	if _setting_fetched[id] ~= _setting_frame then
+	if not _setting_loaded[id] then
 		local ok, value = pcall(mod.get, mod, id)
 
 		if not ok then
 			value = nil
 		end
 
-		if value ~= _setting_values[id] then
-			_settings_changed = true
-		end
-
 		_setting_values[id] = value
-		_setting_fetched[id] = _setting_frame
+		_setting_loaded[id] = true
 	end
 
 	local value = _setting_values[id]

@@ -1,0 +1,17 @@
+{
+    "name": "Let me see my scanner",
+    "author": "IndicaBunny",
+    "version": "1.4",
+    "homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/632",
+    "source": "https://github.com/MaddyMarv/Let-me-see-my-scanner-Auspex-",
+    "funding": {
+        "kofi": "https://ko-fi.com/indicabunny"
+    },
+    "description": "Fades or hides distracting HUD elements (crosshair, stamina bar, buffs) while using the Auspex scanner.",
+    "dependencies": {
+        "required": [],
+        "self_after": [],
+        "self_before": []
+    },
+    "localization": {}
+}

@@ -3,7 +3,7 @@ local mod = get_mod("GetOutOfTheWay")
 return {
 	name = mod:localize("mod_name"),
 	description = mod:localize("mod_description"),
-	is_togglable = true,
+	is_togglable = false,
 	options = {
 		widgets = {
 			{
@@ -61,6 +61,11 @@ return {
 				setting_id = "keep_allies_visible_while_holding_support_items",
 				type = "checkbox",
 				default_value = true,
+			},
+			{
+				setting_id = "prevent_own_player_fade",
+				type = "checkbox",
+				default_value = false,
 			},
 		}
 	}

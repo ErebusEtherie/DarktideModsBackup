@@ -2,9 +2,11 @@ local mod = get_mod("Alfs_DMF_Extensions")
 
 local UIWidgetGrid = require("scripts/ui/widget_logic/ui_widget_grid")
 local UIWidget = require("scripts/managers/ui/ui_widget")
+local UIRenderer = require("scripts/managers/ui/ui_renderer")
 local UIFontSettings = require("scripts/managers/ui/ui_font_settings")
 
 local view_settings = mod.dmf:io_dofile("dmf/scripts/mods/dmf/modules/ui/options/dmf_options_view_settings")
+local OptionsFilter = mod.dmf:io_dofile("dmf/scripts/mods/dmf/modules/ui/options/filter/options_filter")
 
 local _content_blueprints =
 	mod:io_dofile("Alfs_DMF_Extensions/scripts/mods/Alfs_DMF_Extensions/modules/mod_tabs_blueprints")
@@ -159,7 +161,7 @@ end
 
 local TOOLTIP_WIDTH = 400
 
-mod.max_visible_tabs = 5
+mod.max_visible_tabs = 6
 
 local function resolve_widget_tab_from_dmf_data(category, setting_id, display_name)
 	if category then
@@ -227,10 +229,21 @@ mod.inject_tabs_into_widgets = function(self, category)
 	local fallback_tab = mod.default_tab
 	local templates = self._options_templates.settings or {}
 
-	local cat_templates = {}
+	local tab_by_entry = {}
+
 	for _, tpl in ipairs(templates) do
 		if tpl.category == category then
-			cat_templates[#cat_templates + 1] = tpl
+			if tpl.widget_type == "group_header" then
+				local resolved = tpl.tab or resolve_widget_tab_from_dmf_data(category, tpl.setting_id, tpl.display_name)
+
+				if resolved then
+					current_group_tab = resolved
+				elseif tpl.indentation_level and tpl.indentation_level == 0 then
+					current_group_tab = nil
+				end
+			end
+
+			tab_by_entry[tpl] = current_group_tab or fallback_tab
 		end
 	end
 
@@ -241,23 +254,14 @@ mod.inject_tabs_into_widgets = function(self, category)
 			goto continue
 		end
 
-		local tpl = cat_templates[i]
+		local entry = data.entry or widget.content.entry
+		local tpl_tab = entry and tab_by_entry[entry]
 
-		if tpl then
-			widget.content.indentation_level = tpl.indentation_level
-
-			if tpl.widget_type == "group_header" then
-				if tpl.tab then
-					if gen_tabs_enabled or not tpl._auto_tab then
-						current_group_tab = tpl.tab
-					end
-				elseif tpl.indentation_level and tpl.indentation_level == 0 then
-					current_group_tab = nil
-				end
-			end
+		if tpl_tab ~= nil then
+			widget.content.tab = tpl_tab
+		else
+			widget.content.tab = current_group_tab or fallback_tab
 		end
-
-		widget.content.tab = current_group_tab or fallback_tab
 
 		::continue::
 	end
@@ -328,7 +332,17 @@ mod.inject_generalised_tabs = function(self, category)
 	mod._tab_inject_state[state_key] = new_state
 
 	local current_tab = mod.default_tab
-	local ti = 1
+	local tab_by_entry = {}
+
+	for _, tpl in ipairs(templates) do
+		if tpl.category == category then
+			if tpl.widget_type == "group_header" and tpl.indentation_level and tpl.indentation_level == 0 then
+				current_tab = tpl.display_name or current_tab
+			end
+
+			tab_by_entry[tpl] = current_tab or mod.default_tab
+		end
+	end
 
 	for _, data in ipairs(widgets) do
 		local widget = data.widget
@@ -336,20 +350,12 @@ mod.inject_generalised_tabs = function(self, category)
 			goto continue
 		end
 
-		while ti <= #templates do
-			local tpl = templates[ti]
-			ti = ti + 1
-
-			if tpl.category == category then
-				if tpl.widget_type == "group_header" and tpl.indentation_level and tpl.indentation_level == 0 then
-					current_tab = tpl.display_name or current_tab
-				end
-
-				break
-			end
+		local entry = data.entry or widget.content.entry
+		if entry and tab_by_entry[entry] then
+			widget.content.tab = tab_by_entry[entry]
+		else
+			widget.content.tab = mod.default_tab
 		end
-
-		widget.content.tab = current_tab or mod.default_tab
 
 		::continue::
 	end
@@ -401,15 +407,13 @@ mod.get_tabs = function(self, category)
 				local setting_type = setting.widget_type
 
 				if setting_type == "group_header" then
-					if gen_tabs_enabled or not setting._auto_tab then
-						local resolved = setting.tab
-							or resolve_widget_tab_from_dmf_data(category, setting.setting_id, setting.display_name)
+					local resolved = setting.tab
+						or resolve_widget_tab_from_dmf_data(category, setting.setting_id, setting.display_name)
 
-						if resolved then
-							current_group_tab = resolved
-						elseif setting.indentation_level and setting.indentation_level == 0 then
-							current_group_tab = nil
-						end
+					if resolved then
+						current_group_tab = resolved
+					elseif setting.indentation_level and setting.indentation_level == 0 then
+						current_group_tab = nil
 					end
 				elseif setting_type ~= "group_header" then
 					local tab = current_group_tab or fallback_tab
@@ -462,7 +466,7 @@ local _create_settings_widget_from_config = function(
 	callback_name,
 	changed_callback_name
 )
-	local scenegraph_id = "settings_grid_content_pivot"
+	local scenegraph_id = "mod_tab_content"
 
 	local template = _content_blueprints["mod_tab_button"]
 
@@ -592,7 +596,7 @@ mod.create_tab_bar = function(self, category)
 
 		if start_index <= 1 then
 			left_hotspot.disabled = true
-			left_widget.visible = false
+			--left_widget.visible = false
 		end
 
 		widgets[#widgets + 1] = left_widget
@@ -661,11 +665,11 @@ mod.create_tab_bar = function(self, category)
 
 		if end_index >= total_tabs then
 			right_hotspot.disabled = true
-			right_widget.visible = false
+			--right_widget.visible = false
 		end
 
 		if total_tabs <= max_visible_tabs then
-			right_widget.visible = false
+			--right_widget.visible = false
 		end
 
 		widgets[#widgets + 1] = right_widget
@@ -715,7 +719,25 @@ mod.filter_settings = function(self, category)
 		mod.inject_gen_tabs_toggle_into_content(self, category, visible_widgets, visible_alignment)
 	end
 
-	for index, data in ipairs(category_widgets) do
+	local search_text = ""
+	if self._options_header then
+		local ft = self._options_header.filter_text
+		if type(ft) == "function" then
+			search_text = self._options_header:filter_text()
+		elseif type(ft) == "string" then
+			search_text = ft
+		end
+	end
+
+	local grid_data
+	if OptionsFilter and OptionsFilter.filter then
+		OptionsFilter.prepare(category_widgets)
+		grid_data = OptionsFilter.filter(category_widgets, search_text, false)
+	else
+		grid_data = category_widgets
+	end
+
+	for index, data in ipairs(grid_data) do
 		local widget = data.widget
 		local alignment_widget = data.alignment_widget
 
@@ -728,18 +750,13 @@ mod.filter_settings = function(self, category)
 				visible = true
 			else
 				local widget_tab = content.tab
-				visible = (widget_tab == nil) or (widget_tab == selected_tab)
 
-				-- Force show mod_title and description!
-				if index == 1 or index == 2 then
-					if widget.type == "description" or widget.type == "group_header" then
-						visible = true
-					end
-				end
-				if has_toggle and (index == 2 or index == 3) then
-					if widget.type == "description" then
-						visible = true
-					end
+				if widget_tab == nil and selected_tab == "Other" then
+					visible = true
+				elseif widget_tab == selected_tab then
+					visible = true
+				else
+					visible = false
 				end
 			end
 
@@ -753,7 +770,7 @@ mod.filter_settings = function(self, category)
 		end
 	end
 
-	if #visible_widgets <= 2 then
+	--[[if #visible_widgets <= 2 then
 		for index, data in ipairs(category_widgets) do
 			local widget = data.widget
 			local alignment_widget = data.alignment_widget
@@ -768,10 +785,35 @@ mod.filter_settings = function(self, category)
 				end
 			end
 		end
+	end]]
+
+	-- Clear stale hotspot.on_pressed before replacing the grid to prevent
+	-- DMF from re-acting on a press that already occurred (causes infinite
+	-- rebuild loops and memory exhaustion when the pressed widget gets
+	-- scrolled off-screen before its state is consumed).
+	local old_grid = self._settings_content_grid
+	local saved_scroll_progress = old_grid and old_grid:scrollbar_progress() or 0
+
+	for _, data in ipairs(category_widgets) do
+		local w = data.widget
+		if w and w.content then
+			local hs = w.content.hotspot
+			if hs then
+				hs.on_pressed = nil
+			end
+			local bhs = w.content.button_hotspot
+			if bhs then
+				bhs.on_pressed = nil
+			end
+		end
 	end
 
 	self._settings_content_widgets = visible_widgets
 	self._settings_alignment_list = visible_alignment
+
+	if self._mod_tab_grid then
+		self:_set_options_header_layout(self._settings_header_height, self._settings_header_spacing, true)
+	end
 
 	self._settings_content_grid = UIWidgetGrid:new(
 		visible_widgets,
@@ -796,7 +838,10 @@ mod.filter_settings = function(self, category)
 			true
 		)
 
-		self._settings_content_grid:set_scrollbar_progress(0)
+		local scroll_length = self._settings_content_grid:scroll_length()
+		if scroll_length > 0 then
+			self._settings_content_grid:set_scrollbar_progress(math.clamp(saved_scroll_progress, 0, 1))
+		end
 	end
 
 	self._navigation_grids[2] = self._settings_content_grid
@@ -851,13 +896,41 @@ mod:hook(CLASS.BaseView, "draw", function(func, self, dt, t, input_service, laye
 							end
 						end
 
-						self:_draw_grid(grid, self._mod_tab_widgets, interaction_widget, dt, t, input_service)
+						local render_settings = self._render_settings
+						local ui_renderer = self._ui_renderer
+						local ui_scenegraph = self._ui_scenegraph
+
+						UIRenderer.begin_pass(ui_renderer, ui_scenegraph, input_service, dt, render_settings)
+
+						for j = 1, #self._mod_tab_widgets do
+							local widget = self._mod_tab_widgets[j]
+
+							if grid:is_widget_visible(widget) then
+								UIWidget.draw(widget, ui_renderer)
+							end
+						end
+
+						UIRenderer.end_pass(ui_renderer)
 
 						hotspot.is_hover = old_hover
 					end
 				end
 			else
-				self:_draw_grid(grid, self._mod_tab_widgets, nil, dt, t, input_service)
+				local render_settings = self._render_settings
+				local ui_renderer = self._ui_renderer
+				local ui_scenegraph = self._ui_scenegraph
+
+				UIRenderer.begin_pass(ui_renderer, ui_scenegraph, input_service, dt, render_settings)
+
+				for j = 1, #self._mod_tab_widgets do
+					local widget = self._mod_tab_widgets[j]
+
+					if grid:is_widget_visible(widget) then
+						UIWidget.draw(widget, ui_renderer)
+					end
+				end
+
+				UIRenderer.end_pass(ui_renderer)
 			end
 		end
 	end
@@ -944,9 +1017,78 @@ mod:hook(CLASS.BaseView, "draw", function(func, self, dt, t, input_service, laye
 	func(self, dt, t, input_service, layer)
 end)
 
+mod._handle_gamepad_tab_navigation = function(self, view, input_service)
+	local using_gamepad = not view:using_cursor_navigation()
+
+	if not using_gamepad then
+		return
+	end
+
+	local navigate_left = input_service:get("navigate_left_continuous")
+	local navigate_right = input_service:get("navigate_right_continuous")
+
+	if not navigate_left and not navigate_right then
+		return
+	end
+
+	local tabs = mod.get_tabs(view, mod.current_category)
+
+	if #tabs <= 1 then
+		return
+	end
+
+	local mod_storage_key = get_mod_storage_key(view, mod.current_category)
+	local current_tab = mod.selected_tabs[mod_storage_key] or mod.default_tab
+	local current_idx = 1
+
+	for i, tab in ipairs(tabs) do
+		if tab == current_tab then
+			current_idx = i
+			break
+		end
+	end
+
+	if navigate_right and current_idx < #tabs then
+		current_idx = current_idx + 1
+	elseif navigate_left and current_idx > 1 then
+		current_idx = current_idx - 1
+	end
+
+	local new_tab = tabs[current_idx]
+
+	if new_tab and new_tab ~= current_tab then
+		mod.selected_tabs[mod_storage_key] = new_tab
+
+		mod.filter_settings(view, mod.current_category)
+
+		local start_index = tonumber(mod.tab_scroll_index[mod_storage_key]) or 1
+		local max_visible_tabs = tonumber(mod.max_visible_tabs) or 5
+
+		if current_idx < start_index then
+			mod.tab_scroll_index[mod_storage_key] = current_idx
+			mod.create_tab_bar(view, mod.current_category)
+		elseif current_idx > start_index + max_visible_tabs - 1 then
+			mod.tab_scroll_index[mod_storage_key] = current_idx - max_visible_tabs + 1
+			mod.create_tab_bar(view, mod.current_category)
+		end
+	end
+end
+
 mod._addModTabs = function(self, dt, t, input_service)
 	local category = mod.current_category
 	local mod_tabs_enabled = mod:get("enable_mod_tabs")
+
+	if category then
+		local header_height = self._settings_header_height or view_settings.settings_header_height
+		self:_set_scenegraph_position("mod_tab_area", nil, header_height + view_settings.settings_tab_spacing - 8)
+
+		if mod_tabs_enabled and self._mod_tab_grid then
+			self:_set_options_header_layout(self._settings_header_height, self._settings_header_spacing, true)
+			self._settings_content_grid:on_resolution_modified(self._render_scale)
+		end
+
+		self:_force_update_scenegraph()
+	end
 
 	if mod._prev_mod_tabs_enabled == nil then
 		mod._prev_mod_tabs_enabled = mod_tabs_enabled
@@ -985,7 +1127,9 @@ mod._addModTabs = function(self, dt, t, input_service)
 					self._mod_tab_widgets = nil
 				end
 
-				mod.filter_settings(self, category)
+				if self._settings_content_grid ~= mod._grid_ref then
+					mod.filter_settings(self, category)
+				end
 			end
 		end
 
@@ -998,56 +1142,12 @@ mod._addModTabs = function(self, dt, t, input_service)
 	end
 
 	if mod:get("enable_mod_tabs") and input_service then
-		local ok, err = pcall(function()
-			local using_gamepad = not self:using_cursor_navigation()
+		-- disable new DMF options tab indicator if my tabs are enabled.
+		if self and self._options_tab_indicator then
+			self._options_tab_indicator._visible = false
+		end
 
-			if using_gamepad then
-				local navigate_left = input_service:get("navigate_left_continuous")
-				local navigate_right = input_service:get("navigate_right_continuous")
-
-				if navigate_left or navigate_right then
-					local tabs = mod.get_tabs(self, mod.current_category)
-
-					if #tabs > 1 then
-						local mod_storage_key = get_mod_storage_key(self, mod.current_category)
-						local current_tab = mod.selected_tabs[mod_storage_key] or mod.default_tab
-						local current_idx = 1
-
-						for i, tab in ipairs(tabs) do
-							if tab == current_tab then
-								current_idx = i
-								break
-							end
-						end
-
-						if navigate_right and current_idx < #tabs then
-							current_idx = current_idx + 1
-						elseif navigate_left and current_idx > 1 then
-							current_idx = current_idx - 1
-						end
-
-						local new_tab = tabs[current_idx]
-
-						if new_tab and new_tab ~= current_tab then
-							mod.selected_tabs[mod_storage_key] = new_tab
-
-							mod.filter_settings(self, mod.current_category)
-
-							local start_index = tonumber(mod.tab_scroll_index[mod_storage_key]) or 1
-							local max_visible_tabs = tonumber(mod.max_visible_tabs) or 5
-
-							if current_idx < start_index then
-								mod.tab_scroll_index[mod_storage_key] = current_idx
-								mod.create_tab_bar(self, mod.current_category)
-							elseif current_idx > start_index + max_visible_tabs - 1 then
-								mod.tab_scroll_index[mod_storage_key] = current_idx - max_visible_tabs + 1
-								mod.create_tab_bar(self, mod.current_category)
-							end
-						end
-					end
-				end
-			end
-		end)
+		local ok, err = pcall(mod._handle_gamepad_tab_navigation, mod, self, input_service)
 
 		if not ok then
 			mod:debug("mod_tabs input error: %s", tostring(err))

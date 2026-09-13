@@ -544,7 +544,7 @@ local function build_overlay_panel(view, is_end_view)
     if is_end_view then
         local total_width = MAX_PLAYER_CARDS * CARD_WIDTH + (MAX_PLAYER_CARDS - 1) * GRID_GAP_X
         local start_x = (screen_size[1] - total_width) * 0.5
-        local start_y = screen_size[2] - CARD_HEIGHT - 50
+        local start_y = mod.end_view_scoreboard_position == "up" and 50 or screen_size[2] - CARD_HEIGHT - 50
 
         for i = 1, MAX_PLAYER_CARDS do
             local x = start_x + (i - 1) * (CARD_WIDTH + GRID_GAP_X)

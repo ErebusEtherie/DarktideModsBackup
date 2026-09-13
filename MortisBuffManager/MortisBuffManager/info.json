@@ -1,0 +1,14 @@
+{
+  "name": "Mortis Trials Buff Manager",
+  "version": "4.6.3",
+  "description": "Independent Mortis Trials Buff selection for local and Realms sessions.",
+  "author": "IRONCROWY",
+  "localization": {
+    "zh-cn": {
+      "name": "死灵试炼 Buff 管理器"
+    },
+    "zh-tw": {
+      "name": "死靈試煉 Buff 管理器"
+    }
+  }
+}

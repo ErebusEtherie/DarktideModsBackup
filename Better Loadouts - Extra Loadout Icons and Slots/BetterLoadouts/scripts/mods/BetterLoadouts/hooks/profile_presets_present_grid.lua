@@ -8,94 +8,13 @@ end
 local ViewElementProfilePresetsSettings = require(
     "scripts/ui/view_elements/view_element_profile_presets/view_element_profile_presets_settings"
 )
+local ProfileUtils = require("scripts/utilities/profile_utils")
 
-require("scripts/foundation/utilities/math")
 require("scripts/foundation/utilities/table")
 
 local s_format = string.format
 local t_clear_array = table.clear_array
 local t_append = table.append
-local m_floor, m_max = math.floor, math.max
-
--- Layout helper
-local function _layout()
-    return mod.BL.layout_for_limit(mod.preset_limit or 28)
-end
-
-local function _node_bottom(node)
-    if not (node and node.position and node.size) then
-        return nil
-    end
-
-    return (node.position[2] or 0) + (node.size[2] or 0)
-end
-
-local function _is_wide_layout()
-    if mod._bl_is_wide_preset_layout ~= nil then
-        return mod._bl_is_wide_preset_layout == true
-    end
-
-    local cols = mod._bl_profile_preset_num_cols or 0
-    local rows = mod._bl_profile_preset_num_rows or 0
-
-    return cols > rows
-end
-
-local function _tooltip_width(self)
-    local defs = self._definitions
-    local sg = defs and defs.scenegraph_definition
-    local node = sg and sg.profile_preset_tooltip
-
-    if node and node.size then
-        return node.size[1] or 265
-    end
-
-    local live_node = self._ui_scenegraph and self._ui_scenegraph.profile_preset_tooltip
-    if live_node and live_node.size then
-        return live_node.size[1] or 265
-    end
-
-    return 265
-end
-
-local function _tooltip_anchor_x(self, layout)
-    local panel_node = self._ui_scenegraph and self._ui_scenegraph.profile_preset_button_panel
-    local panel_w = mod._bl_profile_preset_panel_width
-        or (panel_node and panel_node.size and panel_node.size[1])
-        or (layout.BUTTON_WIDTH * 2 + layout.COLUMN_GAP)
-
-    if _is_wide_layout() then
-        local tooltip_w = _tooltip_width(self)
-        return m_floor((tooltip_w - panel_w) * 0.5)
-    end
-
-    return -(panel_w + (layout.SAFE_GAP or 40)) + 12
-end
-
-local function _tooltip_anchor_y(self, default_ty)
-    local tooltip_y = default_ty
-
-    if _is_wide_layout() then
-        local panel_bottom_y = mod._bl_profile_preset_panel_bottom_y
-            or ((mod._bl_profile_preset_panel_top_y or default_ty) + (mod._bl_profile_preset_panel_height or 0))
-
-        tooltip_y = panel_bottom_y + 16
-    end
-
-    if mod._has_loadoutnames then
-        local sgN = self._ui_scenegraph
-        local ln_bottom = m_max(
-            _node_bottom(sgN and sgN.loadout_name_tbox_area) or -math.huge,
-            _node_bottom(sgN and sgN.loadout_name_tooltip_area) or -math.huge
-        )
-
-        if ln_bottom > -math.huge then
-            tooltip_y = m_max(tooltip_y, ln_bottom + 16)
-        end
-    end
-
-    return tooltip_y
-end
 
 -- UTF-8 encoder
 local bytemarkers = {
@@ -111,7 +30,9 @@ local function utf8(decimal)
 
     local charbytes = {}
 
-    for bytes, vals in ipairs(bytemarkers) do
+    for bytes = 1, #bytemarkers do
+        local vals = bytemarkers[bytes]
+
         if decimal <= vals[1] then
             for b = bytes + 1, 2, -1 do
                 local rem = decimal % 64
@@ -159,40 +80,6 @@ end
 
 _seed_private_from_vanilla_then_custom()
 
--- Small helper to nudge the ViewElementGrid scrollbar on the tooltip grid
-local function _nudge_grid_scrollbar(grid_obj, dx)
-    if not grid_obj or not grid_obj._ui_scenegraph then
-        return
-    end
-
-    local names = { "grid_scrollbar", "scrollbar" }
-
-    for i = 1, #names do
-        local id = names[i]
-        local node = grid_obj._ui_scenegraph[id]
-
-        if node and node.position then
-            local x = (node.position[1] or 0) + (dx or 0)
-            local y = node.position[2] or 0
-            local z = node.position[3] or 13
-
-            if grid_obj._set_scenegraph_position then
-                grid_obj:_set_scenegraph_position(id, x, y, z)
-            elseif grid_obj._ui_scenegraph and grid_obj._ui_scenegraph[id] then
-                grid_obj._ui_scenegraph[id].position[1] = x
-                grid_obj._ui_scenegraph[id].position[2] = y
-                grid_obj._ui_scenegraph[id].position[3] = z
-            end
-
-            if grid_obj._force_update_scenegraph then
-                grid_obj:_force_update_scenegraph()
-            end
-
-            return true
-        end
-    end
-end
-
 local function make_unicode(cp)
     local key = s_format("unicode:%X", cp)
 
@@ -211,25 +98,18 @@ local function make_text_icon(key, text)
     }
 end
 
+local function make_color_swatch(entry, current_key)
+    return {
+        widget_type = "betterloadouts_color_swatch",
+        color_key = entry.key,
+        color = entry.color,
+        current_key = current_key,
+    }
+end
+
 -- Hook: build & present the tooltip grid layout (icons + unicode + text)
 mod:hook(CLASS.ViewElementProfilePresets, "_present_tooltip_grid_layout", function(func, self, layout)
-    local L = _layout()
-
-    local ty, tz = 0, 1
-    local tooltip_def = self._definitions
-        and self._definitions.scenegraph_definition
-        and self._definitions.scenegraph_definition.profile_preset_tooltip
-
-    if tooltip_def and tooltip_def.position then
-        ty = tooltip_def.position[2] or 0
-        tz = tooltip_def.position[3] or 1
-    end
-
-    local x = _tooltip_anchor_x(self, L)
-    local y = _tooltip_anchor_y(self, ty)
-
-    self:_set_scenegraph_position("profile_preset_tooltip", x, y, tz)
-    self:_force_update_scenegraph()
+    mod.position_preset_tooltip(self)
 
     -- Build a fresh layout from the private pool, but keep the delete button
     -- (if present) from the original layout.
@@ -238,6 +118,14 @@ mod:hook(CLASS.ViewElementProfilePresets, "_present_tooltip_grid_layout", functi
 
     t_clear_array(icons, #icons)
     self._vp_icons = icons
+
+    local current_color_key
+    local customize_index = self._active_customize_preset_index
+    if customize_index then
+        local profile_preset_id = self:_get_profile_preset_id_by_widget_index(customize_index)
+        local profile_preset = ProfileUtils.get_profile_preset(profile_preset_id)
+        current_color_key = profile_preset and profile_preset.betterloadouts_color_key
+    end
 
     for i = 1, #layout do
         local e = layout[i]
@@ -295,6 +183,13 @@ mod:hook(CLASS.ViewElementProfilePresets, "_present_tooltip_grid_layout", functi
     self._vp_spacing_proto = spacing_proto
 
     local new_layout = { spacing_proto }
+
+    for i = 1, #mod.BL.PRESET_COLORS do
+        new_layout[#new_layout + 1] = make_color_swatch(mod.BL.PRESET_COLORS[i], current_color_key)
+    end
+
+    new_layout[#new_layout + 1] = spacing_proto
+
     t_append(new_layout, icons)
     new_layout[#new_layout + 1] = spacing_proto
 
@@ -320,23 +215,12 @@ mod:hook(CLASS.ViewElementProfilePresets, "_present_tooltip_grid_layout", functi
             nil
         )
 
-        -- clear sticky selection/glow
-        local widgets = grid_obj:widgets()
-        if widgets then
-            for i = 1, #widgets do
-                local c = widgets[i].content
-                if c then
-                    c.equipped = false
-                    c.force_glow = false
-                    if c.hotspot then
-                        c.hotspot.is_selected = false
-                        c.hotspot.is_focused = false
-                    end
-                end
-            end
+        local profile_preset
+        if customize_index then
+            local profile_preset_id = self:_get_profile_preset_id_by_widget_index(customize_index)
+            profile_preset = ProfileUtils.get_profile_preset(profile_preset_id)
         end
+        mod.sync_preset_customization_selection(self, profile_preset)
 
-        -- nudge the grid's scrollbar +5px to the right
-        _nudge_grid_scrollbar(grid_obj, 5)
     end
 end)

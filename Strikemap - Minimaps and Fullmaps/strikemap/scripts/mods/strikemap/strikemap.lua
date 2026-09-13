@@ -1,5 +1,76 @@
 ﻿local mod = get_mod("strikemap")
 
+-- Lightweight burst profiler shared by the sibling modules. It deliberately
+-- measures only scheduled/burst work (never marker draw calls), so diagnostics
+-- themselves do not become a per-frame cost.
+local _perf_operations = {}
+
+local function perf_now()
+	local application = rawget(_G, "Application")
+
+	if application and type(application.time_since_launch) == "function" then
+		local ok, value = pcall(application.time_since_launch)
+
+		if ok and type(value) == "number" then
+			return value
+		end
+	end
+
+	local os_lib = rawget(_G, "os")
+	return os_lib and os_lib.clock and os_lib.clock() or 0
+end
+
+function mod.perf_begin()
+	return perf_now()
+end
+
+function mod.perf_end(name, started)
+	if type(name) ~= "string" or type(started) ~= "number" then
+		return 0
+	end
+
+	local elapsed_ms = math.max(0, (perf_now() - started) * 1000)
+	local stat = _perf_operations[name]
+
+	if not stat then
+		stat = { count = 0, total_ms = 0, last_ms = 0, max_ms = 0 }
+		_perf_operations[name] = stat
+	end
+
+	stat.count = stat.count + 1
+	stat.total_ms = stat.total_ms + elapsed_ms
+	stat.last_ms = elapsed_ms
+	stat.max_ms = math.max(stat.max_ms, elapsed_ms)
+
+	return elapsed_ms
+end
+
+function mod.perf_diag_lines(add)
+	add("performance bursts (last / max / avg ms):")
+
+	local names = {}
+
+	for name in pairs(_perf_operations) do
+		names[#names + 1] = name
+	end
+
+	table.sort(names)
+
+	if #names == 0 then
+		add("  no samples yet")
+		return
+	end
+
+	for i = 1, #names do
+		local name = names[i]
+		local stat = _perf_operations[name]
+		local average = stat.count > 0 and stat.total_ms / stat.count or 0
+
+		add(string.format("  %s: %.2f / %.2f / %.2f  (%d)",
+			name, stat.last_ms, stat.max_ms, average, stat.count))
+	end
+end
+
 -- ---------------------------------------------------------------------------
 -- HUD element registration (same pattern as NumericUI / DMF docs).
 -- ---------------------------------------------------------------------------
@@ -274,20 +345,45 @@ local _settings_cache = {
 	enemy_tick = ENEMY_TICK,
 	scan_range = ENEMY_QUERY_RANGE,
 	horde_los = "cone",
+	record_geometry_dumps = false,
 }
+local _settings_generation = 0
 
 local function refresh_settings_snapshot()
 	local cache = _settings_cache
+	local enable_minimap = get_setting("enable_minimap", true) ~= false
+	local show_when_no_map = get_setting("show_when_no_map", true) ~= false
+	local map_corner = get_setting("map_corner", "top_right")
+	local integrate_objectives = get_setting("integrate_objectives", true) ~= false
+	local record_reports = get_setting("record_reports", true) ~= false
+	local combat_tracking = get_setting("perf_combat_tracking", true) ~= false
+	local enemy_tick = (tonumber(get_setting("perf_enemy_tick", 150)) or 150) / 1000
+	local scan_range = tonumber(get_setting("perf_enemy_scan_range", ENEMY_QUERY_RANGE)) or ENEMY_QUERY_RANGE
+	local horde_los = get_setting("perf_horde_los", "cone")
+	local record_geometry_dumps = get_setting("record_geometry_dumps", false) == true
+	local changed = cache.enable_minimap ~= enable_minimap
+		or cache.show_when_no_map ~= show_when_no_map
+		or cache.map_corner ~= map_corner
+		or cache.integrate_objectives ~= integrate_objectives
+		or cache.record_reports ~= record_reports
+		or cache.combat_tracking ~= combat_tracking
+		or cache.enemy_tick ~= enemy_tick
+		or cache.scan_range ~= scan_range
+		or cache.horde_los ~= horde_los
+		or cache.record_geometry_dumps ~= record_geometry_dumps
 
-	cache.enable_minimap = get_setting("enable_minimap", true) ~= false
-	cache.show_when_no_map = get_setting("show_when_no_map", true) ~= false
-	cache.map_corner = get_setting("map_corner", "top_right")
-	cache.integrate_objectives = get_setting("integrate_objectives", true) ~= false
-	cache.record_reports = get_setting("record_reports", true) ~= false
-	cache.combat_tracking = get_setting("perf_combat_tracking", true) ~= false
-	cache.enemy_tick = (tonumber(get_setting("perf_enemy_tick", 150)) or 150) / 1000
-	cache.scan_range = tonumber(get_setting("perf_enemy_scan_range", ENEMY_QUERY_RANGE)) or ENEMY_QUERY_RANGE
-	cache.horde_los = get_setting("perf_horde_los", "cone")
+	cache.enable_minimap = enable_minimap
+	cache.show_when_no_map = show_when_no_map
+	cache.map_corner = map_corner
+	cache.integrate_objectives = integrate_objectives
+	cache.record_reports = record_reports
+	cache.combat_tracking = combat_tracking
+	cache.enemy_tick = enemy_tick
+	cache.scan_range = scan_range
+	cache.horde_los = horde_los
+	cache.record_geometry_dumps = record_geometry_dumps
+
+	return changed
 end
 
 refresh_settings_snapshot()
@@ -302,6 +398,29 @@ function mod.on_setting_changed(...)
 	end
 
 	refresh_settings_snapshot()
+	_settings_generation = _settings_generation + 1
+end
+
+-- DMF 26.08.19 emits this once after a bulk reset. The individual callbacks
+-- normally cover us, but the dedicated event makes renderer invalidation
+-- deterministic even when every value was already at its default.
+local _chained_on_settings_reset = mod.on_settings_reset
+
+function mod.on_settings_reset(...)
+	if _chained_on_settings_reset then
+		pcall(_chained_on_settings_reset, ...)
+	end
+
+	refresh_settings_snapshot()
+	_settings_generation = _settings_generation + 1
+end
+
+function mod.strikemap_settings_generation()
+	return _settings_generation
+end
+
+function mod.geometry_dump_recording_enabled()
+	return _settings_cache.record_geometry_dumps == true
 end
 
 -- Safety net: anything that writes a setting without going through DMF's
@@ -314,7 +433,10 @@ local function tick_settings_snapshot(dt)
 
 	if _snapshot_timer <= 0 then
 		_snapshot_timer = 0.5
-		refresh_settings_snapshot()
+
+		if refresh_settings_snapshot() then
+			_settings_generation = _settings_generation + 1
+		end
 	end
 end
 
@@ -1785,6 +1907,8 @@ local _compat_context_failed = false
 local _compat_vectors = nil
 local _compat_vectors_failed = false
 local _compat_revision = 0
+local _compat_source_map = nil
+local _compat_source_revision = nil
 local _compat_consumers = {}
 local _compat_consumer_count = 0
 local _compat_status = {}
@@ -1924,38 +2048,43 @@ local function build_vector_context(mission_name, map)
 	}
 end
 
--- Build once after the mission map is parsed. Consumers cache this exact table
--- until geometry_revision changes; no context or geometry is copied per frame.
+-- Track the cheap map identity/revision eagerly, but defer bounds walking and
+-- packed live-index creation until a consumer actually asks for the context.
 local function compat_refresh_context(mission_name)
-	if _compat_context or _compat_context_failed or not _state.map or not compat_api_enabled() then
+	local map = _state.map
+
+	if not map or not compat_api_enabled() then
 		return
 	end
 
 	-- A live expedition map exists before its first scan result. Keep the API
 	-- in "loading" instead of publishing infinite bounds or latching an error.
-	if (_state.map.tri_count or 0) <= 0 then
+	if (map.tri_count or 0) <= 0 then
 		return
 	end
 
-	_compat_revision = _compat_revision + 1
+	local source_revision = map.live and (map.revision or 0) or 0
 
-	local ok, context = pcall(build_compat_context, mission_name, _state.map)
-
-	if ok and context then
-		_compat_context = context
-		compat_log_once("api_ready", "Compatibility API ready.")
-	else
-		_compat_context_failed = true
-		compat_log_once("context_failed", "Compatibility context build failed: " .. tostring(context))
+	if _compat_source_map ~= map or _compat_source_revision ~= source_revision then
+		_compat_source_map = map
+		_compat_source_revision = source_revision
+		_compat_revision = _compat_revision + 1
+		_compat_context = nil
+		_compat_context_failed = false
+		_compat_vectors = nil
+		_compat_vectors_failed = false
+		_state.exp_revision = map.live and source_revision or nil
 	end
 end
 
 local function compat_clear_context()
-	if _compat_context then
+	if _compat_source_map or _compat_context then
 		_compat_revision = _compat_revision + 1
-		_compat_context = nil
 	end
 
+	_compat_source_map = nil
+	_compat_source_revision = nil
+	_compat_context = nil
 	_compat_context_failed = false
 	_compat_vectors = nil
 	_compat_vectors_failed = false
@@ -1966,10 +2095,10 @@ local function compat_status_name()
 		return "disabled"
 	elseif not _state.active or not _state.mission then
 		return "not_in_mission"
-	elseif _compat_context then
-		return "map_loaded"
-	elseif _compat_context_failed then
+	elseif _compat_context_failed == _compat_revision then
 		return "error"
+	elseif _compat_source_map then
+		return "map_loaded"
 	elseif _state.map or _load_attempts < MAP_LOAD_ATTEMPTS then
 		return "loading"
 	end
@@ -1995,11 +2124,34 @@ local function compat_get_status()
 end
 
 local function compat_get_map_context()
-	if _compat_context and compat_api_enabled() then
+	if not compat_api_enabled() then
+		return nil
+	end
+
+	compat_refresh_context(_state.mission)
+
+	if _compat_context and _compat_context.revision == _compat_revision then
 		return _compat_context
 	end
 
-	return nil
+	if not _compat_source_map or _compat_context_failed == _compat_revision then
+		return nil
+	end
+
+	local started = mod.perf_begin()
+	local ok, context = pcall(build_compat_context, _state.mission, _compat_source_map)
+	mod.perf_end("compatibility map export", started)
+
+	if ok and context then
+		_compat_context = context
+		compat_log_once("api_ready", "Compatibility API ready.")
+	else
+		_compat_context = nil
+		_compat_context_failed = _compat_revision
+		compat_log_once("context_failed", "Compatibility context build failed: " .. tostring(context))
+	end
+
+	return _compat_context
 end
 
 -- Lazily built on first request per geometry revision, then the exact same
@@ -2007,7 +2159,9 @@ end
 -- context). Never raises; a failed build latches nil until the next
 -- revision/mission.
 local function compat_get_vector_context()
-	if not _compat_context or not compat_api_enabled() or not _state.map then
+	local map_context = compat_get_map_context()
+
+	if not map_context or not _state.map then
 		return nil
 	end
 
@@ -2021,7 +2175,9 @@ local function compat_get_vector_context()
 		return nil
 	end
 
-	local ok, context = pcall(build_vector_context, _compat_context.mission_name, _state.map)
+	local started = mod.perf_begin()
+	local ok, context = pcall(build_vector_context, map_context.mission_name, _state.map)
+	mod.perf_end("compatibility vector export", started)
 
 	if ok and context then
 		_compat_vectors = context
@@ -3293,7 +3449,7 @@ local function diag_lines()
 	end
 
 	add("=== strikemap diag ===")
-	add("build: perf-r2 (sliced level scan, histogram detail budget, reports subfolder)")
+	add("build: perf-r3 (lazy exports, cached settings, staged report saves)")
 	add("registered: " .. tostring(_element_registered))
 	add("mission: " .. tostring(_state.mission))
 	add("active: " .. tostring(_state.active) .. "  visible: " .. tostring(_state.visible))
@@ -3334,6 +3490,8 @@ local function diag_lines()
 		.. "  consumers=" .. tostring(_compat_consumer_count)
 		.. "  geometry_only=" .. tostring(_state.geometry_only))
 
+	mod.perf_diag_lines(add)
+
 	if mod.expedition_diag_lines then
 		safe(function()
 			mod.expedition_diag_lines(add)
@@ -3354,7 +3512,7 @@ local function write_diag_file()
 	local file = io_lib and io_lib.open(DIAG_PATH, "w")
 
 	if not file then
-		return
+		return false
 	end
 
 	local lines = diag_lines()
@@ -3364,6 +3522,19 @@ local function write_diag_file()
 	end
 
 	file:close()
+	return true
+end
+
+-- DMF 26.08.19 button widget target. This exposes the same useful diagnostic
+-- snapshot as /strikemap_diag without flooding chat with every line.
+function mod.write_performance_report()
+	local ok, written = pcall(write_diag_file)
+	local message = ok and written
+		and mod:localize("performance_report_written")
+		or mod:localize("performance_report_failed")
+
+	mod:echo(message)
+	pcall(mod.notify, mod, message)
 end
 
 mod:command("strikemap_diag", "print strikemap diagnostic state", function()
@@ -3538,36 +3709,6 @@ function mod.update(dt)
 			_state.map = expedition_map
 			_state.exp_revision = nil
 		end
-
-		-- Live geometry grew: refresh the shared compat context in place and
-		-- bump the revision so consumers re-read counts/bounds.
-		local revision = expedition_map.revision or 0
-
-		if _compat_context and _state.exp_revision ~= revision then
-			local refreshed = safe(function()
-				local bounds = mod.map_bounds(expedition_map)
-
-				if not bounds then
-					return false
-				end
-
-				local fresh = build_compat_context(mission_name, expedition_map)
-
-				_compat_revision = _compat_revision + 1
-				_compat_context.revision = _compat_revision
-				_compat_context.tri_count = fresh.tri_count
-				_compat_context.spatial_index = fresh.spatial_index
-				_compat_context.bounds = bounds
-				_compat_context.minimum_z = bounds.z0
-				_compat_context.maximum_z = bounds.z1
-
-				return true
-			end)
-
-			if refreshed then
-				_state.exp_revision = revision
-			end
-		end
 	elseif not _state.map and _load_attempts < MAP_LOAD_ATTEMPTS then
 		_load_attempts = _load_attempts + 1
 		_state.map = try_load_map(mission_name)
@@ -3588,12 +3729,6 @@ function mod.update(dt)
 
 	compat_refresh_context(mission_name)
 
-	-- The first live context was built from this exact revision. Recording it
-	-- here avoids a redundant revision bump on the following frame.
-	if expedition_map and _compat_context and _state.exp_revision == nil then
-		_state.exp_revision = expedition_map.revision or 0
-	end
-
 	if hud_active then
 		_gate_timer = _gate_timer - dt
 		if _gate_timer <= 0 then
@@ -3612,13 +3747,17 @@ function mod.update(dt)
 		-- completes after medicae stations already exist and deployables can
 		-- appear at any time, so keep a modest live rescan cadence.
 		if Scan.job then
+			local started = mod.perf_begin()
 			pcall(Scan.step)
+			mod.perf_end("pickup scan slice", started)
 		else
 			_medicae_timer = _medicae_timer - dt
 
 			if _medicae_timer <= 0 then
 				_medicae_timer = 5
+				local started = mod.perf_begin()
 				pcall(Scan.step)
+				mod.perf_end("pickup scan slice", started)
 			end
 		end
 
@@ -3634,13 +3773,17 @@ function mod.update(dt)
 		_enemy_timer = _settings_cache.enemy_tick or ENEMY_TICK
 
 		if hud_active then
+			local started = mod.perf_begin()
 			safe(collect_enemies)
+			mod.perf_end("enemy collection", started)
 			-- LoS raycasts are the most expensive calls the mod makes, and enemy
 			-- positions only change on this tick â€” refreshing visibility any faster
 			-- than ENEMY_TICK is pure waste (worst exactly during hordes).
 			_sight_refresh_due = true
 		elseif get_setting("record_reports", true) ~= false then
+			local started = mod.perf_begin()
 			safe(collect_report_enemies)
+			mod.perf_end("report enemy collection", started)
 		end
 	end
 
@@ -3655,7 +3798,9 @@ function mod.update(dt)
 
 		if _sight_refresh_due then
 			_sight_refresh_due = false
+			local started = mod.perf_begin()
 			safe(refresh_sight_visibility)
+			mod.perf_end("line-of-sight refresh", started)
 		end
 	end
 

@@ -15,18 +15,20 @@ local noospheric_command_duration          = cryptic_talent_settings.servo_skull
 -- Global Cache
 local CLASS                                = CLASS
 local ScriptUnit                           = ScriptUnit
+local Managers                             = Managers
 
 -- Delay for Server Latency, Interval for Auto Mark
 local AUTO_MARK_DELAY                      = 1
-local AUTO_MARK_INTERVAL                   = 0.5
+local AUTO_MARK_INTERVAL                   = 0.2
 local ENEMY_TAG_DELAY                      = 3
-local PRIORITY_SWITCH_COOLDOWN             = 0.5
+local PRIORITY_SWITCH_COOLDOWN             = 0.3
 local FOCUS_TARGET_DELAY                   = 1.5
 
 -- set delay and interval for auto mark
 local function on_set_tag(tag_context)
     -- mark_context.auto_mark_interval = AUTO_MARK_INTERVAL
     tag_context.delay = AUTO_MARK_DELAY
+    tag_context.delay_times = tag_context.delay_times + 1
 end
 
 -- record manual marked unit
@@ -103,10 +105,8 @@ end
 function mod:set_manual_mark(tag_name, target_unit, target_tag)
     local player = context.player
     local player_unit = player and player.player_unit
-    local tag_context = mark_context[tag_name]
     local smart_tag_system = context.smart_tag_system
-    if not player_unit or not target_unit or not tag_context or not smart_tag_system
-    then
+    if not player_unit or not target_unit or not smart_tag_system then
         return
     end
 
@@ -132,7 +132,7 @@ mod:hook(CLASS.SmartTagSystem, "set_tag",
         local player = context.player
         if player and tagger_unit == player.player_unit then
             local tag_context = mark_context[template_name]
-            if tag_context ~= nil then
+            if tag_context then
                 -- the unit is marked manually
                 mod:on_manual_mark(tag_context, target_unit)
                 -- set delay and interval for auto mark
@@ -146,6 +146,9 @@ local function delay_normal_tag()
     local tag_context = mark_context[TAG_NAMES.ENEMY_TAG]
     if tag_context.cooldown < ENEMY_TAG_DELAY then
         tag_context.cooldown = ENEMY_TAG_DELAY
+    end
+    if tag_context.priority_switch_cooldown < ENEMY_TAG_DELAY then
+        tag_context.priority_switch_cooldown = ENEMY_TAG_DELAY
     end
 end
 
@@ -163,18 +166,21 @@ mod:hook_safe(CLASS.SmartTag, "init",
             return
         end
 
+        mod:print_debug("init smart tag", tag_name)
         mark_context.auto_mark_interval = AUTO_MARK_INTERVAL
         -- refresh delay and set cooldown
         tag_context.tag = self
-        tag_context.delay = 0
+        tag_context.interval = 0
         tag_context.cooldown = mod:get_class_settings(tag_name).cooldown
         tag_context.priority_switch_cooldown = PRIORITY_SWITCH_COOLDOWN
-        -- check if the tag is manual
-        if tag_context.manual_unit == target_unit then
-            tag_context.is_manual = true
-        else
-            tag_context.is_manual = false
+        -- reset delay
+        tag_context.delay_times = tag_context.delay_times - 1
+        if tag_context.delay_times <= 0 then
+            tag_context.delay = 0
+            tag_context.delay_times = 0
         end
+        -- check if the tag is manual
+        tag_context.is_manual = tag_context.manual_unit == target_unit
         tag_context.manual_unit = nil
 
         if tag_name == TAG_NAMES.COMPANION_TAG then
@@ -196,6 +202,7 @@ mod:hook_safe(CLASS.SmartTag, "init",
             end
             delay_normal_tag()
         elseif tag_name == TAG_NAMES.SERVO_SKULL_TAG then
+            tag_context.shoot_start_time = nil
             if context.has_noospheric_command then
                 tag_context.noospheric_command_next_time = mod:get_latest_fixed_time() + noospheric_command_duration
             else
@@ -219,6 +226,7 @@ mod:hook_safe(CLASS.SmartTag, "init",
             if context.class_name == "veteran" and context.has_focus_target then
                 local veteran_tag_context = mark_context[TAG_NAMES.VETERAN_TAG]
                 veteran_tag_context.tag = self
+                veteran_tag_context.interval = 0
                 veteran_tag_context.cooldown = mod:get_class_settings(TAG_NAMES.VETERAN_TAG).cooldown
                 veteran_tag_context.priority_switch_cooldown = PRIORITY_SWITCH_COOLDOWN
                 veteran_tag_context.is_manual = tag_context.is_manual
@@ -235,21 +243,27 @@ mod:hook(CLASS.SmartTag, "destroy",
         end
 
         if tag_context.tag == self then
+            mod:print_debug("destroy smart tag", tag_name)
             tag_context.tag = nil
             tag_context.is_manual = false
-            if mod:get_class_settings(tag_name).reset_cooldown then
+            local class_settings = mod:get_class_settings(tag_name)
+            tag_context.interval = class_settings.interval
+            if class_settings.reset_cooldown then
                 tag_context.cooldown = 0
             end
 
             if tag_name == TAG_NAMES.COMPANION_TAG then
-                tag_context.removed_units[self._target_unit] = mod:get_latest_fixed_time() + 3
+                tag_context.removed_units[self._target_unit] = mod:get_latest_fixed_time() + 1.5
                 tag_context.pounce_start_time = nil
                 tag_context.is_cancelable = false
+                delay_normal_tag()
             elseif tag_name == TAG_NAMES.SERVO_SKULL_TAG then
-                tag_context.removed_units[self._target_unit] = mod:get_latest_fixed_time() + 3
+                tag_context.removed_units[self._target_unit] = mod:get_latest_fixed_time() + 1.5
+                tag_context.shoot_start_time = nil
                 tag_context.noospheric_command_next_time = math.huge
+                delay_normal_tag()
             elseif tag_name == TAG_NAMES.VETERAN_TAG then
-                tag_context.removed_units[self._target_unit] = mod:get_latest_fixed_time() + 3
+                tag_context.removed_units[self._target_unit] = mod:get_latest_fixed_time() + 1.5
                 if tag_context.is_switch_melee and tag_context.cooldown < FOCUS_TARGET_DELAY then
                     tag_context.cooldown = FOCUS_TARGET_DELAY
                 end
@@ -261,7 +275,9 @@ mod:hook(CLASS.SmartTag, "destroy",
                     if veteran_tag_context.tag == self then
                         veteran_tag_context.tag = nil
                         veteran_tag_context.is_manual = false
-                        if mod:get_class_settings(TAG_NAMES.VETERAN_TAG).reset_cooldown then
+                        local veteran_class_settings = mod:get_class_settings(TAG_NAMES.VETERAN_TAG)
+                        veteran_tag_context.interval = veteran_class_settings.interval
+                        if veteran_class_settings.reset_cooldown then
                             veteran_tag_context.cooldown = 0
                         end
                     end
@@ -270,4 +286,34 @@ mod:hook(CLASS.SmartTag, "destroy",
         end
 
         return func(self, ...)
+    end)
+
+local SERVO_SKULL_DAMAGE_PROFILE_NAMES = {
+    default_companion_servo_skull_lasgun_killshot = true,
+    improved_companion_servo_skull_lasgun_killshot = true,
+}
+-- Hook for Companion Dog Attack Info
+mod:hook_safe(CLASS.AttackReportManager, "add_attack_result",
+    function(self, damage_profile, attacked_unit, attacking_unit, attack_direction, hit_world_position, hit_weakspot, damage, attack_result, attack_type, damage_efficiency, is_critical_strike)
+        local player = context.player
+        local player_unit = player and player.player_unit
+        if not player_unit or attacking_unit ~= player_unit then
+            return
+        end
+
+        if attack_type == "companion_dog" then
+            local tag_context = mark_context[TAG_NAMES.COMPANION_TAG]
+            local marked_tag = tag_context.tag
+            if marked_tag and marked_tag._target_unit == attacked_unit and not tag_context.pounce_start_time then
+                tag_context.pounce_start_time = mod:get_latest_fixed_time()
+                mod:print_debug("pounce start time:", tag_context.pounce_start_time)
+            end
+        elseif SERVO_SKULL_DAMAGE_PROFILE_NAMES[damage_profile.name] then
+            local tag_context = mark_context[TAG_NAMES.SERVO_SKULL_TAG]
+            local marked_tag = tag_context.tag
+            if marked_tag and marked_tag._target_unit == attacked_unit and not tag_context.shoot_start_time then
+                tag_context.shoot_start_time = mod:get_latest_fixed_time()
+                mod:print_debug("shoot start time:", tag_context.shoot_start_time)
+            end
+        end
     end)

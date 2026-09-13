@@ -16,7 +16,9 @@ return {
 				options       = {
 					{ text = "language_auto",  value = "auto" },
 					{ text = "language_en",    value = "en" },
+					{ text = "language_zh_cn", value = "zh-cn" },
 					{ text = "language_zh_tw", value = "zh-tw" },
+					{ text = "language_ru",    value = "ru" },
 				},
 			},
 			{
@@ -63,6 +65,12 @@ return {
 						type          = "checkbox",
 						default_value = true,
 						tooltip       = "enable_decode_auto_tooltip",
+					},
+					{
+						setting_id    = "enable_decode_smart_reroll",
+						type          = "checkbox",
+						default_value = false,
+						tooltip       = "enable_decode_smart_reroll_tooltip",
 					},
 				},
 			},

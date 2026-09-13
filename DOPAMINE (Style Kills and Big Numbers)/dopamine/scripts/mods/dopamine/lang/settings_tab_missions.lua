@@ -16,6 +16,12 @@ return {
 	enable_mission_summary_description = {
 		en = "Toggles whether the mission summary is shown at the end of each mission",
 	},
+	skip_mission_recap = {
+		en = "Skip Recap Animation",
+	},
+	skip_mission_recap_description = {
+		en = "When enabled, the end-of-mission summary opens straight to the final scores instead of playing the staggered count-up recap. The panel's opening transition still plays.",
+	},
 	heading_danger_zone = {
 		en = important("Danger Zone"),
 	},

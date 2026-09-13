@@ -1,0 +1,18 @@
+{
+    "name": "Gauntlet Trajectory",
+    "description": "Adds a trajectory prediction arc to the Ogryn Grenadier Gauntlet.",
+    "version": "1.3.1",
+    "author": "hermines",
+    "homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/1077",
+    "source": "",
+    "funding": {
+        "kofi": "",
+        "patreon": ""
+    },
+    "load_order": {
+        "requirements": [],
+        "load_after": [],
+        "load_before": []
+    },
+    "localization": {}
+}

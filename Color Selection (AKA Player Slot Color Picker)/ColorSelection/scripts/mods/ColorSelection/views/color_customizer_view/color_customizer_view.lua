@@ -8,7 +8,7 @@ local TextInputPassTemplates = require("scripts/ui/pass_templates/text_input_pas
 local ButtonPassTemplates = require("scripts/ui/pass_templates/button_pass_templates")
 
 local Definitions = mod:io_dofile("ColorSelection/scripts/mods/ColorSelection/views/color_customizer_view/color_customizer_view_definitions")
-local color_presets = mod:io_dofile("ColorSelection/scripts/mods/ColorSelection/color_presets") or {}
+local color_presets = mod:io_dofile("ColorSelection/scripts/mods/ColorSelection/views/color_customizer_view/color_presets") or {}
 
 
 local CONSTANTS = {
@@ -25,8 +25,6 @@ local MOD_CONSTANTS = mod.CONSTANTS or CONSTANTS
 
 local function _get_player_slot(p) return p:slot() end
 local function _get_player_account_id(p) return p:account_id() end
-local function _nameplate_extension_scan(e) e:_nameplate_extension_scan() end
-local function _companion_nameplate_extension_scan(e) e:_companion_nameplate_extension_scan() end
 
 local ColorCustomizerView = class("ColorCustomizerView", "BaseView")
 
@@ -913,9 +911,14 @@ function ColorCustomizerView:_update_slot_button_colors()
             else
 
                 local slot_prefix = "slot" .. tostring(slot)
-                r = mod:get(slot_prefix .. "_r") or mod.get_default_color_value(slot_prefix, "r")
-                g = mod:get(slot_prefix .. "_g") or mod.get_default_color_value(slot_prefix, "g")
-                b = mod:get(slot_prefix .. "_b") or mod.get_default_color_value(slot_prefix, "b")
+                local c = mod:get(slot_prefix)
+                if c and type(c) == "table" and #c >= 3 then
+                    r, g, b = c[2], c[3], c[4]
+                else
+                    r = mod.get_default_color_value(slot_prefix, "r")
+                    g = mod.get_default_color_value(slot_prefix, "g")
+                    b = mod.get_default_color_value(slot_prefix, "b")
+                end
             end
 
 
@@ -954,9 +957,14 @@ function ColorCustomizerView:_update_slot_button_colors()
             b = math.clamp(self._blue, 0, CONSTANTS.MAX_COLOR_VALUE)
         else
 
-            r = mod:get("bot_r") or mod.get_default_color_value("bot", "r")
-            g = mod:get("bot_g") or mod.get_default_color_value("bot", "g")
-            b = mod:get("bot_b") or mod.get_default_color_value("bot", "b")
+            local c = mod:get("bot")
+            if c and type(c) == "table" and #c >= 3 then
+                r, g, b = c[2], c[3], c[4]
+            else
+                r = mod.get_default_color_value("bot", "r")
+                g = mod.get_default_color_value("bot", "g")
+                b = mod.get_default_color_value("bot", "b")
+            end
         end
 
 
@@ -992,9 +1000,14 @@ function ColorCustomizerView:_update_slot_button_colors()
                 g = math.clamp(self._green, 0, CONSTANTS.MAX_COLOR_VALUE)
                 b = math.clamp(self._blue, 0, CONSTANTS.MAX_COLOR_VALUE)
             else
-                r = mod:get(class_name .. "_r") or mod.get_default_color_value(class_name, "r")
-                g = mod:get(class_name .. "_g") or mod.get_default_color_value(class_name, "g")
-                b = mod:get(class_name .. "_b") or mod.get_default_color_value(class_name, "b")
+                local c = mod:get(class_name)
+                if c and type(c) == "table" and #c >= 3 then
+                    r, g, b = c[2], c[3], c[4]
+                else
+                    r = mod.get_default_color_value(class_name, "r")
+                    g = mod.get_default_color_value(class_name, "g")
+                    b = mod.get_default_color_value(class_name, "b")
+                end
             end
 
             if swatch_color then
@@ -1149,9 +1162,14 @@ function ColorCustomizerView:_load_player_info()
 
 
         local slot_prefix = "slot" .. tostring(player_slot)
-        self._red = mod:get(slot_prefix .. "_r") or mod.get_default_color_value(slot_prefix, "r")
-        self._green = mod:get(slot_prefix .. "_g") or mod.get_default_color_value(slot_prefix, "g")
-        self._blue = mod:get(slot_prefix .. "_b") or mod.get_default_color_value(slot_prefix, "b")
+        local c_arr = mod:get(slot_prefix)
+        if c_arr and type(c_arr) == "table" and #c_arr >= 3 then
+            self._red, self._green, self._blue = c_arr[2], c_arr[3], c_arr[4]
+        else
+            self._red = mod.get_default_color_value(slot_prefix, "r")
+            self._green = mod.get_default_color_value(slot_prefix, "g")
+            self._blue = mod.get_default_color_value(slot_prefix, "b")
+        end
         self:_update_slider_values(true)
         self:_update_hex_input()
         self:_update_color_preview()
@@ -1188,51 +1206,12 @@ function ColorCustomizerView:_on_apply_pressed()
         end
 
 
-        mod:set(slot_prefix .. "_r", self._red)
-        mod:set(slot_prefix .. "_g", self._green)
-        mod:set(slot_prefix .. "_b", self._blue)
+        mod:set(slot_prefix, { 255, self._red, self._green, self._blue })
 
 
         if mod.apply_slot_colors and type(mod.apply_slot_colors) == "function" then
             mod.apply_slot_colors()
         end
-
-
-        if mod.update_player_panel_colors and type(mod.update_player_panel_colors) == "function" then
-            mod.update_player_panel_colors()
-        end
-
-
-        local ui_manager = Managers and Managers.ui
-        if ui_manager then
-            local hud = ui_manager:get_hud()
-            if hud then
-                local nameplates_element = hud:element("HudElementNameplates")
-                if nameplates_element then
-
-                    if nameplates_element._nameplate_units then
-                        for unit, unit_data in pairs(nameplates_element._nameplate_units) do
-                            unit_data.synced = false
-                        end
-                    end
-
-                    if nameplates_element._companion_nameplates then
-                        for unit, companion_data in pairs(nameplates_element._companion_nameplates) do
-                            companion_data.synced = false
-                        end
-                    end
-
-                    nameplates_element._scan_delay_duration = 0
-                    if nameplates_element._nameplate_extension_scan then
-                        pcall(_nameplate_extension_scan, nameplates_element)
-                    end
-                    if nameplates_element._companion_nameplate_extension_scan then
-                        pcall(_companion_nameplate_extension_scan, nameplates_element)
-                    end
-                end
-            end
-        end
-
 
         self:_update_slot_button_colors()
 
@@ -1302,46 +1281,8 @@ function ColorCustomizerView:_on_apply_pressed()
     if mod.apply_slot_colors and type(mod.apply_slot_colors) == "function" then
         mod.apply_slot_colors()
     else
-
         mod.on_setting_changed("player_custom_color")
     end
-
-
-    if mod.update_player_panel_colors and type(mod.update_player_panel_colors) == "function" then
-        mod.update_player_panel_colors()
-    end
-
-
-    local ui_manager = Managers and Managers.ui
-    if ui_manager then
-        local hud = ui_manager:get_hud()
-        if hud then
-            local nameplates_element = hud:element("HudElementNameplates")
-            if nameplates_element then
-
-                if nameplates_element._nameplate_units then
-                    for unit, unit_data in pairs(nameplates_element._nameplate_units) do
-                        unit_data.synced = false
-                    end
-                end
-
-                if nameplates_element._companion_nameplates then
-                    for unit, companion_data in pairs(nameplates_element._companion_nameplates) do
-                        companion_data.synced = false
-                    end
-                end
-
-                nameplates_element._scan_delay_duration = 0
-                if nameplates_element._nameplate_extension_scan then
-                    pcall(_nameplate_extension_scan, nameplates_element)
-                end
-                if nameplates_element._companion_nameplate_extension_scan then
-                    pcall(_companion_nameplate_extension_scan, nameplates_element)
-                end
-            end
-        end
-    end
-
 
     if not self._editing_slot then
         self:_load_players_list()
@@ -1416,11 +1357,6 @@ function ColorCustomizerView:_on_save_pressed()
     end
 
 
-    if mod.update_player_panel_colors and type(mod.update_player_panel_colors) == "function" then
-        mod.update_player_panel_colors()
-    end
-
-
     self:_load_players_list()
     self:_update_players_grid()
 
@@ -1436,9 +1372,7 @@ function ColorCustomizerView:_on_reset_pressed()
         if slot == "bot" then
             slot_prefix = "bot"
             slot_name = "Bot"
-            mod:set("bot_r", 128)
-            mod:set("bot_g", 128)
-            mod:set("bot_b", 128)
+            mod:set("bot", {255, 128, 128, 128})
         elseif type(slot) == "string" then
             slot_prefix = slot
             slot_name = mod:localize("button_" .. slot) or slot
@@ -1453,36 +1387,31 @@ function ColorCustomizerView:_on_reset_pressed()
             }
             local c = default_class_colors[slot]
             if c then
-                mod:set(slot .. "_r", c.r)
-                mod:set(slot .. "_g", c.g)
-                mod:set(slot .. "_b", c.b)
+                mod:set(slot, {255, c.r, c.g, c.b})
             end
         else
             slot_prefix = "slot" .. tostring(slot)
             slot_name = tostring(slot)
 
             if slot == 1 then
-                mod:set("slot1_r", 226)
-                mod:set("slot1_g", 210)
-                mod:set("slot1_b", 117)
+                mod:set("slot1", {255, 226, 210, 117})
             elseif slot == 2 then
-                mod:set("slot2_r", 180)
-                mod:set("slot2_g", 88)
-                mod:set("slot2_b", 108)
+                mod:set("slot2", {255, 180, 88, 108})
             elseif slot == 3 then
-                mod:set("slot3_r", 84)
-                mod:set("slot3_g", 172)
-                mod:set("slot3_b", 121)
+                mod:set("slot3", {255, 84, 172, 121})
             elseif slot == 4 then
-                mod:set("slot4_r", 126)
-                mod:set("slot4_g", 153)
-                mod:set("slot4_b", 230)
+                mod:set("slot4", {255, 126, 153, 230})
             end
         end
 
-        self._red = mod:get(slot_prefix .. "_r") or mod.get_default_color_value(slot_prefix, "r")
-        self._green = mod:get(slot_prefix .. "_g") or mod.get_default_color_value(slot_prefix, "g")
-        self._blue = mod:get(slot_prefix .. "_b") or mod.get_default_color_value(slot_prefix, "b")
+        local c_arr = mod:get(slot_prefix)
+        if c_arr and type(c_arr) == "table" and #c_arr >= 3 then
+            self._red, self._green, self._blue = c_arr[2], c_arr[3], c_arr[4]
+        else
+            self._red = mod.get_default_color_value(slot_prefix, "r")
+            self._green = mod.get_default_color_value(slot_prefix, "g")
+            self._blue = mod.get_default_color_value(slot_prefix, "b")
+        end
 
         self:_update_slider_values(true)
         self:_update_hex_input()
@@ -1553,29 +1482,11 @@ end
 function ColorCustomizerView:_on_reset_all_slots_pressed()
 
 
-    mod:set("slot1_r", 226)
-    mod:set("slot1_g", 210)
-    mod:set("slot1_b", 117)
-
-
-    mod:set("slot2_r", 180)
-    mod:set("slot2_g", 88)
-    mod:set("slot2_b", 108)
-
-
-    mod:set("slot3_r", 84)
-    mod:set("slot3_g", 172)
-    mod:set("slot3_b", 121)
-
-
-    mod:set("slot4_r", 126)
-    mod:set("slot4_g", 153)
-    mod:set("slot4_b", 230)
-
-
-    mod:set("bot_r", 128)
-    mod:set("bot_g", 128)
-    mod:set("bot_b", 128)
+    mod:set("slot1", {255, 226, 210, 117})
+    mod:set("slot2", {255, 180, 88, 108})
+    mod:set("slot3", {255, 84, 172, 121})
+    mod:set("slot4", {255, 126, 153, 230})
+    mod:set("bot", {255, 128, 128, 128})
 
 
     local default_class_colors = {
@@ -1588,9 +1499,7 @@ function ColorCustomizerView:_on_reset_all_slots_pressed()
         cryptic = {r = 32,  g = 178, b = 170},
     }
     for class_name, c in pairs(default_class_colors) do
-        mod:set(class_name .. "_r", c.r)
-        mod:set(class_name .. "_g", c.g)
-        mod:set(class_name .. "_b", c.b)
+        mod:set(class_name, {255, c.r, c.g, c.b})
     end
 
 
@@ -1619,9 +1528,14 @@ function ColorCustomizerView:_on_reset_all_slots_pressed()
         else
             slot_prefix = "slot" .. tostring(slot)
         end
-        self._red = mod:get(slot_prefix .. "_r") or mod.get_default_color_value(slot_prefix, "r")
-        self._green = mod:get(slot_prefix .. "_g") or mod.get_default_color_value(slot_prefix, "g")
-        self._blue = mod:get(slot_prefix .. "_b") or mod.get_default_color_value(slot_prefix, "b")
+        local c_arr = mod:get(slot_prefix)
+        if c_arr and type(c_arr) == "table" and #c_arr >= 3 then
+            self._red, self._green, self._blue = c_arr[2], c_arr[3], c_arr[4]
+        else
+            self._red = mod.get_default_color_value(slot_prefix, "r")
+            self._green = mod.get_default_color_value(slot_prefix, "g")
+            self._blue = mod.get_default_color_value(slot_prefix, "b")
+        end
 
         self:_update_slider_values(true)
         self:_update_hex_input()
@@ -1690,9 +1604,14 @@ function ColorCustomizerView:_on_slot_button_pressed(slot)
     else
         slot_prefix = "slot" .. tostring(slot)
     end
-    self._red = mod:get(slot_prefix .. "_r") or mod.get_default_color_value(slot_prefix, "r")
-    self._green = mod:get(slot_prefix .. "_g") or mod.get_default_color_value(slot_prefix, "g")
-    self._blue = mod:get(slot_prefix .. "_b") or mod.get_default_color_value(slot_prefix, "b")
+    local c_arr = mod:get(slot_prefix)
+    if c_arr and type(c_arr) == "table" and #c_arr >= 3 then
+        self._red, self._green, self._blue = c_arr[2], c_arr[3], c_arr[4]
+    else
+        self._red = mod.get_default_color_value(slot_prefix, "r")
+        self._green = mod.get_default_color_value(slot_prefix, "g")
+        self._blue = mod.get_default_color_value(slot_prefix, "b")
+    end
 
 
     local widgets_by_name = self._widgets_by_name

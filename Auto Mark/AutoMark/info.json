@@ -1,0 +1,20 @@
+{
+    "name": "Auto Mark",
+    "description": "Enhance your marking experience",
+    "version": "2.5.1",
+    "author": "Shui Yu",
+    "homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/736",
+    "source": "",
+    "funding": {
+        "kofi": "",
+        "patreon": ""
+    },
+    "load_order": {
+        "requirements": [],
+        "load_after": [],
+        "load_before": [
+            "Muzzle"
+        ]
+    },
+    "localization": {}
+}

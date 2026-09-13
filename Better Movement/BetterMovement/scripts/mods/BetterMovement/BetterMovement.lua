@@ -4,18 +4,19 @@ local constants                     = require("scripts/settings/player_character
 local ActionAvailability            = require("scripts/extension_systems/weapon/utilities/action_availability")
 local ActionHandlerSettings         = require("scripts/settings/action/action_handler_settings")
 local Sprint                        = require("scripts/extension_systems/character_state_machine/character_states/utilities/sprint")
+local FixedFrame                    = require("scripts/utilities/fixed_frame")
 
 -- Global Cache
 local CLASS                         = CLASS
 local ScriptUnit                    = ScriptUnit
 local Managers                      = Managers
 local Vector3                       = Vector3
-local Vector3_length                = Vector3.length
-local Vector3_length_squared        = Vector3.length_squared
-local Vector3_flat                  = Vector3.flat
 local vector3_normalize             = Vector3.normalize
 local math_abs                      = math.abs
 local math_max                      = math.max
+local math_round                    = math.round
+local math_clamp                    = math.clamp
+local math_lerp                     = math.lerp
 local table_clear                   = table.clear
 
 local MELEE_ACTION_KINDS            = {
@@ -73,21 +74,23 @@ local action_records                = {
 -- Mod settings
 ---@class BetterMovementModSettings
 local mod_settings                  = {
-    debug_enabled           = mod:get("debug_enabled"),           -- print some dev gibberish
-    better_sprint           = mod:get("better_sprint"),           -- no more toggle sprint off, hold to sprint even in toggle sprint mode, keep sprinting after sliding, jumping, vaulting
-    always_sprint           = mod:get("always_sprint"),           -- always sprint, only stop when release mover forward button
-    toggle_sprint           = mod:get("toggle_sprint"),           -- toggle continuous sprint on and off with sprint button
-    hold_to_sprint          = mod:get("hold_to_sprint"),          -- hold to sprint
-    hold_to_walk            = mod:get("hold_to_walk"),            -- hold to walk
-    prevent_accidental_jump = mod:get("prevent_accidental_jump"), -- no more unwanted jump when spam dodge button
-    sprint_dodge            = mod:get("sprint_dodge"),            -- dodge while sprinting
-    easy_dodge_slide        = mod:get("easy_dodge_slide"),        -- double tap dodge to slide
-    hold_dodge_slide        = mod:get("hold_dodge_slide"),        -- hold dodge key to slide while dodging
-    keep_dodging            = mod:get("keep_dodging"),            -- hold dodge key to keep dodging
-    better_toggle_crouch    = mod:get("better_toggle_crouch"),    -- better toggle crouch
-    easy_sprint_slide       = mod:get("easy_sprint_slide"),       -- press dodge button to slide forward while sprinting
-    auto_vault              = mod:get("auto_vault"),              -- auto vault when airborne
-    no_sprinting_stamina    = mod:get("no_sprinting_stamina"),    -- pause sprinting to recover stamina
+    debug_enabled                    = mod:get("debug_enabled"),
+    better_sprint                    = mod:get("better_sprint"),
+    always_sprint                    = mod:get("always_sprint"),
+    toggle_sprint                    = mod:get("toggle_sprint"),
+    hold_to_sprint                   = mod:get("hold_to_sprint"),
+    hold_to_walk                     = mod:get("hold_to_walk"),
+    prevent_accidental_jump          = mod:get("prevent_accidental_jump"),
+    sprint_dodge                     = mod:get("sprint_dodge"),
+    easy_dodge_slide                 = mod:get("easy_dodge_slide"),
+    hold_dodge_slide                 = mod:get("hold_dodge_slide"),
+    hold_dodge_slide_duration        = mod:get("hold_dodge_slide_duration"),
+    hold_dodge_slide_guarantee_slide = mod:get("hold_dodge_slide_guarantee_slide"),
+    keep_dodging                     = mod:get("keep_dodging"),
+    better_toggle_crouch             = mod:get("better_toggle_crouch"),
+    easy_sprint_slide                = mod:get("easy_sprint_slide"),
+    auto_vault                       = mod:get("auto_vault"),
+    no_sprinting_stamina             = mod:get("no_sprinting_stamina"),
 }
 
 -- Game Settings
@@ -100,7 +103,6 @@ local always_dodge                  = false
 -- Mod Status
 local mod_enabled                   = false
 local fixed_t                       = 0
-local fixed_dt                      = 1 / 52
 
 -- Player Movement Status
 local previous_state_name           = "walking"
@@ -113,6 +115,7 @@ local run_n_gun_need_sprint         = false
 local sliding_speed                 = 0
 local crouching_override            = false
 local hold_to_walk_sprint_input     = false
+local dodge_slide_time_threshold    = math.huge
 
 -- Input Cache
 local crouch_hold                   = false
@@ -137,7 +140,6 @@ local attempt_crouch                = false
 -- Reset movement parameters
 local function reset_params()
     fixed_t                      = 0
-    fixed_dt                     = 1 / 52
     -- Player movement stats
     previous_state_name          = "walking"
     current_state_name           = "walking"
@@ -149,6 +151,7 @@ local function reset_params()
     sliding_speed                = 0
     crouching_override           = false
     hold_to_walk_sprint_input    = false
+    dodge_slide_time_threshold   = math.huge
     -- Input Cache
     crouch_hold                  = false
     move_forward                 = 0
@@ -328,27 +331,6 @@ local function check_is_in_hub()
     print_debug("is in hub:", is_in_hub)
 end
 
--- Check if slide action is valid
-local function can_dodge_slide()
-    local locomotion_component = components.locomotion
-    local dodge_character_state_component = components.dodge_character_state
-    if not locomotion_component or not dodge_character_state_component then
-        return true
-    end
-
-    if dodge_character_state_component.started_from_crouch then
-        return false
-    end
-
-    if dodge_character_state_component.distance_left <= 0 then
-        return false
-    end
-
-    local current_length_sq = Vector3_length_squared(Vector3_flat(locomotion_component.velocity_current))
-    local slide_threshold_sq = constants.slide_move_speed_threshold_sq
-    return current_length_sq > slide_threshold_sq
-end
-
 -- Check if player is sprinting or sprint-jumping
 local function is_sprint_jumping()
     if is_in_hub then
@@ -431,33 +413,55 @@ local function can_sprinting()
     return false
 end
 
+-- Check if slide action is valid
+local function can_dodge_slide()
+    local locomotion_component = components.locomotion
+    local dodge_character_state_component = components.dodge_character_state
+    local character_state_component = components.character_state
+    if not locomotion_component or not dodge_character_state_component or not character_state_component then
+        return false
+    end
+
+    if dodge_character_state_component.started_from_crouch then
+        return false
+    end
+
+    local distance_left = dodge_character_state_component.distance_left
+    if distance_left <= 0 then
+        return false
+    end
+
+    local time_in_dodge = fixed_t - character_state_component.entered_t
+    if time_in_dodge <= 0.2 and distance_left >= 0.3 then
+        return false
+    end
+
+    if time_in_dodge > dodge_slide_time_threshold then
+        return false
+    end
+
+    return true
+end
+
 local function can_hold_dodge_slide()
-    if not dodge_hold
-        or not dodge_hold_start_time
-        or dodge_press_in_dodging
-    then
+    if not dodge_hold or not dodge_hold_start_time or dodge_press_in_dodging then
         return false
     end
 
     local character_state_component = components.character_state
     local dodge_character_state_component = components.dodge_character_state
     local locomotion_steering_component = components.locomotion_steering
-    if not character_state_component
-        or not dodge_character_state_component
-        or not locomotion_steering_component
-    then
+    if not character_state_component or not dodge_character_state_component or not locomotion_steering_component then
         return false
     end
 
     local start_time = math_max(character_state_component.entered_t, dodge_hold_start_time)
     local hold_duration = fixed_t - start_time
-    if hold_duration >= 0.23 then
+    if hold_duration >= mod_settings.hold_dodge_slide_duration then
         return true
     end
 
-    local distance_left = dodge_character_state_component.distance_left
-    local move_delta = Vector3_length(locomotion_steering_component.velocity_wanted) * fixed_dt
-    if move_delta > distance_left then
+    if mod_settings.hold_dodge_slide_guarantee_slide and hold_duration == dodge_slide_time_threshold then
         return true
     end
 
@@ -746,8 +750,9 @@ local function on_state_change()
     end
 
     if current_state_name ~= "dodging" then
-        attempt_dodge_slide = false
-        dodge_press_in_dodging = false
+        attempt_dodge_slide        = false
+        dodge_press_in_dodging     = false
+        dodge_slide_time_threshold = math.huge
     end
 
     if current_state_name == "sliding" then
@@ -837,6 +842,10 @@ mod:hook_safe(CLASS.PlayerCharacterStateSprinting, "_check_transition",
 -- Hook Sliding State for Current Speed
 mod:hook_safe(CLASS.PlayerCharacterStateSliding, "_check_transition",
     function(self, unit, t, next_state_params, input_source, is_crouching, commit_period_over, max_mass_hit, current_speed)
+        if self._player.viewport_name ~= "player1" then
+            return
+        end
+
         sliding_speed = current_speed
     end)
 
@@ -880,7 +889,7 @@ local function on_action_change(self, id, running_action)
                 no_sprinting_bug_fix = true
             end
 
-            if mod_settings.no_sprinting_stamina and not mod_settings.hold_to_walk and not mod_settings.hold_to_sprint then
+            if mod_settings.no_sprinting_stamina and not mod_settings.hold_to_sprint then
                 if stop_sprint_action_settings and stop_sprint_action_settings == action_settings and fixed_t >= better_sprint_press_time + 0.5 then
                     no_sprinting_stamina = true
                 end
@@ -967,6 +976,106 @@ mod:hook_safe(CLASS.ActionHandler, "_finish_action",
                 no_sprinting_stamina = false
             end
         end
+    end)
+
+local function _calculate_dodge_diminishing_return(dodge_character_state_component, weapon_dodge_template, buff_extension)
+    local stat_buffs = buff_extension:stat_buffs()
+    local extra_consecutive_dodges = math_round(stat_buffs.extra_consecutive_dodges or 0)
+    local dr_start = (weapon_dodge_template and weapon_dodge_template.diminishing_return_start or 2) + extra_consecutive_dodges
+    local dr_limit = dr_start + (weapon_dodge_template and weapon_dodge_template.diminishing_return_limit or 1)
+    local consecutive_dodges = math.min(dodge_character_state_component.consecutive_dodges, dr_limit + dr_start)
+    local dr_distance_modifier = weapon_dodge_template and weapon_dodge_template.diminishing_return_distance_modifier or 1
+    local base = 1 - dr_distance_modifier
+    local diminishing_return = base + dr_distance_modifier * (1 - math_clamp(consecutive_dodges - dr_start, 0, dr_limit) / dr_limit)
+    return diminishing_return
+end
+
+local function _find_speed_settings_index(time_in_dodge, start_index, dodge_speed_at_times, unbuffed_distance_scale)
+    local speed_settings_index = #dodge_speed_at_times
+    for index = start_index, #dodge_speed_at_times do
+        if dodge_speed_at_times[index].time_in_dodge >= time_in_dodge / unbuffed_distance_scale then
+            speed_settings_index = index - 1
+            break
+        end
+    end
+    return speed_settings_index
+end
+
+local function _find_current_dodge_speed(time_in_dodge, speed_settings_index, dodge_speed_at_times, speed_modifier, diminishing_return_factor, unbuffed_distance_scale, buffed_distance_scale)
+    local speed
+    local num_dodge_speed_at_times = #dodge_speed_at_times
+    local total_modifier = speed_modifier * diminishing_return_factor
+    local next_speed_setting_index = speed_settings_index + 1
+    if next_speed_setting_index <= num_dodge_speed_at_times then
+        local current_speed_settings = dodge_speed_at_times[speed_settings_index]
+        local next_speed_settings = dodge_speed_at_times[next_speed_setting_index]
+        local current_time_in_setting = current_speed_settings.time_in_dodge
+        local next_time_in_setting = next_speed_settings.time_in_dodge
+        local current_setting_speed = current_speed_settings.speed
+        if current_setting_speed > 4 then
+            current_setting_speed = current_setting_speed * unbuffed_distance_scale
+        end
+        local next_setting_speed = next_speed_settings.speed
+        if next_setting_speed > 4 then
+            next_setting_speed = next_setting_speed * unbuffed_distance_scale
+        end
+        local time_between_settings = next_time_in_setting - current_time_in_setting
+        local time_in_setting = time_in_dodge / unbuffed_distance_scale - current_time_in_setting
+        local percentage_in_between = time_in_setting / time_between_settings
+        speed = math_lerp(current_setting_speed, next_setting_speed, percentage_in_between) * total_modifier
+    else
+        local current_speed_settings = dodge_speed_at_times[speed_settings_index]
+        local current_setting_speed = current_speed_settings.speed
+        speed = current_setting_speed * total_modifier
+    end
+    return speed * (buffed_distance_scale / unbuffed_distance_scale)
+end
+
+local function _calculate_dodge_total_time(base_dodge_template, diminishing_return_factor, weapon_dodge_template, buff_extension, entered_t, dodge_distance)
+    if dodge_distance <= 0 then
+        return 0
+    end
+
+    local start_frame = FixedFrame.get_latest_fixed_frame()
+    local time_step = Managers.state.game_session.fixed_time_step
+    local time_in_dodge = 0
+    local distance_travelled = 0
+    local stat_buffs = buff_extension:stat_buffs()
+    local weapon_speed_modifier = weapon_dodge_template and weapon_dodge_template.speed_modifier or 1
+    local buff_speed_modifier = stat_buffs.dodge_speed_multiplier
+    local buff_distance_modifier = stat_buffs.dodge_distance_modifier
+    local speed_modifier = weapon_speed_modifier * buff_speed_modifier
+    local unbuffed_distance_scale = (weapon_dodge_template and weapon_dodge_template.distance_scale or 1) * diminishing_return_factor
+    local buffed_distance_scale = unbuffed_distance_scale * buff_distance_modifier
+    local dodge_speed_at_times = weapon_dodge_template and weapon_dodge_template.dodge_speed_at_times or base_dodge_template.dodge_speed_at_times
+    local slide_threshold_sq = constants.slide_move_speed_threshold_sq
+
+    for i = 1, 256, 1 do
+        time_in_dodge = time_step * (start_frame + i) - entered_t
+        local current_speed_setting_index = _find_speed_settings_index(time_in_dodge, 1, dodge_speed_at_times, unbuffed_distance_scale)
+        local speed = _find_current_dodge_speed(time_in_dodge, current_speed_setting_index, dodge_speed_at_times, speed_modifier, diminishing_return_factor, unbuffed_distance_scale, buffed_distance_scale)
+        distance_travelled = distance_travelled + speed * time_step
+
+        if dodge_distance < distance_travelled or speed * speed <= slide_threshold_sq then
+            break
+        end
+    end
+
+    return time_in_dodge
+end
+
+mod:hook_safe(CLASS.PlayerCharacterStateDodging, "on_enter",
+    function(self, unit, dt, t, previous_state, params)
+        if self._player.viewport_name ~= "player1" then
+            return
+        end
+
+        local buff_extension = self._buff_extension
+        local base_dodge_template = self._archetype_dodge_template
+        local dodge_character_state_component = self._dodge_character_state_component
+        local weapon_dodge_template = self._weapon_extension:dodge_template()
+        local diminishing_return_factor = _calculate_dodge_diminishing_return(dodge_character_state_component, weapon_dodge_template, buff_extension)
+        dodge_slide_time_threshold = _calculate_dodge_total_time(base_dodge_template, diminishing_return_factor, weapon_dodge_template, buff_extension, t, dodge_character_state_component.distance_left)
     end)
 
 -- Update settings when input settings changed
@@ -1070,6 +1179,5 @@ mod:hook_safe(CLASS.PlayerUnitDataExtension, "destroy",
 
 mod:hook_safe(CLASS.ExtensionManager, "fixed_update",
     function(self, dt, t, frame)
-        fixed_dt = dt
         fixed_t = dt * (frame + 1)
     end)

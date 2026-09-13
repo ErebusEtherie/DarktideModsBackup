@@ -1,0 +1,26 @@
+{
+  "name": "Realms Loadout",
+  "description": "Unified local loadouts, Forge, talent and Scum stimm management for SoloPlay and Realms.",
+  "version": "0.5.4",
+  "author": "TOKYOVANIA AND IRONCROWY",
+  "dependencies": {
+    "required": [
+      "dmf"
+    ],
+    "optional": [
+      "SoloPlay",
+      "Realms",
+      "MortisBuffManager"
+    ]
+  },
+  "localization": {
+    "zh-cn": {
+      "name": "Realms 配装与天赋",
+      "description": "统一管理配装、锻造、天赋及渣滓兴奋剂。"
+    },
+    "zh-tw": {
+      "name": "Realms 配裝與天賦",
+      "description": "統一管理配裝、鍛造、天賦及渣滓興奮劑。"
+    }
+  }
+}

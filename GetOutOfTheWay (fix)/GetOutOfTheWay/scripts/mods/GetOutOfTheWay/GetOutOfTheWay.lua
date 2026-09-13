@@ -1,6 +1,7 @@
 local mod = get_mod("GetOutOfTheWay")
 
 local DEFAULT_NODE_NAME = "j_spine"
+local SUPPORT_ITEM_CHECK_INTERVAL = 0.25
 
 local RESCUE_STATES = {
 	hogtied = true,
@@ -18,18 +19,34 @@ local SUPPORT_ITEM_TEMPLATES = {
 	syringe_speed_boost_pocketable = true,
 }
 
-local player_fade_profiles = {}
+local fade_profiles = {}
 local rescue_visibility_active = {}
 local support_item_visibility_active = false
+local support_item_check_timer = 0
 local fade_system_instance
 
-local function should_override_fade(owner, unit, breed_name)
+local function get_local_player_unit()
+	local player_manager = Managers and Managers.player
+	local player = player_manager and player_manager:local_player_safe(1)
+
+	return player and player.player_unit
+end
+
+local function should_override_fade(owner, unit, breed_name, local_player_unit)
+	if unit == local_player_unit then
+		return mod:get("prevent_own_player_fade")
+	end
+
+	if not owner then
+		return false
+	end
+
 	if owner.player_unit == unit then
-		return owner.remote and (not mod:get("only_ogryn") or breed_name == "ogryn")
+		return not mod:get("only_ogryn") or breed_name == "ogryn"
 	end
 
 	if breed_name == "companion_dog" then
-		if not owner.remote then
+		if owner.player_unit == local_player_unit then
 			return mod:get("apply_to_my_cyber_mastiff")
 		end
 
@@ -41,7 +58,7 @@ local function should_override_fade(owner, unit, breed_name)
 	end
 
 	if breed_name == "companion_servo_skull" then
-		if not owner.remote then
+		if owner.player_unit == local_player_unit then
 			return mod:get("apply_to_my_servo_skull")
 		end
 
@@ -76,21 +93,25 @@ local function replace_fade_registration(unit, profile)
 end
 
 local function apply_player_fade_profile(unit)
-	local profiles = player_fade_profiles[unit]
+	local profiles = fade_profiles[unit]
 
-	if not profiles then
+	if not profiles or not profiles.is_player then
 		return false
 	end
 
-	local use_official_profile = support_item_visibility_active
-		or rescue_visibility_active[unit] == true
+	local use_official_profile = profiles.is_local_player
+		and not mod:get("prevent_own_player_fade")
+		or profiles.is_remote_player
+		and (mod:get("keep_allies_visible_while_holding_support_items")
+			and support_item_visibility_active
+			or rescue_visibility_active[unit] == true)
 	local profile = use_official_profile and profiles.official or profiles.normal
 
 	return replace_fade_registration(unit, profile)
 end
 
 local function set_rescue_visibility(unit, visible)
-	local profiles = player_fade_profiles[unit]
+	local profiles = fade_profiles[unit]
 	local is_active = rescue_visibility_active[unit] == true
 
 	if not profiles or is_active == visible then
@@ -111,13 +132,12 @@ local function set_rescue_visibility(unit, visible)
 end
 
 local function is_holding_support_item()
-	if not mod:get("keep_allies_visible_while_holding_support_items") then
+	if not mod:get("keep_allies_visible_while_holding_support_items")
+		and not mod:get("prevent_own_player_fade") then
 		return false
 	end
 
-	local player_manager = Managers and Managers.player
-	local player = player_manager and player_manager:local_player_safe(1)
-	local player_unit = player and player.player_unit
+	local player_unit = get_local_player_unit()
 
 	if not player_unit or ALIVE and not ALIVE[player_unit] then
 		return false
@@ -141,6 +161,14 @@ local function is_holding_support_item()
 end
 
 mod.update = function(dt)
+	support_item_check_timer = support_item_check_timer - dt
+
+	if support_item_check_timer > 0 then
+		return
+	end
+
+	support_item_check_timer = SUPPORT_ITEM_CHECK_INTERVAL
+
 	local active = is_holding_support_item()
 
 	if active == support_item_visibility_active then
@@ -149,8 +177,10 @@ mod.update = function(dt)
 
 	support_item_visibility_active = active
 
-	for unit, _ in pairs(player_fade_profiles) do
-		apply_player_fade_profile(unit)
+	for unit, profiles in pairs(fade_profiles) do
+		if profiles.is_player then
+			apply_player_fade_profile(unit)
+		end
 	end
 end
 
@@ -158,8 +188,10 @@ mod:hook(CLASS.FadeSystem, "on_add_extension", function(func, self, world, unit,
 	local state = Managers.state
 	local player_unit_spawn = state and state.player_unit_spawn
 	local owner = player_unit_spawn and player_unit_spawn:owner(unit)
+	local local_player_unit = get_local_player_unit()
+	local is_local_player = unit == local_player_unit
 
-	if not owner then
+	if not owner and not is_local_player then
 		return func(self, world, unit, extension_name)
 	end
 
@@ -167,13 +199,16 @@ mod:hook(CLASS.FadeSystem, "on_add_extension", function(func, self, world, unit,
 	local breed = unit_data_extension and unit_data_extension:breed()
 	local fade = breed and breed.fade
 	local breed_name = breed and breed.name
-	local override_fade = fade and should_override_fade(owner, unit, breed_name)
+	local override_fade = fade
+		and should_override_fade(owner, unit, breed_name, local_player_unit)
 	local registered_min_distance = override_fade
-		and (mod:get("min_distance") or fade.min_distance)
+		and (is_local_player and 0 or mod:get("min_distance") or fade.min_distance)
 	local registered_max_distance = override_fade
-		and math.max(registered_min_distance, mod:get("max_distance") or fade.max_distance)
+		and (is_local_player and 0
+			or math.max(registered_min_distance, mod:get("max_distance") or fade.max_distance))
 	local registered_max_height_difference = override_fade
-		and math.max(registered_min_distance, mod:get("max_height_difference") or fade.max_height_difference)
+		and (is_local_player and 0
+			or math.max(registered_min_distance, mod:get("max_height_difference") or fade.max_height_difference))
 	local registered_node_name = fade and fade.node_name or DEFAULT_NODE_NAME
 	local official_profile = override_fade and {
 		min_distance = fade.min_distance,
@@ -216,8 +251,14 @@ mod:hook(CLASS.FadeSystem, "on_add_extension", function(func, self, world, unit,
 
 	fade_system_instance = self
 
-	if override_fade and owner.player_unit == unit and owner.remote then
-		player_fade_profiles[unit] = {
+	if override_fade then
+		local is_remote_player = not is_local_player
+			and owner
+			and owner.player_unit == unit
+			or false
+		local is_player = is_local_player or is_remote_player
+
+		fade_profiles[unit] = {
 			normal = {
 				min_distance = registered_min_distance,
 				max_distance = registered_max_distance,
@@ -225,18 +266,23 @@ mod:hook(CLASS.FadeSystem, "on_add_extension", function(func, self, world, unit,
 				node_name = registered_node_name,
 			},
 			official = official_profile,
+			is_player = is_player,
+			is_local_player = is_local_player,
+			is_remote_player = is_remote_player,
 		}
 
-		local character_state = unit_data_extension
-			and unit_data_extension.read_component
-			and unit_data_extension:read_component("character_state")
+		if is_player then
+			local character_state = unit_data_extension
+				and unit_data_extension.read_component
+				and unit_data_extension:read_component("character_state")
 
-		if character_state and RESCUE_STATES[character_state.state_name] then
-			set_rescue_visibility(unit, true)
-		end
+			if is_remote_player and character_state and RESCUE_STATES[character_state.state_name] then
+				set_rescue_visibility(unit, true)
+			end
 
-		if support_item_visibility_active and rescue_visibility_active[unit] ~= true then
-			apply_player_fade_profile(unit)
+			if support_item_visibility_active and rescue_visibility_active[unit] ~= true then
+				apply_player_fade_profile(unit)
+			end
 		end
 	end
 
@@ -244,9 +290,23 @@ mod:hook(CLASS.FadeSystem, "on_add_extension", function(func, self, world, unit,
 end)
 
 mod:hook_safe(CLASS.FadeSystem, "on_remove_extension", function(self, unit, extension_name)
-	player_fade_profiles[unit] = nil
+	fade_profiles[unit] = nil
 	rescue_visibility_active[unit] = nil
 end)
+
+mod.on_unload = function(exit_game)
+	if not exit_game then
+		for unit, profiles in pairs(fade_profiles) do
+			replace_fade_registration(unit, profiles.official)
+		end
+	end
+
+	fade_profiles = {}
+	rescue_visibility_active = {}
+	support_item_visibility_active = false
+	support_item_check_timer = 0
+	fade_system_instance = nil
+end
 
 local function on_rescue_state_enter(self, unit)
 	set_rescue_visibility(unit, true)

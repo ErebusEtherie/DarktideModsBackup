@@ -1,5 +1,24 @@
 # Changelog
 
+## 3.0.1 - 2026-09-10
+
+- Fixed an error during manager transitions where event cleanup could access a destroyed `EventManager`.
+
+## 3.0
+
+- Improved Mourningstar and Meat Grinder preloading: selected-operative and selected-destination resources are prioritized, while Meat Grinder warming runs in small background batches after higher-priority work finishes.
+- Added Preferred Mourningstar Location. Auto measures all regions; a fixed location is preferred for early hub-server reservation and applies on the next login.
+- Added early Mourningstar server reservation and preconnection. The selected operative's hub session can begin at character select, and returns from missions can be staged during the score screen.
+- Enabled Mourningstar server reservation and preconnection by default.
+
+## 2.5 - 2026-08-27
+
+- Added an opt-in early Mourningstar server reservation using Darktide's native Immaterium party and latched hub matchmaking. After login, one preliminary region-ping round can select the reservation region while character selection, profile preloading, and UI remain unchanged; vanilla still commits and synchronizes the final operative only after Play.
+- Preserved the login-scoped region result, party, and reservation across the title-to-character-select transition instead of restarting them in the main menu. As soon as the reservation request captures the preliminary result, a normal 10-round region refresh replaces it in the background so later mission matchmaking waits for and uses vanilla's full measurement.
+- Added fallback and cleanup for invalid preliminary measurements, title resets, loading transitions, party changes, setting disable, mod disable, and unload. Late asynchronous results are generation- and party-checked, and cleanup only consumes the exact reservation created by InstantHub.
+- Guarded title-screen profile lookup with `PlayerManager:local_player_safe()`. Calling the unguarded lookup during `signing_in` reaches native `Network.peer_id()` before the connection exists and caused an access-violation crash.
+- Kept post-mission behavior unchanged: Darktide already reserves the next hub server during the result screen, while Mourningstar Caching retains the local hub assets throughout the mission.
+
 ## 2.4.2
 
 - Fixed false-positive unavailable-package warnings during cold direct launches to the Meat Grinder through mods such as Psych Ward. Speculative availability misses are now deferred silently, retried after the authoritative target load, and only reported if the package is still unavailable afterward.

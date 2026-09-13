@@ -426,6 +426,10 @@ function mod._route_input(action, result, source)
 		return r
 	end
 
+	if (action == "action_two_pressed" or action == "interact_pressed") and mod._ds_reroll_input then
+		return _apply_route(mod._ds_reroll_input, action, r, source)
+	end
+
 	local primary_action = _is_primary_hold_action(action)
 	local movement_action = _is_movement_action(action)
 	local scan_action = _scan_action_relevant(action)

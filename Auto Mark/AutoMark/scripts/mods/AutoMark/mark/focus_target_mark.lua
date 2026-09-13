@@ -7,25 +7,33 @@ local TAG_NAMES    = mod.TAG_NAMES
 
 -- Global Cache
 local CLASS        = CLASS
-local Managers     = Managers
-local callback     = callback
 
 -- Constants
-local MELEE_RANGE  = 4.5
+local MELEE_RANGE  = 5
 
--- Manual Focus Target Mark on Attack
-local function focus_target_switch_callback(is_melee)
-    local smart_targeting_extension = context.smart_targeting_extension
-    local smart_tag_system = context.smart_tag_system
-    if not smart_targeting_extension or not smart_tag_system then
+local function focus_target_switch(is_melee)
+    if not context.mod_enabled or not context.game_mode_valid or context.class_name ~= "veteran" or not context.has_focus_target then
         return
     end
 
     local tag_name = TAG_NAMES.VETERAN_TAG
-    local target_unit, target_tag
+    local tag_context = mark_context[tag_name]
+    if mark_context.auto_mark_interval > 0 or tag_context.delay > 0 then
+        return
+    end
 
+    if not mod_settings.focus_target_switch_override_manual and tag_context.is_manual and not tag_context.is_switch_melee and not tag_context.is_switch_range then
+        return
+    end
+
+    local smart_tag_system = context.smart_tag_system
+    if not smart_tag_system then
+        return
+    end
+
+    local target_unit, target_tag
     if is_melee then
-        target_unit, target_tag = mod:find_target_unit_custom("focus_target_melee", 0, MELEE_RANGE, 0, tag_name)
+        target_unit, target_tag = mod:find_focus_target_switch_melee_target_unit(MELEE_RANGE)
     else
         target_unit = mod:find_target_unit(true)
     end
@@ -35,7 +43,6 @@ local function focus_target_switch_callback(is_melee)
         return
     end
 
-    local tag_context = mark_context[tag_name]
     if is_melee then
         tag_context.switch_melee_unit = target_unit
     else
@@ -48,24 +55,6 @@ local function focus_target_switch_callback(is_melee)
     mod:set_auto_mark(tag_name, target_unit, target_tag)
 end
 
-local function focus_target_switch(is_melee)
-    if not context.mod_enabled or not context.game_mode_valid or context.class_name ~= "veteran" or not context.has_focus_target then
-        return
-    end
-
-    local tag_context = mark_context[TAG_NAMES.VETERAN_TAG]
-    if mark_context.auto_mark_interval > 0 or tag_context.delay > 0 then
-        return
-    end
-
-    if not mod_settings.focus_target_switch_override_manual and tag_context.is_manual and not tag_context.is_switch_melee and not tag_context.is_switch_range then
-        return
-    end
-
-    local cb = callback(focus_target_switch_callback, is_melee)
-    Managers.state.game_mode:register_physics_safe_callback(cb)
-end
-
 local MELEE_ACTION_KINDS = {
     -- windup = true,
     sweep = true,
@@ -73,8 +62,8 @@ local MELEE_ACTION_KINDS = {
 local RANGED_ACTION_KINDS = {
     shoot_hit_scan = true,
     shoot_pellets = true,
-    overload_charge = true,
-    charge_ammo = true,
+    -- overload_charge = true,
+    -- charge_ammo = true,
 }
 mod:hook_safe(CLASS.ActionHandler, "start_action",
     function(self, id, action_objects, action_name, action_params, action_settings, used_input, t, transition_type, condition_func_params, automatic_input, reset_combo_override)

@@ -1,0 +1,12 @@
+{
+  "name": "Pilgrimage",
+  "description": "A roguelite Darktide campaign with stacking boons and curses, a persistent warband, transformative weapon balance, and experimental co-op through Realms.",
+  "version": "0.28.146",
+  "author": "Kaizen2137",
+  "localization": {
+    "zh-cn": {
+      "name": "朝圣远征",
+      "description": "将增益与诅咒跨任务叠加，组建永久战团，重塑武器，并通过 Realms 提供实验性合作模式的《暗潮》肉鸽战役。"
+    }
+  }
+}

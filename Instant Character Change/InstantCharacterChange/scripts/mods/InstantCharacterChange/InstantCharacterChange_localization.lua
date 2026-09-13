@@ -1,4 +1,12 @@
 return {
+	msg_switch_pending = {
+		en = "A character switch is still pending. Please wait.",
+		ru = "Смена персонажа ещё выполняется. Подождите.",
+	},
+	msg_switch_unavailable = {
+		en = "Could not safely switch characters. Try again when you are back in the hub or Psykhanium.",
+		ru = "Не удалось безопасно сменить персонажа. Повторите попытку в хабе или Психаниуме.",
+	},
 	mod_name = {
 		en = "Instant Character Change",
 		ru = "Мгновенная смена персонажа",
@@ -6,10 +14,6 @@ return {
 	mod_description = {
 		en = "Switch operatives instantly from the Esc menu, without reloading the Mourningstar. Drag entries in the panel to reorder them.",
 		ru = "Мгновенная смена оперативника через Esc-меню, без перезагрузки Морнингстар. Записи в панели можно перетаскивать, меняя порядок.",
-	},
-	command_description = {
-		en = "Switch character for the next mission (no Mourningstar reload)",
-		ru = "Сменить персонажа для следующей миссии (без перезагрузки Морнингстар)",
 	},
 	chat_messages_enabled = {
 		en = "Chat messages",
@@ -71,33 +75,9 @@ return {
 		en = "Writes a diagnostic log to AppData\\Fatshark\\Darktide\\InstantCharacterChange.log.",
 		ru = "Пишет диагностический лог в AppData\\Fatshark\\Darktide\\InstantCharacterChange.log.",
 	},
-	msg_character_list = {
-		en = "Your characters:",
-		ru = "Твои персонажи:",
-	},
-	msg_current_marker = {
-		en = "current",
-		ru = "текущий",
-	},
-	msg_usage_hint = {
-		en = "Usage: /switchchar <name|class|number>, /switchchar cancel",
-		ru = "Использование: /switchchar <имя|класс|номер>, /switchchar cancel",
-	},
-	msg_armed_status = {
-		en = "Switch armed:",
-		ru = "Переключение взведено:",
-	},
-	msg_armed_hint = {
-		en = "Now join a Party Finder group or start a mission — you will connect to it as that character. The Party Finder will show you with the new class within a second. (/switchchar cancel to revert.)",
-		ru = "Теперь вступай в группу через Party Finder или запускай миссию — ты подключишься к ней этим персонажем. Party Finder покажет тебя с новым классом в течение секунды. (/switchchar cancel — отменить.)",
-	},
 	msg_already_that_character = {
 		en = "You are already playing that character.",
 		ru = "Ты уже играешь этим персонажем.",
-	},
-	msg_nothing_armed = {
-		en = "No switch is armed.",
-		ru = "Переключение не взведено.",
 	},
 	msg_in_matchmaking = {
 		en = "Cannot switch while matchmaking is in progress.",
@@ -107,10 +87,6 @@ return {
 		en = "Cannot switch while the group is departing to a mission — the server already reserved your slot for the current character; switching now would get you kicked on mission load. Try again after the mission (or if the departure gets cancelled).",
 		ru = "Нельзя менять персонажа, пока группа отправляется на миссию — сервер уже зарезервировал твой слот за текущим персонажем, смена сейчас закончится киком при загрузке миссии. Попробуй после миссии (или если отправка сорвётся).",
 	},
-	msg_departing_cancel_blocked = {
-		en = "Cannot cancel now — the matchmaking ticket already went out with the armed character, so you will connect to the mission as it. Cancelling unlocks again if the queue or departure gets cancelled.",
-		ru = "Нельзя отменить сейчас — тикет матчмейкинга уже ушёл со взведённым персонажем, и в миссию ты подключишься им. Отмена снова станет доступна, если очередь или отправка сорвётся.",
-	},
 	msg_start_vote_blocked = {
 		en = "Cannot switch while the group is accepting a mission — queue tickets are sent as members accept, and switching now would get you kicked on mission load. Try again if the vote fails (or after the mission).",
 		ru = "Нельзя менять персонажа, пока группа принимает миссию — тикеты очереди уходят по мере принятия, и смена сейчас закончится киком при загрузке миссии. Попробуй снова, если голосование сорвётся (или после миссии).",
@@ -118,10 +94,6 @@ return {
 	msg_hub_only = {
 		en = "Character switching only works on the Mourningstar or in the Psykhanium.",
 		ru = "Смена персонажа работает только на Морнингстар или в Психаниуме.",
-	},
-	command_description_now = {
-		en = "Switch character instantly",
-		ru = "Сменить персонажа мгновенно",
 	},
 	panel_offset_x = {
 		en = "Panel: horizontal offset",
@@ -178,13 +150,5 @@ return {
 	msg_hub_swapped = {
 		en = "Switched (data only): your visible character stays the old one until the next travel, but the inventory/talents now open for the NEW character — set up the build, then queue. The next mission spawns you as the new character.",
 		ru = "Переключено (по данным): внешне ты останешься старым персонажем до следующего перемещения, но инвентарь и таланты теперь открываются за НОВОГО — настрой билд и запускай миссию. В миссии заспавнишься уже новым персонажем.",
-	},
-	msg_live_switching = {
-		en = "Switching right here — you will respawn as the new character in a few seconds...",
-		ru = "Переключаю прямо здесь — через пару секунд ты переспавнишься новым персонажем...",
-	},
-	msg_fetch_failed = {
-		en = "Could not fetch your character list from the backend — try again in a moment.",
-		ru = "Не удалось получить список персонажей с бэкенда — попробуй ещё раз через пару секунд.",
 	},
 }

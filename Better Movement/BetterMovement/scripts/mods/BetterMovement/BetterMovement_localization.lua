@@ -147,16 +147,16 @@ return {
         ru = "Без случайных прыжков",
     },
     prevent_accidental_jump_description = {
-        en = "Prevents " .. highlight("accidental jump") .. " during " .. highlight("dodging") .. ".\n"
+        en = "Prevents " .. highlight("accidental jump") .. " during " .. highlight("dodging") .. ".\n\n"
             .. highlight("Recommended") ..
-            " for players who use the " .. highlight("same key") .. " for both jumping and dodging.\n"
+            " for players who use the " .. highlight("same key") .. " for both jumping and dodging.\n\n"
             .. highlight("Disable") .. " this option if you use a " .. highlight("separate jump key") .. ".",
-        ["zh-cn"] = "防止" .. highlight("闪避") .. "时" .. highlight("意外跳跃") .. "。\n"
-            .. "推荐" .. highlight("跳跃和闪避使用相同按键") .. "的玩家开启。\n"
+        ["zh-cn"] = "防止" .. highlight("闪避") .. "时" .. highlight("意外跳跃") .. "。\n\n"
+            .. "推荐" .. highlight("跳跃和闪避使用相同按键") .. "的玩家开启。\n\n"
             .. "如使用" .. highlight("单独跳跃按键") .. "请" .. highlight("关闭") .. "。",
-        ru = "Предотвращает " .. highlight("случайный прыжок") .. " во время " .. highlight("уклонения") .. ".\n"
+        ru = "Предотвращает " .. highlight("случайный прыжок") .. " во время " .. highlight("уклонения") .. ".\n\n"
             .. highlight("Рекомендуется") ..
-            " для игроков, использующих " .. highlight("одну и ту же клавишу") .. " для прыжка и уклонения.\n"
+            " для игроков, использующих " .. highlight("одну и ту же клавишу") .. " для прыжка и уклонения.\n\n"
             .. highlight("Отключите") .. " эту опцию, если вы используете " .. highlight("отдельную клавишу прыжка") .. ".",
     },
     sprint_dodge = {
@@ -195,6 +195,26 @@ return {
         ["zh-cn"] = highlight("闪避过程中按住闪避键") .. "触发" .. highlight("闪避滑铲") .. "。",
         ru = "Активирует " .. highlight("скольжение после уклонения") .. " путём "
             .. highlight("удержания клавиши уклонения") .. ".",
+    },
+    hold_dodge_slide_duration = {
+        en = "Hold Duration",
+        ["zh-cn"] = "按住时间",
+        ru = "Время удержания",
+    },
+    hold_dodge_slide_duration_description = {
+        en = "The minimum duration to hold the dodge key to trigger a " .. highlight("dodge-slide") .. ".",
+        ["zh-cn"] = "触发" .. highlight("闪避滑铲") .. "所需的最短按住闪避键时间。",
+        ru = "Минимальное время удержания клавиши уклонения для активации " .. highlight("уклонения-скольжения") .. ".",
+    },
+    hold_dodge_slide_guarantee_slide = {
+        en = "Guarantee Slide",
+        ["zh-cn"] = "保证滑铲",
+        ru = "Гарантированное скольжение",
+    },
+    hold_dodge_slide_guarantee_slide_description = {
+        en = "When enabled, if the slide input " .. highlight("window") .. " during a dodge is shorter than your configured hold duration (for example, a Hive Scum's dodge time is shortened after picking the Nimble talent), the crouch input is sent at the very end of the window to ensure the dodge-slide triggers reliably.",
+        ["zh-cn"] = "开启后，当闪避过程中的滑铲输入" .. highlight("窗口") .. "短于设定的按住时间时（例如巢都渣滓点选灵活天赋后闪避时间会缩短），在输入窗口的最后时刻输入蹲下指令，确保闪避滑铲稳定触发。",
+        ru = "Когда включено, если " .. highlight("окно") .. " ввода скольжения во время уклонения короче заданного времени удержания (например, время уклонения Мрази Улья сокращается после выбора таланта Ловкач), команда приседания вводится в самый конец окна, гарантируя надёжное срабатывание уклонения-скольжения.",
     },
     keep_dodging = {
         en = "Keep Dodging",
@@ -243,13 +263,13 @@ return {
     },
     easy_sprint_slide_description = {
         en = "Triggers " .. highlight("slide") .. " by "
-            .. highlight("pressing the dodge key while sprinting") .. ".\n"
+            .. highlight("pressing the dodge key while sprinting") .. ".\n\n"
             .. highlight("Recommended") .. " when jump and dodge are bound to "
             .. highlight("separate keys") .. ".",
-        ["zh-cn"] = highlight("疾跑过程中按下闪避键") .. "可触发" .. highlight("滑铲") .. "。\n"
+        ["zh-cn"] = highlight("疾跑过程中按下闪避键") .. "可触发" .. highlight("滑铲") .. "。\n\n"
             .. "推荐" .. highlight("跳跃和闪避使用不同按键") .. "的玩家开启。",
         ru = "Активирует " .. highlight("скольжение") .. " путём "
-            .. highlight("нажатия клавиши уклонения во время спринта") .. ".\n"
+            .. highlight("нажатия клавиши уклонения во время спринта") .. ".\n\n"
             .. highlight("Рекомендуется") .. ", когда прыжок и уклонение привязаны к "
             .. highlight("разным клавишам") .. ".",
     },
@@ -278,10 +298,10 @@ return {
     },
     no_sprinting_stamina_description = {
         en = "Pause sprinting during consecutive melee attacks to regenerate stamina. This does not apply to "
-            .. highlight("Hold to Sprint") .. " or " .. highlight("Hold to Walk") .. ".",
-        ["zh-cn"] = "在连续近战攻击过程中暂停疾跑，以恢复体力。对" .. highlight("按住疾跑") .. "与" .. highlight("按住慢走") .. "无效。",
+            .. highlight("Hold to Sprint") .. ".",
+        ["zh-cn"] = "在连续近战攻击过程中暂停疾跑，以恢复体力。对" .. highlight("按住疾跑") .. "无效。",
         ru = "Приостанавливает бег во время серии атак ближнего боя для восстановления выносливости. Не работает с "
-            .. highlight("Удержанием для спринта") .. " или " .. highlight("Удержанием для ходьбы") .. ".",
+            .. highlight("Удержанием для спринта") .. ".",
     },
     luggable_keep_push = {
         en = "Luggable Hold to Push",
@@ -302,5 +322,10 @@ return {
             .. highlight("удержание")
             .. " клавиши вторичного действия будет ставить в очередь повторяющиеся команды толчка. Это гарантирует, что игрок надежно "
             .. highlight("выйдет") .. " из состояния бега и успешно выполнит " .. highlight("толчок."),
+    },
+    second = {
+        en = "s",
+        ["zh-cn"] = "秒",
+        ru = "с",
     },
 }

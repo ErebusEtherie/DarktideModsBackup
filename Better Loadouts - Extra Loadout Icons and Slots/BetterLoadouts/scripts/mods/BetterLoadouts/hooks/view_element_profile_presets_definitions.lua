@@ -10,38 +10,29 @@ local UISoundEvents = require("scripts/settings/ui/ui_sound_events")
 local ButtonPassTemplates = require("scripts/ui/pass_templates/button_pass_templates")
 
 local s_lower = string.lower
+local SELECTED_HIGHLIGHT_COLOR = Color.terminal_corner_selected(255, true)
 
-local function _layout()
-    return mod.BL.layout_for_limit(mod.preset_limit or 28)
-end
-
-local function _tooltip_dimensions()
-    local layout = _layout()
-    local max_columns = layout.MAX_COLUMNS or 0
-    local rows_per_col = layout.ROWS_PER_COL or 0
-    local is_wide_layout = max_columns > rows_per_col
-
-    if is_wide_layout then
-        if max_columns >= 80 then
-            return {
-                tooltip_width = 600,
-                tooltip_height = 360,
-                grid_width = 560,
-            }
-        end
-
-        return {
-            tooltip_width = 500,
-            tooltip_height = 340,
-            grid_width = 460,
-        }
+local function _write_color(target, source)
+    if not target then
+        target = { 255, 255, 255, 255 }
     end
 
-    return {
-        tooltip_width = 265,
-        tooltip_height = 460,
-        grid_width = 225,
-    }
+    target[1] = source[1]
+    target[2] = source[2]
+    target[3] = source[3]
+    target[4] = source[4]
+
+    return target
+end
+
+local function _bar_alignment()
+    local alignment = mod.preset_alignment
+
+    if alignment == "left" or alignment == "center" then
+        return alignment
+    end
+
+    return "right"
 end
 
 mod:hook_require(
@@ -49,13 +40,13 @@ mod:hook_require(
     function(defs)
         -- (No re-ensuring of global icons; BetterLoadouts uses a private pool elsewhere)
 
-        local tooltip_dimensions = _tooltip_dimensions()
+        local tooltip_width, tooltip_height, grid_width = mod.BL.tooltip_dimensions()
 
         local sg = defs and defs.scenegraph_definition
         if sg then
             -- Loadout bar node (runtime size is updated later)
             if sg.profile_preset_button_panel then
-                sg.profile_preset_button_panel.horizontal_alignment = "right"
+                sg.profile_preset_button_panel.horizontal_alignment = _bar_alignment()
                 sg.profile_preset_button_panel.vertical_alignment = "top"
                 sg.profile_preset_button_panel.size = { 56, 524 }
 
@@ -71,7 +62,7 @@ mod:hook_require(
 
             -- "+" button
             if sg.profile_preset_add_button then
-                sg.profile_preset_add_button.horizontal_alignment = "right"
+                sg.profile_preset_add_button.horizontal_alignment = _bar_alignment() == "left" and "left" or "right"
                 sg.profile_preset_add_button.vertical_alignment = "top"
                 sg.profile_preset_add_button.size = { 44, 44 }
                 sg.profile_preset_add_button.position = { 0, 0, 1 }
@@ -79,7 +70,7 @@ mod:hook_require(
 
             -- Button list pivot: start under +
             if sg.profile_preset_button_pivot then
-                sg.profile_preset_button_pivot.horizontal_alignment = "right"
+                sg.profile_preset_button_pivot.horizontal_alignment = _bar_alignment() == "left" and "left" or "right"
                 sg.profile_preset_button_pivot.vertical_alignment = "top"
                 sg.profile_preset_button_pivot.position = { 0, 48, 1 }
             end
@@ -87,12 +78,12 @@ mod:hook_require(
             -- Tooltip container & grid (baseline; runtime resizes/repositions later)
             if sg.profile_preset_tooltip then
                 sg.profile_preset_tooltip.size = {
-                    tooltip_dimensions.tooltip_width,
-                    tooltip_dimensions.tooltip_height,
+                    tooltip_width,
+                    tooltip_height,
                 }
             end
             if sg.profile_preset_tooltip_grid then
-                sg.profile_preset_tooltip_grid.size = { tooltip_dimensions.grid_width, 1 }
+                sg.profile_preset_tooltip_grid.size = { grid_width, 1 }
                 sg.profile_preset_tooltip_grid.horizontal_alignment = "center"
                 sg.profile_preset_tooltip_grid.position[1] = 0
             end
@@ -165,6 +156,101 @@ mod:hook_require(
         end
 
         _vp_silence_highlight(blueprints and blueprints.icon)
+
+        -- BetterLoadouts color picker: compact inline paint swatches rather than tabs.
+        if blueprints and not blueprints.betterloadouts_color_swatch then
+            blueprints.betterloadouts_color_swatch = {
+                size = { 36, 36 },
+                pass_template = {
+                    {
+                        content_id = "hotspot",
+                        pass_type = "hotspot",
+                        content = {
+                            on_hover_sound = UISoundEvents.default_mouse_hover,
+                            on_pressed_sound = UISoundEvents.default_click,
+                        },
+                    },
+                    {
+                        pass_type = "rect",
+                        style_id = "swatch",
+                        style = {
+                            horizontal_alignment = "center",
+                            vertical_alignment = "center",
+                            size = { 26, 26 },
+                            offset = { 0, 0, 2 },
+                            color = { 255, 255, 255, 255 },
+                        },
+                    },
+                    {
+                        pass_type = "texture",
+                        value = "content/ui/materials/frames/inner_shadow_thin",
+                        style = {
+                            scale_to_material = true,
+                            offset = { 0, 0, 3 },
+                            color = Color.terminal_corner_selected(255, true),
+                        },
+                        visibility_function = function(content)
+                            return content.betterloadouts_color_selected == true
+                        end,
+                    },
+                    {
+                        pass_type = "texture",
+                        style_id = "frame",
+                        value = "content/ui/materials/frames/frame_tile_2px",
+                        style = {
+                            horizontal_alignment = "center",
+                            vertical_alignment = "center",
+                            offset = { 0, 0, 5 },
+                            color = Color.terminal_frame(nil, true),
+                            default_color = Color.terminal_frame(nil, true),
+                            selected_color = Color.terminal_frame_selected(nil, true),
+                            hover_color = Color.terminal_frame_hover(nil, true),
+                        },
+                        change_function = ButtonPassTemplates.default_button_hover_change_function,
+                    },
+                    {
+                        pass_type = "texture",
+                        style_id = "corner",
+                        value = "content/ui/materials/frames/frame_corner_2px",
+                        style = {
+                            horizontal_alignment = "center",
+                            vertical_alignment = "center",
+                            offset = { 0, 0, 6 },
+                            color = Color.terminal_corner(nil, true),
+                            default_color = Color.terminal_corner(nil, true),
+                            selected_color = Color.terminal_corner_selected(nil, true),
+                            hover_color = Color.terminal_corner_hover(nil, true),
+                        },
+                        change_function = ButtonPassTemplates.default_button_hover_change_function,
+                    },
+                },
+                init = function(parent, widget, element, on_left_click)
+                    local content = widget.content
+                    local hotspot = content.hotspot
+                    local color = element.color
+
+                    content.element = element
+                    content.color_key = element.color_key
+                    content.current_key = element.current_key
+                    content.betterloadouts_color_selected = element.color_key == element.current_key
+                    content.equipped = false
+
+                    local swatch_color = widget.style.swatch.color
+                    swatch_color[1] = color[1]
+                    swatch_color[2] = color[2]
+                    swatch_color[3] = color[3]
+                    swatch_color[4] = color[4]
+
+                    if type(on_left_click) == "function" then
+                        hotspot.pressed_callback = function()
+                            on_left_click(widget, element)
+                        end
+                    elseif type(on_left_click) == "string" then
+                        hotspot.pressed_callback = callback(parent, on_left_click, widget, element)
+                    end
+                end,
+            }
+        end
 
         -- Unicode tile
         if blueprints and not blueprints.unicode_icon then
@@ -503,8 +589,26 @@ mod:hook_require(
             for i = 1, #ppb.passes do
                 local pass = ppb.passes[i]
 
-                if pass.value_id == "icon" then
+                if pass.value_id == "highlight" and not pass.betterloadouts_selected_highlight then
+                    local original_change_function = pass.change_function
+                    pass.change_function = function(content, style, animations, dt, t, ui_renderer)
+                        if original_change_function then
+                            original_change_function(content, style, animations, dt, t, ui_renderer)
+                        end
+
+                        local hotspot = content.hotspot
+                        if hotspot and hotspot.is_selected and style and style.color then
+                            style.color[1] = 255
+                            style.color[2] = SELECTED_HIGHLIGHT_COLOR[2]
+                            style.color[3] = SELECTED_HIGHLIGHT_COLOR[3]
+                            style.color[4] = SELECTED_HIGHLIGHT_COLOR[4]
+                        end
+                    end
+                    pass.betterloadouts_selected_highlight = true
+                elseif pass.value_id == "icon" then
                     local prev_vis = pass.visibility_function
+                    local prev_change = pass.change_function
+
                     pass.visibility_function = function(content, style)
                         if content.unicode ~= nil and content.unicode ~= "" then
                             return false
@@ -513,6 +617,17 @@ mod:hook_require(
                             return false
                         end
                         return prev_vis and prev_vis(content, style) or true
+                    end
+
+                    pass.change_function = function(content, icon_style, animations, dt, t, ui_renderer)
+                        if prev_change then
+                            prev_change(content, icon_style, animations, dt, t, ui_renderer)
+                        end
+
+                        local color = content and content.betterloadouts_icon_color
+                        if color and icon_style then
+                            icon_style.color = _write_color(icon_style.color, color)
+                        end
                     end
                 elseif pass.pass_type == "text" and pass.value_id == "unicode" then
                     has_unicode_text = true

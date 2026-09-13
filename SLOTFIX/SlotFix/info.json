@@ -1,0 +1,17 @@
+{
+    "name": "SLOTFIX",
+    "author": "IndicaBunny",
+    "version": "2",
+    "homepage": "https://www.nexusmods.com/warhammer40kdarktide/mods/982",
+    "source": "https://github.com/MaddyMarv/SLOTFIX",
+    "funding": {
+        "kofi": "https://ko-fi.com/indicabunny"
+    },
+    "description": "Fixes invalid player slots that make class icons appear black by reassigning players to valid slots.",
+    "dependencies": {
+        "required": [],
+        "self_after": [],
+        "self_before": []
+    },
+    "localization": {}
+}

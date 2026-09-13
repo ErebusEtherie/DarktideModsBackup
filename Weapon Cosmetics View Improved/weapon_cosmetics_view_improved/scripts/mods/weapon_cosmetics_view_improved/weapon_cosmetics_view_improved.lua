@@ -173,7 +173,7 @@ mod.on_all_mods_loaded = function()
 								default_position[3]
 							)
 							-- mod:info("WEAPONCUSTOMIZATION.set_light_positions: " .. tostring(unit_data.unit))
-							if not tostring(unit_data.unit) == "[Unit (deleted)]" then
+							if tostring(unit_data.unit) ~= "[Unit (deleted)]" then
 								unit_set_local_position(unit_data.unit, 1, light_position)
 							end
 						end
@@ -334,8 +334,6 @@ mod:hook_safe(CLASS.InventoryWeaponCosmeticsView, "_preview_element", function(s
 	local parent_item = self._presentation_item
 	local selected_item = self._previewed_item
 
-	dbg_p = self._previewed_item
-
 	if self._selected_tab_index == 1 then
 		if string.find(self._previewed_item.name, "trinket") then
 			self._previewed_item = base_item
@@ -479,6 +477,11 @@ mod:hook_safe(CLASS.InventoryView, "on_enter", function(self)
 	mod.grab_current_commodores_items(self)
 end)
 
+mod:hook_safe(CLASS.InventoryView, "on_exit", function(self)
+	-- clear cached commodores offers so they are re-fetched fresh next time and don't grow unbounded...
+	current_commodores_offers = {}
+end)
+
 mod:hook_require("scripts/ui/pass_templates/item_pass_templates", function(instance)
 	instance.item_icon = {}
 end)
@@ -513,6 +516,19 @@ mod:hook_safe(CLASS.InventoryWeaponCosmeticsView, "on_enter", function(self)
 		-5,
 		7,
 	}
+
+	local item_owned_text_style = table.clone(UIFontSettings.header_2)
+
+	item_owned_text_style.text_horizontal_alignment = "right"
+	item_owned_text_style.text_vertical_alignment = "bottom"
+	item_owned_text_style.horizontal_alignment = "right"
+	item_owned_text_style.vertical_alignment = "bottom"
+	item_owned_text_style.offset = {
+		0,
+		4,
+		15,
+	}
+	item_owned_text_style.text_color = Color.terminal_text_body(255, true)
 
 	local function item_change_function(content, style)
 		local hotspot = content.hotspot
@@ -2245,35 +2261,10 @@ InventoryWeaponCosmeticsView._prepare_layout_data = function(self)
 				--continue = false
 			end
 
-			for _, default_item in pairs(inventory_items) do
-				if
-					default_item.item
-					and default_item.item.__master_item
-					and default_item.item.__master_item.display_name == skin_name
-				then
-					continue = false
-				end
-
-				if default_item.item and default_item.item and default_item.item.display_name == skin_name then
-					continue = false
-				end
-			end
-
-			for _, default_item in pairs(penance_track_items) do
-				if
-					default_item.item
-					and default_item.item.__master_item
-					and default_item.item.__master_item.display_name == skin_name
-				then
-					continue = false
-				end
-
-				if default_item.item and default_item.item and default_item.item.display_name == skin_name then
-					continue = false
-				end
-			end
-
-			for _, default_item in pairs(store_items) do
+			-- Only dedupe against OWNED inventory items. The penance_track/store lists contain
+			-- every reward/offer regardless of ownership, so deduping against them would hide
+			-- locked penance, commissary and Hestia's Blessings cosmetics entirely.
+			for _, default_item in pairs(inventory_items or {}) do
 				if
 					default_item.item
 					and default_item.item.__master_item
@@ -2338,7 +2329,7 @@ InventoryWeaponCosmeticsView._fetch_inventory_items = function(self)
 	local player = Managers.player:local_player(local_player_id)
 	local character_id = player:character_id()
 	local selected_item = self._selected_item
-	local promises = Promise.resolved({})
+	local promises = {}
 	local tabs_content = self._tabs_content
 
 	for i = 1, #tabs_content do
@@ -2415,11 +2406,14 @@ InventoryWeaponCosmeticsView._fetch_inventory_items = function(self)
 
 					-- find if item is on wishlist
 					local item_on_wishlist = false
-					local widgets_by_name = self._widgets_by_name
 
-					for i, item in pairs(wishlisted_items) do
-						if item.name == "previewed_item_name" then
-							item_on_wishlist = true
+					if wishlisted_items ~= nil and not table.is_empty(wishlisted_items) then
+						for _, wishlisted_entry in pairs(wishlisted_items) do
+							if wishlisted_entry and wishlisted_entry.name == item.name then
+								item_on_wishlist = true
+
+								break
+							end
 						end
 					end
 
@@ -2557,8 +2551,9 @@ InventoryWeaponCosmeticsView._fetch_inventory_items = function(self)
 				premium_store_promises[count] = self._promise_container
 					:cancel_on_destroy(Managers.data_service.store:get_character_premium_store(archetype_name))
 					:next(function(data)
-						local offers = data.offers
-						local catalog_validity = data.catalog_validity
+						-- Empty/unavailable storefronts resolve to nil, guard against that.
+						local offers = data and data.offers or {}
+						local catalog_validity = data and data.catalog_validity
 						local valid_to = catalog_validity and catalog_validity.valid_to
 
 						self._premium_rotation_ends_at = valid_to
@@ -2597,17 +2592,36 @@ InventoryWeaponCosmeticsView._fetch_inventory_items = function(self)
 			}
 		end)
 	end
-
-	return Promise.all(unpack(promises)):next(function(items_data)
+	return self._promise_container:cancel_on_destroy(Promise.all(unpack(promises))):next(function(items_data)
 		self._items_by_slot = {}
+
 		for i = 1, #items_data do
 			local tab_content = tabs_content[i]
 			local slot_name = tab_content.slot_name
+
 			self._items_by_slot[slot_name] = items_data[i]
+		end
+	end):catch(function(items_data)
+		self._items_by_slot = {}
+
+		if type(items_data) == "table" then
+			for i = 1, #items_data do
+				local rejected = items_data[i]
+
+				if type(rejected) == "table" and rejected.code and Managers.backend:is_retryable_error_code(rejected.code) then
+					self._refresh_in_seconds = 5
+				end
+			end
+
+			for i = 1, #items_data do
+				local tab_content = tabs_content[i]
+				local slot_name = tab_content.slot_name
+
+				self._items_by_slot[slot_name] = items_data[i]
+			end
 		end
 	end)
 end
-
 -- Grabs all weapon cosmetic trinkets, skins etc.
 mod.get_weapon_cosmetic_items = function(self)
 	MasterItems.refresh()
@@ -2615,27 +2629,23 @@ mod.get_weapon_cosmetic_items = function(self)
 	local weapon_cosmetic_items = {}
 
 	local item_definitions = MasterItems.get_cached()
+	local feature_flags_table = Application.get_feature_flags_table()
 
 	for item_name, item in pairs(item_definitions) do
 		repeat
 			local slots = item.slots
-			local gearid = item.__gear_id
-			if gearid then
-				gearid[#gearid + 1] = gearid
-			end
 			local slot = slots and slots[1]
 
 			if slot == "slot_weapon_skin" or slot == "slot_trinket_1" then
 				-- filter out skins for wrong weapon types
 				if slot == "slot_weapon_skin" then
 					local is_item_stripped = true
-					local strip_tags_table = Application.get_strip_tags_table()
 
 					if table.size(item.feature_flags) == 0 then
 						is_item_stripped = false
 					else
 						for _, feature_flag in pairs(item.feature_flags) do
-							if strip_tags_table[feature_flag] == true then
+							if feature_flags_table[feature_flag] == true then
 								is_item_stripped = false
 
 								break
@@ -2891,68 +2901,6 @@ mod:hook_require("scripts/ui/views/inventory_weapon_cosmetics_view/inventory_wea
 		widgets_by_name.wishlist_button.content.hotspot.pressed_callback = callback(self, "cb_on_wishlist_pressed")
 
 		equip_button.content.hotspot.pressed_callback = callback(self, "cb_on_equip_pressed")
-	end
-
-	mod.grab_current_commodores_items = function(self, archetype)
-		local player = Managers.player:local_player(1)
-		local archetype_name = player and player:archetype_name() or nil
-
-		-- Resolve archetype storefront
-		local storefront = "premium_store_featured"
-		if archetype == "veteran" or (archetype == nil and archetype_name == "veteran") then
-			storefront = "premium_store_skins_veteran"
-		elseif archetype == "zealot" or (archetype == nil and archetype_name == "zealot") then
-			storefront = "premium_store_skins_zealot"
-		elseif archetype == "psyker" or (archetype == nil and archetype_name == "psyker") then
-			storefront = "premium_store_skins_psyker"
-		elseif archetype == "ogryn" or (archetype == nil and archetype_name == "ogryn") then
-			storefront = "premium_store_skins_ogryn"
-		elseif archetype == "adamant" or (archetype == nil and archetype_name == "adamant") then
-			storefront = "premium_store_skins_adamant"
-		elseif archetype == "broker" or (archetype == nil and archetype_name == "broker") then
-			storefront = "premium_store_skins_broker"
-		elseif archetype == "cryptic" or (archetype == nil and archetype_name == "cryptic") then
-			storefront = "premium_store_skins_cryptic"
-		end
-
-		local store_service = Managers.data_service.store
-
-		-- Always include featured storefront as well
-		local promises = {}
-
-		local archetype_promise = store_service:get_premium_store(storefront)
-		if archetype_promise then
-			table.insert(promises, archetype_promise)
-		end
-
-		local featured_promise = store_service:get_premium_store("premium_store_featured")
-		if featured_promise then
-			table.insert(promises, featured_promise)
-		end
-
-		if #promises == 0 then
-			return Promise:resolved()
-		end
-
-		return Promise.all(unpack(promises)):next(function(results)
-			-- Merge offers from all results, avoid duplicates by offerId
-			local seen = {}
-			for r = 1, #results do
-				local data = results[r]
-				if data and data.offers then
-					for i = 1, #data.offers do
-						local offer = data.offers[i]
-						local offer_id = offer and offer.offerId
-						if offer_id and not seen[offer_id] then
-							seen[offer_id] = true
-							-- Attach layout_config reference if present on this result
-							offer["layout_config"] = data.layout_config
-							table.insert(current_commodores_offers, offer)
-						end
-					end
-				end
-			end
-		end)
 	end
 
 	instance._setup_sort_options = function(self)

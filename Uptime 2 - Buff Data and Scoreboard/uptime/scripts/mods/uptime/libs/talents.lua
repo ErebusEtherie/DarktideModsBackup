@@ -38,6 +38,8 @@ local buff_to_talent = {
     veteran_melee_crits_increase_damage = "veteran_crits_apply_rending",
 
     zealot_stamina_cost_multiplier_aura = "zealot_stamina_cost_multiplier_aura",
+    -- Darktide currently points this buff at zealot_crits_grant_cd via related_talents.
+    zealot_weakspot_backstab_hit_cooldown_cooldown_buff = "zealot_backstab_kills_restore_cd",
 
     ogryn_ranged_stance = "ogryn_special_ammo",
 
@@ -57,6 +59,22 @@ local buff_to_talent = {
 local talents_by_id = {}
 local talents_by_buff_name = {}
 
+local function index_buff_template_names(definition, buff_template_name)
+    local value_type = type(buff_template_name)
+
+    if value_type == "string" then
+        if buff_template_name ~= "" then
+            talents_by_buff_name[buff_template_name] = definition
+        end
+    elseif value_type == "table" then
+        for _, name in pairs(buff_template_name) do
+            if type(name) == "string" and name ~= "" then
+                talents_by_buff_name[name] = definition
+            end
+        end
+    end
+end
+
 if type(ArchetypeTalents) == "table" then
     for _, archetype_talents in pairs(ArchetypeTalents) do
         if type(archetype_talents) == "table" then
@@ -66,16 +84,9 @@ if type(ArchetypeTalents) == "table" then
 
                     local passive = definition.passive
                     local coherency = definition.coherency
-                    local passive_buff_name = passive and passive.buff_template_name
-                    local coherency_buff_name = coherency and coherency.buff_template_name
 
-                    if type(passive_buff_name) == "string" and passive_buff_name ~= "" then
-                        talents_by_buff_name[passive_buff_name] = definition
-                    end
-
-                    if type(coherency_buff_name) == "string" and coherency_buff_name ~= "" then
-                        talents_by_buff_name[coherency_buff_name] = definition
-                    end
+                    index_buff_template_names(definition, passive and passive.buff_template_name)
+                    index_buff_template_names(definition, coherency and coherency.buff_template_name)
                 end
             end
         end

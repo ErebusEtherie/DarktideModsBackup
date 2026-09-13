@@ -399,8 +399,34 @@ local hell_yeah_block = make(
 		:size(C.FONT_SIZE.hell_yeah)
 		:align("center", "center")
 		:color(C.COLOR.HELL_YEAH_TEXT)
-		:z(10)
+		:z(20)
 )
+
+local skip_recap_block = (function()
+	local icon_y = (C.HELL_YEAH_BUTTON_H - C.SKIP_RECAP_ICON_SIZE) * 0.5
+	return make(
+		"skip_recap",
+		at_block(g.skip_recap),
+		rect:id("skip_bg"):color(C.COLOR.SKIP_RECAP_BG):z(10),
+		text:id("skip_text")
+			:val(mod:localize("mission_summary_skip_recap"))
+			:font(C.FONTS.heading)
+			:size(C.FONT_SIZE.hell_yeah)
+			:at(0, 0)
+			:sizes(g.skip_recap.w, C.HELL_YEAH_BUTTON_H)
+			:align("center", "left")
+			:color(C.COLOR.SKIP_RECAP_TEXT)
+			:z(20),
+		texture
+			:id("skip_icon")
+			:material(C.MATERIAL.skip_recap_icon)
+			:scale(false)
+			:at(0, icon_y)
+			:sizes(C.SKIP_RECAP_ICON_SIZE, C.SKIP_RECAP_ICON_SIZE)
+			:color(C.COLOR.SKIP_RECAP_TEXT)
+			:z(20)
+	)
+end)()
 
 return build(
 	screen(),
@@ -427,5 +453,6 @@ return build(
 	team_block,
 	mission_grid_block,
 	live_button_block,
-	hell_yeah_block
+	hell_yeah_block,
+	skip_recap_block
 )

@@ -62,61 +62,29 @@ local localization = {
 		en = "Match Outline to Tag Color",
 		["zh-cn"] = "轮廓颜色跟随标记",
 	},
-	normal_tag_icon_settings = {
-		en = "Normal Tag Icon",
-		["zh-cn"] = "普通标签图标",
-	},
-	veteran_tag_icon_settings = {
-		en = "Focus Target Tag Icon",
-		["zh-cn"] = "聚焦目标标签图标",
-	},
-	companion_tag_icon_settings = {
-		en = "Cyber-Mastiff Tag Icon",
-		["zh-cn"] = "智能獒犬标签图标",
-	},
-	servo_skull_tag_icon_settings = {
-		en = "Servo-Skull Tag Icon",
-		["zh-cn"] = "伺服颅骨标签图标",
+	icon_settings = {
+		en = "Icon Settings",
+		["zh-cn"] = "图标设置",
 	},
 	tag_icon = {
 		en = "Tag Icon",
 		["zh-cn"] = "标签图标",
 	},
+	tag_color = {
+		en = "Color",
+		["zh-cn"] = "颜色",
+	},
 	use_slot_color = {
 		en = "Use Player Slot Color",
 		["zh-cn"] = "使用玩家槽位颜色",
-	},
-	normal_tag_color = {
-		en = "Normal Tag Color",
-		["zh-cn"] = "普通标签颜色",
-	},
-	veteran_tag_color = {
-		en = "Focus Target Tag Color",
-		["zh-cn"] = "聚焦目标标签颜色",
-	},
-	companion_tag_color = {
-		en = "Cyber-Mastiff Tag Color",
-		["zh-cn"] = "智能獒犬标签颜色",
-	},
-	servo_skull_tag_color = {
-		en = "Servo-Skull Tag Color",
-		["zh-cn"] = "伺服颅骨标签颜色",
 	},
 	override_tag_color = {
 		en = "Override Tag Color",
 		["zh-cn"] = "覆盖标签颜色",
 	},
-	red = {
-		en = "Red",
-		["zh-cn"] = "红色",
-	},
-	green = {
-		en = "Green",
-		["zh-cn"] = "绿色",
-	},
-	blue = {
-		en = "Blue",
-		["zh-cn"] = "蓝色",
+	override_teammate_tag_color = {
+		en = "Override Teammate Tag Color",
+		["zh-cn"] = "覆盖队友标签颜色",
 	},
 	normal_tag_settings = {
 		en = "Normal Tag Settings",
@@ -137,22 +105,6 @@ local localization = {
 	override_tag_settings = {
 		en = "Override Tag Settings",
 		["zh-cn"] = "覆盖标签设置",
-	},
-	teammate_normal_tag_color = {
-		en = "Teammate Normal Tag Color",
-		["zh-cn"] = "队友普通标签颜色",
-	},
-	teammate_veteran_tag_color = {
-		en = "Teammate Focus Target Tag Color",
-		["zh-cn"] = "队友聚焦目标标签颜色",
-	},
-	teammate_companion_tag_color = {
-		en = "Teammate Cyber-Mastiff Tag Color",
-		["zh-cn"] = "队友智能獒犬标签颜色",
-	},
-	teammate_servo_skull_tag_color = {
-		en = "Teammate Servo-Skull Tag Color",
-		["zh-cn"] = "队友伺服颅骨标签颜色",
 	},
 	default = {
 		en = "Default",

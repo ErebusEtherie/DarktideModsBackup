@@ -6,72 +6,24 @@ local UIWidget = require("scripts/managers/ui/ui_widget")
 local UISettings = require("scripts/settings/ui/ui_settings")
 local MasterItems = require("scripts/backend/master_items")
 local ItemUtils = require("scripts/utilities/items")
+local moddir = "LoadoutMonitor/scripts/mods/LoadoutMonitor/"
+local datalookup = mod:io_dofile(moddir.."LoadoutMonitor_lookup")
 local lid = Managers and Managers.localization and Managers.localization:language() or Application.user_setting("language_id")
 local function get_local_player()
 	return Managers.player:local_player(1)
 end
 local scoreboard = get_mod("scoreboard")
-local default_feats_order = {"Ability","Blitz","Aura","Keystone"}
-local feats_symbol = {
-	Ability = mod:localize("player_Feats_symbol_Ability"),
-	Blitz = mod:localize("player_Feats_symbol_Blitz"),
-	Aura = mod:localize("player_Feats_symbol_Aura"),
-	Keystone = mod:localize("player_Feats_symbol_Keystone"),
-}
-
-local weapon_slot = {Melee = "slot_primary", Range = "slot_secondary"}
-local talents_index = {
-	veteran = {
-		Ability = {"veteran_combat_ability_elite_and_special_outlines","veteran_combat_ability_stagger_nearby_enemies","veteran_invisibility_on_combat_ability"},
-		Blitz = {"veteran_grenade_apply_bleed","veteran_krak_grenade","veteran_smoke_grenade"},
-		Aura = {"veteran_aura_gain_ammo_on_elite_kill_improved","veteran_increased_damage_coherency","veteran_movement_speed_coherency"},
-		Keystone = {"veteran_snipers_focus","veteran_improved_tag","veteran_weapon_switch_passive"},
-	},
-	zealot = {
-		Ability = {"zealot_attack_speed_post_ability","zealot_bolstering_prayer","zealot_stealth"},
-		Blitz = {"zealot_improved_stun_grenade","zealot_flame_grenade","zealot_throwing_knives"},
-		Aura = {"zealot_toughness_damage_reduction_coherency_improved","zealot_corruption_healing_coherency_improved","zealot_stamina_cost_multiplier_aura"},
-		Keystone = {"zealot_fanatic_rage","zealot_martyrdom","zealot_quickness_passive"},
-	},
-	psyker = {
-		Ability = {"psyker_shout_vent_warp_charge","psyker_combat_ability_force_field","psyker_combat_ability_stance"},
-		Blitz = {"psyker_brain_burst_improved","psyker_grenade_chain_lightning","psyker_grenade_throwing_knives"},
-		Aura = {"psyker_aura_damage_vs_elites","psyker_cooldown_aura_improved","psyker_aura_crit_chance_aura"},
-		Keystone = {"psyker_passive_souls_from_elite_kills","psyker_empowered_ability","psyker_new_mark_passive"},
-	},
-	ogryn = {
-		Ability = {"ogryn_longer_charge","ogryn_taunt_shout","ogryn_special_ammo"},
-		Blitz = {"ogryn_grenade_friend_rock","ogryn_grenade_frag","ogryn_box_explodes"},
-		Aura = {"ogryn_melee_damage_coherency_improved","ogryn_toughness_regen_aura","ogryn_damage_vs_suppressed_coherency"},
-		Keystone = {"ogryn_passive_heavy_hitter","ogryn_carapace_armor","ogryn_leadbelcher_no_ammo_chance"},
-	},
-	adamant = {
-		Ability = {"adamant_stance","adamant_area_buff_drone_improved","adamant_charge"},
-		Blitz = {"adamant_whistle","adamant_shock_mine","adamant_grenade_improved"},
-		Aura = {"adamant_companion_coherency","adamant_reload_speed_aura","adamant_damage_vs_staggered_aura"},
-		Keystone = {"adamant_execution_order","adamant_terminus_warrant","adamant_forceful"},
-		Keystone_dog = {"adamant_companion_focus_elite","adamant_disable_companion","adamant_companion_focus_ranged"},
-	},
-	broker = {
-		Ability = {"broker_ability_focus_improved","broker_ability_punk_rage","broker_ability_stimm_field"},
-		Blitz = {"broker_blitz_flash_grenade_improved","broker_blitz_missile_launcher","broker_blitz_tox_grenade"},
-		Aura = {"broker_aura_gunslinger_improved","broker_coherency_melee_damage","broker_coherency_anarchist"},
-		Keystone = {"broker_keystone_vultures_mark_on_kill","broker_keystone_adrenaline_junkie","broker_keystone_chemical_dependency"},
-	},
-	cryptic = {
-		Ability = {"cryptic_chordclaw","cryptic_discharge","cryptic_precision_stance"},
-		Blitz = {"cryptic_servo_skull_improved","cryptic_grenade_ability_arc_grenade","cryptic_grenade_ability_force_field"},
-		Aura = {"cryptic_coherency_regen_aura_improved","cryptic_aura_weapon_improved","cryptic_ammo_aura"},
-		Keystone = {"cryptic_redline","cryptic_dissector","cryptic_overload_keystone"},
-	},
-}
+local default_feats_order = datalookup.default_feats_order
+local feats_symbol = datalookup.feats_symbol
+local talents_index = datalookup.talents_index
+local weapon_slot = datalookup.weapon_slot
+local noteworthy_talents = datalookup.noteworthy_talents
+local trait_offsets = datalookup.trait_offsets
 local feats_abbreviations = {}
 local teammates = {}
 mod.user_custom_feats_abbreviation = mod:get("user_custom_feats_abbreviation") or {}
 
 mod.left_panel_lift = 0 - mod:get("left_panel_lift")
-mod.text_color = {255,239,238,238}
-
 
 local function clean_teammates()
 	if not table.is_empty(teammates) then
@@ -199,26 +151,7 @@ mod.get_player_feats = function(profile)
 	end
     return ""
 end
-local noteworthy_talents = {
-	veteran = {
-		{
-			"veteran_better_deployables",
-			{255,0,206,209}
-		},
-		{
-			"veteran_combat_ability_revive_nearby_allies",
-			{255,255,215,0}
-		},
-		
-	},
-	cryptic = {
-		{
-			"cryptic_servo_skull_inject_ally",
-			{255,77,255,46},
-		},
-	
-	},
-}
+
 local function notable_talents(profile,widget)
 	if not mod.display.notable_talents then
 		return
@@ -284,10 +217,7 @@ local function weapon_display_name(profile,slot)
 	return name ~= " " and string.trim(name) or " "
 end
 
-local trait_offsets = {
-	bless = {280,},
-	perk = {370,},
-}
+
 mod.get_companion_name = function(profile)
 	return profile.talents and not profile.talents.adamant_disable_companion and profile.companion and profile.companion.name or ""
 end
@@ -353,7 +283,7 @@ mod.get_playerloadout_intel = function(profile,widget)
 						if mod.trait_display_by[trait_type] == "color" or mod.trait_display_by[trait_type] == "both" then
 							style[id].text_color = Color["item_rarity_"..tostring(value[trait_type][i+2])](255,true)
 						else
-							style[id].text_color = mod.text_color
+							style[id].text_color = datalookup.mod_text_color
 						end
 					end
 					content[id] = text
@@ -364,58 +294,40 @@ mod.get_playerloadout_intel = function(profile,widget)
 		end
 	end
 end
-mod:hook("LobbyView","_destroy_spawn_slots",function(func,self)
-	if self._spawn_slots then
-		for i = 1,#self._spawn_slots do
-			local slot = self._spawn_slots[i]
-			local panel_widget = slot and slot.panel_widget
-			if panel_widget then
-				for ii = #panel_widget.passes + 1,1,-1 do
-					local pass = panel_widget.passes[ii]
-					if pass then
-						if pass.value_id == "loadout_intel_Melee" or pass.value_id == "loadout_intel_Range" or pass.value_id == "loadout_intel_Keystone" then
-							pass.pass_type = nil
-							pass.value_id = nil
-							pass.style_id = nil
-							table.clear(pass.data)
-							panel_widget.passes[ii] = nil
-						end
-					end
-				end
-				panel_widget.content.loadout_intel_Melee = nil
-				panel_widget.content.loadout_intel_Range = nil
-				panel_widget.content.loadout_intel_Keystone = nil
-				table.clear(panel_widget.style.loadout_intel_Melee)
-				table.clear(panel_widget.style.loadout_intel_Range)
-				table.clear(panel_widget.style.loadout_intel_Keystone)
-				panel_widget.style.loadout_intel_Melee = nil
-				panel_widget.style.loadout_intel_Range = nil
-				panel_widget.style.loadout_intel_Keystone = nil
-			end
-		end
-	end
-	return func(self)
+local lobby_delay,lobby_interval = 0,1
+
+mod:hook_safe("LobbyView","init",function()
+	lobby_delay = 0
+	lobby_interval = 1
 end)
-mod.lobby_loadout = function (self)
-	local spawn_slots = self._spawn_slots
-	if not spawn_slots then
+mod.lobby_loadout = function (self,dt)
+	if not self._spawn_slots or not self._world_initialized then
 		return
 	end
+	
+	lobby_delay = lobby_delay + dt
+	if lobby_delay < lobby_interval then return end
+	lobby_delay = 0
+	if self._countdown then
+		lobby_interval = 10
+	end
+	
+	local spawn_slots = self._spawn_slots
 	for i = 1, #spawn_slots do
 		local slot = spawn_slots[i]
 		if slot then
 			local panel_widget = slot.panel_widget
 			local slot_player = slot.player
 			local profile_spawner = slot.profile_spawner
-			if panel_widget then
-				local panel_content = panel_widget.content
-				local panel_style = panel_widget.style
-				panel_content.loadout_intel_Melee = ""
-				panel_content.loadout_intel_Range = ""
-				panel_content.loadout_intel_Keystone = ""
+			if panel_widget then				
 				if slot.occupied and slot_player and profile_spawner:spawned() then
 					local profile = slot_player:profile()
 					if profile and profile_spawner:spawned_character_unit() then
+						local panel_content = panel_widget.content
+						local panel_style = panel_widget.style					
+						panel_content.loadout_intel_Melee = ""
+						panel_content.loadout_intel_Range = ""
+						panel_content.loadout_intel_Keystone = ""
 						
 						if mod.lobby_exhibition.weapon then
 							local offset_M = mod.offsets.lobby[1] or 165
@@ -639,7 +551,7 @@ mod.playerloadout_definition = function(instance)
 					text_horizontal_alignment = "left",
 					offset = {0, 29.5, 200},
 					size = {275, 100},
-					text_color = mod.text_color,
+					text_color = datalookup.mod_text_color,
 					font_size = 20,
 					line_spacing = 0.8,
 				},
@@ -657,7 +569,7 @@ mod.playerloadout_definition = function(instance)
 					text_horizontal_alignment = "left",
 					offset = {trait_offsets.bless[1], 22.5, 200},
 					size = {500, 100},
-					text_color = mod.text_color,
+					text_color = datalookup.mod_text_color,
 					font_size = 14,
 				},
 				
@@ -674,7 +586,7 @@ mod.playerloadout_definition = function(instance)
 					text_horizontal_alignment = "left",
 					offset = {trait_offsets.bless[1], 38.5, 200},
 					size = {500, 100},
-					text_color = mod.text_color,
+					text_color = datalookup.mod_text_color,
 					font_size = 14,
 				},
 				
@@ -691,7 +603,7 @@ mod.playerloadout_definition = function(instance)
 					text_horizontal_alignment = "left",
 					offset = {370, 23, 200},
 					size = {275, 100},
-					text_color = mod.text_color,
+					text_color = datalookup.mod_text_color,
 					font_size = 14,
 				},
 				
@@ -708,7 +620,7 @@ mod.playerloadout_definition = function(instance)
 					text_horizontal_alignment = "left",
 					offset = {370, 39, 200},
 					size = {500, 100},
-					text_color = mod.text_color,
+					text_color = datalookup.mod_text_color,
 					font_size = 14,
 				},
 				
@@ -725,7 +637,7 @@ mod.playerloadout_definition = function(instance)
 					text_horizontal_alignment = "left",
 					offset = {0, 59.5, 200},
 					size = {275, 100},
-					text_color = mod.text_color,
+					text_color = datalookup.mod_text_color,
 					font_size = 20,
 					line_spacing = 0.8,
 				},
@@ -743,7 +655,7 @@ mod.playerloadout_definition = function(instance)
 					text_horizontal_alignment = "left",
 					offset = {trait_offsets.bless[1], 57, 200},
 					size = {500, 100},
-					text_color = mod.text_color,
+					text_color = datalookup.mod_text_color,
 					font_size = 14,
 				},
 				
@@ -760,7 +672,7 @@ mod.playerloadout_definition = function(instance)
 					text_horizontal_alignment = "left",
 					offset = {trait_offsets.bless[1], 72, 200},
 					size = {500, 100},
-					text_color = mod.text_color,
+					text_color = datalookup.mod_text_color,
 					font_size = 14,
 				},
 				
@@ -777,7 +689,7 @@ mod.playerloadout_definition = function(instance)
 					text_horizontal_alignment = "left",
 					offset = {370, 57, 200},
 					size = {500, 100},
-					text_color = mod.text_color,
+					text_color = datalookup.mod_text_color,
 					font_size = 14,
 				},
 				
@@ -794,7 +706,7 @@ mod.playerloadout_definition = function(instance)
 					text_horizontal_alignment = "left",
 					offset = {370, 72, 200},
 					size = {500, 100},
-					text_color = mod.text_color,
+					text_color = datalookup.mod_text_color,
 					font_size = 14,
 				},
 				
@@ -809,11 +721,19 @@ local team_player_panel_definition_path = "scripts/ui/hud/elements/team_player_p
 mod:hook_require(personal_player_panel_definition_path,mod.playerloadout_definition)
 mod:hook_require(team_player_panel_definition_path,mod.playerloadout_definition)
 
-mod:hook_safe("LobbyView","_check_loadout_changes",mod.lobby_loadout)
+mod:hook_safe("LobbyView","update",mod.lobby_loadout)
 
 
 local lobby_view_definition_path = "scripts/ui/views/lobby_view/lobby_view_definitions"
 mod:hook_require(lobby_view_definition_path,function(instance)
+	local exist = false
+	for _,p in ipairs(instance.panel_definition.passes or {}) do
+		if p.value_id and p.value_id:find("loadout_intel_") then
+			exist = true
+			break
+		end
+	end
+	if exist then return end
 	local extra = {
 			{
 				pass_type = "text",
@@ -827,7 +747,7 @@ mod:hook_require(lobby_view_definition_path,function(instance)
 					text_horizontal_alignment = "center",
 					offset = {0, 165, 1},
 					size = {250, 100},
-					text_color = mod.text_color,
+					text_color = datalookup.mod_text_color,
 					font_size = 17,
 					--line_spacing = 0.95,
 				},
@@ -845,7 +765,7 @@ mod:hook_require(lobby_view_definition_path,function(instance)
 					text_horizontal_alignment = "center",
 					offset = {0, 200, 1},
 					size = {250, 100},
-					text_color = mod.text_color,
+					text_color = datalookup.mod_text_color,
 					font_size = 17,
 					--line_spacing = 0.95,
 				},
@@ -862,7 +782,7 @@ mod:hook_require(lobby_view_definition_path,function(instance)
 					text_horizontal_alignment = "center",
 					offset = {200, 235, 1},
 					size = {250, 100},
-					text_color = mod.text_color,
+					text_color = datalookup.mod_text_color,
 					font_size = 17,
 					--line_spacing = 0.95,
 				},
@@ -871,6 +791,7 @@ mod:hook_require(lobby_view_definition_path,function(instance)
 	for i = 1,#extra do
 		UIWidget.add_definition_pass(instance.panel_definition,extra[i])
 	end
+	
 end)
 
 -- Make tactical overlay available in meat grinder
@@ -1130,4 +1051,3 @@ end)
 mod:hook_safe(CLASS.EndView, "on_exit", function(...)
 	mod.update_scoreboard("off")
 end)
-

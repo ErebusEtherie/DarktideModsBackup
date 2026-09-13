@@ -1,0 +1,194 @@
+ModShrine Changelog
+
+v0.5.5
+======
+Workflow performance, diagnostics, and retired-roster cleanup update.
+
+Performance:
+- Added a guarded UI-only WORKFLOW_CACHE for current-state/workflow display.
+- The cache automatically warms after a verified snapshot or confirmed duplicate
+  and can be reused while the verified state remains unchanged.
+- Added a UI-only PREVIEW_TARGET_CACHE for passive Known Good/latest workflow
+  display. Actual Preview Restore and Stage Safe Restore still reread and
+  reanalyze the backup fresh from disk.
+- Fixed false WORKFLOW_CACHE disk_changed misses caused by harmless DMF Mod
+  Options file rewrites. The raw UI fingerprint is refreshed only after the
+  existing verified unchanged guard passes and the required DMF save succeeds.
+
+Retired roster cleanup:
+- Added hold-to-confirm FORGET TRACKING for obsolete retired/missing mod IDs,
+  useful after a mod has been renamed or permanently removed.
+- Forgotten IDs stop appearing in active missing/retired workflow rows and are
+  excluded from restore missing-target counts and future archive refresh work.
+- Live DMF settings, historical snapshots, and existing per-mod archives are NOT
+  deleted.
+- If the exact forgotten mod ID is physically installed again later, ModShrine
+  automatically resumes tracking it.
+
+Diagnostics:
+- Added detailed build_current_state subphase timings.
+- Added Known Good/latest restore-target timing.
+- Added SLOW_PHASE breadcrumbs for measured ModShrine phases at or above 50 ms.
+
+Safety:
+- Forgetting a currently installed mod ID is rejected.
+- Forgetting invalidates the verified roster sentinel so the next protection
+  check uses the normal full verification path.
+- No changes to snapshot format, Safe Restore staging, Known Good verification,
+  retention, missing-mod archive format, or changed-settings DMF safety flushes.
+
+Field validation:
+- Repeated workflow opens hit the verified state cache instead of rebuilding.
+- Repeated passive restore-target display hits the preview cache.
+- Verified unchanged Mod Options closes refresh the UI raw fingerprint and skip
+  the delayed snapshot queue without false disk_changed rebuilds.
+- Real settings changes still invalidate the cache and complete the normal
+  verified automatic snapshot path.
+- Forgotten retired IDs persisted across a full Darktide restart and remained
+  excluded from active retired/missing tracking.
+
+v0.5.4
+======
+Large-installation Mod Options performance update.
+
+Performance:
+- Added a guarded fast path for closing Mod Options when no meaningful settings
+  or roster changes are present.
+- Once a full verified state has armed the guard, an unchanged close can skip
+  the delayed snapshot queue, build_current_state pass, and duplicate baseline
+  refresh.
+- Reuses the semantic settings hash already computed by live_settings_probe, so
+  the stronger disk-state guard does not add a second config parse.
+- Added lightweight roster-probe timing so large installations can be diagnosed without running a full state build.
+
+Field validation:
+- Confirmed an unchanged Mod Options close can skip the delayed snapshot queue after all guards match.
+- Confirmed a real settings change disarms the fast path and completes the normal verified automatic snapshot path.
+
+Safety:
+- Fast-path eligibility requires the live settings hash, semantic on-disk
+  settings hash, installed/enabled/retired roster hash, and exact latest
+  snapshot identity to match the previously verified state.
+- Any uncertainty falls back to the existing full verification path.
+- Real settings changes retain the v0.5.3 immediate save plus the snapshot
+  job's final safety flush.
+- No changes to snapshot format, Known Good, restore staging, retention,
+  missing-mod archives, or Mourningstar gating.
+
+v0.5.3
+======
+Mod Options performance cleanup.
+
+Performance:
+- Removed an unnecessary second DMF settings save that could run shortly after
+  closing Mod Options.
+- ModShrine still saves settings when Mod Options closes and keeps the final
+  safety flush before creating a snapshot.
+- No-change checks continue to skip duplicate backups normally.
+
+Safety:
+- No changes to snapshot format, verification, Known Good, restore staging,
+  missing-mod archives, retention, or Mourningstar gating.
+
+v0.5.2-beta
+============
+Performance and transition-safety update.
+
+Performance:
+- Removed routine per-snapshot file-existence validation of all indexed
+  automatic backups from snapshot finalization.
+- Full-pool retention now parses ModShrine's own index, prunes the oldest
+  entry, and writes the updated index without reopening all 20 snapshots.
+- Added cooperative retention-index reconciliation for abnormal/stale index
+  evidence, one file check per safe update.
+- Live validation reduced full-pool retention cleanup to low single-digit
+  milliseconds, with snapshot finalization returning to roughly 26-36 ms.
+
+Transition safety:
+- Mourningstar secondary archive/snapshot work now stays paused throughout
+  GameplayInitStep* and unlocks only when GameplayStateRun confirms the hub is
+  fully initialized.
+- GameplayStateRun is authoritative whenever available, avoiding timer races on
+  slow hub loads.
+- A delayed compatibility fallback is used only if a future Darktide build no
+  longer exposes GameplayStateRun.on_enter.
+
+Safety:
+- Backup format, verification, Known Good, restore staging, missing-mod
+  archives, retention limit, and guided workflow UI are unchanged.
+
+v0.5.1-beta
+============
+Retention performance update.
+
+Performance:
+- Fixed a brief hitch that could occur when the rolling automatic-backup pool
+  reached its configured limit and the oldest snapshot was pruned.
+- Modern snapshots now skip obsolete legacy sidecar cleanup unless a legacy
+  snapshot actually needs it.
+- Added focused retention timing diagnostics for future troubleshooting.
+- Validation with a full 20/20 backup pool reduced retention cleanup to 1-3 ms
+  and snapshot finalization to about 25 ms.
+
+UI:
+- Retains the v0.5.0 guided workflow and completed-step check marks.
+
+Safety:
+- Backup format, verification, Known Good, restore staging, archive behavior,
+  and the configured retention policy are unchanged.
+
+v0.5.0-beta
+============
+First public beta.
+
+Core:
+- Verified automatic DMF/mod settings snapshots.
+- Rolling backup retention.
+- Separate LocalAppData vault.
+- Live DMF settings-change detection with forced-save protection.
+- Per-mod protected archives.
+- Installed/missing/returned mod tracking.
+- Known Good trusted restore point.
+- Preview-before-restore workflow.
+- Emergency pre-restore backup.
+- Offline restore application only after Darktide exits.
+- Hidden restore watcher.
+- Next-launch restore hash verification.
+- Mission/loading safety gating.
+
+UI:
+- Completed workflow states now use a compact check mark instead of the "DONE -" prefix.
+- Kept the Step 3 workflow label visually stable after Preview completes.
+- Renamed missing-mod warnings to "Missing Mod Archived" to reflect that settings are already protected.
+- Moved Cancel Pending Restore directly beneath Step 4 while a restore is armed.
+- Guided numbered protection/recovery workflow.
+- Compact Protection Status and Current State.
+- Contextual missing/retired mod actions.
+- Advanced Tools hidden by default.
+- Step 3/4 safety gating.
+- First-run guidance explaining the required Mod Options refresh after creating
+  Known Good.
+
+Performance:
+- Cooperative archive processing.
+- Cached installed roster and snapshot analysis.
+- Optimized normal incremental backup path.
+- Initial full protection pass may cause a brief one-time hitch on large mod
+  configurations.
+
+v0.4.10c
+========
+- Added explicit Step 2 -> Step 3 Mourningstar/Mod Options refresh guidance.
+- No protection/restore engine behavior changes.
+
+v0.4.10b
+========
+- Fixed DMF validation display-name collision that could hide Steps 3 and 4.
+
+v0.4.10a
+========
+- Fixed Lua 200-local-variable compile ceiling regression.
+
+v0.4.10
+=======
+- Added DMF-native live Step 3 -> Step 4 validation refresh.

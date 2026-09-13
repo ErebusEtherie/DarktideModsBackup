@@ -21,6 +21,17 @@ local function hosted_widget(view, name)
     return type(widgets) == "table" and rawget(widgets, name) or nil
 end
 
+-- Mirror the proven History integration: hosted widgets remain hidden from
+-- Scores' native draw-all pass and are revealed only inside our own draw pass.
+local function set_compact_visibility(view, visible)
+    for _, name in ipairs(mod.victory_host_compact_widgets or {}) do
+        local widget = hosted_widget(view, name)
+        if widget then
+            widget.visible = visible == true
+        end
+    end
+end
+
 -- Feature gate for replacing Scores' visible end screen.
 local function replacement_enabled()
     return tostring(mod:get("end_board_preference") or "improve_yourself") == "improve_yourself"
@@ -165,7 +176,8 @@ end
 local function prepare_initial_host(view)
     if not view or not compact_widgets_exist(view) then return false end
 
-    local entry = recently_saved_entry(view)
+    local entry = mod._iy_eom_test_entry
+        or recently_saved_entry(view)
         or (mod.build_live_scoreboard_entry and mod.build_live_scoreboard_entry() or nil)
     if not entry or not mod.render_victory_host then return false end
 
@@ -246,7 +258,13 @@ local function draw_replacement(view, dt, input_service)
     UIRenderer.begin_pass(renderer, view._ui_scenegraph, input_service, dt, render_settings)
     for _, name in ipairs(mod.victory_host_draw_widgets or mod.victory_host_compact_widgets or {}) do
         local widget = hosted_widget(view, name)
-        if widget then UIWidget.draw(widget, renderer) end
+        if widget then
+            -- Keep merged IY widgets invisible to Scores' native draw-all pass;
+            -- expose each widget only for its dedicated replacement draw.
+            widget.visible = true
+            UIWidget.draw(widget, renderer)
+            widget.visible = false
+        end
     end
     UIRenderer.end_pass(renderer)
 end
@@ -294,7 +312,9 @@ end
 
 -- Restore host state so temporary Scores mutations cannot persist.
 local function restore_view(view)
-    if not view or not view._iy_live_host_attached then return end
+    if not view then return end
+    set_compact_visibility(view, false)
+    if not view._iy_live_host_attached then return end
     if view._iy_original_draw_widgets_field ~= nil then
         view._draw_widgets = view._iy_original_draw_widgets_field
     else
@@ -308,6 +328,7 @@ local function restore_view(view)
     view._iy_host_last_signature = nil
     view._iy_host_finalized = nil
     view._iy_host_wait_warned = nil
+    view._iy_host_replacement_enabled = nil
     view._iy_saved_entry = nil
     view._iy_host_attached_at = nil
     view._iy_original_draw_widgets_callable = nil
@@ -315,12 +336,17 @@ local function restore_view(view)
     view._iy_reward_phase_y = nil
     view._iy_reward_base_panel_y = nil
     view._iy_original_draw_widgets_field = nil
+    -- Release the Tactical exclusion only for the end-view that owns it.
+    if mod._iy_host_live_view == view then
+        mod._iy_scores_end_view_active = false
+    end
 end
 
 attach_live_view = function(view)
     if not view or view._iy_live_host_attached then return false end
-    if not view.end_view or not replacement_enabled() then return false end
+    if not view.end_view then return false end
 
+    set_compact_visibility(view, false)
     view._iy_original_draw_widgets_field = rawget(view, "_draw_widgets")
     view._iy_original_draw_widgets_callable = view._draw_widgets
     view._iy_live_host_attached = true
@@ -331,11 +357,17 @@ attach_live_view = function(view)
     view._iy_host_stable_elapsed = 0
     view._iy_host_last_signature = nil
     view._iy_host_finalized = false
+    view._iy_host_replacement_enabled = replacement_enabled()
+    -- Tactical and mission-end views are separate layers; this shared state
+    -- prevents either Tactical board from drawing over the result screen.
+    mod._iy_scores_end_view_active = true
 
-    -- Instance-level override: ScoreboardView.draw resolves self._draw_widgets,
-    -- so this replaces only this exact Scores end-view instance.
+    -- One permanent wrapper owns the mode switch for this end-view instance,
+    -- matching History's numbers/bars design. Scores mode always takes the
+    -- untouched native path; Improve Yourself mode uses the hosted board only
+    -- after it has populated successfully.
     view._draw_widgets = function(self, dt, input_service, ...)
-        if not self._iy_host_ready then
+        if not replacement_enabled() or not self._iy_host_ready then
             return draw_native_fallback(self, dt, input_service, ...)
         end
         return draw_replacement(self, dt, input_service)
@@ -345,7 +377,9 @@ attach_live_view = function(view)
     -- Populate now so the draw override is already ready on its first frame.
     -- If that is not possible, _iy_host_ready stays false and the established
     -- native fail-safe remains visible until the update poll succeeds.
-    prepare_initial_host(view)
+    if view._iy_host_replacement_enabled then
+        prepare_initial_host(view)
+    end
 
     return true
 end
@@ -356,7 +390,7 @@ end
 if CLASS and CLASS.ScoreboardView and type(CLASS.ScoreboardView.on_enter) == "function" then
     mod:hook(CLASS.ScoreboardView, "on_enter", function(func, view, ...)
         local result = func(view, ...)
-        if view and view.end_view and replacement_enabled() then
+        if view and view.end_view then
             local ui = scoreboard.ui_manager or mod.ui_manager or (Managers and Managers.ui)
             local active_view = ui and type(ui.view_instance) == "function"
                 and ui:view_instance("scores_view") or view
@@ -391,12 +425,6 @@ end
 -- Poll the mission-end host lifecycle and attach/detach at safe boundaries.
 -- Coordinates definition refresh, finalized entry changes, reward phase, and cleanup.
 function mod.poll_scores_end_host(dt)
-    if not replacement_enabled() then
-        if mod._iy_host_live_view then restore_view(mod._iy_host_live_view) end
-        mod._iy_host_live_view = nil
-        return
-    end
-
     local ui = scoreboard.ui_manager or mod.ui_manager or (Managers and Managers.ui)
     if not ui or type(ui.view_instance) ~= "function" then return end
 
@@ -417,6 +445,27 @@ function mod.poll_scores_end_host(dt)
     end
 
     if not view._iy_live_host_attached and not attach_live_view(view) then return end
+    set_compact_visibility(view, false)
+
+    local enabled = replacement_enabled()
+    if view._iy_host_replacement_enabled ~= enabled then
+        -- Keep the same wrapper when the user changes boards, just as History
+        -- switches numbers/bars without creating a second overlapping view.
+        view._iy_host_replacement_enabled = enabled
+        view._iy_host_ready = false
+        view._iy_host_elapsed = 0
+        view._iy_host_retry = 0
+        view._iy_host_stable_elapsed = 0
+        view._iy_host_last_signature = nil
+        view._iy_host_finalized = false
+        view._iy_host_wait_warned = nil
+    end
+
+    if not enabled then
+        apply_reward_phase_position(view, false)
+        return
+    end
+
     local step = dt or 0
     view._iy_host_elapsed = (view._iy_host_elapsed or 0) + step
     local widgets_ready, missing_widget = compact_widgets_exist(view)
@@ -432,7 +481,8 @@ function mod.poll_scores_end_host(dt)
     if view._iy_host_finalized or view._iy_host_retry > 0 then return end
     view._iy_host_retry = 0.1
 
-    local entry = recently_saved_entry(view)
+    local entry = mod._iy_eom_test_entry
+        or recently_saved_entry(view)
         or (mod.build_live_scoreboard_entry and mod.build_live_scoreboard_entry() or nil)
     if entry and mod.render_victory_host then
         local signature = entry_signature(entry)

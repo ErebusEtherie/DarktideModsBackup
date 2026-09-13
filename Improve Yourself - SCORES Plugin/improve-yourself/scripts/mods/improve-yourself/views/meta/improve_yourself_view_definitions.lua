@@ -5,6 +5,10 @@ local Color = Color
 local VisualConstants = mod:io_dofile("improve-yourself/scripts/mods/improve-yourself/views/shared/improve_yourself_visual_constants")
 local VictoryVisual = VisualConstants.victory
 
+local function L(key)
+    return mod:safe_localize(key)
+end
+
 -- Compact Victory Board geometry. All visual layers derive from these values so
 -- resizing the host board cannot leave its background, shadows, or frame behind.
 local compact_w = VictoryVisual.width
@@ -86,7 +90,7 @@ local function summary_definition(scenegraph_id)
             offset = {bar_x, bar_y, 6}, size = {bar_w, bar_h}, color = {115, 90, 112, 92}, material_values = {speed = 0},
         }},
         {pass_type = "rect", style_id = "goal_marker", style = {offset = {bar_x + math.floor(bar_w * 2 / 3), bar_y + bar_h - 1, 11}, size = {2, 5}, color = {230, 105, 125, 108}}},
-        {pass_type = "text", value_id = "goal_label", style_id = "goal_label", value = "GOAL", style = {
+        {pass_type = "text", value_id = "goal_label", style_id = "goal_label", value = L("iy_goal"), style = {
             offset = {bar_x + math.floor(bar_w * 2 / 3) - 22, bar_y - 14, 12}, size = {44, 12},
             text_horizontal_alignment = "center", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 9, text_color = {230, 105, 125, 108},
@@ -178,7 +182,7 @@ local function defense_prototype_definition(scenegraph_id)
             style.font_size = 18
             return style
         end)()},
-        {pass_type = "text", value = "DEFENSE", style_id = "section_label", style = {
+        {pass_type = "text", value = L("iy_section_defense"), style_id = "section_label", style = {
             offset = {12, 66, 5}, size = {label_w - 24, 32}, text_horizontal_alignment = "center", text_vertical_alignment = "center",
             font_type = UIFontSettings.header_1.font_type, font_size = 22, text_color = Color.white(255, true),
         }},
@@ -193,7 +197,7 @@ local function defense_prototype_definition(scenegraph_id)
             visibility_function = function(content) return content.damage_glyph_visible == true end,
             style = {offset = {chart_x, 6, 20}, size = {18, 22}, text_horizontal_alignment = "center", text_vertical_alignment = "center",
                 font_type = "itc_novarese_bold", font_size = 18, text_color = Color.white(255, true)}},
-        {pass_type = "text", value = "Damage Taken", style_id = "damage_title", style = {
+        {pass_type = "text", value = L("iy_metric_damage_taken"), style_id = "damage_title", style = {
             offset = {chart_x + 24, 4, 8}, size = {220, 26}, text_horizontal_alignment = "left", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 17, text_color = Color.white(255, true),
         }},
@@ -220,7 +224,7 @@ local function defense_prototype_definition(scenegraph_id)
             offset = {source_x, chart_y, 14}, size = {source_w, 14}, text_horizontal_alignment = "center", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 9, text_color = {255, 28, 36, 31},
         }},
-        {pass_type = "text", value_id = "source_area_label", style_id = "source_area_label", value = "Area of Effect", style = {
+        {pass_type = "text", value_id = "source_area_label", style_id = "source_area_label", value = L("iy_damage_area"), style = {
             offset = {source_x + source_w + 4, chart_y, 14}, size = {source_label_w, 11}, text_horizontal_alignment = "left", text_vertical_alignment = "center",
             word_wrap = false, font_type = UIFontSettings.body.font_type, font_size = 9, text_color = Color.terminal_text_body(230, true),
         }},
@@ -232,7 +236,7 @@ local function defense_prototype_definition(scenegraph_id)
             offset = {source_x, chart_y, 14}, size = {source_w, 14}, text_horizontal_alignment = "center", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 9, text_color = {255, 28, 36, 31},
         }},
-        {pass_type = "text", value_id = "source_melee_label", style_id = "source_melee_label", value = "Melee Damage", style = {
+        {pass_type = "text", value_id = "source_melee_label", style_id = "source_melee_label", value = L("iy_damage_melee"), style = {
             offset = {source_x + source_w + 4, chart_y, 14}, size = {source_label_w, 11}, text_horizontal_alignment = "left", text_vertical_alignment = "center",
             word_wrap = false, font_type = UIFontSettings.body.font_type, font_size = 9, text_color = Color.terminal_text_body(230, true),
         }},
@@ -244,7 +248,7 @@ local function defense_prototype_definition(scenegraph_id)
             offset = {source_x, chart_y, 14}, size = {source_w, 14}, text_horizontal_alignment = "center", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 9, text_color = {255, 28, 36, 31},
         }},
-        {pass_type = "text", value_id = "source_ranged_label", style_id = "source_ranged_label", value = "Ranged Damage", style = {
+        {pass_type = "text", value_id = "source_ranged_label", style_id = "source_ranged_label", value = L("iy_damage_ranged"), style = {
             offset = {source_x + source_w + 4, chart_y, 14}, size = {source_label_w, 11}, text_horizontal_alignment = "left", text_vertical_alignment = "center",
             word_wrap = false, font_type = UIFontSettings.body.font_type, font_size = 9, text_color = Color.terminal_text_body(230, true),
         }},
@@ -256,7 +260,7 @@ local function defense_prototype_definition(scenegraph_id)
             offset = {source_x, chart_y, 14}, size = {source_w, 14}, text_horizontal_alignment = "center", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 9, text_color = {255, 28, 36, 31},
         }},
-        {pass_type = "text", value_id = "source_other_label", style_id = "source_other_label", value = "Other Damage", style = {
+        {pass_type = "text", value_id = "source_other_label", style_id = "source_other_label", value = L("iy_damage_other"), style = {
             offset = {source_x + source_w + 4, chart_y, 14}, size = {source_label_w, 11}, text_horizontal_alignment = "left", text_vertical_alignment = "center",
             word_wrap = false, font_type = UIFontSettings.body.font_type, font_size = 9, text_color = Color.terminal_text_body(230, true),
         }},
@@ -264,7 +268,7 @@ local function defense_prototype_definition(scenegraph_id)
             offset = {source_x + source_w + 4, chart_y, 14}, size = {source_label_w, 18}, text_horizontal_alignment = "left", text_vertical_alignment = "center",
             word_wrap = false, line_spacing = 1, font_type = UIFontSettings.body.font_type, font_size = 7, text_color = Color.terminal_text_body(230, true),
         }},
-        {pass_type = "text", value = "Attacks Blocked", style_id = "source_summary_title", style = {
+        {pass_type = "text", value = L("iy_attacks_blocked"), style_id = "source_summary_title", style = {
             offset = {source_x - 2, chart_y + chart_h + 5, 14}, size = {106, 14}, text_horizontal_alignment = "left", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 9, text_color = Color.terminal_text_body(220, true),
         }},
@@ -301,7 +305,7 @@ local function defense_prototype_definition(scenegraph_id)
     -- Disabled and Deaths. These reuse the proven vertical bar language:
     -- muted comparison bars, a role-goal frame around the local result, and
     -- the local player's uncapped team share underneath.
-    local titles = {"Downed", "Disabled", "Deaths"}
+    local titles = {L("iy_counter_downed"), L("iy_counter_disabled"), L("iy_counter_deaths")}
     local mini_chart_y, mini_chart_h = 62, 82
     local comparison_bar_w, own_bar_w, mini_gap = 10, 38, 4
     for i = 1, 3 do
@@ -328,12 +332,12 @@ local function defense_prototype_definition(scenegraph_id)
             offset = {heading_x + 22, 4, 12}, size = {title_widths[i], 24}, text_horizontal_alignment = "left", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 14, text_color = Color.white(255, true),
         }}
-        passes[#passes + 1] = {pass_type = "text", value = "BEST", style_id = "counter_best_label_" .. i, style = {
+        passes[#passes + 1] = {pass_type = "text", value = L("iy_best"), style_id = "counter_best_label_" .. i, style = {
             offset = {best_x - 12, mini_chart_y + mini_chart_h + 5, 14}, size = {comparison_bar_w + 24, 14},
             text_horizontal_alignment = "center", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 8, text_color = {190, 126, 148, 126},
         }}
-        passes[#passes + 1] = {pass_type = "text", value = "WORST", style_id = "counter_worst_label_" .. i, style = {
+        passes[#passes + 1] = {pass_type = "text", value = L("iy_worst"), style_id = "counter_worst_label_" .. i, style = {
             offset = {worst_x - 14, mini_chart_y + mini_chart_h + 5, 14}, size = {comparison_bar_w + 28, 14},
             text_horizontal_alignment = "center", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 8, text_color = {190, 126, 148, 126},
@@ -425,7 +429,7 @@ local function offense_prototype_definition(scenegraph_id)
             style.font_size = 18
             return style
         end)()},
-        {pass_type = "text", value = "OFFENSE", style_id = "section_label", style = {
+        {pass_type = "text", value = L("iy_section_offense"), style_id = "section_label", style = {
             offset = {12, 66, 5}, size = {label_w - 24, 32}, text_horizontal_alignment = "center", text_vertical_alignment = "center",
             font_type = UIFontSettings.header_1.font_type, font_size = 22, text_color = Color.white(255, true),
         }},
@@ -442,7 +446,7 @@ local function offense_prototype_definition(scenegraph_id)
             visibility_function = function(content) return content.damage_total_glyph_visible == true end,
             style = {offset = {154, 6, 20}, size = {18, 22}, text_horizontal_alignment = "center", text_vertical_alignment = "center",
                 font_type = "itc_novarese_bold", font_size = 18, text_color = Color.white(255, true)}},
-        {pass_type = "text", value = "Damage Total", style_id = "damage_total_title", style = {
+        {pass_type = "text", value = L("iy_metric_damage_total"), style_id = "damage_total_title", style = {
             offset = {178, 4, 8}, size = {135, 26}, text_horizontal_alignment = "left", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 17, text_color = Color.white(255, true),
         }},
@@ -497,7 +501,7 @@ local function offense_prototype_definition(scenegraph_id)
             offset = {metrics_x - 36, chart_y + chart_h / 2 - 8, 5}, size = {32, 16}, text_horizontal_alignment = "right", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 10, text_color = {180, 126, 148, 126},
         }},
-        {pass_type = "text", value = "COMBAT QUALITY", style_id = "quality_heading", style = {
+        {pass_type = "text", value = L("iy_combat_quality"), style_id = "quality_heading", style = {
             offset = {quality_x + 8, 2, 12}, size = {quality_w - 16, 18}, text_horizontal_alignment = "center", text_vertical_alignment = "center",
             font_type = UIFontSettings.header_1.font_type, font_size = 12, text_color = Color.white(255, true),
         }},
@@ -573,7 +577,10 @@ local function offense_prototype_definition(scenegraph_id)
         }
     end
 
-    local metric_titles = {"Weakspot", "Melee", "Ranged", "Swarmers", "Elites", "Specials", "Boss"}
+    local metric_titles = {
+        L("iy_metric_weakspot_short"), L("iy_metric_melee_short"), L("iy_metric_ranged_short"),
+        L("iy_metric_swarmers"), L("iy_metric_elites"), L("iy_metric_specials"), L("iy_metric_boss"),
+    }
     local slot_w, bar_w = metrics_w / 7, 36
     for i = 1, 7 do
         local cx = metrics_x + slot_w * (i - 0.5)
@@ -609,7 +616,7 @@ local function offense_prototype_definition(scenegraph_id)
 
     -- Neutral personal-rate comparisons. Each row mirrors the Defense
     -- best/local/worst language horizontally and scales to the team-high value.
-    local quality_titles = {"Weakspot hit %", "Critical hits %", "Ranged accuracy"}
+    local quality_titles = {L("iy_metric_weakspot_percent"), L("iy_metric_critical_percent"), L("iy_metric_accuracy")}
     -- Center the complete labels + bars + endpoint-values group within the
     -- 225 px Combat Quality panel. The longest group occupies about 170 px,
     -- so a 25 px shift from the former left anchor balances both side margins.
@@ -626,11 +633,11 @@ local function offense_prototype_definition(scenegraph_id)
             offset = {quality_x + 8, y - 7, 12}, size = {quality_w - 16, 14}, text_horizontal_alignment = "center", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 10, text_color = {220, 126, 148, 126},
         }}
-        passes[#passes + 1] = {pass_type = "text", value = "BEST", style_id = "quality_best_label_" .. i, style = {
+        passes[#passes + 1] = {pass_type = "text", value = L("iy_best"), style_id = "quality_best_label_" .. i, style = {
             offset = {quality_x + 5 + quality_group_shift, y + 8, 12}, size = {34, 10}, text_horizontal_alignment = "right", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 8, text_color = {180, 126, 148, 126},
         }}
-        passes[#passes + 1] = {pass_type = "text", value = "WORST", style_id = "quality_worst_label_" .. i, style = {
+        passes[#passes + 1] = {pass_type = "text", value = L("iy_worst"), style_id = "quality_worst_label_" .. i, style = {
             offset = {quality_x + 3 + quality_group_shift, y + 35, 12}, size = {36, 10}, text_horizontal_alignment = "right", text_vertical_alignment = "center",
             font_type = UIFontSettings.body.font_type, font_size = 8, text_color = {180, 126, 148, 126},
         }}
@@ -680,7 +687,7 @@ local function teamplay_widget_definition(scenegraph_id)
             style.font_size = 18
             return style
         end)()},
-        {pass_type = "text", value = "TEAMPLAY", style_id = "section_label", style = {
+        {pass_type = "text", value = L("iy_section_teamplay"), style_id = "section_label", style = {
             offset = {8, 33, 5}, size = {label_w - 16, 24}, text_horizontal_alignment = "center", text_vertical_alignment = "center",
             font_type = UIFontSettings.header_1.font_type, font_size = 18, text_color = Color.white(255, true),
         }},
@@ -689,7 +696,10 @@ local function teamplay_widget_definition(scenegraph_id)
             font_type = UIFontSettings.body.font_type, font_size = 14, text_color = Color.terminal_text_header(255, true),
         }},
     }
-    local labels = {"Coherency", "Saves", "Revives", "Ammo", "Healthstations", "Objectives", "Currency"}
+    local labels = {
+        L("iy_metric_coherency"), L("iy_metric_saves"), L("iy_metric_revives"), L("iy_metric_ammo"),
+        L("iy_metric_healthstations"), L("iy_metric_objectives"), L("iy_metric_currency"),
+    }
     local content_x = label_w + 10
     local slot_w = (width - content_x - 10) / 7
     for i = 1, 7 do
@@ -740,7 +750,7 @@ local widget_definitions = {
             offset = {0, 0, compact_visual_z + 7}, size = {compact_frame_w, 36}, color = Color.gray(255, true),
         }},
     }, "compact_panel"),
-    compact_title = UIWidget.create_definition({{pass_type = "text", value_id = "text", style_id = "text", value = "IMPROVE YOURSELF!", style = (function()
+    compact_title = UIWidget.create_definition({{pass_type = "text", value_id = "text", style_id = "text", value = L("iy_title"), style = (function()
         local style = table.clone(title_style)
         style.font_size = 54
         style.size = {220, 62}
